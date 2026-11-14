@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Async `Result` support: `AsyncResult<T>`, returned by the new `captureAsyncResult` and by `thenOnSuccess` / `thenOnFailure` on every `Result`, keeps a chain fluent across `await`; `AsyncDetailedResult<T, TD>` keeps the detail type through async steps.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

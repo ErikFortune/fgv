@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res",
+      "comment": "`QualifierCollector.create` accepts qualifier names as plain strings alongside full declarations (`qualifierTypes` is optional when every entry is a string), and the simple context qualifier providers accept partial `qualifierValues`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-res",
+  "email": "noreply@anthropic.com"
+}

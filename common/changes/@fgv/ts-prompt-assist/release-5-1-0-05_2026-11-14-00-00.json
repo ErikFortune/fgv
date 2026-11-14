@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-prompt-assist",
+      "comment": "Observation and caching: observers on every resolution, opt-in composition reports of what a prompt is made of, prompt-cache stability analysis, and `toCacheRequest` to place `@fgv/ts-extras` ai-assist cache breakpoints.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist",
+  "email": "noreply@anthropic.com"
+}

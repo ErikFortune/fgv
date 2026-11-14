@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "New `Mustache` (`MustacheTemplate`, with selectable escaping and `renderWithSegments`), `Yaml` (`yamlConverter`) and `AsyncControl` (`raceStopConditions`, `WriteGate`) namespaces.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

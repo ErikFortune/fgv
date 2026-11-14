@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Async collectors with a concurrency bound — `mapResultsAsync`, `mapDetailedResultsAsync`, `mapSuccessAsync`, `mapFailuresAsync`, `allSucceedAsync` — plus the serial `populateObjectAsync` and `firstSuccessAsync`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}
