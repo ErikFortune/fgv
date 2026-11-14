@@ -4,15 +4,17 @@ name: Publish Release (Implementation)
 # file). Dispatched on refs/heads/publish/<version>, a child of release/<major> cut at its tip.
 #
 #   guard   no secrets, read-only. Refuses the wrong ref, a policy that does not name the branch's
-#           version, a HEAD that is not exactly origin/release/<major>, and a version every package
-#           already has on npm. Chooses the npm dist-tag.
+#           version, a HEAD that is not exactly origin/release/<major>, and a version already on npm
+#           unless this is a resume of our own partial run. Chooses the npm dist-tag and fixes the
+#           package list the publish job holds the build to.
 #   build   read-only token, no npm credentials. Installs, versions and writes CHANGELOGs, commits
 #           the bump locally, rebuilds, tests, and packs one tarball per package. Uploads the
 #           tarballs and a git bundle of the bump commit. All third-party install/build/test code
 #           runs here, where there is nothing worth stealing.
 #   publish environment npm-publish-release, OIDC and a write token. Installs no repository
-#           dependencies. Pushes the bump commit first, publishes each tarball with the pinned npm,
-#           tags and pushes, then opens the follow-up PRs.
+#           dependencies. Checks the build's output against the guard's package list and the bump
+#           commit against a path allowlist, pushes the bump commit first, then publishes each
+#           tarball with the pinned npm and pushes its tag, then opens the follow-up PRs.
 #
 # The version policy names the version this run publishes. `rush version --bump` always increments,
 # so the build job parks the policy on `<version>-0` and bumps `patch`, which semver resolves to
@@ -46,6 +48,7 @@ jobs:
       version: ${{ steps.check.outputs.version }}
       major: ${{ steps.check.outputs.major }}
       npm_tag: ${{ steps.check.outputs.npm_tag }}
+      packages: ${{ steps.check.outputs.packages }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -113,22 +116,26 @@ jobs:
           ' "$RUNNER_TEMP/projects.json" "$RUNNER_TEMP/packages.txt"
           [ -s "$RUNNER_TEMP/packages.txt" ] || fail "rush lists no base-utils projects"
 
-          # Refuse only when every package already has VERSION, so a run that stopped part-way can be
-          # finished: the publish job skips what npm already has.
-          TOTAL=0; DONE=0
+          # A package already at VERSION is allowed only when this is a resume of our own partial run:
+          # the publish job pushes each package's tag right after publishing it, so every package
+          # already on npm must also have its <pkg>_v<VERSION> tag on origin. Anything else (all
+          # published, or published by someone else) is refused.
+          TOTAL=0; DONE=0; UNTAGGED=""
           while read -r NAME; do
             TOTAL=$((TOTAL + 1))
             if OUT=$(npm view "$NAME" versions --json 2>&1); then
               if OUT="$OUT" node -e 'process.exit([].concat(JSON.parse(process.env.OUT)).includes(process.argv[1]) ? 0 : 1)' "$VERSION"; then
                 DONE=$((DONE + 1))
+                git ls-remote --exit-code --tags origin "refs/tags/${NAME}_v$VERSION" >/dev/null || UNTAGGED="$UNTAGGED $NAME"
               fi
             elif ! grep -q E404 <<<"$OUT"; then
               fail "could not read the published versions of $NAME from npm: $OUT"
             fi
           done < "$RUNNER_TEMP/packages.txt"
           [ "$DONE" -lt "$TOTAL" ] || fail "all $TOTAL base-utils packages are already on npm at $VERSION; nothing to publish"
+          [ -z "$UNTAGGED" ] || fail "already on npm at $VERSION without a ${VERSION} tag on origin (not a resume of this workflow):$UNTAGGED"
           if [ "$DONE" -gt 0 ]; then
-            echo "::warning title=Partial publish::$DONE of $TOTAL packages are already on npm at $VERSION; this run publishes the rest"
+            echo "::warning title=Resuming a partial publish::$DONE of $TOTAL packages are already on npm at $VERSION and tagged; this run publishes the rest"
           fi
 
           # A maintenance-train release older than npm's latest must not move `latest` backwards.
@@ -146,6 +153,7 @@ jobs:
             echo "version=$VERSION"
             echo "major=$MAJOR"
             echo "npm_tag=$NPM_TAG"
+            echo "packages=$(node -e 'console.log(JSON.stringify(require("fs").readFileSync(process.argv[1], "utf8").split("\n").filter(Boolean)))' "$RUNNER_TEMP/packages.txt")"
           } >> "$GITHUB_OUTPUT"
           echo "Guards passed: $RELEASE_KIND $VERSION on $GITHUB_REF = origin/release/$MAJOR; $DONE/$TOTAL already on npm; npm latest is $LATEST, dist-tag $NPM_TAG."
 
@@ -177,8 +185,9 @@ jobs:
         with:
           node-version: 24.15.0
 
-      - name: Verify Change Logs
-        run: node common/scripts/install-run-rush.js change --verify --target-branch "origin/release/${MAJOR}"
+      # No `rush change --verify` here: the guard has already required HEAD to be exactly the
+      # train's tip, so it would compare the branch with itself; PR CI verifies change files on the
+      # way into the train.
 
       - name: Rush Install
         run: node common/scripts/install-run-rush.js install
@@ -215,7 +224,8 @@ jobs:
           git add -A -- common/config/rush/version-policies.json common/changes \
             ':(glob)**/package.json' ':(glob)**/CHANGELOG.json' ':(glob)**/CHANGELOG.md'
           git commit --no-verify -m "Publish $VERSION"
-          git status --porcelain
+          DIRTY=$(git status --porcelain)
+          [ -z "$DIRTY" ] || { echo "::error::the tree is dirty after the bump commit:"; echo "$DIRTY"; exit 1; }
           echo "bump_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Rush rebuild
@@ -236,8 +246,13 @@ jobs:
       # The same `pnpm pack` rush runs per project, which resolves workspace: ranges to $VERSION.
       # Each tarball is checked for the version and for any workspace: range left unresolved.
       - name: Pack tarballs and bundle the bump commit
+        env:
+          BUMP_SHA: ${{ steps.commit.outputs.bump_sha }}
         run: |
           set -euo pipefail
+          DIRTY=$(git status --porcelain)
+          [ -z "$DIRTY" ] || { echo "::error::the build changed tracked files; refusing to pack:"; echo "$DIRTY"; exit 1; }
+          [ "$(git rev-parse HEAD)" = "$BUMP_SHA" ] || { echo "::error::HEAD moved after the bump commit"; exit 1; }
           OUT="$RUNNER_TEMP/release"
           mkdir -p "$OUT/tarballs"
           PNPM="$PWD/common/temp/pnpm-local/node_modules/.bin/pnpm"
@@ -283,6 +298,7 @@ jobs:
       MAJOR: ${{ needs.guard.outputs.major }}
       NPM_TAG: ${{ needs.guard.outputs.npm_tag }}
       BUMP_SHA: ${{ needs.build.outputs.bump_sha }}
+      PACKAGES: ${{ needs.guard.outputs.packages }}
     steps:
       - name: Locate the release artifact
         run: echo "REL=$RUNNER_TEMP/release" >> "$GITHUB_ENV"
@@ -313,6 +329,39 @@ jobs:
           name: release-${{ needs.guard.outputs.version }}
           path: ${{ runner.temp }}/release
 
+      # The build job ran repository code; nothing it produced is trusted until checked here. The
+      # bump commit must sit directly on the dispatched commit and touch only what the version
+      # step writes, and the tarballs must be exactly the guard's package list.
+      - name: Check the build output
+        run: |
+          set -euo pipefail
+          fail() { echo "::error title=Build output check::$1"; exit 1; }
+          git fetch -q "$REL/bump.bundle" HEAD
+          [ "$(git rev-parse FETCH_HEAD)" = "$BUMP_SHA" ] || fail "bundle holds $(git rev-parse FETCH_HEAD), build reported $BUMP_SHA"
+          [ "$(git rev-list --count "$GITHUB_SHA..$BUMP_SHA")" = "1" ] && [ "$(git rev-parse "$BUMP_SHA^")" = "$GITHUB_SHA" ] \
+            || fail "the bump commit is not a single commit on the dispatched commit $GITHUB_SHA"
+          git branch -f publish-bump "$BUMP_SHA"
+          OUTSIDE=$(git diff --no-renames --name-status "$GITHUB_SHA" "$BUMP_SHA" | awk -F'\t' '
+            $1 == "M" && $2 == "common/config/rush/version-policies.json" { next }
+            $1 == "D" && $2 ~ /^common\/changes\// { next }
+            ($1 == "M" || $1 == "A") && $2 !~ /^common\/changes\// && $2 ~ /(^|\/)(package\.json|CHANGELOG\.json|CHANGELOG\.md)$/ { next }
+            { print }')
+          [ -z "$OUTSIDE" ] || fail "the bump commit touches paths the version step never writes: $(echo "$OUTSIDE" | tr '\n' ' ')"
+          # shellcheck disable=SC2016 # single quotes: the argument is JavaScript, not shell
+          node -e '
+            const fs = require("fs");
+            const want = JSON.parse(process.env.PACKAGES).sort();
+            const rows = fs.readFileSync(process.argv[1], "utf8").split("\n").filter(Boolean).map((l) => l.split("\t"));
+            const got = rows.map(([n]) => n).sort();
+            const missing = rows.filter(([, f]) => !fs.existsSync(`${process.argv[2]}/${f}`)).map(([n]) => n);
+            if (JSON.stringify(want) !== JSON.stringify(got) || missing.length > 0) {
+              console.error(`::error::tarballs do not match the guard package list; expected ${want.length}, got ${got.length}; ` +
+                `extra: ${got.filter((n) => !want.includes(n))}; missing: ${want.filter((n) => !got.includes(n))}; no file: ${missing}`);
+              process.exit(1);
+            }
+            console.log(`${got.length} tarballs match the guard package list`);
+          ' "$REL/tarballs.tsv" "$REL/tarballs"
+
       # Pushed before anything reaches npm, so a failure later never leaves npm holding a version
       # the repository has no commit for. Idempotent on a re-run. Credentials exist for this
       # command only.
@@ -321,10 +370,6 @@ jobs:
           TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          git fetch -q "$REL/bump.bundle" HEAD
-          [ "$(git rev-parse FETCH_HEAD)" = "$BUMP_SHA" ] || { echo "::error::bundle holds $(git rev-parse FETCH_HEAD), build reported $BUMP_SHA"; exit 1; }
-          [ "$(git rev-parse FETCH_HEAD^)" = "$GITHUB_SHA" ] || { echo "::error::the bump commit's parent is not the dispatched commit $GITHUB_SHA"; exit 1; }
-          git branch -f publish-bump FETCH_HEAD
           REMOTE=$(git ls-remote origin "refs/heads/$GITHUB_REF_NAME" | cut -f1)
           if [ "$REMOTE" = "$BUMP_SHA" ]; then
             echo "origin/$GITHUB_REF_NAME already holds the bump commit"
@@ -334,40 +379,31 @@ jobs:
               push origin "$BUMP_SHA:refs/heads/$GITHUB_REF_NAME"
           fi
 
-      # Tarballs only: no repository code runs here. A version already on npm is skipped, so a
-      # re-run finishes a partial publish.
-      - name: Publish to npm
-        run: |
-          set -euo pipefail
-          cd "$REL/tarballs"
-          while IFS=$'\t' read -r NAME FILE; do
-            if OUT=$(npm view "$NAME" versions --json 2>&1) \
-              && OUT="$OUT" node -e 'process.exit([].concat(JSON.parse(process.env.OUT)).includes(process.argv[1]) ? 0 : 1)' "$VERSION"; then
-              echo "Skip $NAME@$VERSION: already on npm"
-              continue
-            fi
-            npm publish "./$FILE" --access public --tag "$NPM_TAG" --ignore-scripts
-          done < "$REL/tarballs.tsv"
-
-      - name: Tag and push tags
+      # Tarballs only: no repository code runs here. Each package's tag is pushed right after the
+      # package is published, so every version on npm has its tag on origin; that is what lets the
+      # guard tell a resume of this run from a version someone else published. A version already on
+      # npm is skipped (and tagged if its tag is missing), so a re-run finishes a partial publish.
+      - name: Publish to npm and tag
         env:
           TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          NEW=()
-          while IFS=$'\t' read -r NAME _; do
+          AUTH=$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)
+          while IFS=$'\t' read -r NAME FILE; do
+            if OUT=$(npm view "$NAME" versions --json 2>&1) \
+              && OUT="$OUT" node -e 'process.exit([].concat(JSON.parse(process.env.OUT)).includes(process.argv[1]) ? 0 : 1)' "$VERSION"; then
+              echo "Skip $NAME@$VERSION: already on npm"
+            else
+              (cd "$REL/tarballs" && npm publish "./$FILE" --access public --tag "$NPM_TAG" --ignore-scripts)
+            fi
             TAG="${NAME}_v$VERSION"
             if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null; then
               echo "Tag $TAG already on origin"
-              continue
+            else
+              git tag -f -a "$TAG" -m "$NAME v$VERSION" "$BUMP_SHA"
+              git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push origin "refs/tags/$TAG"
             fi
-            git tag -f -a "$TAG" -m "$NAME v$VERSION" "$BUMP_SHA"
-            NEW+=("refs/tags/$TAG")
           done < "$REL/tarballs.tsv"
-          if [ "${#NEW[@]}" -gt 0 ]; then
-            AUTH=$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)
-            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push origin "${NEW[@]}"
-          fi
           WANT=$(wc -l < "$REL/tarballs.tsv")
           HAVE=$(git ls-remote --tags origin "refs/tags/@fgv/*_v$VERSION" | wc -l)
           [ "$HAVE" = "$WANT" ] || { echo "::error::$HAVE tags for $VERSION on origin, expected $WANT"; exit 1; }

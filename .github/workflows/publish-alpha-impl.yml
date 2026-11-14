@@ -1,10 +1,17 @@
 name: Publish Alpha (Implementation)
 
 # Alpha publishes from `prerelease`. Called only from publish.yml (npm trusted publishing is bound to
-# that file). Publishes every base-utils package at its committed package.json version
-# (`<next minor>.0-N`, bumped on `prerelease` beforehand) under the `alpha` dist-tag, tags each
-# `<package>_v<version>-alpha`, and pushes the tags. With --include-all rush ignores change files and
-# --apply, so nothing is committed; a version already on npm is skipped.
+# that file). Same semantics as the `rush publish --include-all --tag alpha --prerelease-name alpha`
+# it replaces: every base-utils package is published at its committed package.json version
+# (`<next minor>.0-N`, bumped on `prerelease` beforehand) under the `alpha` dist-tag, a version already
+# on npm is skipped, each package it publishes gets the annotated tag `<package>_v<version>-alpha` on
+# the dispatched commit, and nothing is committed.
+#
+# Split like the stable path so that no job holding credentials runs repository dependency code:
+#   guard   read-only, no secrets: ref, version policy, package list.
+#   build   read-only token, no npm credentials: install, rebuild, tarball check, pack.
+#   publish environment npm-publish-alpha, OIDC and a write token; installs nothing; publishes the
+#           tarballs and pushes tags, with credentials passed to `git push` only.
 
 on:
   workflow_call:
@@ -18,12 +25,13 @@ permissions:
   contents: read
 
 jobs:
-  publish:
+  guard:
     runs-on: ubuntu-latest
-    environment: npm-publish-alpha
     permissions:
-      id-token: write # npm OIDC
-      contents: write # per-package tags on prerelease
+      contents: read
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      packages: ${{ steps.check.outputs.packages }}
     steps:
       - name: Guard (ref)
         run: |
@@ -34,7 +42,142 @@ jobs:
 
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
-          fetch-depth: 2
+          persist-credentials: false
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24.15.0
+
+      - name: Version policy and package list
+        id: check
+        run: |
+          set -euo pipefail
+          fail() { echo "::error title=Publish guard::$1"; exit 1; }
+          # version-policies.json carries // and /* */ comments and trailing commas.
+          # shellcheck disable=SC2016 # single quotes: the argument is JavaScript, not shell
+          VERSION=$(node -e '
+            const fs = require("fs");
+            const text = fs.readFileSync("common/config/rush/version-policies.json", "utf8")
+              .replace(/^\s*\/\/.*$/gm, "")
+              .replace(/\/\*[\s\S]*?\*\//g, "")
+              .replace(/,(\s*[\]}])/g, "$1");
+            const policy = JSON.parse(text).find((p) => p.policyName === "base-utils");
+            if (!policy) { console.error("no base-utils version policy"); process.exit(1); }
+            console.log(policy.version);
+          ') || fail "could not read the base-utils version policy"
+          node common/scripts/install-run-rush.js list --json --version | sed -n '/^{/,$p' > "$RUNNER_TEMP/projects.json"
+          # shellcheck disable=SC2016 # single quotes: the argument is JavaScript, not shell
+          PACKAGES=$(node -e '
+            const names = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).projects
+              .filter((p) => p.versionPolicyName === "base-utils").map((p) => p.name);
+            console.log(JSON.stringify(names));
+          ' "$RUNNER_TEMP/projects.json")
+          [ "$PACKAGES" != "[]" ] || fail "rush lists no base-utils projects"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "packages=$PACKAGES" >> "$GITHUB_OUTPUT"
+          echo "Alpha $VERSION on $GITHUB_REF ($GITHUB_SHA)"
+
+  build:
+    needs: guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ needs.guard.outputs.version }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24.15.0
+
+      # No `rush change --verify`: on `prerelease` it compared the branch with itself.
+      - name: Rush Install
+        run: node common/scripts/install-run-rush.js install
+
+      - name: Rush rebuild
+        run: node common/scripts/install-run-rush.js rebuild --verbose
+
+      # The publish-time hard gate. Every path a manifest names must be present in the tarball
+      # this publish would upload — @fgv 5.1.0-27 shipped only `src/`, and no tree-based
+      # check could see it. Runs immediately before the pack so it reads the same tree.
+      # Costs ~5 s across the repo, against ~3.3 min for `npm pack --dry-run` per package.
+      - name: Install pack-check autoinstaller
+        run: node common/scripts/install-run-rush.js install-autoinstaller --name rush-pack-check
+      - name: Verify exports resolve inside the published tarball
+        run: node common/scripts/verify-tarball-exports.mjs --verbose --timing
+
+      # The same `pnpm pack` rush runs per project. Every base-utils package must be at the policy
+      # version (lockstep), and each tarball is checked for it and for unresolved workspace: ranges.
+      - name: Pack tarballs
+        run: |
+          set -euo pipefail
+          DIRTY=$(git status --porcelain)
+          [ -z "$DIRTY" ] || { echo "::error::the build changed tracked files; refusing to pack:"; echo "$DIRTY"; exit 1; }
+          [ "$(git rev-parse HEAD)" = "$GITHUB_SHA" ] || { echo "::error::HEAD is not the dispatched commit"; exit 1; }
+          node common/scripts/install-run-rush.js list --json --version | sed -n '/^{/,$p' > "$RUNNER_TEMP/projects.json"
+          # shellcheck disable=SC2016 # single quotes: the argument is JavaScript, not shell
+          node -e '
+            const fs = require("fs");
+            const projects = JSON.parse(fs.readFileSync(process.argv[1], "utf8")).projects
+              .filter((p) => p.versionPolicyName === "base-utils");
+            const wrong = projects.filter((p) => p.version !== process.env.VERSION);
+            if (projects.length === 0 || wrong.length > 0) {
+              console.error(`expected every base-utils project at ${process.env.VERSION}; wrong: ` +
+                wrong.map((p) => `${p.name}@${p.version}`).join(", "));
+              process.exit(1);
+            }
+            fs.writeFileSync(process.argv[2], projects.map((p) => `${p.name}\t${p.path}`).join("\n") + "\n");
+          ' "$RUNNER_TEMP/projects.json" "$RUNNER_TEMP/projects.tsv"
+          OUT="$RUNNER_TEMP/release"
+          mkdir -p "$OUT/tarballs"
+          PNPM="$PWD/common/temp/pnpm-local/node_modules/.bin/pnpm"
+          : > "$OUT/tarballs.tsv"
+          while IFS=$'\t' read -r NAME DIR; do
+            FILE=$(cd "$DIR" && "$PNPM" pack --pack-destination "$OUT/tarballs" | tail -1)
+            FILE=$(basename "$FILE")
+            # shellcheck disable=SC2016 # single quotes: the argument is JavaScript, not shell
+            tar -xzOf "$OUT/tarballs/$FILE" package/package.json | node -e '
+              let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () => {
+                const p = JSON.parse(s);
+                const bad = ["dependencies", "peerDependencies", "optionalDependencies"]
+                  .flatMap((k) => Object.entries(p[k] ?? {})).filter(([, r]) => String(r).startsWith("workspace:"));
+                if (p.name !== process.argv[1] || p.version !== process.argv[2] || bad.length > 0) {
+                  console.error(`${process.argv[1]}: tarball says ${p.name}@${p.version}, unresolved: ${JSON.stringify(bad)}`);
+                  process.exit(1);
+                }
+              });
+            ' "$NAME" "$VERSION"
+            printf '%s\t%s\n' "$NAME" "$FILE" >> "$OUT/tarballs.tsv"
+          done < "$RUNNER_TEMP/projects.tsv"
+          git rev-parse HEAD > "$OUT/build-sha"
+          echo "$(wc -l < "$OUT/tarballs.tsv") tarballs at $VERSION"
+
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: alpha-${{ needs.guard.outputs.version }}
+          path: ${{ runner.temp }}/release
+          if-no-files-found: error
+
+  publish:
+    needs: [guard, build]
+    runs-on: ubuntu-latest
+    environment: npm-publish-alpha
+    permissions:
+      id-token: write # npm OIDC
+      contents: write # per-package tags on prerelease
+    env:
+      VERSION: ${{ needs.guard.outputs.version }}
+      PACKAGES: ${{ needs.guard.outputs.packages }}
+    steps:
+      - name: Locate the release artifact
+        run: echo "REL=$RUNNER_TEMP/release" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
       - name: Git config user
         env:
@@ -52,25 +195,56 @@ jobs:
       - name: Upgrade npm for OIDC support
         run: npm install -g npm@11.21.2 && npm --version
 
-      # Compares prerelease with itself, so it only checks the branch is well-formed; the stable
-      # path compares against origin/release/<major>.
-      - name: Verify Change Logs
-        run: node common/scripts/install-run-rush.js change --verify --target-branch "origin/${GITHUB_REF_NAME}"
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: alpha-${{ needs.guard.outputs.version }}
+          path: ${{ runner.temp }}/release
 
-      - name: Rush Install
-        run: node common/scripts/install-run-rush.js install
+      # Alpha commits nothing, so the build must have packed the dispatched commit itself, and the
+      # tarballs must be exactly the guard's package list.
+      - name: Check the build output
+        run: |
+          set -euo pipefail
+          [ "$(cat "$REL/build-sha")" = "$GITHUB_SHA" ] \
+            || { echo "::error::the build packed $(cat "$REL/build-sha"), not the dispatched commit $GITHUB_SHA"; exit 1; }
+          # shellcheck disable=SC2016 # single quotes: the argument is JavaScript, not shell
+          node -e '
+            const fs = require("fs");
+            const want = JSON.parse(process.env.PACKAGES).sort();
+            const rows = fs.readFileSync(process.argv[1], "utf8").split("\n").filter(Boolean).map((l) => l.split("\t"));
+            const got = rows.map(([n]) => n).sort();
+            const missing = rows.filter(([, f]) => !fs.existsSync(`${process.argv[2]}/${f}`)).map(([n]) => n);
+            if (JSON.stringify(want) !== JSON.stringify(got) || missing.length > 0) {
+              console.error(`::error::tarballs do not match the guard package list; expected ${want.length}, got ${got.length}; ` +
+                `extra: ${got.filter((n) => !want.includes(n))}; missing: ${want.filter((n) => !got.includes(n))}; no file: ${missing}`);
+              process.exit(1);
+            }
+            console.log(`${got.length} tarballs match the guard package list`);
+          ' "$REL/tarballs.tsv" "$REL/tarballs"
 
-      - name: Rush rebuild
-        run: node common/scripts/install-run-rush.js rebuild --verbose
-
-      # The publish-time hard gate. Every path a manifest names must be present in the tarball
-      # this publish would upload — @fgv 5.1.0-27 shipped only `src/`, and no tree-based
-      # check could see it. Runs immediately before publish so it reads the same tree npm
-      # packs. Costs ~5 s across the repo, against ~3.3 min for `npm pack --dry-run` per package.
-      - name: Install pack-check autoinstaller
-        run: node common/scripts/install-run-rush.js install-autoinstaller --name rush-pack-check
-      - name: Verify exports resolve inside the published tarball
-        run: node common/scripts/verify-tarball-exports.mjs --verbose --timing
-
-      - name: Rush Publish
-        run: node common/scripts/install-run-rush.js publish --apply --publish --include-all --set-access-level public --target-branch "${GITHUB_REF_NAME}" --add-commit-details --ignore-git-hooks --tag alpha --prerelease-name alpha
+      # Tarballs only: no repository code runs here. As rush did: a version already on npm is
+      # skipped and not tagged; a package published here is tagged `<pkg>_v<version>-alpha`.
+      - name: Publish to npm and tag
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          AUTH=$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)
+          PUBLISHED=0
+          while IFS=$'\t' read -r NAME FILE; do
+            if OUT=$(npm view "$NAME" versions --json 2>&1) \
+              && OUT="$OUT" node -e 'process.exit([].concat(JSON.parse(process.env.OUT)).includes(process.argv[1]) ? 0 : 1)' "$VERSION"; then
+              echo "Skip $NAME. Not updated."
+              continue
+            fi
+            (cd "$REL/tarballs" && npm publish "./$FILE" --access public --tag alpha --ignore-scripts)
+            PUBLISHED=$((PUBLISHED + 1))
+            TAG="${NAME}_v$VERSION-alpha"
+            if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null; then
+              echo "Not tagging $NAME@$VERSION. A tag already exists for this version."
+            else
+              git tag -f -a "$TAG" -m "$NAME v$VERSION-alpha" "$GITHUB_SHA"
+              git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push origin "refs/tags/$TAG"
+            fi
+          done < "$REL/tarballs.tsv"
+          echo "Published $PUBLISHED of $(wc -l < "$REL/tarballs.tsv") packages at $VERSION (alpha)" | tee -a "$GITHUB_STEP_SUMMARY"
