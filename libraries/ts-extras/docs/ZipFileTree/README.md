@@ -67,7 +67,16 @@ Description
 
 </td><td>
 
-Simple interface for a file to be added to a zip file.
+Simple interface for a text file to be added to a zip file.
+
+</td></tr>
+<tr><td>
+
+[IZipFile](./interfaces/IZipFile.md)
+
+</td><td>
+
+Interface for a file to be added to a zip file, whose contents are either text or
 
 </td></tr>
 <tr><td>
@@ -123,6 +132,15 @@ Description
 </td><td>
 
 Creates a zip file from an array of text files.
+
+</td></tr>
+<tr><td>
+
+[createZipFromFiles](./functions/createZipFromFiles.md)
+
+</td><td>
+
+Creates a zip file from an array of files whose contents are either text or raw bytes.
 
 </td></tr>
 </tbody></table>

@@ -12,5 +12,5 @@ Initialization options for a [SimpleJsonMap](../classes/SimpleJsonMap.md).
 
 | Property | Type |
 | ------ | ------ |
-| <a id="editor"></a> `editor?` | [`JsonEditor`](../classes/JsonEditor.md) |
-| <a id="keypolicy"></a> `keyPolicy?` | [`ReferenceMapKeyPolicy`](../classes/ReferenceMapKeyPolicy.md)\<[`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md)\> |
+| <a id="property-editor"></a> `editor?` | [`JsonEditor`](../classes/JsonEditor.md) |
+| <a id="property-keypolicy"></a> `keyPolicy?` | [`ReferenceMapKeyPolicy`](../classes/ReferenceMapKeyPolicy.md)\<[`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md)\> |

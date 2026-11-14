@@ -70,7 +70,7 @@ Description
 
 </td><td>
 
-"gemini-2.5-flash-image"[]
+[GeminiFlashImageModelNames](../type-aliases/GeminiFlashImageModelNames.md)[]
 
 </td><td>
 

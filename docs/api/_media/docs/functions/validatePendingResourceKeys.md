@@ -8,5 +8,5 @@ This is a diagnostic function to ensure the pending resource key invariant is ma
 ## Signature
 
 ```typescript
-function validatePendingResourceKeys(pendingResources: Map<string, ILooseResourceDecl>): Result<void>
+function validatePendingResourceKeys(pendingResources: Map<string, ILooseResourceDecl<string>>): Result<void>
 ```

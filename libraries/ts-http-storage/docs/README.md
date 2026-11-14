@@ -93,6 +93,15 @@ Request for path-based operations.
 </td></tr>
 <tr><td>
 
+[IStorageReadFileRequest](./interfaces/IStorageReadFileRequest.md)
+
+</td><td>
+
+Request for reading a file, with an optional preferred content encoding.
+
+</td></tr>
+<tr><td>
+
 [IStorageWriteFileRequest](./interfaces/IStorageWriteFileRequest.md)
 
 </td><td>
@@ -186,6 +195,15 @@ Namespace identifier for scoped storage.
 Storage item type.
 
 </td></tr>
+<tr><td>
+
+[StorageContentEncoding](./type-aliases/StorageContentEncoding.md)
+
+</td><td>
+
+How a file's bytes are represented in the `contents` field on the wire.
+
+</td></tr>
 </tbody></table>
 
 ## Functions
@@ -257,6 +275,24 @@ Converter for IStorageTreeItem.
 </td><td>
 
 Converter for path-based requests.
+
+</td></tr>
+<tr><td>
+
+[storageContentEncoding](./variables/storageContentEncoding.md)
+
+</td><td>
+
+Converter for the wire content encoding.
+
+</td></tr>
+<tr><td>
+
+[storageReadFileRequest](./variables/storageReadFileRequest.md)
+
+</td><td>
+
+Converter for read-file requests.
 
 </td></tr>
 <tr><td>

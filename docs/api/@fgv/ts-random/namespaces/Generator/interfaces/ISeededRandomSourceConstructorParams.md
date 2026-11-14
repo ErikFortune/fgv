@@ -12,8 +12,8 @@ Constructor params for a [SeededRandomSource](../classes/SeededRandomSource.md).
 
 | Property | Type |
 | ------ | ------ |
-| <a id="counter"></a> `counter` | `number` |
-| <a id="lineage"></a> `lineage` | readonly `string`[] |
-| <a id="seed"></a> `seed` | `string` |
-| <a id="state"></a> `state` | `number` |
-| <a id="step"></a> `step` | [`RandomStepFunction`](../type-aliases/RandomStepFunction.md) |
+| <a id="property-counter"></a> `counter` | `number` |
+| <a id="property-lineage"></a> `lineage` | readonly `string`[] |
+| <a id="property-seed"></a> `seed` | `string` |
+| <a id="property-state"></a> `state` | `number` |
+| <a id="property-step"></a> `step` | [`RandomStepFunction`](../type-aliases/RandomStepFunction.md) |

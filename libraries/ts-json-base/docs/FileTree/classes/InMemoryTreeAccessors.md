@@ -5,7 +5,7 @@
 Implementation of FileTree.IMutableFileTreeAccessors that uses an in-memory
 tree to access and modify files and directories.
 
-**Implements:** [`IMutableFileTreeAccessors<TCT>`](../../interfaces/IMutableFileTreeAccessors.md)
+**Implements:** [`IMutableFileTreeAccessors<TCT>`](../../interfaces/IMutableFileTreeAccessors.md), [`IBinaryFileTreeAccessors<TCT>`](../../interfaces/IBinaryFileTreeAccessors.md), [`IAtomicFileTreeAccessors<TCT>`](../../interfaces/IAtomicFileTreeAccessors.md)
 
 ## Methods
 
@@ -116,6 +116,32 @@ Gets the contents of a file in the file tree.
 </td></tr>
 <tr><td>
 
+[getFileBytes(path)](./InMemoryTreeAccessors.getFileBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the contents of a file in the file tree as bytes, with no text decoding applied.
+
+</td></tr>
+<tr><td>
+
+[getFileTextStrict(path)](./InMemoryTreeAccessors.getFileTextStrict.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Reads a file's contents, decoding UTF-8 strictly.
+
+</td></tr>
+<tr><td>
+
 [getFileContentType(path, provided)](./InMemoryTreeAccessors.getFileContentType.md)
 
 </td><td>
@@ -203,6 +229,45 @@ Deletes a directory at the given path.
 </td><td>
 
 Saves the contents to a file at the given path.
+
+</td></tr>
+<tr><td>
+
+[getAtomicWriteCapabilities(directory)](./InMemoryTreeAccessors.getAtomicWriteCapabilities.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Reports what atomic replacement this store can offer for writes into the
+
+</td></tr>
+<tr><td>
+
+[writeFileAtomically(path, contents, options)](./InMemoryTreeAccessors.writeFileAtomically.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Replaces (or creates) a file's contents such that a reader never observes
+
+</td></tr>
+<tr><td>
+
+[cleanupAtomicTemporaries(directory)](./InMemoryTreeAccessors.cleanupAtomicTemporaries.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Removes any working files this store reserves for interrupted atomic
 
 </td></tr>
 </tbody></table>

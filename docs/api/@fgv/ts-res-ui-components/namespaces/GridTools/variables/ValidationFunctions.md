@@ -14,7 +14,7 @@ Common validation functions for reuse.
 
 | Name | Type |
 | ------ | ------ |
-| <a id="excludecharacters"></a> `excludeCharacters()` | (`forbiddenChars`) => (`value`) => `string` \| `null` |
-| <a id="numberrange"></a> `numberRange()` | (`min`, `max`) => (`value`) => `string` \| `null` |
-| <a id="oneof"></a> `oneOf()` | (`allowedValues`) => (`value`) => `string` \| `null` |
-| <a id="validjson"></a> `validJson()` | (`value`) => `string` \| `null` |
+| <a id="property-excludecharacters"></a> `excludeCharacters()` | (`forbiddenChars`) => (`value`) => `string` \| `null` |
+| <a id="property-numberrange"></a> `numberRange()` | (`min`, `max`) => (`value`) => `string` \| `null` |
+| <a id="property-oneof"></a> `oneOf()` | (`allowedValues`) => (`value`) => `string` \| `null` |
+| <a id="property-validjson"></a> `validJson()` | (`value`) => `string` \| `null` |

@@ -13,9 +13,9 @@ a flow.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="hasmessages"></a> `hasMessages` | `readonly` | `boolean` | Indicates whether any messages have been aggregated. |
-| <a id="messages"></a> `messages` | `readonly` | readonly `string`[] | The aggregated messages. |
-| <a id="nummessages"></a> `numMessages` | `readonly` | `number` | The number of messages aggregated. |
+| <a id="property-hasmessages"></a> `hasMessages` | `readonly` | `boolean` | Indicates whether any messages have been aggregated. |
+| <a id="property-messages"></a> `messages` | `readonly` | readonly `string`[] | The aggregated messages. |
+| <a id="property-nummessages"></a> `numMessages` | `readonly` | `number` | The number of messages aggregated. |
 
 ## Methods
 

@@ -2,7 +2,7 @@
 
 # Function: resolveModel
 
-Resolves a ModelSpec to a concrete model string given an optional context key.
+Resolves a AiAssist.ModelSpec to a concrete model string given an optional context key.
 
 ## Signature
 

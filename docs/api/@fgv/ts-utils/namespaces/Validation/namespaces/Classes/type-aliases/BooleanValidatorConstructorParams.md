@@ -14,4 +14,4 @@ Parameters used to construct a [BooleanValidator](../classes/BooleanValidator.md
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TC` | `unknown` |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |

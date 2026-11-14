@@ -38,8 +38,8 @@ Constructor for a QualifierTypeCollector object.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_converters"></a> `_converters` | `readonly` | [`KeyValueConverters`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`QualifierTypeName`](../../../type-aliases/QualifierTypeName.md), [`QualifierType`](../../../classes/QualifierType.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>\> | - |
-| <a id="validating"></a> `validating` | `readonly` | [`ConvertingCollectorValidator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`QualifierType`](../../../classes/QualifierType.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>, [`QualifierType`](../../../classes/QualifierType.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>\> | A [ConvertingCollectorValidator](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) which validates keys and values before inserting them into this collector. |
+| <a id="property-_converters"></a> `_converters` | `protected readonly` | [`KeyValueConverters`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`QualifierTypeName`](../../../type-aliases/QualifierTypeName.md), [`QualifierType`](../../../classes/QualifierType.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>\> | - |
+| <a id="property-validating"></a> `validating` | `readonly` | [`ConvertingCollectorValidator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`QualifierType`](../../../classes/QualifierType.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>, [`QualifierType`](../../../classes/QualifierType.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>\> | A [ConvertingCollectorValidator](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) which validates keys and values before inserting them into this collector. |
 
 ## Accessors
 
@@ -587,7 +587,7 @@ Creates a new [Collector](https://github.com/ErikFortune/fgv/tree/main/libraries
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
 
 #### Parameters
 
@@ -618,8 +618,8 @@ Creates a new [ConvertingCollector](https://github.com/ErikFortune/fgv/tree/main
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> | - |
-| `TSRC` | `TITEM` |
+| <a id="type-parameter-titem-1"></a> `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> | - |
+| <a id="type-parameter-tsrc"></a> `TSRC` | `TITEM` |
 
 #### Parameters
 
@@ -651,8 +651,8 @@ the supplied [parameters](https://github.com/ErikFortune/fgv/tree/main/libraries
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> | - |
-| `TSRC` | `TITEM` |
+| <a id="type-parameter-titem-2"></a> `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> | - |
+| <a id="type-parameter-tsrc-1"></a> `TSRC` | `TITEM` |
 
 #### Parameters
 

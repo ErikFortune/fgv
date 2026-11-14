@@ -15,8 +15,8 @@ supplied `unknown` value to a valid [JsonCompatibleType\<T\>](../../../../../typ
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Parameters
 

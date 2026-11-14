@@ -17,9 +17,9 @@ Handles editing and managing system configuration including qualifiers, qualifie
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="classname"></a> `className?` | `string` | Additional CSS class names for styling |
-| <a id="configuration"></a> `configuration?` | [`ISystemConfiguration`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) \| `null` | Current system configuration to display and edit |
-| <a id="hasunsavedchanges"></a> `hasUnsavedChanges?` | `boolean` | Whether there are unsaved changes to the configuration |
-| <a id="onconfigurationchange"></a> `onConfigurationChange?` | (`config`) => `void` | Callback when configuration changes (during editing) |
-| <a id="onsave"></a> `onSave?` | (`config`) => `void` | Callback when configuration should be saved/applied |
-| <a id="pickeroptionspanelpresentation"></a> `pickerOptionsPanelPresentation?` | `"inline"` \| `"hidden"` \| `"popover"` \| `"popup"` \| `"collapsible"` | How to present the ResourcePicker options control panel (default: 'hidden' for production use) |
+| <a id="property-classname"></a> `className?` | `string` | Additional CSS class names for styling |
+| <a id="property-configuration"></a> `configuration?` | [`ISystemConfiguration`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) \| `null` | Current system configuration to display and edit |
+| <a id="property-hasunsavedchanges"></a> `hasUnsavedChanges?` | `boolean` | Whether there are unsaved changes to the configuration |
+| <a id="property-onconfigurationchange"></a> `onConfigurationChange?` | (`config`) => `void` | Callback when configuration changes (during editing) |
+| <a id="property-onsave"></a> `onSave?` | (`config`) => `void` | Callback when configuration should be saved/applied |
+| <a id="property-pickeroptionspanelpresentation"></a> `pickerOptionsPanelPresentation?` | `"inline"` \| `"hidden"` \| `"popover"` \| `"popup"` \| `"collapsible"` | How to present the ResourcePicker options control panel (default: 'hidden' for production use) |

@@ -24,6 +24,7 @@
 
 ## Type Aliases
 
+- [CompositeIdSplitMode](type-aliases/CompositeIdSplitMode.md)
 - [Constraint](type-aliases/Constraint.md)
 - [ConstraintTrait](type-aliases/ConstraintTrait.md)
 - [TypeGuardWithContext](type-aliases/TypeGuardWithContext.md)
@@ -32,6 +33,7 @@
 
 ## Variables
 
+- [allCompositeIdSplitModes](variables/allCompositeIdSplitModes.md)
 - [defaultValidatorTraits](variables/defaultValidatorTraits.md)
 
 ## References

@@ -14,5 +14,5 @@ Parameters used to construct a [NumberValidator](../classes/NumberValidator.md).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* `number` | `number` |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` *extends* `number` | `number` |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |

@@ -12,5 +12,5 @@ Non-validated declaration of a single qualifier default value.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="qualifier"></a> `qualifier` | `string` |
-| <a id="value"></a> `value` | `string` |
+| <a id="property-qualifier"></a> `qualifier` | `string` |
+| <a id="property-value"></a> `value` | `string` |

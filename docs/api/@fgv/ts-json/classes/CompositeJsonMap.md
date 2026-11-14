@@ -37,7 +37,7 @@ The [reference maps](../interfaces/IJsonReferenceMap.md) from which this map is 
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_maps"></a> `_maps` | `protected` | [`IJsonReferenceMap`](../interfaces/IJsonReferenceMap.md)[] | **`Internal`** The [reference maps](../interfaces/IJsonReferenceMap.md) from which this map is composed. |
+| <a id="property-_maps"></a> `_maps` | `protected` | [`IJsonReferenceMap`](../interfaces/IJsonReferenceMap.md)[] | **`Internal`** The [reference maps](../interfaces/IJsonReferenceMap.md) from which this map is composed. |
 
 ## Methods
 

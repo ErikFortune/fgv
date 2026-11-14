@@ -41,11 +41,11 @@ default options.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_brand"></a> `_brand?` | `protected` | `string` | **`Internal`** |
-| <a id="_defaultcontext"></a> `_defaultContext?` | `readonly` | [`IJsonContext`](../interfaces/IJsonContext.md) | **`Internal`** |
-| <a id="_isoptional"></a> `_isOptional` | `protected` | `boolean` | **`Internal`** |
-| <a id="editor"></a> `editor` | `readonly` | [`JsonEditor`](JsonEditor.md) | - |
-| <a id="conditionaloptions"></a> `conditionalOptions` | `readonly` | `Partial`\<[`IJsonConverterOptions`](../interfaces/IJsonConverterOptions.md)\> | Default [JSON converter options](../interfaces/IJsonConverterOptions.md) to enable conditional conversion. |
+| <a id="property-_brand"></a> `_brand?` | `protected` | `string` | **`Internal`** |
+| <a id="property-_defaultcontext"></a> `_defaultContext?` | `protected readonly` | [`IJsonContext`](../interfaces/IJsonContext.md) | **`Internal`** |
+| <a id="property-_isoptional"></a> `_isOptional` | `protected` | `boolean` | **`Internal`** |
+| <a id="property-editor"></a> `editor` | `public readonly` | [`JsonEditor`](JsonEditor.md) | - |
+| <a id="property-conditionaloptions"></a> `conditionalOptions` | `public static readonly` | `Partial`\<[`IJsonConverterOptions`](../interfaces/IJsonConverterOptions.md)\> | Default [JSON converter options](../interfaces/IJsonConverterOptions.md) to enable conditional conversion. |
 
 ## Accessors
 
@@ -191,7 +191,7 @@ Gets a derived converter which fails if the resulting converted
 
 ### convert()
 
-> **convert**(`from`, `context?`): [`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<[`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md)\>
+> **convert**(`from`, `context?`, `selfOverride?`): [`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<[`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md)\>
 
 Converts from `unknown` to `<T>`. For objects and arrays, is guaranteed
 to return a new entity, with any unrecognized properties removed.
@@ -202,6 +202,7 @@ to return a new entity, with any unrecognized properties removed.
 | ------ | ------ | ------ |
 | `from` | `unknown` | The `unknown` to be converted |
 | `context?` | [`IJsonContext`](../interfaces/IJsonContext.md) | An optional conversion context of type `<TC>` to be used in the conversion. |
+| `selfOverride?` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md), [`IJsonContext`](../interfaces/IJsonContext.md)\> | An optional override for the `self` reference passed to the converter function, enabling outer converters (e.g. discriminated-object) to thread themselves through to per-arm converters for recursive parsing. |
 
 #### Returns
 
@@ -263,7 +264,7 @@ the converted value of this [Converter](https://github.com/ErikFortune/fgv/tree/
 
 | Type Parameter |
 | ------ |
-| `T2` |
+| <a id="type-parameter-t2"></a> `T2` |
 
 #### Parameters
 
@@ -294,7 +295,7 @@ converter to the result of this converter.
 
 | Type Parameter |
 | ------ |
-| `T2` |
+| <a id="type-parameter-t2-1"></a> `T2` |
 
 #### Parameters
 
@@ -325,7 +326,7 @@ resulting from this [Converter](https://github.com/ErikFortune/fgv/tree/main/lib
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti"></a> `TI` |
 
 #### Parameters
 
@@ -360,7 +361,7 @@ resulting from this [Converter](https://github.com/ErikFortune/fgv/tree/main/lib
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-1"></a> `TI` |
 
 #### Parameters
 
@@ -469,7 +470,7 @@ of the base conversion and is allowed to mutate the return type.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-2"></a> `TI` |
 
 #### Parameters
 
@@ -498,7 +499,7 @@ of simple types.
 
 | Type Parameter |
 | ------ |
-| `B` *extends* `string` |
+| <a id="type-parameter-b"></a> `B` *extends* `string` |
 
 #### Parameters
 
@@ -557,7 +558,7 @@ Returns a Converter which always succeeds with a default value rather than faili
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TD` | [`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="type-parameter-td"></a> `TD` | [`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md) |
 
 #### Parameters
 
@@ -611,7 +612,7 @@ the conversion result from this converter.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-3"></a> `TI` |
 
 #### Parameters
 
@@ -648,7 +649,7 @@ result.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-4"></a> `TI` |
 
 #### Parameters
 

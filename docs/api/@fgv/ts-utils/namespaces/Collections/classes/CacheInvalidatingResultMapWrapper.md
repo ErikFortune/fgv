@@ -13,10 +13,10 @@ in the parent [ConvertingResultMap](ConvertingResultMap.md) when mutations occur
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | - |
-| `TSRC` | - |
-| `TTARGET` | - |
-| `TSRCMAP` *extends* [`IResultMap`](../interfaces/IResultMap.md)\<`TK`, `TSRC`\> | [`IResultMap`](../interfaces/IResultMap.md)\<`TK`, `TSRC`\> |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | - |
+| <a id="type-parameter-tsrc"></a> `TSRC` | - |
+| <a id="type-parameter-ttarget"></a> `TTARGET` | - |
+| <a id="type-parameter-tsrcmap"></a> `TSRCMAP` *extends* [`IResultMap`](../interfaces/IResultMap.md)\<`TK`, `TSRC`\> | [`IResultMap`](../interfaces/IResultMap.md)\<`TK`, `TSRC`\> |
 
 ## Implements
 
@@ -59,7 +59,7 @@ Returns the number of entries in the map.
 
 #### Implementation of
 
-[`IResultMap`](../interfaces/IResultMap.md).[`size`](../interfaces/IResultMap.md#size)
+[`IResultMap`](../interfaces/IResultMap.md).[`size`](../interfaces/IResultMap.md#property-size)
 
 ## Methods
 

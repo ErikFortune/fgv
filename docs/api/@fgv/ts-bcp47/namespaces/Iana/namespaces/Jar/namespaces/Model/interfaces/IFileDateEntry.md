@@ -17,10 +17,10 @@ file.
 
 ## Indexable
 
-\[`key`: `string`\]: `string` \| `string`[]
+> \[`key`: `string`\]: `string` \| `string`[]
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="file-date"></a> `File-Date` | [`YearMonthDaySpec`](../../../../Model/type-aliases/YearMonthDaySpec.md) |
+| <a id="property-file-date"></a> `File-Date` | [`YearMonthDaySpec`](../../../../Model/type-aliases/YearMonthDaySpec.md) |

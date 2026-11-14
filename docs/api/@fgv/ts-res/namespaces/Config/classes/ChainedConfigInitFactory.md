@@ -17,8 +17,8 @@ A factory that chains multiple factories together.
 
 | Type Parameter |
 | ------ |
-| `TConfig` |
-| `T` |
+| <a id="type-parameter-tconfig"></a> `TConfig` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Implements
 
@@ -46,7 +46,7 @@ Constructor for a chained config init factory.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="factories"></a> `factories` | `readonly` | [`IConfigInitFactory`](../interfaces/IConfigInitFactory.md)\<`TConfig`, `T`\>[] |
+| <a id="property-factories"></a> `factories` | `public readonly` | [`IConfigInitFactory`](../interfaces/IConfigInitFactory.md)\<`TConfig`, `T`\>[] |
 
 ## Methods
 

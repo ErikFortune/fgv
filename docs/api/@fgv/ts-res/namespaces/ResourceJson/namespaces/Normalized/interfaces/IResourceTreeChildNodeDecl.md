@@ -16,5 +16,5 @@ Normalized non-validated declaration of a [resource](../../../../../classes/Reso
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="children"></a> `children?` | `readonly` | `Record`\<`string`, `IResourceTreeChildNodeDecl`\> |
-| <a id="resources"></a> `resources?` | `readonly` | `Record`\<`string`, [`IChildResourceDecl`](IChildResourceDecl.md)\> |
+| <a id="property-children"></a> `children?` | `readonly` | `Record`\<`string`, `IResourceTreeChildNodeDecl`\> |
+| <a id="property-resources"></a> `resources?` | `readonly` | `Record`\<`string`, [`IChildResourceDecl`](IChildResourceDecl.md)\> |

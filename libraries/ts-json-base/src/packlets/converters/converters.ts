@@ -273,19 +273,17 @@ export function enumeratedValue<T>(
 }
 
 /**
- * Creates a converter that accepts a string, parses it as JSON, and optionally
- * applies the supplied inner converter or validator to the parsed value.
+ * Creates a converter that accepts a string and parses it as JSON, with no
+ * inner conversion step.
  *
  * @remarks
- * Unlike {@link Converters.jsonConverter}, the inner step is optional. When omitted, the
- * converter resolves to the parsed `JsonValue` (object, array, or primitive).
- * Both `Converter<T>` and `Validator<T>` are accepted because both expose
+ * Unlike {@link Converters.jsonConverter}, the inner step is optional. This form
+ * omits it, so the converter resolves to the parsed `JsonValue` (object, array,
+ * or primitive). The overload that takes an inner step accepts both
+ * `Converter<T>` and `Validator<T>`, because both expose
  * `convert(unknown): Result<T>`.
  *
- * @param inner - Optional `Converter<T>` or `Validator<T>` applied to the
- * parsed JSON value.
- * @returns Converter that parses a JSON string into `T` (or `JsonValue` when
- * no inner step is supplied).
+ * @returns Converter that parses a JSON string into a `JsonValue`.
  * @public
  */
 export function stringifiedJson(): Converter<JsonValue>;

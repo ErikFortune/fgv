@@ -15,7 +15,7 @@ message management and display.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="id"></a> `id` | `string` | Unique identifier for the message |
-| <a id="message"></a> `message` | `string` | The message content to display |
-| <a id="timestamp"></a> `timestamp` | `Date` | Timestamp when the message was created |
-| <a id="type"></a> `type` | `"error"` \| `"success"` \| `"info"` \| `"warning"` | Message type determining visual styling and filtering |
+| <a id="property-id"></a> `id` | `string` | Unique identifier for the message |
+| <a id="property-message"></a> `message` | `string` | The message content to display |
+| <a id="property-timestamp"></a> `timestamp` | `Date` | Timestamp when the message was created |
+| <a id="property-type"></a> `type` | `"error"` \| `"success"` \| `"info"` \| `"warning"` | Message type determining visual styling and filtering |

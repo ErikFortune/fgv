@@ -14,7 +14,7 @@ Type-safe(ish) key extractor for typed records.
 
 | Type Parameter |
 | ------ |
-| `TK` *extends* `string` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` |
 
 ## Parameters
 

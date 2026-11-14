@@ -8,5 +8,5 @@ Provides summary information useful for UI displays.
 ## Signature
 
 ```typescript
-function getPendingResourceStats(pendingResources: Map<string, ILooseResourceDecl>): { totalCount: number; byType: Record<string, number>; resourceIds: string[] }
+function getPendingResourceStats(pendingResources: Map<string, ILooseResourceDecl<string>>): { totalCount: number; byType: Record<string, number>; resourceIds: string[] }
 ```

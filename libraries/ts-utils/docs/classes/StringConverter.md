@@ -113,6 +113,19 @@ Description
 <tbody>
 <tr><td>
 
+[singleLine(options)](./StringConverter.singleLine.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Returns a Conversion.StringConverter | StringConverter which constrains the result to a
+
+</td></tr>
+<tr><td>
+
 [convert(from, context, selfOverride)](./BaseConverter.convert.md)
 
 </td><td>

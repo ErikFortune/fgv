@@ -6,11 +6,11 @@
 
 # Interface: IZipTextFile
 
-Simple interface for a file to be added to a zip file.
+Simple interface for a text file to be added to a zip file.
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="contents"></a> `contents` | `readonly` | `string` |
-| <a id="path"></a> `path` | `readonly` | `string` |
+| <a id="property-contents"></a> `contents` | `readonly` | `string` |
+| <a id="property-path"></a> `path` | `readonly` | `string` |

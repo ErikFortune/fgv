@@ -4,7 +4,7 @@
 
 Class representing a file in a file tree.
 
-**Implements:** [`IMutableFileTreeFileItem<TCT>`](../interfaces/IMutableFileTreeFileItem.md)
+**Implements:** [`IMutableBinaryFileTreeFileItem<TCT>`](../interfaces/IMutableBinaryFileTreeFileItem.md), [`IStrictTextFileTreeFileItem<TCT>`](../interfaces/IStrictTextFileTreeFileItem.md)
 
 ## Properties
 
@@ -256,6 +256,45 @@ Gets the contents of the file as parsed JSON.
 </td><td>
 
 Gets the raw contents of the file as a string.
+
+</td></tr>
+<tr><td>
+
+[getTextStrict()](./FileItem.getTextStrict.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the file's contents with a strict UTF-8 decode, failing on malformed
+
+</td></tr>
+<tr><td>
+
+[getRawBytes()](./FileItem.getRawBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the raw contents of the file as bytes, with no text decoding applied.
+
+</td></tr>
+<tr><td>
+
+[setRawBytes(bytes)](./FileItem.setRawBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Sets the raw contents of the file from bytes, with no text encoding applied.
 
 </td></tr>
 <tr><td>

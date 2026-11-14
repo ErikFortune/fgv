@@ -17,14 +17,14 @@ Consuming apps provide this to configure the list for their entity types.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TEntity` | - |
-| `TId` *extends* `string` | `string` |
+| <a id="type-parameter-tentity"></a> `TEntity` | - |
+| <a id="type-parameter-tid"></a> `TId` *extends* `string` | `string` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="getid"></a> `getId` | `readonly` | (`entity`) => `TId` | Extract the unique ID from an entity |
-| <a id="getlabel"></a> `getLabel` | `readonly` | (`entity`) => `string` | Extract the primary display label |
-| <a id="getstatus"></a> `getStatus?` | `readonly` | (`entity`) => [`IEntityStatus`](IEntityStatus.md) \| `undefined` | Extract an optional status badge or indicator |
-| <a id="getsublabel"></a> `getSublabel?` | `readonly` | (`entity`) => `string` \| `undefined` | Extract an optional secondary line (subtitle, description) |
+| <a id="property-getid"></a> `getId` | `readonly` | (`entity`) => `TId` | Extract the unique ID from an entity |
+| <a id="property-getlabel"></a> `getLabel` | `readonly` | (`entity`) => `string` | Extract the primary display label |
+| <a id="property-getstatus"></a> `getStatus?` | `readonly` | (`entity`) => [`IEntityStatus`](IEntityStatus.md) \| `undefined` | Extract an optional status badge or indicator |
+| <a id="property-getsublabel"></a> `getSublabel?` | `readonly` | (`entity`) => `string` \| `undefined` | Extract an optional secondary line (subtitle, description) |

@@ -39,9 +39,9 @@ Creates a new MessagesLogger.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `addMessage` | (`severity`, `text`, `action?`) => [`IMessage`](../interfaces/IMessage.md) | The addMessage function from MessagesContext |
+| `addMessage` | (`level`, `text`, `options?`) => [`IMessage`](../interfaces/IMessage.md) | The addMessage function from MessagesContext |
 | `logLevel?` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | The minimum log level to display (default: 'info') |
-| `defaultAction?` | [`IMessageAction`](../interfaces/IMessageAction.md) | Optional default action to attach to all messages |
+| `defaultAction?` | [`IMessageAction`](../type-aliases/IMessageAction.md) | Optional default action to attach to all messages |
 
 #### Returns
 
@@ -55,13 +55,13 @@ Creates a new MessagesLogger.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="loglevel"></a> `logLevel` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | The level of logging to be used. |
+| <a id="property-loglevel"></a> `logLevel` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | The level of logging to be used. |
 
 ## Methods
 
 ### \_format()
 
-> **\_format**(`message?`, ...`parameters?`): `string`
+> **\_format**(`message?`, ...`parameters`): `string`
 
 Formats a message and parameters into a string.
 
@@ -90,20 +90,25 @@ The formatted message.
 
 **`Internal`**
 
-Routes a formatted log message into the MessagesContext.
+Routes a formatted log message into the MessagesContext, setting the message `level`
+straight through from the log call (lossless). Display styling `severity` is left
+undefined so it is derived from the level for display.
+
+Suppression by threshold is handled upstream by @fgv/ts-utils#Logging.LoggerBase \| LoggerBase
+(`shouldLog` against `logLevel`) before this method is invoked.
 
 #### Parameters
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `message` | `string` | The formatted message string |
-| `level` | [`MessageLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | The log level |
+| `level` | [`MessageLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | The @fgv/ts-utils#MessageLogLevel \| log level |
 
 #### Returns
 
 [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
 
-Success with the message if it was logged, or Success with undefined if suppressed
+Success with the message that was logged
 
 #### Overrides
 
@@ -111,9 +116,38 @@ Success with the message if it was logged, or Success with undefined if suppress
 
 ***
 
+### \_logStructured()
+
+> **\_logStructured**(`__level`, `__formatted`, `__message?`, `__parameters?`): `void`
+
+Inner hook called for logged messages alongside [\_log](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs),
+exposing the structured `(level, formatted, message, parameters)` form before it is
+collapsed to the formatted string. The default implementation is a no-op; subclasses
+that need to retain structured records (e.g. [RetainingLogger](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs))
+override this. Fired only in the `shouldLog` branch, so suppressed messages never reach it.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `__level` | [`MessageLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | The [level](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) of the message. |
+| `__formatted` | `string` | The formatted message (same string passed to `_log`). |
+| `__message?` | `unknown` | The raw message argument before formatting. |
+| `__parameters?` | readonly `unknown`[] | The raw parameter arguments before formatting. |
+
+#### Returns
+
+`void`
+
+#### Inherited from
+
+`Logging.LoggerBase._logStructured`
+
+***
+
 ### \_suppressLog()
 
-> **\_suppressLog**(`__level`, `__message?`, ...`__parameters?`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`undefined`\>
+> **\_suppressLog**(`__level`, `__message?`, ...`__parameters`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`undefined`\>
 
 Inner method called for suppressed log messages.
 
@@ -137,7 +171,7 @@ Inner method called for suppressed log messages.
 
 ### detail()
 
-> **detail**(`message?`, ...`parameters?`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
+> **detail**(`message?`, ...`parameters`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
 
 Logs a detail message.
 
@@ -163,7 +197,7 @@ Logs a detail message.
 
 ### error()
 
-> **error**(`message?`, ...`parameters?`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
+> **error**(`message?`, ...`parameters`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
 
 Logs an error message.
 
@@ -212,7 +246,7 @@ Logs a short error summary at `error` level, then emits `detail` at `detail` lev
 
 ### info()
 
-> **info**(`message?`, ...`parameters?`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
+> **info**(`message?`, ...`parameters`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
 
 Logs an info message.
 
@@ -238,7 +272,7 @@ Logs an info message.
 
 ### log()
 
-> **log**(`level`, `message?`, ...`parameters?`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
+> **log**(`level`, `message?`, ...`parameters`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
 
 Logs a message at the given level.
 
@@ -265,7 +299,7 @@ Logs a message at the given level.
 
 ### warn()
 
-> **warn**(`message?`, ...`parameters?`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
+> **warn**(`message?`, ...`parameters`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
 
 Logs a warning message.
 

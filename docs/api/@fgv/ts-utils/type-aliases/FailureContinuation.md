@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../README.md) / [@fgv/ts-utils](../README.md) / FailureContinuation
 
-# Type Alias: FailureContinuation()\<T\>
+# Type Alias: FailureContinuation\<T\>
 
 > **FailureContinuation**\<`T`\> = (`message`) => [`Result`](Result.md)\<`T`\>
 
@@ -15,7 +15,7 @@ Continuation callback to be called in the event that an
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Parameters
 

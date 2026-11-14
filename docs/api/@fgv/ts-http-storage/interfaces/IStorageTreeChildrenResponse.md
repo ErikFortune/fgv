@@ -12,5 +12,5 @@ Response for listing children.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="children"></a> `children` | `readonly` | readonly [`IStorageTreeItem`](IStorageTreeItem.md)[] |
-| <a id="path"></a> `path` | `readonly` | `string` |
+| <a id="property-children"></a> `children` | `readonly` | readonly [`IStorageTreeItem`](IStorageTreeItem.md)[] |
+| <a id="property-path"></a> `path` | `readonly` | `string` |

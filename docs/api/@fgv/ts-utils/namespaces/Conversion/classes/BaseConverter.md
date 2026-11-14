@@ -17,8 +17,8 @@ Base templated wrapper to simplify creation of new [Converter](../interfaces/Con
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Implements
 
@@ -44,13 +44,26 @@ Constructs a new [Converter](../interfaces/Converter.md) which uses the supplied
 
 `BaseConverter`\<`T`, `TC`\>
 
+#### Remarks
+
+The converter is a `Result` boundary, so it never throws: if the supplied function throws
+(a bug in a custom callback, or a getter or Proxy trap on the value being converted), the
+conversion fails with `converter threw: <message>` instead. Stack exhaustion inside nested
+converters unwinds to the outermost converter and fails once there; a `captureResult` (or any
+`try`) the caller places between two nested converters catches it there instead.
+
+The conversion to a `Failure` masks the error wherever a failure is expected: `convertOptional`
+with `ignoreErrors`, `oneOf` (which tries the next converter), `orDefault`, and `guard` all
+treat a buggy callback like invalid input. `orThrow` re-raises the message, but not the original
+error's class or stack.
+
 ## Properties
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="_brand"></a> `_brand?` | `protected` | `string` | `undefined` | **`Internal`** |
-| <a id="_defaultcontext"></a> `_defaultContext?` | `readonly` | `TC` | `undefined` | **`Internal`** |
-| <a id="_isoptional"></a> `_isOptional` | `protected` | `boolean` | `false` | **`Internal`** |
+| <a id="property-_brand"></a> `_brand?` | `protected` | `string` | `undefined` | **`Internal`** |
+| <a id="property-_defaultcontext"></a> `_defaultContext?` | `protected readonly` | `TC` | `undefined` | **`Internal`** |
+| <a id="property-_isoptional"></a> `_isOptional` | `protected` | `boolean` | `false` | **`Internal`** |
 
 ## Accessors
 
@@ -70,7 +83,7 @@ Returns the brand for a branded type.
 
 #### Implementation of
 
-[`Converter`](../interfaces/Converter.md).[`brand`](../interfaces/Converter.md#brand)
+[`Converter`](../interfaces/Converter.md).[`brand`](../interfaces/Converter.md#property-brand)
 
 ***
 
@@ -90,7 +103,7 @@ Indicates whether this element is explicitly optional.
 
 #### Implementation of
 
-[`Converter`](../interfaces/Converter.md).[`isOptional`](../interfaces/Converter.md#isoptional)
+[`Converter`](../interfaces/Converter.md).[`isOptional`](../interfaces/Converter.md#property-isoptional)
 
 ## Methods
 
@@ -150,7 +163,7 @@ Indicates whether this element is explicitly optional.
 
 ### convert()
 
-> **convert**(`from`, `context?`): [`Result`](../../../type-aliases/Result.md)\<`T`\>
+> **convert**(`from`, `context?`, `selfOverride?`): [`Result`](../../../type-aliases/Result.md)\<`T`\>
 
 Converts from `unknown` to `<T>`. For objects and arrays, is guaranteed
 to return a new entity, with any unrecognized properties removed.
@@ -161,6 +174,7 @@ to return a new entity, with any unrecognized properties removed.
 | ------ | ------ | ------ |
 | `from` | `unknown` | The `unknown` to be converted |
 | `context?` | `TC` | An optional conversion context of type `<TC>` to be used in the conversion. |
+| `selfOverride?` | [`Converter`](../interfaces/Converter.md)\<`T`, `TC`\> | An optional override for the `self` reference passed to the converter function, enabling outer converters (e.g. discriminated-object) to thread themselves through to per-arm converters for recursive parsing. |
 
 #### Returns
 
@@ -222,7 +236,7 @@ the converted value of this [Converter](../interfaces/Converter.md).
 
 | Type Parameter |
 | ------ |
-| `T2` |
+| <a id="type-parameter-t2"></a> `T2` |
 
 #### Parameters
 
@@ -253,7 +267,7 @@ converter to the result of this converter.
 
 | Type Parameter |
 | ------ |
-| `T2` |
+| <a id="type-parameter-t2-1"></a> `T2` |
 
 #### Parameters
 
@@ -284,7 +298,7 @@ resulting from this [Converter](../interfaces/Converter.md) using the supplied [
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti"></a> `TI` |
 
 #### Parameters
 
@@ -319,7 +333,7 @@ resulting from this [Converter](../interfaces/Converter.md) using the supplied m
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-1"></a> `TI` |
 
 #### Parameters
 
@@ -411,7 +425,7 @@ of the base conversion and is allowed to mutate the return type.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-2"></a> `TI` |
 
 #### Parameters
 
@@ -440,7 +454,7 @@ of simple types.
 
 | Type Parameter |
 | ------ |
-| `B` *extends* `string` |
+| <a id="type-parameter-b"></a> `B` *extends* `string` |
 
 #### Parameters
 
@@ -499,7 +513,7 @@ Returns a Converter which always succeeds with a default value rather than faili
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TD` | `T` |
+| <a id="type-parameter-td"></a> `TD` | `T` |
 
 #### Parameters
 
@@ -553,7 +567,7 @@ the conversion result from this converter.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-3"></a> `TI` |
 
 #### Parameters
 
@@ -590,7 +604,7 @@ result.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-4"></a> `TI` |
 
 #### Parameters
 

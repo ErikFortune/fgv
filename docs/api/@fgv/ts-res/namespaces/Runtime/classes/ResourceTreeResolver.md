@@ -35,7 +35,7 @@ Creates a ResourceTreeResolver instance.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="resolver"></a> `resolver` | `readonly` | [`ResourceResolver`](../../../classes/ResourceResolver.md) | The [ResourceResolver](../../../classes/ResourceResolver.md) to use for individual resource resolution |
+| <a id="property-resolver"></a> `resolver` | `public readonly` | [`ResourceResolver`](../../../classes/ResourceResolver.md) | The [ResourceResolver](../../../classes/ResourceResolver.md) to use for individual resource resolution |
 
 ## Accessors
 

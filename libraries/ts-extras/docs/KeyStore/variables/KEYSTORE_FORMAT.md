@@ -2,7 +2,7 @@
 
 # Variable: KEYSTORE_FORMAT
 
-Current format version constant.
+Current format version constant. New vaults are written as `'keystore-v3'`.
 
 ## Type
 

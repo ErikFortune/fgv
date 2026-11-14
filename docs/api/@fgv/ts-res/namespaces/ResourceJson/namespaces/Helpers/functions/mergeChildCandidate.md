@@ -15,7 +15,7 @@ Helper method to merge a child candidate with base conditions.
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `candidate` | [`IChildResourceCandidateDecl`](../../Normalized/interfaces/IChildResourceCandidateDecl.md) | The candidate to merge. |
-| `baseConditions?` | readonly [`ILooseConditionDecl`](../../Json/interfaces/ILooseConditionDecl.md)[] | The base conditions to merge with the candidate. |
+| `baseConditions?` | readonly [`ILooseConditionDecl`](../../Json/interfaces/ILooseConditionDecl.md)\<`string`\>[] | The base conditions to merge with the candidate. |
 
 ## Returns
 

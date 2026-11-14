@@ -16,6 +16,6 @@ Represents a resource tree to be imported.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="context"></a> `context?` | [`ImportContext`](../classes/ImportContext.md) |
-| <a id="tree"></a> `tree` | [`ResourceDeclTree`](../../ResourceJson/classes/ResourceDeclTree.md) |
-| <a id="type"></a> `type` | `"resourceTree"` |
+| <a id="property-context"></a> `context?` | [`ImportContext`](../classes/ImportContext.md) |
+| <a id="property-tree"></a> `tree` | [`ResourceDeclTree`](../../ResourceJson/classes/ResourceDeclTree.md) |
+| <a id="property-type"></a> `type` | `"resourceTree"` |

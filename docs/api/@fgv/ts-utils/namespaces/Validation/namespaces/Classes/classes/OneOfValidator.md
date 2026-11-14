@@ -17,8 +17,8 @@ value matches one of several other validators.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Constructors
 
@@ -46,11 +46,11 @@ Constructs a new OneOfValidator.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_options"></a> `_options` | `readonly` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> | **`Internal`** |
-| <a id="_validator"></a> `_validator` | `readonly` | [`ValidatorFunc`](../../../type-aliases/ValidatorFunc.md)\<`T`, `TC`\> | **`Internal`** |
-| <a id="_validators"></a> `_validators` | `readonly` | [`Validator`](../../../interfaces/Validator.md)\<`T`, `TC`\>[] | - |
-| <a id="options"></a> `options` | `readonly` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> | [Options](../../../interfaces/ValidatorOptions.md) which apply to this validator. |
-| <a id="traits"></a> `traits` | `readonly` | [`ValidatorTraits`](../../../classes/ValidatorTraits.md) | [Traits](../../../classes/ValidatorTraits.md) describing this validation. |
+| <a id="property-_options"></a> `_options` | `protected readonly` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> | **`Internal`** |
+| <a id="property-_validator"></a> `_validator` | `protected readonly` | [`ValidatorFunc`](../../../type-aliases/ValidatorFunc.md)\<`T`, `TC`\> | **`Internal`** |
+| <a id="property-_validators"></a> `_validators` | `protected readonly` | [`Validator`](../../../interfaces/Validator.md)\<`T`, `TC`\>[] | - |
+| <a id="property-options"></a> `options` | `public readonly` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> | [Options](../../../interfaces/ValidatorOptions.md) which apply to this validator. |
+| <a id="property-traits"></a> `traits` | `public readonly` | [`ValidatorTraits`](../../../classes/ValidatorTraits.md) | [Traits](../../../classes/ValidatorTraits.md) describing this validation. |
 
 ## Accessors
 
@@ -127,7 +127,7 @@ of the configured validators.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-1"></a> `T` |
 
 #### Parameters
 
@@ -305,7 +305,7 @@ The brand for a branded type.
 
 | Type Parameter |
 | ------ |
-| `B` *extends* `string` |
+| <a id="type-parameter-b"></a> `B` *extends* `string` |
 
 #### Parameters
 

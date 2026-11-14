@@ -12,5 +12,5 @@ Props for the ObservabilityProvider component.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="children"></a> `children` | `ReactNode` | Child components that will have access to the observability context |
-| <a id="observabilitycontext"></a> `observabilityContext?` | [`IObservabilityContext`](../namespaces/ObservabilityTools/interfaces/IObservabilityContext.md) | Optional observability context to provide (defaults to console-based context) |
+| <a id="property-children"></a> `children` | `ReactNode` | Child components that will have access to the observability context |
+| <a id="property-observabilitycontext"></a> `observabilityContext?` | [`IObservabilityContext`](../namespaces/ObservabilityTools/interfaces/IObservabilityContext.md) | Optional observability context to provide (defaults to console-based context) |

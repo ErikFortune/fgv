@@ -14,5 +14,5 @@ Parameters used to construct a [StringValidator](../classes/StringValidator.md).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* `string` | `string` |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` | `string` |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |

@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-utils](../../../README.md) / [Collections](../README.md) / CollectibleFactory
 
-# Type Alias: CollectibleFactory()\<TITEM, TSRC\>
+# Type Alias: CollectibleFactory\<TITEM, TSRC\>
 
 > **CollectibleFactory**\<`TITEM`, `TSRC`\> = (`key`, `index`, `item`) => [`Result`](../../../type-aliases/Result.md)\<`TITEM`\>
 
@@ -15,8 +15,8 @@ of the item to be added.
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
-| `TSRC` |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-tsrc"></a> `TSRC` |
 
 ## Parameters
 

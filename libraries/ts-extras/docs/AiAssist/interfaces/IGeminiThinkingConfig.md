@@ -43,6 +43,23 @@ Token budget for thinking.
 </td></tr>
 <tr><td>
 
+[thinkingLevel](./IGeminiThinkingConfig.thinkingLevel.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[GeminiThinkingLevel](../../type-aliases/GeminiThinkingLevel.md)
+
+</td><td>
+
+Thinking level.
+
+</td></tr>
+<tr><td>
+
 [includeThoughts](./IGeminiThinkingConfig.includeThoughts.md)
 
 </td><td>

@@ -94,6 +94,23 @@ Optional description.
 </td></tr>
 <tr><td>
 
+[metadata](./IKeyStoreSymmetricEntryJson.metadata.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+JsonValue
+
+</td><td>
+
+Optional mutable, non-secret-by-contract metadata for this entry.
+
+</td></tr>
+<tr><td>
+
 [createdAt](./IKeyStoreSymmetricEntryJson.createdAt.md)
 
 </td><td>
@@ -107,6 +124,23 @@ string
 </td><td>
 
 When this secret was added (ISO 8601).
+
+</td></tr>
+<tr><td>
+
+[updatedAt](./IKeyStoreSymmetricEntryJson.updatedAt.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+When this entry was last mutated (ISO 8601).
 
 </td></tr>
 </tbody></table>

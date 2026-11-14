@@ -2,8 +2,8 @@
 
 # Function: stringifiedJson
 
-Creates a converter that accepts a string, parses it as JSON, and optionally
-applies the supplied inner converter or validator to the parsed value.
+Creates a converter that accepts a string and parses it as JSON, with no
+inner conversion step.
 
 ## Signature
 

@@ -16,5 +16,5 @@ Converter traits.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="brand"></a> `brand?` | `readonly` | `string` |
-| <a id="isoptional"></a> `isOptional` | `readonly` | `boolean` |
+| <a id="property-brand"></a> `brand?` | `readonly` | `string` |
+| <a id="property-isoptional"></a> `isOptional` | `readonly` | `boolean` |

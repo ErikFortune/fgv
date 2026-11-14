@@ -30,7 +30,7 @@ console.log(`Stability: ${metadata.unchanged / (metadata.unchanged + metadata.mo
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="added"></a> `added` | `number` | Number of properties that exist only in the second object. These represent new data that was added when transitioning from the first object to the second object. |
-| <a id="modified"></a> `modified` | `number` | Number of properties that exist in both objects but have different values. These represent data that was modified during the transition between objects. For arrays, this counts entire array replacements as single modifications. |
-| <a id="removed"></a> `removed` | `number` | Number of properties that exist only in the first object. These represent data that was removed when transitioning from the first object to the second object. |
-| <a id="unchanged"></a> `unchanged` | `number` | Number of properties that exist in both objects with identical values. These represent stable data that remained consistent between the two objects. |
+| <a id="property-added"></a> `added` | `number` | Number of properties that exist only in the second object. These represent new data that was added when transitioning from the first object to the second object. |
+| <a id="property-modified"></a> `modified` | `number` | Number of properties that exist in both objects but have different values. These represent data that was modified during the transition between objects. For arrays, this counts entire array replacements as single modifications. |
+| <a id="property-removed"></a> `removed` | `number` | Number of properties that exist only in the first object. These represent data that was removed when transitioning from the first object to the second object. |
+| <a id="property-unchanged"></a> `unchanged` | `number` | Number of properties that exist in both objects with identical values. These represent stable data that remained consistent between the two objects. |

@@ -15,6 +15,12 @@ result but does not roll back the replacement.
 Requires a CryptoUtils.KeyStore.IPrivateKeyStorage backend
 supplied at construction.
 
+Extractability of the generated private key defaults to the storage
+backend's CryptoUtils.KeyStore.IPrivateKeyStorage.supportsNonExtractable.
+`options.extractable` overrides that default for this key only; requesting
+`extractable: false` against a backend that cannot store non-extractable
+keys fails loudly rather than silently generating an extractable key.
+
 **Signature:**
 
 ```typescript
@@ -26,11 +32,12 @@ addKeyPair(name: string, options: IAddKeyPairOptions): Promise<Result<IAddKeyPai
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
 <tr><td>name</td><td>string</td><td>Unique name for the entry</td></tr>
-<tr><td>options</td><td>IAddKeyPairOptions</td><td>Algorithm, optional description, replace flag</td></tr>
+<tr><td>options</td><td>IAddKeyPairOptions</td><td>Algorithm, optional description, replace flag, extractable override</td></tr>
 </tbody></table>
 
 **Returns:**
 
 Promise&lt;Result&lt;[IAddKeyPairResult](../interfaces/IAddKeyPairResult.md)&gt;&gt;
 
-Success with the new entry, Failure if locked, no provider, or storage write failed
+Success with the new entry, Failure if locked, no provider, storage write failed,
+or the requested extractability cannot be honored by the backend

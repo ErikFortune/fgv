@@ -13,14 +13,14 @@ Keyed by a label (typically the directory name).
 
 ### Constructor
 
-> **new DirectoryHandleStore**(`dbName`, `storeName`): `DirectoryHandleStore`
+> **new DirectoryHandleStore**(`dbName?`, `storeName?`): `DirectoryHandleStore`
 
 #### Parameters
 
 | Parameter | Type | Default value |
 | ------ | ------ | ------ |
-| `dbName` | `string` | `DEFAULT_DIRECTORY_HANDLE_DB` |
-| `storeName` | `string` | `DEFAULT_DIRECTORY_HANDLE_STORE` |
+| `dbName?` | `string` | `DEFAULT_DIRECTORY_HANDLE_DB` |
+| `storeName?` | `string` | `DEFAULT_DIRECTORY_HANDLE_STORE` |
 
 #### Returns
 

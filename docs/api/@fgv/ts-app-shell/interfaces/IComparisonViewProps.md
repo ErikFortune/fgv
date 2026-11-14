@@ -12,4 +12,4 @@ Props for the ComparisonView component.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="columns"></a> `columns` | `readonly` | readonly [`IComparisonColumn`](IComparisonColumn.md)[] | Columns to compare (2–4) |
+| <a id="property-columns"></a> `columns` | `readonly` | readonly [`IComparisonColumn`](IComparisonColumn.md)[] | Columns to compare (2–4) |

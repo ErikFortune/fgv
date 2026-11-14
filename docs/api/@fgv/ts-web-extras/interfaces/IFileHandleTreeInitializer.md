@@ -12,5 +12,5 @@ Tree initializer for File System Access API file handles.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="filehandles"></a> `fileHandles` | `readonly` | [`FileSystemFileHandle`](FileSystemFileHandle.md)[] |
-| <a id="prefix"></a> `prefix?` | `readonly` | `string` |
+| <a id="property-filehandles"></a> `fileHandles` | `readonly` | [`FileSystemFileHandle`](FileSystemFileHandle.md)[] |
+| <a id="property-prefix"></a> `prefix?` | `readonly` | `string` |

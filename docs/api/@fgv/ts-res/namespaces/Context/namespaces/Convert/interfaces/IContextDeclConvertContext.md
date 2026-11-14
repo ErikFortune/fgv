@@ -15,4 +15,4 @@ or [validated context declaration](../../../type-aliases/IValidatedContextDecl.m
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) |
+| <a id="property-qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) |

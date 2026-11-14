@@ -14,4 +14,4 @@ additional constraint implementation.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="type"></a> `type` | `"function"` |
+| <a id="property-type"></a> `type` | `"function"` |

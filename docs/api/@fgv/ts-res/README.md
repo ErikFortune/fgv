@@ -1200,7 +1200,7 @@ rushx build-all
 
 ## License
 
-MIT License. See [LICENSE](../../_media/LICENSE) for details.
+MIT License. See [LICENSE](../../_media/LICENSE-1) for details.
 
 ## Contributing
 

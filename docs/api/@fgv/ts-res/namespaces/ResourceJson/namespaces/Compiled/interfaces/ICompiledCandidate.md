@@ -12,6 +12,6 @@ Represents a compiled resource candidate with JSON value and merge properties.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="ispartial"></a> `isPartial` | `boolean` | Indicates if this is a partial resource that needs to be merged. |
-| <a id="mergemethod"></a> `mergeMethod` | [`ResourceValueMergeMethod`](../../../../../type-aliases/ResourceValueMergeMethod.md) | The method to use when merging this candidate with others. |
-| <a id="valueindex"></a> `valueIndex` | [`CandidateValueIndex`](../../../../../type-aliases/CandidateValueIndex.md) | The global index of the JSON value of the candidate. |
+| <a id="property-ispartial"></a> `isPartial` | `boolean` | Indicates if this is a partial resource that needs to be merged. |
+| <a id="property-mergemethod"></a> `mergeMethod` | [`ResourceValueMergeMethod`](../../../../../type-aliases/ResourceValueMergeMethod.md) | The method to use when merging this candidate with others. |
+| <a id="property-valueindex"></a> `valueIndex` | [`CandidateValueIndex`](../../../../../type-aliases/CandidateValueIndex.md) | The global index of the JSON value of the candidate. |

@@ -13,7 +13,7 @@ and values before calling the wrapped collector.
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
 
 ## Implements
 
@@ -41,8 +41,8 @@ Constructs a new [ConvertingCollectorValidator](ConvertingCollectorValidator.md)
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="_collector"></a> `_collector` | `protected` | [`Collector`](Collector.md)\<`TITEM`\> |
-| <a id="converters"></a> `converters` | `readonly` | [`KeyValueConverters`](KeyValueConverters.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TITEM`\> |
+| <a id="property-_collector"></a> `_collector` | `protected` | [`Collector`](Collector.md)\<`TITEM`\> |
+| <a id="property-converters"></a> `converters` | `public readonly` | [`KeyValueConverters`](KeyValueConverters.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TITEM`\> |
 
 ## Accessors
 
@@ -62,7 +62,7 @@ The underlying map.
 
 #### Implementation of
 
-[`IReadOnlyCollectorValidator`](../interfaces/IReadOnlyCollectorValidator.md).[`map`](../interfaces/IReadOnlyCollectorValidator.md#map)
+[`IReadOnlyCollectorValidator`](../interfaces/IReadOnlyCollectorValidator.md).[`map`](../interfaces/IReadOnlyCollectorValidator.md#property-map)
 
 ## Methods
 

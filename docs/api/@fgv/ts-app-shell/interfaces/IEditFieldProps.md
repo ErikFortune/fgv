@@ -12,6 +12,6 @@ Props for the EditField component.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="children"></a> `children` | `readonly` | `ReactNode` | The input control(s) to render |
-| <a id="label"></a> `label` | `readonly` | `string` | Label text displayed to the left of the field |
-| <a id="tooltip"></a> `tooltip?` | `readonly` | `string` | Optional tooltip shown on hover over the label |
+| <a id="property-children"></a> `children` | `readonly` | `ReactNode` | The input control(s) to render |
+| <a id="property-label"></a> `label` | `readonly` | `string` | Label text displayed to the left of the field |
+| <a id="property-tooltip"></a> `tooltip?` | `readonly` | `string` | Optional tooltip shown on hover over the label |

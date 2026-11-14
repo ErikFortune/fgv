@@ -12,6 +12,6 @@ Parameters for creating a BundleLoader.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="bundle"></a> `bundle` | [`IBundle`](IBundle.md) | The bundle to load. |
-| <a id="hashnormalizer"></a> `hashNormalizer?` | [`HashingNormalizer`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | Optional hash normalizer for verifying checksums. If not provided, a CRC32 normalizer will be used for browser compatibility. Must match the normalizer used during bundle creation. |
-| <a id="skipchecksumverification"></a> `skipChecksumVerification?` | `boolean` | Whether to skip checksum verification during loading. Default is false - checksum verification is performed. |
+| <a id="property-bundle"></a> `bundle` | [`IBundle`](IBundle.md) | The bundle to load. |
+| <a id="property-hashnormalizer"></a> `hashNormalizer?` | [`HashingNormalizer`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | Optional hash normalizer for verifying checksums. If not provided, a CRC32 normalizer will be used for browser compatibility. Must match the normalizer used during bundle creation. |
+| <a id="property-skipchecksumverification"></a> `skipChecksumVerification?` | `boolean` | Whether to skip checksum verification during loading. Default is false - checksum verification is performed. |

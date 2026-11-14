@@ -14,4 +14,4 @@ Options for the [strictObject](../functions/strictObject.md) helper function.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |

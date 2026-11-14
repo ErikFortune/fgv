@@ -12,4 +12,4 @@ Options for deleting a child item from a directory.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="recursive"></a> `recursive?` | `boolean` | If true, recursively delete directory children and their contents. Default: false (fail if directory is non-empty). |
+| <a id="property-recursive"></a> `recursive?` | `boolean` | If true, recursively delete directory children and their contents. Default: false (fail if directory is non-empty). |

@@ -2,7 +2,7 @@
 
 ## FsFileTreeAccessors.prefix property
 
-Optional path prefix to prepend to all paths.
+Optional root of the tree.
 
 **Signature:**
 

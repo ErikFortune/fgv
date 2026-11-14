@@ -12,5 +12,5 @@ Options for a JAR record parser.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="arrayfields"></a> `arrayFields?` | `readonly` | `string`[] \| [`JarFieldPicker`](../type-aliases/JarFieldPicker.md)\<[`JarRecord`](../type-aliases/JarRecord.md)\> |
-| <a id="fixedcontinuationsize"></a> `fixedContinuationSize?` | `readonly` | `number` |
+| <a id="property-arrayfields"></a> `arrayFields?` | `readonly` | `string`[] \| [`JarFieldPicker`](../type-aliases/JarFieldPicker.md)\<[`JarRecord`](../type-aliases/JarRecord.md)\> |
+| <a id="property-fixedcontinuationsize"></a> `fixedContinuationSize?` | `readonly` | `number` |

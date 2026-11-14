@@ -7,5 +7,5 @@ Format identifier.
 **Signature:**
 
 ```typescript
-readonly format: "keystore-v1";
+readonly format: KeyStoreFormat;
 ```

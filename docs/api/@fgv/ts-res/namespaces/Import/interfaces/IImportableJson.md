@@ -16,6 +16,6 @@ Represents some JSON to be imported.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="context"></a> `context?` | [`ImportContext`](../classes/ImportContext.md) |
-| <a id="json"></a> `json` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
-| <a id="type"></a> `type` | `"json"` |
+| <a id="property-context"></a> `context?` | [`ImportContext`](../classes/ImportContext.md) |
+| <a id="property-json"></a> `json` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="property-type"></a> `type` | `"json"` |

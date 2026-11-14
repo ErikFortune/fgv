@@ -35,9 +35,9 @@ Constructor for a ConditionSet object.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_collectible"></a> `_collectible` | `readonly` | [`Collectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ConditionSetKey`](../../../type-aliases/ConditionSetKey.md), [`ConditionSetIndex`](../../../type-aliases/ConditionSetIndex.md)\> | - |
-| <a id="conditions"></a> `conditions` | `readonly` | readonly [`Condition`](../../../classes/Condition.md)[] | The [conditions](../../../classes/Condition.md) that make up this condition set. |
-| <a id="unconditionalkey"></a> `UnconditionalKey` | `static` | [`ConditionSetKey`](../../../type-aliases/ConditionSetKey.md) | The key for an unconditional condition set. |
+| <a id="property-_collectible"></a> `_collectible` | `protected readonly` | [`Collectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ConditionSetKey`](../../../type-aliases/ConditionSetKey.md), [`ConditionSetIndex`](../../../type-aliases/ConditionSetIndex.md)\> | - |
+| <a id="property-conditions"></a> `conditions` | `public readonly` | readonly [`Condition`](../../../classes/Condition.md)[] | The [conditions](../../../classes/Condition.md) that make up this condition set. |
+| <a id="property-unconditionalkey"></a> `UnconditionalKey` | `public static` | [`ConditionSetKey`](../../../type-aliases/ConditionSetKey.md) | The key for an unconditional condition set. |
 
 ## Accessors
 
@@ -55,7 +55,7 @@ The index for this condition set.
 
 #### Implementation of
 
-[`IValidatedConditionSetDecl`](../interfaces/IValidatedConditionSetDecl.md).[`index`](../interfaces/IValidatedConditionSetDecl.md#index)
+[`IValidatedConditionSetDecl`](../interfaces/IValidatedConditionSetDecl.md).[`index`](../interfaces/IValidatedConditionSetDecl.md#property-index)
 
 ***
 
@@ -328,7 +328,7 @@ Gets a condition set key from a loose condition set declaration.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `conditionSet` | [`ConditionSetDecl`](../../ResourceJson/namespaces/Json/type-aliases/ConditionSetDecl.md) \| `undefined` | The loose condition set declaration to convert. |
+| `conditionSet` | [`ConditionSetDecl`](../../ResourceJson/namespaces/Json/type-aliases/ConditionSetDecl.md)\<`string`\> \| `undefined` | The loose condition set declaration to convert. |
 | `conditionCollector` | [`ConditionCollector`](ConditionCollector.md) | The condition collector used for validation. |
 
 #### Returns

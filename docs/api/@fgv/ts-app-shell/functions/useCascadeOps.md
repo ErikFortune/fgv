@@ -19,7 +19,7 @@ values from their own store.
 
 | Type Parameter | Description |
 | ------ | ------ |
-| `TEntry` *extends* [`ICascadeEntryBase`](../interfaces/ICascadeEntryBase.md) | The cascade entry type. Inferred from `cascadeStack`. |
+| <a id="type-parameter-tentry"></a> `TEntry` *extends* [`ICascadeEntryBase`](../interfaces/ICascadeEntryBase.md) | The cascade entry type. Inferred from `cascadeStack`. |
 
 ## Parameters
 

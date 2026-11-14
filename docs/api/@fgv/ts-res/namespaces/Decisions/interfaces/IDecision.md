@@ -14,12 +14,12 @@ value for some resource, along with the conditions under which that value is val
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="type-parameter-tvalue"></a> `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="candidates"></a> `candidates` | readonly [`ICandidate`](ICandidate.md)\<`TVALUE`\>[] |
-| <a id="index"></a> `index?` | [`DecisionIndex`](../../../type-aliases/DecisionIndex.md) |
-| <a id="key"></a> `key` | [`DecisionKey`](../../../type-aliases/DecisionKey.md) |
+| <a id="property-candidates"></a> `candidates` | readonly [`ICandidate`](ICandidate.md)\<`TVALUE`\>[] |
+| <a id="property-index"></a> `index?` | [`DecisionIndex`](../../../type-aliases/DecisionIndex.md) |
+| <a id="property-key"></a> `key` | [`DecisionKey`](../../../type-aliases/DecisionKey.md) |

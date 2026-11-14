@@ -11,3 +11,8 @@
 Converter which constructs a [validated condition set declaration](../../../interfaces/IValidatedConditionSetDecl.md)
 from a [condition set declaration](../../../interfaces/IConditionSetDecl.md), instantiating qualifiers by name
 from a supplied [conversion context](../interfaces/IConditionSetDeclConvertContext.md).
+
+## Remarks
+
+Accepts any string as the qualifier name. Use `typedValidatedConditionSetDecl` to layer
+literal-string narrowing on top of the collector-membership check.

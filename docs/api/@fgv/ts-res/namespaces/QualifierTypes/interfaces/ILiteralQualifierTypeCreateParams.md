@@ -13,9 +13,9 @@ Interface defining the parameters that can be used to create a new
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="allowcontextlist"></a> `allowContextList?` | `boolean` | Optional flag indicating whether the context can be a list of values. Defaults to `true`. |
-| <a id="casesensitive"></a> `caseSensitive?` | `boolean` | Optional flag indicating whether the match should be case-sensitive. Defaults to `false`. |
-| <a id="enumeratedvalues"></a> `enumeratedValues?` | readonly `string`[] | Optional array of enumerated values to further constrain the type. Defaults to no constraint. |
-| <a id="hierarchy"></a> `hierarchy?` | [`LiteralValueHierarchyDecl`](../namespaces/Config/type-aliases/LiteralValueHierarchyDecl.md)\<`string`\> | Optional [hierarchy declaration](../namespaces/Config/type-aliases/LiteralValueHierarchyDecl.md) of literal values to use for matching. If not provided, no hierarchy will be used. |
-| <a id="index"></a> `index?` | `number` | Global index for this qualifier type. |
-| <a id="name"></a> `name?` | `string` | Optional name for the qualifier type. Defaults to 'literal'. |
+| <a id="property-allowcontextlist"></a> `allowContextList?` | `boolean` | Optional flag indicating whether the context can be a list of values. Defaults to `true`. |
+| <a id="property-casesensitive"></a> `caseSensitive?` | `boolean` | Optional flag indicating whether the match should be case-sensitive. Defaults to `false`. |
+| <a id="property-enumeratedvalues"></a> `enumeratedValues?` | readonly `string`[] | Optional array of enumerated values to further constrain the type. Defaults to no constraint. |
+| <a id="property-hierarchy"></a> `hierarchy?` | [`LiteralValueHierarchyDecl`](../namespaces/Config/type-aliases/LiteralValueHierarchyDecl.md)\<`string`\> | Optional [hierarchy declaration](../namespaces/Config/type-aliases/LiteralValueHierarchyDecl.md) of literal values to use for matching. If not provided, no hierarchy will be used. |
+| <a id="property-index"></a> `index?` | `number` | Global index for this qualifier type. |
+| <a id="property-name"></a> `name?` | `string` | Optional name for the qualifier type. Defaults to 'literal'. |

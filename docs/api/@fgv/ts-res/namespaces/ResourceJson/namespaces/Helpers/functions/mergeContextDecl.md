@@ -16,7 +16,7 @@ Helper method to merge a resource context declaration with a parent name and con
 | ------ | ------ | ------ |
 | `decl?` | [`IContainerContextDecl`](../../Normalized/interfaces/IContainerContextDecl.md) | The resource context declaration to merge. |
 | `parentName?` | `string` | The name of the parent resource. |
-| `parentConditions?` | readonly [`ILooseConditionDecl`](../../Json/interfaces/ILooseConditionDecl.md)[] | The conditions of the parent resource. |
+| `parentConditions?` | readonly [`ILooseConditionDecl`](../../Json/interfaces/ILooseConditionDecl.md)\<`string`\>[] | The conditions of the parent resource. |
 
 ## Returns
 

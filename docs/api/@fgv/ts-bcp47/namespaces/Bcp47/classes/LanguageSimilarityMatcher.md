@@ -29,9 +29,9 @@ applying normalization and language semantics as appropriate.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="iana"></a> `iana` | `public` | [`LanguageRegistries`](../../Iana/classes/LanguageRegistries.md) |
-| <a id="overrides"></a> `overrides` | `public` | [`OverridesRegistry`](../namespaces/Overrides/classes/OverridesRegistry.md) |
-| <a id="unsd"></a> `unsd` | `public` | [`RegionCodes`](../../Unsd/classes/RegionCodes.md) |
+| <a id="property-iana"></a> `iana` | `public` | [`LanguageRegistries`](../../Iana/classes/LanguageRegistries.md) |
+| <a id="property-overrides"></a> `overrides` | `public` | [`OverridesRegistry`](../namespaces/Overrides/classes/OverridesRegistry.md) |
+| <a id="property-unsd"></a> `unsd` | `public` | [`RegionCodes`](../../Unsd/classes/RegionCodes.md) |
 
 ## Methods
 

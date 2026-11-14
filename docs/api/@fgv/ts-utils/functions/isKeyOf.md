@@ -15,7 +15,7 @@ a supplied object.
 
 | Type Parameter |
 | ------ |
-| `T` *extends* `object` |
+| <a id="type-parameter-t"></a> `T` *extends* `object` |
 
 ## Parameters
 

@@ -12,11 +12,11 @@ Parameters for constructing a [ValidatingCollector](../classes/ValidatingCollect
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](ICollectible.md)\<`any`, `any`\> |
 
 ## Properties
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="converters"></a> `converters` | [`KeyValueConverters`](../classes/KeyValueConverters.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TITEM`\> | The key-value converters for validation. |
-| <a id="items"></a> `items?` | `unknown`[] | Optional initial items to populate the collector. |
+| <a id="property-converters"></a> `converters` | [`KeyValueConverters`](../classes/KeyValueConverters.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TITEM`\> | The key-value converters for validation. |
+| <a id="property-items"></a> `items?` | `unknown`[] | Optional initial items to populate the collector. |

@@ -27,8 +27,8 @@
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="read"></a> `read` | `readonly` | `SpyInstance` |
-| <a id="write"></a> `write` | `readonly` | `SpyInstance` |
+| <a id="property-read"></a> `read` | `public readonly` | `SpyInstance` |
+| <a id="property-write"></a> `write` | `public readonly` | `SpyInstance` |
 
 ## Methods
 

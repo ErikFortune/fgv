@@ -207,6 +207,19 @@ Gets the value associated with a successful IResult | result,
 </td></tr>
 <tr><td>
 
+[orDefaultWith(cb)](./Success.orDefaultWith.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the value associated with a successful IResult | result, or a
+
+</td></tr>
+<tr><td>
+
 [getValueOrThrow(__logger)](./Success.getValueOrThrow.md)
 
 </td><td>

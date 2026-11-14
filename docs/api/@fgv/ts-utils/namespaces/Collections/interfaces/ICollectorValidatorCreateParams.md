@@ -12,11 +12,11 @@ Parameters for constructing a [CollectorValidator](../classes/CollectorValidator
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](ICollectible.md)\<`any`, `any`\> |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="collector"></a> `collector` | `readonly` | [`Collector`](../classes/Collector.md)\<`TITEM`\> | The collector to validate access to. |
-| <a id="converters"></a> `converters` | `readonly` | [`KeyValueConverters`](../classes/KeyValueConverters.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TITEM`\> | The key-value converters for validation. |
+| <a id="property-collector"></a> `collector` | `readonly` | [`Collector`](../classes/Collector.md)\<`TITEM`\> | The collector to validate access to. |
+| <a id="property-converters"></a> `converters` | `readonly` | [`KeyValueConverters`](../classes/KeyValueConverters.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TITEM`\> | The key-value converters for validation. |

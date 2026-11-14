@@ -28,6 +28,6 @@ const annotations: IResourceAnnotations = {
 
 ## Indexable
 
-\[`resourceId`: `string`\]: [`IResourceAnnotation`](IResourceAnnotation.md)
+> \[`resourceId`: `string`\]: [`IResourceAnnotation`](IResourceAnnotation.md)
 
 Map of resource IDs to their annotation configurations

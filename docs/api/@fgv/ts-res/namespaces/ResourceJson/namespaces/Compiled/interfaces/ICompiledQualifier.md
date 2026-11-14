@@ -12,6 +12,6 @@ Represents a compiled qualifier with a name and type reference.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="defaultpriority"></a> `defaultPriority` | [`ConditionPriority`](../../../../../type-aliases/ConditionPriority.md) | The token used to identify the qualifier in resource names or paths. |
-| <a id="name"></a> `name` | [`QualifierName`](../../../../../type-aliases/QualifierName.md) | The name of the qualifier. |
-| <a id="type"></a> `type` | [`QualifierTypeIndex`](../../../../../type-aliases/QualifierTypeIndex.md) | Index reference to the qualifier type. |
+| <a id="property-defaultpriority"></a> `defaultPriority` | [`ConditionPriority`](../../../../../type-aliases/ConditionPriority.md) | The token used to identify the qualifier in resource names or paths. |
+| <a id="property-name"></a> `name` | [`QualifierName`](../../../../../type-aliases/QualifierName.md) | The name of the qualifier. |
+| <a id="property-type"></a> `type` | [`QualifierTypeIndex`](../../../../../type-aliases/QualifierTypeIndex.md) | Index reference to the qualifier type. |

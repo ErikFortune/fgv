@@ -5,5 +5,5 @@
 **Signature:**
 
 ```typescript
-saveNewResourceAsPending: () => Result<{ pendingResources: Map<string, ILooseResourceDecl>; diagnostics: string[] }>;
+saveNewResourceAsPending: () => Result<{ pendingResources: Map<string, ILooseResourceDecl<string>>; diagnostics: string[] }>;
 ```

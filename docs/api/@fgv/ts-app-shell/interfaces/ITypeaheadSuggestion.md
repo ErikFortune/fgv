@@ -12,11 +12,11 @@ A suggestion entry for typeahead matching.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TId` *extends* `string` | `string` |
+| <a id="type-parameter-tid"></a> `TId` *extends* `string` | `string` |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="id"></a> `id` | `readonly` | `TId` |
-| <a id="name"></a> `name` | `readonly` | `string` |
+| <a id="property-id"></a> `id` | `readonly` | `TId` |
+| <a id="property-name"></a> `name` | `readonly` | `string` |

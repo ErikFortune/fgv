@@ -6,7 +6,7 @@
 
 # Function: exportUsingFileSystemAPI()
 
-> **exportUsingFileSystemAPI**(`data`, `suggestedName`, `description`, `window`): `Promise`\<`boolean`\>
+> **exportUsingFileSystemAPI**(`data`, `suggestedName`, `description?`, `window?`): `Promise`\<`boolean`\>
 
 Export data using File System Access API with fallback to blob download.
 
@@ -16,8 +16,8 @@ Export data using File System Access API with fallback to blob download.
 | ------ | ------ | ------ | ------ |
 | `data` | `unknown` | `undefined` | Data to export as JSON |
 | `suggestedName` | `string` | `undefined` | Suggested filename for the save dialog |
-| `description` | `string` | `'JSON files'` | Description for file type filter (default: 'JSON files') |
-| `window` | `Window` | `globalThis.window` | Window object for API access (default: globalThis.window) |
+| `description?` | `string` | `'JSON files'` | Description for file type filter (default: 'JSON files') |
+| `window?` | `Window` | `globalThis.window` | Window object for API access (default: globalThis.window) |
 
 ## Returns
 

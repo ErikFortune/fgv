@@ -7,7 +7,7 @@ to provide persistent file editing in browsers.
 
 **Extends:** `InMemoryTreeAccessors<TCT>`
 
-**Implements:** `IPersistentFileTreeAccessors<TCT>`
+**Implements:** `IPersistentFileTreeAccessors<TCT>`, `IBinaryFileTreeAccessors<TCT>`
 
 ## Methods
 
@@ -222,6 +222,32 @@ Gets the contents of a file in the file tree.
 </td></tr>
 <tr><td>
 
+[getFileBytes(path)](./FileSystemAccessTreeAccessors.getFileBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the contents of a file in the file tree as bytes, with no text decoding applied.
+
+</td></tr>
+<tr><td>
+
+[getFileTextStrict(path)](./FileSystemAccessTreeAccessors.getFileTextStrict.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Reads a file's contents, decoding UTF-8 strictly.
+
+</td></tr>
+<tr><td>
+
 [getFileContentType(path, provided)](./FileSystemAccessTreeAccessors.getFileContentType.md)
 
 </td><td>
@@ -270,6 +296,45 @@ Creates a directory at the given path, including any missing parent directories.
 </td><td>
 
 Deletes a directory at the given path.
+
+</td></tr>
+<tr><td>
+
+[getAtomicWriteCapabilities(directory)](./FileSystemAccessTreeAccessors.getAtomicWriteCapabilities.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Reports what atomic replacement this store can offer for writes into the
+
+</td></tr>
+<tr><td>
+
+[writeFileAtomically(path, contents, options)](./FileSystemAccessTreeAccessors.writeFileAtomically.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Replaces (or creates) a file's contents such that a reader never observes
+
+</td></tr>
+<tr><td>
+
+[cleanupAtomicTemporaries(directory)](./FileSystemAccessTreeAccessors.cleanupAtomicTemporaries.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Removes any working files this store reserves for interrupted atomic
 
 </td></tr>
 </tbody></table>

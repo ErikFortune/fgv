@@ -12,8 +12,8 @@ Interface for reporting a result.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TD` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-td"></a> `TD` | `unknown` |
 
 ## Methods
 

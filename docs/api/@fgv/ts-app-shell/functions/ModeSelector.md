@@ -10,14 +10,14 @@
 
 Top-level mode selector bar.
 Renders the application title, mode toggle buttons, and optional right-side content.
-When [onMenuToggle](../interfaces/IModeSelectorProps.md#onmenutoggle) is provided, a hamburger
+When [onMenuToggle](../interfaces/IModeSelectorProps.md#property-onmenutoggle) is provided, a hamburger
 menu button is shown at the left edge (for compact/mobile layouts).
 
 ## Type Parameters
 
 | Type Parameter |
 | ------ |
-| `TMode` *extends* `string` |
+| <a id="type-parameter-tmode"></a> `TMode` *extends* `string` |
 
 ## Parameters
 

@@ -9,15 +9,32 @@
 Implementation of [FileTree.IMutableFileTreeAccessors](../interfaces/IMutableFileTreeAccessors.md) that uses an in-memory
 tree to access and modify files and directories.
 
+## Remarks
+
+Also implements the read half of the optional binary capability
+([FileTree.IBinaryFileTreeAccessors](../interfaces/IBinaryFileTreeAccessors.md)). Byte *writes* are deliberately not
+supported: subclasses that persist this tree (`localStorage`, HTTP JSON transport,
+File System Access) persist text, so a byte write could not round-trip through them.
+Seed a tree with `Uint8Array` contents to hold bytes verbatim.
+
+Also implements the optional atomic-write capability
+([FileTree.IAtomicFileTreeAccessors](../interfaces/IAtomicFileTreeAccessors.md)). A replacement of an in-memory file's
+contents is a single synchronous property assignment, so a reader can never observe
+a torn write — this store advertises the `'session'` guarantee and never
+`'process-crash'`: nothing here survives the process exiting, because nothing here
+is ever written to anything other than process memory.
+
 ## Type Parameters
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |
 
 ## Implements
 
 - [`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md)\<`TCT`\>
+- [`IBinaryFileTreeAccessors`](../interfaces/IBinaryFileTreeAccessors.md)\<`TCT`\>
+- [`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md)\<`TCT`\>
 
 ## Constructors
 
@@ -40,6 +57,39 @@ Protected constructor for derived classes.
 
 ## Methods
 
+### cleanupAtomicTemporaries()
+
+> **cleanupAtomicTemporaries**(`directory`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<readonly `string`[]\>
+
+Removes any working files this store reserves for interrupted atomic
+writes from the given directory.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `directory` | `string` | Absolute path of the directory to reclaim. |
+
+#### Returns
+
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<readonly `string`[]\>
+
+`Success` with an empty list, or `Failure` if the path is not an
+existing directory.
+
+#### Remarks
+
+Always an empty list: an in-memory replacement is a single synchronous
+assignment, so there is no intermediate working file for an interrupted
+write to leave behind. The method exists so a consumer's reopen path is the
+same shape whichever store is behind it.
+
+#### Implementation of
+
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`cleanupAtomicTemporaries`](../interfaces/IAtomicFileTreeAccessors.md#cleanupatomictemporaries)
+
+***
+
 ### createDirectory()
 
 > **createDirectory**(`dirPath`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
@@ -60,7 +110,7 @@ Creates a directory at the given path, including any missing parent directories.
 
 #### Implementation of
 
-[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`createDirectory`](../interfaces/IMutableFileTreeAccessors.md#createdirectory)
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`createDirectory`](../interfaces/IAtomicFileTreeAccessors.md#createdirectory)
 
 ***
 
@@ -85,7 +135,7 @@ The directory must be empty or the operation will fail.
 
 #### Implementation of
 
-[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`deleteDirectory`](../interfaces/IMutableFileTreeAccessors.md#deletedirectory)
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`deleteDirectory`](../interfaces/IAtomicFileTreeAccessors.md#deletedirectory)
 
 ***
 
@@ -109,7 +159,7 @@ Deletes a file at the given path.
 
 #### Implementation of
 
-[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`deleteFile`](../interfaces/IMutableFileTreeAccessors.md#deletefile)
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`deleteFile`](../interfaces/IAtomicFileTreeAccessors.md#deletefile)
 
 ***
 
@@ -134,7 +184,33 @@ or `DetailedFailure` with [FileTree.SaveFailureReason](../type-aliases/SaveFailu
 
 #### Implementation of
 
-[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`fileIsMutable`](../interfaces/IMutableFileTreeAccessors.md#fileismutable)
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`fileIsMutable`](../interfaces/IAtomicFileTreeAccessors.md#fileismutable)
+
+***
+
+### getAtomicWriteCapabilities()
+
+> **getAtomicWriteCapabilities**(`directory`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAtomicWriteCapabilities`](../interfaces/IAtomicWriteCapabilities.md)\>
+
+Reports what atomic replacement this store can offer for writes into the
+given directory.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `directory` | `string` | Absolute path of the containing directory. |
+
+#### Returns
+
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAtomicWriteCapabilities`](../interfaces/IAtomicWriteCapabilities.md)\>
+
+`Success` with the store's [capabilities](../interfaces/IAtomicWriteCapabilities.md), or `Failure` if the directory does not exist or the path
+names a file rather than a directory.
+
+#### Implementation of
+
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`getAtomicWriteCapabilities`](../interfaces/IAtomicFileTreeAccessors.md#getatomicwritecapabilities)
 
 ***
 
@@ -159,7 +235,7 @@ The base name of the path.
 
 #### Implementation of
 
-[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`getBaseName`](../interfaces/IMutableFileTreeAccessors.md#getbasename)
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`getBaseName`](../interfaces/IAtomicFileTreeAccessors.md#getbasename)
 
 ***
 
@@ -183,7 +259,7 @@ The children of the directory.
 
 #### Implementation of
 
-[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`getChildren`](../interfaces/IMutableFileTreeAccessors.md#getchildren)
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`getChildren`](../interfaces/IAtomicFileTreeAccessors.md#getchildren)
 
 ***
 
@@ -207,7 +283,36 @@ The extension of the path.
 
 #### Implementation of
 
-[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`getExtension`](../interfaces/IMutableFileTreeAccessors.md#getextension)
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`getExtension`](../interfaces/IAtomicFileTreeAccessors.md#getextension)
+
+***
+
+### getFileBytes()
+
+> **getFileBytes**(`path`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+Gets the contents of a file in the file tree as bytes, with no text decoding applied.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | Absolute path of the file. |
+
+#### Returns
+
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+`Success` with the raw bytes of the file, or `Failure` with an error message.
+
+#### Remarks
+
+The returned array must be treated as read-only — implementations are free to
+return their internal buffer rather than a copy.
+
+#### Implementation of
+
+[`IBinaryFileTreeAccessors`](../interfaces/IBinaryFileTreeAccessors.md).[`getFileBytes`](../interfaces/IBinaryFileTreeAccessors.md#getfilebytes)
 
 ***
 
@@ -231,7 +336,7 @@ The contents of the file.
 
 #### Implementation of
 
-[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`getFileContents`](../interfaces/IMutableFileTreeAccessors.md#getfilecontents)
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`getFileContents`](../interfaces/IAtomicFileTreeAccessors.md#getfilecontents)
 
 ***
 
@@ -256,7 +361,41 @@ The content type of the file.
 
 #### Implementation of
 
-[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`getFileContentType`](../interfaces/IMutableFileTreeAccessors.md#getfilecontenttype)
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`getFileContentType`](../interfaces/IAtomicFileTreeAccessors.md#getfilecontenttype)
+
+***
+
+### getFileTextStrict()
+
+> **getFileTextStrict**(`path`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
+
+Reads a file's contents, decoding UTF-8 strictly.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | Absolute path of the file. |
+
+#### Returns
+
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
+
+`Success` with the decoded text; `Failure` if the bytes are not
+valid UTF-8, or if this store no longer holds the original bytes to judge.
+
+#### Remarks
+
+Decidable **per file**, not per store: only a byte-seeded file still has the
+original bytes to judge. A `string`- or JSON-seeded file was decoded before
+this tree received it, so the substitution — if any — already happened
+upstream and re-encoding would produce well-formed UTF-8. Those fail rather
+than reporting a success this store cannot stand behind.
+
+This is also what makes the derived string-backed stores correct for free:
+an HTTP tree seeded from a JSON `contents` field, or a `localStorage` tree,
+holds only strings and so refuses every file — structurally, not by a
+hand-written special case.
 
 ***
 
@@ -280,7 +419,7 @@ The item if it exists.
 
 #### Implementation of
 
-[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`getItem`](../interfaces/IMutableFileTreeAccessors.md#getitem)
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`getItem`](../interfaces/IAtomicFileTreeAccessors.md#getitem)
 
 ***
 
@@ -304,7 +443,7 @@ The joined paths.
 
 #### Implementation of
 
-[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`joinPaths`](../interfaces/IMutableFileTreeAccessors.md#joinpaths)
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`joinPaths`](../interfaces/IAtomicFileTreeAccessors.md#joinpaths)
 
 ***
 
@@ -328,7 +467,7 @@ The resolved absolute path.
 
 #### Implementation of
 
-[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`resolveAbsolutePath`](../interfaces/IMutableFileTreeAccessors.md#resolveabsolutepath)
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`resolveAbsolutePath`](../interfaces/IAtomicFileTreeAccessors.md#resolveabsolutepath)
 
 ***
 
@@ -353,7 +492,43 @@ Saves the contents to a file at the given path.
 
 #### Implementation of
 
-[`IMutableFileTreeAccessors`](../interfaces/IMutableFileTreeAccessors.md).[`saveFileContents`](../interfaces/IMutableFileTreeAccessors.md#savefilecontents)
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`saveFileContents`](../interfaces/IAtomicFileTreeAccessors.md#savefilecontents)
+
+***
+
+### writeFileAtomically()
+
+> **writeFileAtomically**(`path`, `contents`, `options`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IAtomicWriteReceipt`](../interfaces/IAtomicWriteReceipt.md), [`IAtomicWriteFailure`](../interfaces/IAtomicWriteFailure.md)\>
+
+Replaces (or creates) a file's contents such that a reader never observes
+a torn write.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | Absolute path of the file to write. |
+| `contents` | `string` | The string contents to write. |
+| `options` | [`IAtomicWriteOptions`](../interfaces/IAtomicWriteOptions.md) | The requested [options](../interfaces/IAtomicWriteOptions.md). |
+
+#### Returns
+
+[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IAtomicWriteReceipt`](../interfaces/IAtomicWriteReceipt.md), [`IAtomicWriteFailure`](../interfaces/IAtomicWriteFailure.md)\>
+
+`DetailedSuccess` with the receipt if the write committed, or
+`DetailedFailure` with a classified failure.
+
+#### Remarks
+
+A replacement of an in-memory file's contents is a single synchronous
+assignment (see `MutableInMemoryFile.setContents`), so there is no
+intermediate state a reader could observe as torn — this store can honor
+`'session'` unconditionally whenever ordinary mutation would succeed, and
+fails any stronger request before touching anything.
+
+#### Implementation of
+
+[`IAtomicFileTreeAccessors`](../interfaces/IAtomicFileTreeAccessors.md).[`writeFileAtomically`](../interfaces/IAtomicFileTreeAccessors.md#writefileatomically)
 
 ***
 
@@ -364,9 +539,13 @@ in-memory files.
 
 #### Param
 
+**files**
+
 An array of [in-memory files](../interfaces/IInMemoryFile.md) to include in the tree.
 
 #### Param
+
+**params**
 
 Optional params for the tree.
 
@@ -381,7 +560,7 @@ in-memory files.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-1"></a> `TCT` *extends* `string` | `string` |
 
 ##### Parameters
 
@@ -405,7 +584,7 @@ in-memory files.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-2"></a> `TCT` *extends* `string` | `string` |
 
 ##### Parameters
 

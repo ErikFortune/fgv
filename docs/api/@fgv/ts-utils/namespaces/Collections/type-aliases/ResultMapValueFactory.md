@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-utils](../../../README.md) / [Collections](../README.md) / ResultMapValueFactory
 
-# Type Alias: ResultMapValueFactory()\<TK, TV\>
+# Type Alias: ResultMapValueFactory\<TK, TV\>
 
 > **ResultMapValueFactory**\<`TK`, `TV`\> = (`key`) => [`Result`](../../../type-aliases/Result.md)\<`TV`\>
 
@@ -14,8 +14,8 @@ Deferred constructor for the [getOrAdd](../classes/ResultMap.md#getoradd) method
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv"></a> `TV` | `unknown` |
 
 ## Parameters
 

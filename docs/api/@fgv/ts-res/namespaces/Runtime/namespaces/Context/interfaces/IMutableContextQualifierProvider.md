@@ -17,8 +17,8 @@ Extends the base interface with mutation operations and explicit mutability mark
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="mutable"></a> `mutable` | `readonly` | `true` | Explicit mutability marker for compile-time type discrimination. Always `true` for mutable providers. |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The readonly qualifier collector that defines and validates the qualifiers for this context. |
+| <a id="property-mutable"></a> `mutable` | `readonly` | `true` | Explicit mutability marker for compile-time type discrimination. Always `true` for mutable providers. |
+| <a id="property-qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The readonly qualifier collector that defines and validates the qualifiers for this context. |
 
 ## Methods
 

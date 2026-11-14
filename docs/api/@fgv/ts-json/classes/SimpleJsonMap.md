@@ -45,10 +45,10 @@ Constructs a new SimpleJsonMap from the supplied objects
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_context"></a> `_context?` | `readonly` | [`IJsonContext`](../interfaces/IJsonContext.md) | **`Internal`** An optional [IJsonContext](../interfaces/IJsonContext.md) used for any conversions involving items in this map. |
-| <a id="_editor"></a> `_editor?` | `protected` | [`JsonEditor`](JsonEditor.md) | **`Internal`** |
-| <a id="_keypolicy"></a> `_keyPolicy` | `readonly` | [`ReferenceMapKeyPolicy`](ReferenceMapKeyPolicy.md)\<[`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md)\> | **`Internal`** The [key policy](ReferenceMapKeyPolicy.md) in effect for this map. |
-| <a id="_values"></a> `_values` | `readonly` | `Map`\<`string`, [`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md)\> | **`Internal`** A map containing keys and values already present in this map. |
+| <a id="property-_context"></a> `_context?` | `protected readonly` | [`IJsonContext`](../interfaces/IJsonContext.md) | **`Internal`** An optional [IJsonContext](../interfaces/IJsonContext.md) used for any conversions involving items in this map. |
+| <a id="property-_editor"></a> `_editor?` | `protected` | [`JsonEditor`](JsonEditor.md) | **`Internal`** |
+| <a id="property-_keypolicy"></a> `_keyPolicy` | `protected readonly` | [`ReferenceMapKeyPolicy`](ReferenceMapKeyPolicy.md)\<[`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md)\> | **`Internal`** The [key policy](ReferenceMapKeyPolicy.md) in effect for this map. |
+| <a id="property-_values"></a> `_values` | `protected readonly` | `Map`\<`string`, [`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md)\> | **`Internal`** A map containing keys and values already present in this map. |
 
 ## Methods
 
@@ -187,7 +187,7 @@ Returns a `Map\<string, T\>` derived from a supplied [MapOrRecord](https://githu
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 #### Parameters
 

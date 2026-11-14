@@ -12,7 +12,7 @@ Result of ZIP archive loading
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="config"></a> `config` | [`ISystemConfiguration`](../../Config/namespaces/Model/interfaces/ISystemConfiguration.md) \| `undefined` | Loaded configuration |
-| <a id="directory"></a> `directory` | [`IImportedDirectory`](../namespaces/Json/interfaces/IImportedDirectory.md) \| `undefined` | Directory structure if available |
-| <a id="files"></a> `files` | [`IImportedFile`](../namespaces/Json/interfaces/IImportedFile.md)[] | All files extracted from the archive |
-| <a id="manifest"></a> `manifest` | [`IZipArchiveManifest`](../namespaces/Json/interfaces/IZipArchiveManifest.md) \| `undefined` | Parsed archive manifest |
+| <a id="property-config"></a> `config` | [`ISystemConfiguration`](../../Config/namespaces/Model/interfaces/ISystemConfiguration.md) \| `undefined` | Loaded configuration |
+| <a id="property-directory"></a> `directory` | [`IImportedDirectory`](../namespaces/Json/interfaces/IImportedDirectory.md) \| `undefined` | Directory structure if available |
+| <a id="property-files"></a> `files` | [`IImportedFile`](../namespaces/Json/interfaces/IImportedFile.md)[] | All files extracted from the archive |
+| <a id="property-manifest"></a> `manifest` | [`IZipArchiveManifest`](../namespaces/Json/interfaces/IZipArchiveManifest.md) \| `undefined` | Parsed archive manifest |

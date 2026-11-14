@@ -16,13 +16,13 @@ A read-only interface exposing only the non-mutating methods of a [ICollector](.
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](ICollectible.md)\<`any`, `any`\> |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="size"></a> `size` | `readonly` | `number` | Returns the number of entries in the map. |
+| <a id="property-size"></a> `size` | `readonly` | `number` | Returns the number of entries in the map. |
 
 ## Methods
 

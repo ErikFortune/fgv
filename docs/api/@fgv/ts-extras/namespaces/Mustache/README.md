@@ -15,8 +15,11 @@
 - [IContextValidationResult](interfaces/IContextValidationResult.md)
 - [IMissingVariableDetail](interfaces/IMissingVariableDetail.md)
 - [IMustacheTemplateOptions](interfaces/IMustacheTemplateOptions.md)
+- [IRenderedSegment](interfaces/IRenderedSegment.md)
+- [IRenderedTemplate](interfaces/IRenderedTemplate.md)
 - [IVariableRef](interfaces/IVariableRef.md)
 
 ## Type Aliases
 
+- [MustacheEscapeStrategy](type-aliases/MustacheEscapeStrategy.md)
 - [MustacheTokenType](type-aliases/MustacheTokenType.md)

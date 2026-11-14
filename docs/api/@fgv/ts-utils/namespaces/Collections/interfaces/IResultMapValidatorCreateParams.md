@@ -12,12 +12,12 @@ Parameters for constructing a [ResultMapValidator](../classes/ResultMapValidator
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv"></a> `TV` | `unknown` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="converters"></a> `converters` | [`KeyValueConverters`](../classes/KeyValueConverters.md)\<`TK`, `TV`\> |
-| <a id="map"></a> `map` | [`ResultMap`](../classes/ResultMap.md)\<`TK`, `TV`\> |
+| <a id="property-converters"></a> `converters` | [`KeyValueConverters`](../classes/KeyValueConverters.md)\<`TK`, `TV`\> |
+| <a id="property-map"></a> `map` | [`ResultMap`](../classes/ResultMap.md)\<`TK`, `TV`\> |

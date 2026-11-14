@@ -8,4 +8,4 @@
 
 > `const` **MODEL\_SPEC\_BASE\_KEY**: [`ModelSpecKey`](../type-aliases/ModelSpecKey.md) = `'base'`
 
-Default context key used as fallback when resolving a [ModelSpec](../type-aliases/ModelSpec.md).
+Default context key used as fallback when resolving a [AiAssist.ModelSpec](../type-aliases/ModelSpec.md).

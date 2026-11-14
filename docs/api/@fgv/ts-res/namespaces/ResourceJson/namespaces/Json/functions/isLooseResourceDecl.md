@@ -6,16 +6,22 @@
 
 # Function: isLooseResourceDecl()
 
-> **isLooseResourceDecl**(`decl`): `decl is ILooseResourceDecl`
+> **isLooseResourceDecl**\<`TQualifierNames`\>(`decl`): `decl is ILooseResourceDecl<TQualifierNames>`
 
 Type guard function to check if a resource declaration is a loose resource declaration.
+
+## Type Parameters
+
+| Type Parameter | Default type |
+| ------ | ------ |
+| <a id="type-parameter-tqualifiernames"></a> `TQualifierNames` *extends* `string` | `string` |
 
 ## Parameters
 
 | Parameter | Type |
 | ------ | ------ |
-| `decl` | [`IImporterResourceDecl`](../type-aliases/IImporterResourceDecl.md) |
+| `decl` | [`IImporterResourceDecl`](../type-aliases/IImporterResourceDecl.md)\<`TQualifierNames`\> |
 
 ## Returns
 
-`decl is ILooseResourceDecl`
+`decl is ILooseResourceDecl<TQualifierNames>`

@@ -2,9 +2,11 @@
 
 # Interface: IProviderCompletionStreamParams
 
-Parameters for a streaming completion request. Structurally identical to
-the non-streaming `IProviderCompletionParams`; kept as its own interface
-so callers can be explicit about which path they're invoking.
+Parameters for a streaming completion request. The non-streaming
+`IProviderCompletionParams` shape **minus `structuredOutput`**; kept as its
+own interface so callers can be explicit about which path they're invoking.
+
+**Extends:** [`IChatRequest`](IChatRequest.md)
 
 ## Properties
 
@@ -62,41 +64,6 @@ API key for authentication
 </td></tr>
 <tr><td>
 
-[prompt](./IProviderCompletionStreamParams.prompt.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[AiPrompt](../classes/AiPrompt.md)
-
-</td><td>
-
-The structured prompt to send
-
-</td></tr>
-<tr><td>
-
-[messagesBefore](./IProviderCompletionStreamParams.messagesBefore.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-readonly [IChatMessage](IChatMessage.md)[]
-
-</td><td>
-
-Prior conversation history to insert between the system prompt and the
-prompt's user message.
-
-</td></tr>
-<tr><td>
-
 [temperature](./IProviderCompletionStreamParams.temperature.md)
 
 </td><td>
@@ -109,7 +76,7 @@ number
 
 </td><td>
 
-Sampling temperature (default: 0.7)
+Sampling temperature.
 
 </td></tr>
 <tr><td>
@@ -127,6 +94,23 @@ Sampling temperature (default: 0.7)
 </td><td>
 
 Optional model override — string or context-aware map.
+
+</td></tr>
+<tr><td>
+
+[tier](./IProviderCompletionStreamParams.tier.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+"advanced" | "frontier"
+
+</td><td>
+
+Optional quality tier selecting which completion model to use.
 
 </td></tr>
 <tr><td>
@@ -199,6 +183,24 @@ Optional override of the descriptor's default base URL.
 </td></tr>
 <tr><td>
 
+[verifiedEndpoint](./IProviderCompletionStreamParams.verifiedEndpoint.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IAiVerifiedEndpoint](IAiVerifiedEndpoint.md)
+
+</td><td>
+
+The host's assertion that `endpoint` reaches the descriptor's own provider, so this request's
+schemas are adapted with that provider's keyword table instead of the conservative one.
+
+</td></tr>
+<tr><td>
+
 [thinking](./IProviderCompletionStreamParams.thinking.md)
 
 </td><td>
@@ -212,6 +214,78 @@ Optional override of the descriptor's default base URL.
 </td><td>
 
 Optional thinking/reasoning mode configuration.
+
+</td></tr>
+<tr><td>
+
+[maxTokens](./IProviderCompletionStreamParams.maxTokens.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+Optional cap on generated output tokens, mapped to each provider's native field:
+Anthropic `max_tokens`, OpenAI/xAI Responses `max_output_tokens`, Gemini
+`generationConfig.maxOutputTokens`, and on the chat-completions path the descriptor's
+`chatOutputTokensField` (`max_completion_tokens` for OpenAI, Groq and xAI; `max_tokens` for
+Mistral, Ollama and `openai-compat`).
+
+</td></tr>
+<tr><td>
+
+[cache](./IProviderCompletionStreamParams.cache.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IAiCacheRequest](IAiCacheRequest.md)
+
+</td><td>
+
+Prompt-caching plan for this request.
+
+</td></tr>
+<tr><td>
+
+[system](./IChatRequest.system.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+System instructions (schema docs, format rules, general guidance).
+
+</td></tr>
+<tr><td>
+
+[messages](./IChatRequest.messages.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [IChatMessage](IChatMessage.md)[]
+
+</td><td>
+
+The ordered conversation turns.
 
 </td></tr>
 </tbody></table>

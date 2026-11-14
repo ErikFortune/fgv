@@ -14,7 +14,7 @@ Represents the [result](../interfaces/IResult.md) of some operation or sequence 
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Remarks
 

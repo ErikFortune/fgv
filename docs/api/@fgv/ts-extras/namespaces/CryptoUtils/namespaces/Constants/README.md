@@ -13,3 +13,4 @@
 - [ENCRYPTED\_FILE\_FORMAT](variables/ENCRYPTED_FILE_FORMAT.md)
 - [GCM\_AUTH\_TAG\_SIZE](variables/GCM_AUTH_TAG_SIZE.md)
 - [GCM\_IV\_SIZE](variables/GCM_IV_SIZE.md)
+- [HMAC\_SHA256\_KEY\_SIZE](variables/HMAC_SHA256_KEY_SIZE.md)

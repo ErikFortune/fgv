@@ -14,7 +14,7 @@ Generic app layout component with header, sidebar, main content area, and messag
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TTool` | `unknown` |
+| <a id="type-parameter-ttool"></a> `TTool` | `unknown` |
 
 ## Parameters
 

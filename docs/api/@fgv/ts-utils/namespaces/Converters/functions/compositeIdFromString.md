@@ -6,7 +6,7 @@
 
 # Function: compositeIdFromString()
 
-> **compositeIdFromString**\<`TCOLLECTIONID`, `TITEMID`, `TC`\>(`collectionIdConverter`, `separator`, `itemIdConverter`): [`Converter`](../../Conversion/interfaces/Converter.md)\<[`ICompositeId`](../interfaces/ICompositeId.md)\<`TCOLLECTIONID`, `TITEMID`\>, `TC`\>
+> **compositeIdFromString**\<`TCOLLECTIONID`, `TITEMID`, `TC`\>(`collectionIdConverter`, `separator`, `itemIdConverter`, `options?`): [`Converter`](../../Conversion/interfaces/Converter.md)\<[`ICompositeId`](../interfaces/ICompositeId.md)\<`TCOLLECTIONID`, `TITEMID`\>, `TC`\>
 
 Converts a composite ID string into a strongly-typed [CompositeId](../interfaces/ICompositeId.md).
 
@@ -14,9 +14,9 @@ Converts a composite ID string into a strongly-typed [CompositeId](../interfaces
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCOLLECTIONID` *extends* `string` | - |
-| `TITEMID` *extends* `string` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-tcollectionid"></a> `TCOLLECTIONID` *extends* `string` | - |
+| <a id="type-parameter-titemid"></a> `TITEMID` *extends* `string` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Parameters
 
@@ -25,6 +25,7 @@ Converts a composite ID string into a strongly-typed [CompositeId](../interfaces
 | `collectionIdConverter` | [`Converter`](../../Conversion/interfaces/Converter.md)\<`TCOLLECTIONID`, `TC`\> \| [`Validator`](../../Validation/interfaces/Validator.md)\<`TCOLLECTIONID`, `TC`\> | [Converter](../../Conversion/interfaces/Converter.md) or [Validator](../../Validation/interfaces/Validator.md) for the collection ID portion. |
 | `separator` | `string` | The separator string. |
 | `itemIdConverter` | [`Converter`](../../Conversion/interfaces/Converter.md)\<`TITEMID`, `TC`\> \| [`Validator`](../../Validation/interfaces/Validator.md)\<`TITEMID`, `TC`\> | [Converter](../../Conversion/interfaces/Converter.md) or [Validator](../../Validation/interfaces/Validator.md) for the item ID portion. |
+| `options?` | [`ICompositeIdOptions`](../interfaces/ICompositeIdOptions.md) | Optional `ICompositeIdOptions`; `split` defaults to `'exact'`. |
 
 ## Returns
 

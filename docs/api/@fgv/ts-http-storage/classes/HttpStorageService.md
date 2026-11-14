@@ -82,7 +82,7 @@ Service layer for storage API operations.
 
 | Parameter | Type |
 | ------ | ------ |
-| `request` | [`IStoragePathRequest`](../interfaces/IStoragePathRequest.md) |
+| `request` | [`IStorageReadFileRequest`](../interfaces/IStorageReadFileRequest.md) |
 
 #### Returns
 

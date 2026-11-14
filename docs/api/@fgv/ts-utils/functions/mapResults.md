@@ -14,7 +14,7 @@ Aggregates successful result values from a collection of [Result\<T\>](../type-a
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Parameters
 

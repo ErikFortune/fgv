@@ -13,6 +13,6 @@ Tools are disabled by default — consuming apps must opt in explicitly.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="config"></a> `config?` | `readonly` | [`IAiWebSearchToolConfig`](IAiWebSearchToolConfig.md) | Optional tool-specific configuration. |
-| <a id="enabled"></a> `enabled` | `readonly` | `boolean` | Whether this tool is enabled by default for this provider. |
-| <a id="type"></a> `type` | `readonly` | `"web_search"` | Which tool type. |
+| <a id="property-config"></a> `config?` | `readonly` | [`IAiWebSearchToolConfig`](IAiWebSearchToolConfig.md) | Optional tool-specific configuration. |
+| <a id="property-enabled"></a> `enabled` | `readonly` | `boolean` | Whether this tool is enabled by default for this provider. |
+| <a id="property-type"></a> `type` | `readonly` | `"web_search"` | Which tool type. |

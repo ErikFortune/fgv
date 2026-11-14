@@ -45,7 +45,7 @@ Creates a new ConditionalJsonEditorRule.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_options"></a> `_options?` | `public` | [`IConditionalJsonRuleOptions`](../interfaces/IConditionalJsonRuleOptions.md) | Stored fully-resolved [options](../interfaces/IConditionalJsonRuleOptions.md) for this rule. |
+| <a id="property-_options"></a> `_options?` | `public` | [`IConditionalJsonRuleOptions`](../interfaces/IConditionalJsonRuleOptions.md) | Stored fully-resolved [options](../interfaces/IConditionalJsonRuleOptions.md) for this rule. |
 
 ## Methods
 

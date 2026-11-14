@@ -12,12 +12,12 @@
 
 | Property | Type |
 | ------ | ------ |
-| <a id="added"></a> `added` | [`YearMonthDaySpec`](../../../../Model/type-aliases/YearMonthDaySpec.md) |
-| <a id="authority"></a> `authority` | `string` |
-| <a id="comments"></a> `comments` | `string`[] |
-| <a id="contactemail"></a> `contactEmail` | `string` |
-| <a id="description"></a> `description` | `string`[] |
-| <a id="identifier"></a> `identifier` | [`ExtensionSingleton`](../type-aliases/ExtensionSingleton.md) |
-| <a id="mailinglist"></a> `mailingList` | `string` |
-| <a id="rfc"></a> `rfc` | `string` |
-| <a id="url"></a> `url` | `string` |
+| <a id="property-added"></a> `added` | [`YearMonthDaySpec`](../../../../Model/type-aliases/YearMonthDaySpec.md) |
+| <a id="property-authority"></a> `authority` | `string` |
+| <a id="property-comments"></a> `comments` | `string`[] |
+| <a id="property-contactemail"></a> `contactEmail` | `string` |
+| <a id="property-description"></a> `description` | `string`[] |
+| <a id="property-identifier"></a> `identifier` | [`ExtensionSingleton`](../type-aliases/ExtensionSingleton.md) |
+| <a id="property-mailinglist"></a> `mailingList` | `string` |
+| <a id="property-rfc"></a> `rfc` | `string` |
+| <a id="property-url"></a> `url` | `string` |

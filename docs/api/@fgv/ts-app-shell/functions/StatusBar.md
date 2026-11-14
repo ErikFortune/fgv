@@ -11,7 +11,8 @@
 Collapsible status bar / log panel at the bottom of the application.
 
 Collapsed: shows severity counts.
-Expanded: filterable, searchable, copyable log of all messages.
+Expanded: filterable, searchable, copyable log of all messages, bounded to
+[IStatusBarProps.maxExpandedHeight](../interfaces/IStatusBarProps.md#property-maxexpandedheight) with the list scrolling within the bound.
 
 ## Parameters
 

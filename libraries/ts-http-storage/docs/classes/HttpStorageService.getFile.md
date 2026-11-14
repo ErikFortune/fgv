@@ -5,14 +5,14 @@
 **Signature:**
 
 ```typescript
-getFile(request: IStoragePathRequest): Promise<Result<IStorageFileResponse>>;
+getFile(request: IStorageReadFileRequest): Promise<Result<IStorageFileResponse>>;
 ```
 
 **Parameters:**
 
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>request</td><td>IStoragePathRequest</td><td></td></tr>
+<tr><td>request</td><td>IStorageReadFileRequest</td><td></td></tr>
 </tbody></table>
 
 **Returns:**

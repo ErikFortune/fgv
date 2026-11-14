@@ -17,13 +17,13 @@ A read-only interface exposing non-mutating methods of a
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](ICollectible.md)\<`any`, `any`\> |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="map"></a> `map` | `readonly` | [`IReadOnlyResultMap`](IReadOnlyResultMap.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TITEM`\> | The underlying map. |
+| <a id="property-map"></a> `map` | `readonly` | [`IReadOnlyResultMap`](IReadOnlyResultMap.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TITEM`\> | The underlying map. |
 
 ## Methods
 

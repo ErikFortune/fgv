@@ -13,8 +13,8 @@ before calling the wrapped result map.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv"></a> `TV` | `unknown` |
 
 ## Implements
 
@@ -42,8 +42,8 @@ Constructs a new ResultMapValidator.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="_map"></a> `_map` | `protected` | [`ResultMap`](ResultMap.md)\<`TK`, `TV`\> |
-| <a id="converters"></a> `converters` | `readonly` | [`KeyValueConverters`](KeyValueConverters.md)\<`TK`, `TV`\> |
+| <a id="property-_map"></a> `_map` | `protected` | [`ResultMap`](ResultMap.md)\<`TK`, `TV`\> |
+| <a id="property-converters"></a> `converters` | `public readonly` | [`KeyValueConverters`](KeyValueConverters.md)\<`TK`, `TV`\> |
 
 ## Accessors
 
@@ -63,7 +63,7 @@ The underlying map.
 
 #### Implementation of
 
-[`IReadOnlyResultMapValidator`](../interfaces/IReadOnlyResultMapValidator.md).[`map`](../interfaces/IReadOnlyResultMapValidator.md#map)
+[`IReadOnlyResultMapValidator`](../interfaces/IReadOnlyResultMapValidator.md).[`map`](../interfaces/IReadOnlyResultMapValidator.md#property-map)
 
 ## Methods
 
@@ -77,8 +77,8 @@ Determines if a value is a [ResultMapValueFactory](../type-aliases/ResultMapValu
 
 | Type Parameter |
 | ------ |
-| `TK` *extends* `string` |
-| `TV` |
+| <a id="type-parameter-tk-1"></a> `TK` *extends* `string` |
+| <a id="type-parameter-tv-1"></a> `TV` |
 
 #### Parameters
 

@@ -13,6 +13,6 @@ Compatible with existing tools from ts-res-browser-cli
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="config"></a> `config?` | [`IZipArchiveConfigInfo`](IZipArchiveConfigInfo.md) | Optional configuration file information |
-| <a id="input"></a> `input?` | [`IZipArchiveInputInfo`](IZipArchiveInputInfo.md) | Optional input source information |
-| <a id="timestamp"></a> `timestamp` | `string` | Archive creation timestamp |
+| <a id="property-config"></a> `config?` | [`IZipArchiveConfigInfo`](IZipArchiveConfigInfo.md) | Optional configuration file information |
+| <a id="property-input"></a> `input?` | [`IZipArchiveInputInfo`](IZipArchiveInputInfo.md) | Optional input source information |
+| <a id="property-timestamp"></a> `timestamp` | `string` | Archive creation timestamp |

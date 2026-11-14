@@ -12,7 +12,7 @@ Non-validated child declaration of a [condition](../../../../../classes/Conditio
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="operator"></a> `operator?` | [`ConditionOperator`](../../../../../type-aliases/ConditionOperator.md) | The operator to be used in the comparison. Default is 'matches'. |
-| <a id="priority"></a> `priority?` | `number` | The priority of the condition. Default is the default priority for the qualifier. |
-| <a id="scoreasdefault"></a> `scoreAsDefault?` | `number` | The score to be used if the condition is used as a default. |
-| <a id="value"></a> `value` | `string` | The value to be compared. |
+| <a id="property-operator"></a> `operator?` | [`ConditionOperator`](../../../../../type-aliases/ConditionOperator.md) | The operator to be used in the comparison. Default is 'matches'. |
+| <a id="property-priority"></a> `priority?` | `number` | The priority of the condition. Default is the default priority for the qualifier. |
+| <a id="property-scoreasdefault"></a> `scoreAsDefault?` | `number` | The score to be used if the condition is used as a default. |
+| <a id="property-value"></a> `value` | `string` | The value to be compared. |

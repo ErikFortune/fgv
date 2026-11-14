@@ -12,4 +12,4 @@ Options for creating filesystem-backed storage providers.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="rootpath"></a> `rootPath` | `readonly` | `string` |
+| <a id="property-rootpath"></a> `rootPath` | `readonly` | `string` |

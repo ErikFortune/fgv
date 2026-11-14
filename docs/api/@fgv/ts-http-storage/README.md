@@ -22,6 +22,7 @@ Reusable HTTP storage services for FileTree-style backends.
 - [IHttpStorageProviderFactory](interfaces/IHttpStorageProviderFactory.md)
 - [IStorageFileResponse](interfaces/IStorageFileResponse.md)
 - [IStoragePathRequest](interfaces/IStoragePathRequest.md)
+- [IStorageReadFileRequest](interfaces/IStorageReadFileRequest.md)
 - [IStorageSyncRequest](interfaces/IStorageSyncRequest.md)
 - [IStorageSyncResponse](interfaces/IStorageSyncResponse.md)
 - [IStorageTreeChildrenResponse](interfaces/IStorageTreeChildrenResponse.md)
@@ -30,13 +31,16 @@ Reusable HTTP storage services for FileTree-style backends.
 
 ## Type Aliases
 
+- [StorageContentEncoding](type-aliases/StorageContentEncoding.md)
 - [StorageItemType](type-aliases/StorageItemType.md)
 - [StorageNamespace](type-aliases/StorageNamespace.md)
 
 ## Variables
 
+- [storageContentEncoding](variables/storageContentEncoding.md)
 - [storageFileResponse](variables/storageFileResponse.md)
 - [storagePathRequest](variables/storagePathRequest.md)
+- [storageReadFileRequest](variables/storageReadFileRequest.md)
 - [storageSyncRequest](variables/storageSyncRequest.md)
 - [storageTreeChildrenResponse](variables/storageTreeChildrenResponse.md)
 - [storageTreeItem](variables/storageTreeItem.md)

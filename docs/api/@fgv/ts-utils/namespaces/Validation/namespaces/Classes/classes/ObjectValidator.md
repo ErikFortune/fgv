@@ -22,8 +22,8 @@ for other validation options.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Constructors
 
@@ -51,13 +51,13 @@ Constructs a new ObjectValidator\<T\>.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_allowedfields"></a> `_allowedFields?` | `readonly` | `Set`\<keyof `T`\> | **`Internal`** |
-| <a id="_innervalidators"></a> `_innerValidators` | `readonly` | [`FieldValidators`](../type-aliases/FieldValidators.md)\<`T`\> | **`Internal`** |
-| <a id="_options"></a> `_options` | `readonly` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> | **`Internal`** |
-| <a id="_validator"></a> `_validator` | `readonly` | [`ValidatorFunc`](../../../type-aliases/ValidatorFunc.md)\<`T`, `TC`\> | **`Internal`** |
-| <a id="fields"></a> `fields` | `readonly` | [`FieldValidators`](../type-aliases/FieldValidators.md)\<`T`\> | A [FieldValidators](../type-aliases/FieldValidators.md) object specifying a [Validator](../../../interfaces/Validator.md) for each of the expected properties |
-| <a id="options"></a> `options` | `readonly` | [`ObjectValidatorOptions`](../interfaces/ObjectValidatorOptions.md)\<`T`, `TC`\> | [Options](../interfaces/ObjectValidatorOptions.md) which apply to this validator. |
-| <a id="traits"></a> `traits` | `readonly` | [`ValidatorTraits`](../../../classes/ValidatorTraits.md) | [Traits](../../../classes/ValidatorTraits.md) describing this validation. |
+| <a id="property-_allowedfields"></a> `_allowedFields?` | `protected readonly` | `Set`\<keyof `T`\> | **`Internal`** |
+| <a id="property-_innervalidators"></a> `_innerValidators` | `protected readonly` | [`FieldValidators`](../type-aliases/FieldValidators.md)\<`T`\> | **`Internal`** |
+| <a id="property-_options"></a> `_options` | `protected readonly` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> | **`Internal`** |
+| <a id="property-_validator"></a> `_validator` | `protected readonly` | [`ValidatorFunc`](../../../type-aliases/ValidatorFunc.md)\<`T`, `TC`\> | **`Internal`** |
+| <a id="property-fields"></a> `fields` | `public readonly` | [`FieldValidators`](../type-aliases/FieldValidators.md)\<`T`\> | A [FieldValidators](../type-aliases/FieldValidators.md) object specifying a [Validator](../../../interfaces/Validator.md) for each of the expected properties |
+| <a id="property-options"></a> `options` | `public readonly` | [`ObjectValidatorOptions`](../interfaces/ObjectValidatorOptions.md)\<`T`, `TC`\> | [Options](../interfaces/ObjectValidatorOptions.md) which apply to this validator. |
+| <a id="property-traits"></a> `traits` | `public readonly` | [`ValidatorTraits`](../../../classes/ValidatorTraits.md) | [Traits](../../../classes/ValidatorTraits.md) describing this validation. |
 
 ## Accessors
 
@@ -160,7 +160,7 @@ new optional properties as specified by a supplied array of `keyof T`.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `addOptionalFields` | keyof `T`[] | The keys to be made optional. |
+| `addOptionalFields` | (keyof `T`)[] | The keys to be made optional. |
 
 #### Returns
 
@@ -349,7 +349,7 @@ The brand for a branded type.
 
 | Type Parameter |
 | ------ |
-| `B` *extends* `string` |
+| <a id="type-parameter-b"></a> `B` *extends* `string` |
 
 #### Parameters
 
@@ -433,8 +433,8 @@ to the field converters passed to the constructor.
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `TC` |
+| <a id="type-parameter-t-1"></a> `T` |
+| <a id="type-parameter-tc-1"></a> `TC` |
 
 #### Parameters
 

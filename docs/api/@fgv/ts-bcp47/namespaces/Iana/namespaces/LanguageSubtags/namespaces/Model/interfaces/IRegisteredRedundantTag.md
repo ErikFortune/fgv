@@ -14,10 +14,10 @@
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="added"></a> `added` | `readonly` | [`YearMonthDaySpec`](../../../../Jar/namespaces/LanguageSubtags/namespaces/Registry/type-aliases/YearMonthDaySpec.md) |
-| <a id="comments"></a> `comments?` | `readonly` | `string`[] |
-| <a id="deprecated"></a> `deprecated?` | `readonly` | [`YearMonthDaySpec`](../../../../Jar/namespaces/LanguageSubtags/namespaces/Registry/type-aliases/YearMonthDaySpec.md) |
-| <a id="description"></a> `description` | `readonly` | `string`[] |
-| <a id="preferredvalue"></a> `preferredValue?` | `readonly` | [`ExtendedLanguageRange`](../../../type-aliases/ExtendedLanguageRange.md) |
-| <a id="tag"></a> `tag` | `readonly` | [`RedundantTag`](../../../type-aliases/RedundantTag.md) |
-| <a id="type"></a> `type` | `readonly` | `"redundant"` |
+| <a id="property-added"></a> `added` | `readonly` | [`YearMonthDaySpec`](../../../../Jar/namespaces/LanguageSubtags/namespaces/Registry/type-aliases/YearMonthDaySpec.md) |
+| <a id="property-comments"></a> `comments?` | `readonly` | `string`[] |
+| <a id="property-deprecated"></a> `deprecated?` | `readonly` | [`YearMonthDaySpec`](../../../../Jar/namespaces/LanguageSubtags/namespaces/Registry/type-aliases/YearMonthDaySpec.md) |
+| <a id="property-description"></a> `description` | `readonly` | `string`[] |
+| <a id="property-preferredvalue"></a> `preferredValue?` | `readonly` | [`ExtendedLanguageRange`](../../../type-aliases/ExtendedLanguageRange.md) |
+| <a id="property-tag"></a> `tag` | `readonly` | [`RedundantTag`](../../../type-aliases/RedundantTag.md) |
+| <a id="property-type"></a> `type` | `readonly` | `"redundant"` |

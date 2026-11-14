@@ -76,4 +76,38 @@ string
 The full concatenated text from all `text-delta` events in this turn.
 
 </td></tr>
+<tr><td>
+
+[toolConflicts](./IAiClientToolTurnResult.toolConflicts.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IAiToolConflictReport](../../interfaces/IAiToolConflictReport.md)
+
+</td><td>
+
+What the provider tool-conflict resolution did to this turn's tools.
+
+</td></tr>
+<tr><td>
+
+[usage](./IAiClientToolTurnResult.usage.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IAiCompletionUsage](../../interfaces/IAiCompletionUsage.md)
+
+</td><td>
+
+Token usage for this turn's provider call, when the provider reports it.
+
+</td></tr>
 </tbody></table>

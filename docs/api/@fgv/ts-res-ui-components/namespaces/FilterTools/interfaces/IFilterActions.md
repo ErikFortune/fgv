@@ -13,8 +13,8 @@ Provides methods for updating all aspects of resource filtering.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="applyfiltervalues"></a> `applyFilterValues` | () => `void` | Apply current filter values to create a filtered resource manager |
-| <a id="resetfiltervalues"></a> `resetFilterValues` | () => `void` | Reset filter values to their applied state (discards pending changes) |
-| <a id="updatefilterenabled"></a> `updateFilterEnabled` | (`enabled`) => `void` | Enable or disable filtering |
-| <a id="updatefiltervalues"></a> `updateFilterValues` | (`values`) => `void` | Update filter values (does not apply them until applyFilterValues is called) |
-| <a id="updatereducequalifiers"></a> `updateReduceQualifiers` | (`reduceQualifiers`) => `void` | Enable or disable qualifier reduction during filtering |
+| <a id="property-applyfiltervalues"></a> `applyFilterValues` | () => `void` | Apply current filter values to create a filtered resource manager |
+| <a id="property-resetfiltervalues"></a> `resetFilterValues` | () => `void` | Reset filter values to their applied state (discards pending changes) |
+| <a id="property-updatefilterenabled"></a> `updateFilterEnabled` | (`enabled`) => `void` | Enable or disable filtering |
+| <a id="property-updatefiltervalues"></a> `updateFilterValues` | (`values`) => `void` | Update filter values (does not apply them until applyFilterValues is called) |
+| <a id="property-updatereducequalifiers"></a> `updateReduceQualifiers` | (`reduceQualifiers`) => `void` | Enable or disable qualifier reduction during filtering |

@@ -6,7 +6,7 @@
 
 # Function: downloadFile()
 
-> **downloadFile**(`data`, `type`, `options`): [`Result`](../../../../../type-aliases/Result.md)\<`void`\>
+> **downloadFile**(`data`, `type`, `options?`): [`Result`](../../../../../type-aliases/Result.md)\<`void`\>
 
 Downloads data as a file using the browser's download mechanism
 
@@ -16,7 +16,7 @@ Downloads data as a file using the browser's download mechanism
 | ------ | ------ |
 | `data` | `unknown` |
 | `type` | `string` |
-| `options` | [`IDownloadOptions`](../interfaces/IDownloadOptions.md) |
+| `options?` | [`IDownloadOptions`](../interfaces/IDownloadOptions.md) |
 
 ## Returns
 

@@ -165,6 +165,17 @@ A Validation.Constraint | Constraint<T> function returns
 Formats an incoming error message and value that failed validation.
 
 </td></tr>
+<tr><td>
+
+[CompositeIdSplitMode](./type-aliases/CompositeIdSplitMode.md)
+
+</td><td>
+
+How a composite ID string is split into its collection and item parts:
+- `'exact'` (the default) requires exactly one separator and fails if the
+  string contains more than one.
+
+</td></tr>
 </tbody></table>
 
 ## Variables
@@ -186,6 +197,15 @@ Description
 </td><td>
 
 Default Validation.ValidatorTraitValues | validation traits.
+
+</td></tr>
+<tr><td>
+
+[allCompositeIdSplitModes](./variables/allCompositeIdSplitModes.md)
+
+</td><td>
+
+All supported `CompositeIdSplitMode` values.
 
 </td></tr>
 </tbody></table>

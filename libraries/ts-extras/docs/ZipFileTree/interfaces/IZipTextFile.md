@@ -2,7 +2,7 @@
 
 # Interface: IZipTextFile
 
-Simple interface for a file to be added to a zip file.
+Simple interface for a text file to be added to a zip file.
 
 ## Properties
 

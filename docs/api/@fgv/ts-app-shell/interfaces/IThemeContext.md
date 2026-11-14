@@ -12,7 +12,7 @@ Value exposed by ThemeContext.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="availablethemes"></a> `availableThemes` | `readonly` | readonly [`IThemeOption`](IThemeOption.md)[] | All available theme options |
-| <a id="isdark"></a> `isDark` | `readonly` | `boolean` | Whether the resolved (effective) appearance is dark |
-| <a id="settheme"></a> `setTheme` | `readonly` | (`theme`) => `void` | Set the active theme |
-| <a id="theme"></a> `theme` | `readonly` | `string` | The currently active theme ID |
+| <a id="property-availablethemes"></a> `availableThemes` | `readonly` | readonly [`IThemeOption`](IThemeOption.md)[] | All available theme options |
+| <a id="property-isdark"></a> `isDark` | `readonly` | `boolean` | Whether the resolved (effective) appearance is dark |
+| <a id="property-settheme"></a> `setTheme` | `readonly` | (`theme`) => `void` | Set the active theme |
+| <a id="property-theme"></a> `theme` | `readonly` | `string` | The currently active theme ID |

@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../README.md) / [@fgv/ts-utils](../README.md) / ErrorFormatter
 
-# Type Alias: ErrorFormatter()\<TD\>
+# Type Alias: ErrorFormatter\<TD\>
 
 > **ErrorFormatter**\<`TD`\> = (`message`, `detail?`) => `string`
 
@@ -14,7 +14,7 @@ Formats an error message.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TD` | `unknown` |
+| <a id="type-parameter-td"></a> `TD` | `unknown` |
 
 ## Parameters
 

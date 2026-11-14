@@ -12,4 +12,4 @@ Request for sync operation.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="namespace"></a> `namespace?` | `readonly` | `string` |
+| <a id="property-namespace"></a> `namespace?` | `readonly` | `string` |

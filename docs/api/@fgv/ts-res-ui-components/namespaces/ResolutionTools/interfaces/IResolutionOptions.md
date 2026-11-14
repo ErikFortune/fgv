@@ -49,5 +49,5 @@ const fullResolver = ResolutionTools.createResolverWithContext(
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="enablecaching"></a> `enableCaching?` | `boolean` | Enable caching for improved performance during repeated resolutions |
-| <a id="enabledebuglogging"></a> `enableDebugLogging?` | `boolean` | Enable detailed console logging for debugging resolution processes |
+| <a id="property-enablecaching"></a> `enableCaching?` | `boolean` | Enable caching for improved performance during repeated resolutions |
+| <a id="property-enabledebuglogging"></a> `enableDebugLogging?` | `boolean` | Enable detailed console logging for debugging resolution processes |

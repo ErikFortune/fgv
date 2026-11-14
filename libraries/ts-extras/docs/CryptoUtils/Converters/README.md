@@ -111,6 +111,15 @@ Converter for base64 strings (validates format).
 </td></tr>
 <tr><td>
 
+[multibaseSpkiPublicKey](./variables/multibaseSpkiPublicKey.md)
+
+</td><td>
+
+Converter for CryptoUtils.MultibaseSpkiPublicKey | multibase SPKI public key strings.
+
+</td></tr>
+<tr><td>
+
 [uint8ArrayFromBase64](./variables/uint8ArrayFromBase64.md)
 
 </td><td>

@@ -14,7 +14,7 @@ Type guard to check if accessors support mutation.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |
 
 ## Parameters
 

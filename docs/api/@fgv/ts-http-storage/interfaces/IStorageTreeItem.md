@@ -12,6 +12,6 @@ Storage tree item metadata.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="name"></a> `name` | `readonly` | `string` |
-| <a id="path"></a> `path` | `readonly` | `string` |
-| <a id="type"></a> `type` | `readonly` | [`StorageItemType`](../type-aliases/StorageItemType.md) |
+| <a id="property-name"></a> `name` | `readonly` | `string` |
+| <a id="property-path"></a> `path` | `readonly` | `string` |
+| <a id="property-type"></a> `type` | `readonly` | [`StorageItemType`](../type-aliases/StorageItemType.md) |

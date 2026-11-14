@@ -41,13 +41,13 @@ per-qualifier customization.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="contextpanelclassname"></a> `contextPanelClassName?` | `string` | Additional CSS classes for the context panel |
-| <a id="contextpaneltitle"></a> `contextPanelTitle?` | `string` | Custom title for the context configuration panel |
-| <a id="defaultqualifiereditable"></a> `defaultQualifierEditable?` | `boolean` | Global defaults for qualifiers not specifically configured |
-| <a id="defaultqualifiervisible"></a> `defaultQualifierVisible?` | `boolean` | - |
-| <a id="globalplaceholder"></a> `globalPlaceholder?` | `string` \| (`qualifierName`) => `string` | Global placeholder text pattern for qualifier inputs |
-| <a id="hostmanagedvalues"></a> `hostManagedValues?` | `Record`\<`string`, `string` \| `undefined`\> | Host-managed values that override all user input for invisible qualifiers |
-| <a id="qualifieroptions"></a> `qualifierOptions?` | `Record`\<`string`, [`IQualifierControlOptions`](IQualifierControlOptions.md)\> | Per-qualifier control options |
-| <a id="showcontextactions"></a> `showContextActions?` | `boolean` | Whether to show the Apply/Reset buttons |
-| <a id="showcontextcontrols"></a> `showContextControls?` | `boolean` | Whether to show the context configuration panel at all |
-| <a id="showcurrentcontext"></a> `showCurrentContext?` | `boolean` | Whether to show the current context display |
+| <a id="property-contextpanelclassname"></a> `contextPanelClassName?` | `string` | Additional CSS classes for the context panel |
+| <a id="property-contextpaneltitle"></a> `contextPanelTitle?` | `string` | Custom title for the context configuration panel |
+| <a id="property-defaultqualifiereditable"></a> `defaultQualifierEditable?` | `boolean` | Global defaults for qualifiers not specifically configured |
+| <a id="property-defaultqualifiervisible"></a> `defaultQualifierVisible?` | `boolean` | - |
+| <a id="property-globalplaceholder"></a> `globalPlaceholder?` | `string` \| ((`qualifierName`) => `string`) | Global placeholder text pattern for qualifier inputs |
+| <a id="property-hostmanagedvalues"></a> `hostManagedValues?` | `Record`\<`string`, `string` \| `undefined`\> | Host-managed values that override all user input for invisible qualifiers |
+| <a id="property-qualifieroptions"></a> `qualifierOptions?` | `Record`\<`string`, [`IQualifierControlOptions`](IQualifierControlOptions.md)\> | Per-qualifier control options |
+| <a id="property-showcontextactions"></a> `showContextActions?` | `boolean` | Whether to show the Apply/Reset buttons |
+| <a id="property-showcontextcontrols"></a> `showContextControls?` | `boolean` | Whether to show the context configuration panel at all |
+| <a id="property-showcurrentcontext"></a> `showCurrentContext?` | `boolean` | Whether to show the current context display |

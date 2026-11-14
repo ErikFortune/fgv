@@ -12,6 +12,6 @@ Context used to convert or edit JSON objects.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="extendvars"></a> `extendVars?` | [`TemplateVarsExtendFunction`](../type-aliases/TemplateVarsExtendFunction.md) |
-| <a id="refs"></a> `refs?` | [`IJsonReferenceMap`](IJsonReferenceMap.md) |
-| <a id="vars"></a> `vars?` | [`TemplateVars`](../type-aliases/TemplateVars.md) |
+| <a id="property-extendvars"></a> `extendVars?` | [`TemplateVarsExtendFunction`](../type-aliases/TemplateVarsExtendFunction.md) |
+| <a id="property-refs"></a> `refs?` | [`IJsonReferenceMap`](IJsonReferenceMap.md) |
+| <a id="property-vars"></a> `vars?` | [`TemplateVars`](../type-aliases/TemplateVars.md) |

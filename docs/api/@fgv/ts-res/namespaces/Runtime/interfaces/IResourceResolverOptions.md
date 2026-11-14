@@ -12,4 +12,4 @@ Options for configuring a [ResourceResolver](../../../classes/ResourceResolver.m
 
 | Property | Type | Default value | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="suppressnullasdelete"></a> `suppressNullAsDelete?` | `boolean` | `false` | Controls whether null values in resource composition should suppress properties instead of setting them to null. When true, properties with null values from higher-priority partial candidates will be omitted from the final composed resource. |
+| <a id="property-suppressnullasdelete"></a> `suppressNullAsDelete?` | `boolean` | `false` | Controls whether null values in resource composition should suppress properties instead of setting them to null. When true, properties with null values from higher-priority partial candidates will be omitted from the final composed resource. |
