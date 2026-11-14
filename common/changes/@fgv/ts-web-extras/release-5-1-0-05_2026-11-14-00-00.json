@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "Upgrading from 5.0.2: the package now requires the peer dependency `@fgv/ts-extras` — install `@fgv/ts-extras@^5.1.0` (npm 7 and later install peers automatically).",
+      "type": "major"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras",
+  "email": "noreply@anthropic.com"
+}

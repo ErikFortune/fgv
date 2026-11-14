@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-cli",
+      "comment": "Dependency update: `commander` ^11.1.0.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-res-cli",
+  "email": "noreply@anthropic.com"
+}

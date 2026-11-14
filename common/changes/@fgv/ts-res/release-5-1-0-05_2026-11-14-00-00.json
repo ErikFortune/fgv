@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res",
+      "comment": "Upgrading from 5.0.2: `ResourceJson.Json.ConditionSetDeclAsRecord` is now readonly and partial. Code that builds one by assigning keys one at a time must build a `Record<string, …>` and assign it whole.",
+      "type": "major"
+    }
+  ],
+  "packageName": "@fgv/ts-res",
+  "email": "noreply@anthropic.com"
+}

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "`Converters.stringifiedJson(inner?)` parses a JSON string, optionally validating the result with an inner converter or validator.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "noreply@anthropic.com"
+}

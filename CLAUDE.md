@@ -46,7 +46,6 @@ These rules are **absolute and non-negotiable**:
 | `@fgv/ts-json-base` | Base JSON validation |
 | `@fgv/ts-http-storage` | HTTP storage provider abstraction |
 | `@fgv/ts-app-shell` | Shared React app shell primitives |
-| `@fgv/ts-sudoku-lib` | Sudoku puzzle library |
 | `@fgv/ts-extras` | Additional utilities |
 | `@fgv/ts-utils-jest` | Jest testing utilities |
 

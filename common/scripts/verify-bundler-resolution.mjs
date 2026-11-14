@@ -11,8 +11,8 @@
 //
 //   - `rush build` resolves *types*, and types resolve regardless of which JS a condition names.
 //   - `rush test` runs Jest in CJS, so it takes `require` and never enters `browser` or `import`.
-//   - `apps/sudoku` is the repo's only webpack build, and it exercises the handful of packages it
-//     happens to import — not the published surface.
+//   - The repo's webpack apps (`tools/ts-res-browser`, `tools/ts-res-ui-playground`) exercise the
+//     handful of packages they happen to import — not the published surface.
 //
 // The gap is not hypothetical. While measuring bundle sizes, `@fgv/ts-bcp47`'s *browser* entry —
 // one of only four packages that already routes browsers at the ESM emit — failed to bundle for a

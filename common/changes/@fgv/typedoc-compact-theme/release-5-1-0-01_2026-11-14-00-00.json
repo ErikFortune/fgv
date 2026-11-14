@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/typedoc-compact-theme",
+      "comment": "First release on the 5.x lockstep line (previously published separately as 1.0.0): a compact TypeDoc theme that renders API docs as tables, in the style of api-documenter.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/typedoc-compact-theme",
+  "email": "noreply@anthropic.com"
+}

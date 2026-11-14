@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "Packaging: the MIT `LICENSE` file and `CAPABILITIES.md` now ship in the package, test files no longer do. New runtime dependency `idb-keyval`.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras",
+  "email": "noreply@anthropic.com"
+}

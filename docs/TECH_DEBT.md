@@ -138,8 +138,7 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
   earlier. `TESTING_GUIDELINES.md` already states the rule this breaks: *"A millisecond assertion on
   a CI runner measures the runner."* Siblings, tightest first: the same file's 300 ms;
   `ts-extras/.../saferFetchRetry.test.ts:502` at 500 ms; `ts-res` `deltaGenerator.enumeration` at
-  2000 ms and `deltaGenerator.core` at 5000 ms. (`ts-sudoku-lib` has four more, out of scope —
-  that package is leaving this repo.) **Remedy:** assert the property the test is really about —
+  2000 ms and `deltaGenerator.core` at 5000 ms. **Remedy:** assert the property the test is really about —
   a counter, a call count, an absence of quadratic blowup — or delete the assertion. Raising the
   threshold buys time and keeps the defect. *(Checked 2026-11-11: the `md5Normalizer.browser` and
   `saferFetchRetry` assertions are gone — `deterministic-timing-tests`, #745 — leaving the two
@@ -796,7 +795,7 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
 
   Comprehensive per-export coverage on every library is too expensive given the API surface. The right scope is opportunistic per-library micro-tests.
 
-  **Libraries with `*.browser.ts` entries that still need the micro-test:** `ts-bcp47`, `ts-res`, `ts-web-extras`, `ts-app-shell`, `ts-res-ui-components`, `ts-json`, `ts-json-base`, `ts-sudoku-lib`, `ts-sudoku-ui`.
+  **Libraries with `*.browser.ts` entries that still need the micro-test:** `ts-bcp47`, `ts-res`, `ts-web-extras`, `ts-app-shell`, `ts-res-ui-components`, `ts-json`, `ts-json-base`.
 
   **Trigger — FIRED repeatedly without effect; needs replacing, not restating (2026-08-14).**
   The stated trigger is "anytime one of those libraries' `index.browser.ts` is touched
@@ -950,13 +949,8 @@ during the upgrade, confirming it would have done nothing on Rush 5.177.2. This 
     sites, and `TERMINATE_TIMEOUT_MS ± …` around a real 2 s hold, all over real loopback HTTP.
   - `libraries/ts-res/src/test/unit/resources/deltaGenerator.{enumeration,core}.test.ts`:
     `duration < 2000` and `duration < 5000`.
-  - `libraries/ts-sudoku-lib/src/test/unit/puzzles/killerCombinations.test.ts`: `< 100` / `< 200`
-    ms. These are the tightest, and the likeliest to flake next.
-  - `libraries/ts-sudoku-lib/src/test/unit/hints/integration.test.ts`, `puzzles/anyPuzzle.test.ts`
-    and `puzzles/sudokuXPuzzle.test.ts`.
 
-  **Trigger**: any of these failing under a loaded gate. The sudoku packages are slated to leave
-  the repo, so their entries may lapse instead.
+  **Trigger**: any of these failing under a loaded gate.
 
   **Scope sketch**:
   - For `terminate.test.ts`, use `useFakeTimeouts()` in `oauth.test.ts`: fake `setTimeout` only,

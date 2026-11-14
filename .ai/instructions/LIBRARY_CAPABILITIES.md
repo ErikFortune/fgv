@@ -53,9 +53,6 @@ getting-started material. This index routes; it does not duplicate.
 | [`ts-app-shell`](libraries/ts-app-shell/CAPABILITIES.md) | React app-shell primitives — bars, layout, theme, messages/toasts |
 | [`ts-http-storage`](libraries/ts-http-storage/CAPABILITIES.md) | Server side of the HTTP `FileTree` backend |
 
-*Not listed: `ts-sudoku-lib` / `ts-sudoku-ui`, slated to move to their own monorepo — see
-`.ai/instructions/ACTIVE_DEVELOPMENT.md`.*
-
 ---
 
 ## Decision shortcuts

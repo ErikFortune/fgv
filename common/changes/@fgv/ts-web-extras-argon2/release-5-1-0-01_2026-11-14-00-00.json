@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras-argon2",
+      "comment": "Initial release: `BrowserArgon2Provider`, a pure-WASM Argon2id provider (via `hash-wasm`) that runs the same in browsers and Node — pass it to `@fgv/ts-extras`' `KeyStore` Argon2id password methods.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras-argon2",
+  "email": "noreply@anthropic.com"
+}

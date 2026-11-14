@@ -10,9 +10,9 @@
 //   - TypeScript resolves *types*, and the types resolve either way, so the build is green.
 //   - Jest runs in CJS, so every test takes the `require` condition and never enters the `import`
 //     condition at all.
-//   - The bundled apps (`apps/sudoku` via webpack, `samples/testbed` via heft/CJS) are a browser
-//     bundler and a CJS consumer respectively, and between them they import a fraction of the
-//     published surface. Neither reaches most packages at all.
+//   - The bundled apps (`tools/ts-res-browser` via webpack, `samples/testbed` via heft/CJS) are a
+//     browser bundler and a CJS consumer respectively, and between them they import a fraction of
+//     the published surface. Neither reaches most packages at all.
 //
 // A word on bundlers, because an earlier version of this comment got it wrong and the error was
 // load-bearing: it is NOT true that "bundlers resolve extensionless directory imports happily".
@@ -80,7 +80,7 @@ const VERBOSE = process.argv.includes('--verbose');
  *
  * If a package here ever gains a Node consumer, remove the entry rather than widening the reason.
  *
- * Both entries below are **confirmed intent from the package owner** (2026-08-08), not this
+ * The entry below is **confirmed intent from the package owner** (2026-08-08), not this
  * script's inference from how they happen to be consumed today. That distinction matters: an
  * inferred entry would be a guess that silently hardens into policy, which is the failure mode
  * this list exists to avoid.
@@ -89,10 +89,6 @@ const BUNDLER_ONLY = new Map([
   [
     '@fgv/ts-res-ui-components',
     'React component library; consumed through webpack/vite only. Built with `@rushstack/heft-web-rig` (`library` profile), which emits `module: esnext` to `lib` and produces no CJS build. There is no artifact for a `node` condition to point at.'
-  ],
-  [
-    '@fgv/ts-sudoku-ui',
-    'React component library; consumed through webpack only (apps/sudoku). Built with `@rushstack/heft-web-rig` (`library` profile), which emits `module: esnext` to `lib` and produces no CJS build. There is no artifact for a `node` condition to point at.'
   ]
 ]);
 

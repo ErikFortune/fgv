@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "comment": "Initial release: React UI primitives for application shells, styled with Tailwind — add the package to your Tailwind `content` paths and import `@fgv/ts-app-shell/theme.css` (see the README).",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell",
+  "email": "noreply@anthropic.com"
+}

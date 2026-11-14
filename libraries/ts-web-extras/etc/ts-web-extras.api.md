@@ -56,7 +56,7 @@ class BrowserCryptoProvider implements CryptoUtils_2.ICryptoProvider {
 }
 
 // @public
-class BrowserHashProvider {
+export class BrowserHashProvider {
     static hashParts(parts: string[], algorithm?: string, separator?: string): Promise<Result<string>>;
     static hashString(data: string, algorithm?: string): Promise<Result<string>>;
 }

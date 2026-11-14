@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-browser",
+      "comment": "Dependency updates: React and React DOM ~19.3.1, `core-js` ~3.51.0, `json-edit-react` ~1.30.2, `serve-handler` ~6.1.7; the unused `crypto-browserify` dependency is removed.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-res-browser",
+  "email": "noreply@anthropic.com"
+}

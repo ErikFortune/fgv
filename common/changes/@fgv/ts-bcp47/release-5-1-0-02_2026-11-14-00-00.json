@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-bcp47",
+      "comment": "Packaging: source maps and `CAPABILITIES.md` now ship in the package.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-bcp47",
+  "email": "noreply@anthropic.com"
+}
