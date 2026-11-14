@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-mcp",
+      "comment": "MCP_TASK_SUPPORT_VALUES and McpTaskSupport are now the @fgv/ts-extras declarations (AiAssist.MCP_TASK_SUPPORT_VALUES / AiAssist.McpTaskSupport) bound under the same names, and listMcpTools converts execution.taskSupport with AiAssist.mcpTaskSupport. Same names, values, order and types; no behaviour change.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "noreply@anthropic.com"
+}

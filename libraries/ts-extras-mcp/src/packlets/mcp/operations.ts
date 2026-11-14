@@ -28,7 +28,6 @@
 
 import {
   type DetailedResult,
-  type Converter,
   type Logging,
   type Result,
   Converters as UtilsConverters,
@@ -38,6 +37,7 @@ import {
   succeed,
   succeedWithDetail
 } from '@fgv/ts-utils';
+import { AiAssist } from '@fgv/ts-extras';
 import { Converters, type JsonObject, type JsonValue } from '@fgv/ts-json-base';
 
 import { line, projectContent, receivedJson, toContentBlocks } from './content';
@@ -49,12 +49,15 @@ import {
   type IMcpToolCallResult,
   type IMcpToolDescriptor,
   type IMcpToolExecution,
-  MCP_TASK_SUPPORT_VALUES,
-  type McpFailureReason,
-  type McpTaskSupport
+  type McpFailureReason
 } from './model';
 import { runSdkRequest, validateTimeoutMs } from './request';
-import { type ISdkListToolsResult, type ISdkToolDescriptor, SDK_RAW_RESULT_SCHEMA, classifySdkError } from './sdk';
+import {
+  type ISdkListToolsResult,
+  type ISdkToolDescriptor,
+  SDK_RAW_RESULT_SCHEMA,
+  classifySdkError
+} from './sdk';
 import { McpSession } from './session';
 
 /**
@@ -93,9 +96,6 @@ function _normalizeAnnotations(raw: unknown): IMcpToolAnnotations | undefined {
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
-const _taskSupport: Converter<McpTaskSupport, ReadonlyArray<McpTaskSupport>> =
-  UtilsConverters.enumeratedValue<McpTaskSupport>(MCP_TASK_SUPPORT_VALUES);
-
 /**
  * Validates/normalizes a raw (untrusted) MCP `Tool.execution` blob into an {@link IMcpToolExecution}.
  *
@@ -107,7 +107,10 @@ const _taskSupport: Converter<McpTaskSupport, ReadonlyArray<McpTaskSupport>> =
  * values that passed the SDK's own `tools/list` parse: an unknown or malformed value fails the page
  * as `'protocol'` there, before it gets here.
  */
-function _normalizeExecution(raw: unknown, logger: Logging.ILogger | undefined): IMcpToolExecution | undefined {
+function _normalizeExecution(
+  raw: unknown,
+  logger: Logging.ILogger | undefined
+): IMcpToolExecution | undefined {
   if (raw === undefined) {
     return undefined;
   }
@@ -117,10 +120,11 @@ function _normalizeExecution(raw: unknown, logger: Logging.ILogger | undefined):
     .onSuccess((obj) =>
       obj.taskSupport === undefined
         ? succeed(undefined)
-        : _taskSupport
+        : AiAssist.mcpTaskSupport
             .convert(obj.taskSupport)
             .withErrorFormat(
-              () => `a tool's execution.taskSupport is not one of ${MCP_TASK_SUPPORT_VALUES.join(', ')}`
+              () =>
+                `a tool's execution.taskSupport is not one of ${AiAssist.MCP_TASK_SUPPORT_VALUES.join(', ')}`
             )
     )
     .onFailure((message) => {
