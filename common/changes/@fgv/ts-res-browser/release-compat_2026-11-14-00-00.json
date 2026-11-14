@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Accept any Node from 22.22.0 up; the published range no longer excludes Node 23 and later.",
+      "type": "patch",
+      "packageName": "@fgv/ts-res-browser"
+    }
+  ],
+  "packageName": "@fgv/ts-res-browser",
+  "email": "noreply@anthropic.com"
+}
