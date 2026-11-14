@@ -15,7 +15,7 @@ Checks if a resource ID corresponds to a pending addition.
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `resourceId` | `string` | Resource ID to check (should be full resource ID) |
-| `pendingResources` | `Map`\<`string`, [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs)\> | Map of pending resources |
+| `pendingResources` | `Map`\<`string`, [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs)\<`string`\>\> | Map of pending resources |
 
 ## Returns
 

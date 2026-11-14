@@ -13,12 +13,16 @@
 - [InMemoryLogger](classes/InMemoryLogger.md)
 - [LoggerBase](classes/LoggerBase.md)
 - [LogReporter](classes/LogReporter.md)
+- [MultiLogger](classes/MultiLogger.md)
 - [NoOpLogger](classes/NoOpLogger.md)
+- [RetainingLogger](classes/RetainingLogger.md)
 
 ## Interfaces
 
 - [IDetailLogger](interfaces/IDetailLogger.md)
+- [IGetRecordsOptions](interfaces/IGetRecordsOptions.md)
 - [ILogger](interfaces/ILogger.md)
+- [ILogRecord](interfaces/ILogRecord.md)
 - [ILogReporterCreateParams](interfaces/ILogReporterCreateParams.md)
 
 ## Type Aliases
@@ -26,6 +30,11 @@
 - [LogMessageFormatter](type-aliases/LogMessageFormatter.md)
 - [LogValueFormatter](type-aliases/LogValueFormatter.md)
 - [ReporterLogLevel](type-aliases/ReporterLogLevel.md)
+
+## Variables
+
+- [allReporterLogLevels](variables/allReporterLogLevels.md)
+- [reporterLogLevel](variables/reporterLogLevel.md)
 
 ## Functions
 

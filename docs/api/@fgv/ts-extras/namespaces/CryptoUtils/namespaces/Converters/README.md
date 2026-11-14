@@ -8,6 +8,7 @@
 
 ## Variables
 
+- [argon2idKeyDerivationParams](variables/argon2idKeyDerivationParams.md)
 - [base64String](variables/base64String.md)
 - [encryptedFile](variables/encryptedFile.md)
 - [encryptedFileErrorMode](variables/encryptedFileErrorMode.md)
@@ -15,7 +16,9 @@
 - [encryptionAlgorithm](variables/encryptionAlgorithm.md)
 - [keyDerivationFunction](variables/keyDerivationFunction.md)
 - [keyDerivationParams](variables/keyDerivationParams.md)
+- [multibaseSpkiPublicKey](variables/multibaseSpkiPublicKey.md)
 - [namedSecret](variables/namedSecret.md)
+- [pbkdf2KeyDerivationParams](variables/pbkdf2KeyDerivationParams.md)
 - [uint8ArrayFromBase64](variables/uint8ArrayFromBase64.md)
 
 ## Functions

@@ -2070,7 +2070,7 @@ All workspace dependencies use `workspace:*` version ranges for automatic versio
 
 ## License
 
-MIT License - see [LICENSE](./LICENSE) file for details.
+MIT License - see [LICENSE](../../_media/LICENSE-2) file for details.
 
 ## Contributing
 

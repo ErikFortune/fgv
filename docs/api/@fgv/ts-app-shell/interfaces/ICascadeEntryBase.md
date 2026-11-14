@@ -17,10 +17,10 @@ fields (e.g., target weights, source references, session context).
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="entity"></a> `entity?` | `readonly` | `unknown` | Optional pre-resolved materialized entity. |
-| <a id="entityid"></a> `entityId` | `readonly` | `string` | The ID of the entity (qualified ID, e.g. 'collection.base-id'). |
-| <a id="entitytype"></a> `entityType` | `readonly` | `string` | The type of entity displayed in this column (domain-specific string). |
-| <a id="haschanges"></a> `hasChanges?` | `readonly` | `boolean` | Whether this cascade entry has unsaved changes (set by the owning tab component). |
-| <a id="mode"></a> `mode` | `readonly` | [`CascadeColumnMode`](../type-aliases/CascadeColumnMode.md) | Whether the column is in view, edit, create, or preview mode. |
-| <a id="origin"></a> `origin?` | `readonly` | [`CascadeEntryOrigin`](../type-aliases/CascadeEntryOrigin.md) | How this entry was opened. Determines save/cancel behavior. **See** CascadeEntryOrigin |
-| <a id="prefillname"></a> `prefillName?` | `readonly` | `string` | Pre-fill name for entity creation (set when on-blur typeahead doesn't match). |
+| <a id="property-entity"></a> `entity?` | `readonly` | `unknown` | Optional pre-resolved materialized entity. |
+| <a id="property-entityid"></a> `entityId` | `readonly` | `string` | The ID of the entity (qualified ID, e.g. 'collection.base-id'). |
+| <a id="property-entitytype"></a> `entityType` | `readonly` | `string` | The type of entity displayed in this column (domain-specific string). |
+| <a id="property-haschanges"></a> `hasChanges?` | `readonly` | `boolean` | Whether this cascade entry has unsaved changes (set by the owning tab component). |
+| <a id="property-mode"></a> `mode` | `readonly` | [`CascadeColumnMode`](../type-aliases/CascadeColumnMode.md) | Whether the column is in view, edit, create, or preview mode. |
+| <a id="property-origin"></a> `origin?` | `readonly` | [`CascadeEntryOrigin`](../type-aliases/CascadeEntryOrigin.md) | How this entry was opened. Determines save/cancel behavior. **See** CascadeEntryOrigin |
+| <a id="property-prefillname"></a> `prefillName?` | `readonly` | `string` | Pre-fill name for entity creation (set when on-blur typeahead doesn't match). |

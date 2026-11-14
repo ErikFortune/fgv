@@ -12,6 +12,6 @@ Props for the TextInput component.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="onchange"></a> `onChange` | `readonly` | (`value`) => `void` | Called when value changes |
-| <a id="placeholder"></a> `placeholder?` | `readonly` | `string` | Placeholder text |
-| <a id="value"></a> `value` | `readonly` | `string` | Current value |
+| <a id="property-onchange"></a> `onChange` | `readonly` | (`value`) => `void` | Called when value changes |
+| <a id="property-placeholder"></a> `placeholder?` | `readonly` | `string` | Placeholder text |
+| <a id="property-value"></a> `value` | `readonly` | `string` | Current value |

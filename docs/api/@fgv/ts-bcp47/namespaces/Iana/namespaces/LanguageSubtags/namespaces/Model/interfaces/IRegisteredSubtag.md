@@ -16,13 +16,13 @@
 
 | Type Parameter |
 | ------ |
-| `TTYPE` *extends* [`RegistryEntryType`](../../../type-aliases/RegistryEntryType.md) |
-| `TTAG` *extends* `string` |
+| <a id="type-parameter-ttype"></a> `TTYPE` *extends* [`RegistryEntryType`](../../../type-aliases/RegistryEntryType.md) |
+| <a id="type-parameter-ttag"></a> `TTAG` *extends* `string` |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="description"></a> `description` | `readonly` | `string`[] |
-| <a id="subtag"></a> `subtag` | `readonly` | `TTAG` |
-| <a id="type"></a> `type` | `readonly` | `TTYPE` |
+| <a id="property-description"></a> `description` | `readonly` | `string`[] |
+| <a id="property-subtag"></a> `subtag` | `readonly` | `TTAG` |
+| <a id="property-type"></a> `type` | `readonly` | `TTYPE` |

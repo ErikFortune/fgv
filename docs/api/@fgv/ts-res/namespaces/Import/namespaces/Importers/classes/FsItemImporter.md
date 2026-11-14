@@ -34,10 +34,10 @@ Protected constructor for the FsItemImporter.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="filecontentconverter"></a> `fileContentConverter?` | `readonly` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](../../../../../../ts-res-ui-components/type-aliases/JsonValue.md), `unknown`\> | Optional converter used to parse raw file contents before they are exposed as JSON importables. |
-| <a id="filecontentextensions"></a> `fileContentExtensions?` | `readonly` | readonly `string`[] | Optional list of file extensions which should be parsed using the file content converter. |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [qualifier collector](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) to use for this importer. |
-| <a id="types"></a> `types` | `readonly` | readonly `string`[] | The types of [importables](../../../interfaces/IImportable.md) that this importer can handle. |
+| <a id="property-filecontentconverter"></a> `fileContentConverter?` | `public readonly` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](../../../../../../ts-res-ui-components/type-aliases/JsonValue.md), `unknown`\> | Optional converter used to parse raw file contents before they are exposed as JSON importables. |
+| <a id="property-filecontentextensions"></a> `fileContentExtensions?` | `public readonly` | readonly `string`[] | Optional list of file extensions which should be parsed using the file content converter. |
+| <a id="property-qualifiers"></a> `qualifiers` | `public readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [qualifier collector](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) to use for this importer. |
+| <a id="property-types"></a> `types` | `public readonly` | readonly `string`[] | The types of [importables](../../../interfaces/IImportable.md) that this importer can handle. |
 
 ## Methods
 

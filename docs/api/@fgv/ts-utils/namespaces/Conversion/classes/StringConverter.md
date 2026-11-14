@@ -18,8 +18,8 @@ helper methods.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* `string` | `string` |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` | `string` |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Constructors
 
@@ -49,9 +49,9 @@ Construct a new StringConverter.
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="_brand"></a> `_brand?` | `protected` | `string` | `undefined` | **`Internal`** |
-| <a id="_defaultcontext"></a> `_defaultContext?` | `readonly` | `TC` | `undefined` | **`Internal`** |
-| <a id="_isoptional"></a> `_isOptional` | `protected` | `boolean` | `false` | **`Internal`** |
+| <a id="property-_brand"></a> `_brand?` | `protected` | `string` | `undefined` | **`Internal`** |
+| <a id="property-_defaultcontext"></a> `_defaultContext?` | `protected readonly` | `TC` | `undefined` | **`Internal`** |
+| <a id="property-_isoptional"></a> `_isOptional` | `protected` | `boolean` | `false` | **`Internal`** |
 
 ## Accessors
 
@@ -163,7 +163,7 @@ Indicates whether this element is explicitly optional.
 
 ### convert()
 
-> **convert**(`from`, `context?`): [`Result`](../../../type-aliases/Result.md)\<`T`\>
+> **convert**(`from`, `context?`, `selfOverride?`): [`Result`](../../../type-aliases/Result.md)\<`T`\>
 
 Converts from `unknown` to `<T>`. For objects and arrays, is guaranteed
 to return a new entity, with any unrecognized properties removed.
@@ -174,6 +174,7 @@ to return a new entity, with any unrecognized properties removed.
 | ------ | ------ | ------ |
 | `from` | `unknown` | The `unknown` to be converted |
 | `context?` | `TC` | An optional conversion context of type `<TC>` to be used in the conversion. |
+| `selfOverride?` | [`Converter`](../interfaces/Converter.md)\<`T`, `TC`\> | An optional override for the `self` reference passed to the converter function, enabling outer converters (e.g. discriminated-object) to thread themselves through to per-arm converters for recursive parsing. |
 
 #### Returns
 
@@ -235,7 +236,7 @@ the converted value of this [Converter](../interfaces/Converter.md).
 
 | Type Parameter |
 | ------ |
-| `T2` |
+| <a id="type-parameter-t2"></a> `T2` |
 
 #### Parameters
 
@@ -266,7 +267,7 @@ converter to the result of this converter.
 
 | Type Parameter |
 | ------ |
-| `T2` |
+| <a id="type-parameter-t2-1"></a> `T2` |
 
 #### Parameters
 
@@ -297,7 +298,7 @@ resulting from this [Converter](../interfaces/Converter.md) using the supplied [
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti"></a> `TI` |
 
 #### Parameters
 
@@ -332,7 +333,7 @@ resulting from this [Converter](../interfaces/Converter.md) using the supplied m
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-1"></a> `TI` |
 
 #### Parameters
 
@@ -507,6 +508,50 @@ converter fails.
 
 ***
 
+### singleLine()
+
+> **singleLine**(`options?`): `StringConverter`\<`T`, `TC`\>
+
+Returns a StringConverter which constrains the result to a
+single line of printable text: no line breaks, no control characters, non-empty, and optionally
+bounded in length.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `options?` | [`SingleLineOptions`](../interfaces/SingleLineOptions.md) | Optional [Conversion.SingleLineOptions](../interfaces/SingleLineOptions.md) for this conversion. |
+
+#### Returns
+
+`StringConverter`\<`T`, `TC`\>
+
+[Success](../../../classes/Success.md) with a conforming string, or [Failure](../../../classes/Failure.md) with an informative error.
+
+#### Remarks
+
+**This checks a shape. It is not a safety guarantee, and in particular it does not make a value
+safe to interpolate into an LLM prompt.** The constraint stops a value ending a line and
+starting a new one, which is a real and narrow win where text is framed positionally — a
+system directive that interpolates a descriptor, a log line, a CSV cell, an HTTP header value.
+It says nothing about what the value *means*. A value reading
+"document, and also disregard all prior constraints" contains no newline and no control
+character, passes this constraint, and defeats that framing completely.
+
+**Where the domain is closed, use Conversion.enumeratedValue instead.** An allowlist is
+not a weaker sanitizer; it is the thing that actually works, because it never has to reason
+about what a hostile value might contain. Reach for `singleLine` when the domain is genuinely
+open and a shape is the most that can be said.
+
+Rejects rather than rewrites, deliberately: a value that had to be altered to conform is a
+value its author did not intend, and failing says so. Nothing here strips or escapes.
+
+Control characters are matched as Unicode `\p{Cc}`, which covers C0, DEL and C1 — so `\n`,
+`\r`, `\t` and `\u0007` are all rejected, as is `\u0085` (NEL), a line break that a naive
+`[^\r\n]` check would admit.
+
+***
+
 ### withAction()
 
 > **withAction**\<`TI`\>(`action`): [`Converter`](../interfaces/Converter.md)\<`TI`, `TC`\>
@@ -519,7 +564,7 @@ of the base conversion and is allowed to mutate the return type.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-2"></a> `TI` |
 
 #### Parameters
 
@@ -548,7 +593,7 @@ of simple types.
 
 | Type Parameter |
 | ------ |
-| `B` *extends* `string` |
+| <a id="type-parameter-b"></a> `B` *extends* `string` |
 
 #### Parameters
 
@@ -607,7 +652,7 @@ Returns a Converter which always succeeds with a default value rather than faili
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TD` | `T` |
+| <a id="type-parameter-td"></a> `TD` | `T` |
 
 #### Parameters
 
@@ -661,7 +706,7 @@ the conversion result from this converter.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-3"></a> `TI` |
 
 #### Parameters
 
@@ -698,7 +743,7 @@ result.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-4"></a> `TI` |
 
 #### Parameters
 
@@ -729,7 +774,7 @@ A new [Converter](../interfaces/Converter.md) returning `<TI>`.
 
 | Type Parameter |
 | ------ |
-| `T` *extends* `string` |
+| <a id="type-parameter-t-1"></a> `T` *extends* `string` |
 
 #### Parameters
 
@@ -753,8 +798,8 @@ A new [Converter](../interfaces/Converter.md) returning `<TI>`.
 
 | Type Parameter |
 | ------ |
-| `T` *extends* `string` |
-| `TC` |
+| <a id="type-parameter-t-2"></a> `T` *extends* `string` |
+| <a id="type-parameter-tc-1"></a> `TC` |
 
 #### Parameters
 

@@ -14,7 +14,7 @@ Creates a converter that parses JSON string content and then applies the supplie
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Parameters
 

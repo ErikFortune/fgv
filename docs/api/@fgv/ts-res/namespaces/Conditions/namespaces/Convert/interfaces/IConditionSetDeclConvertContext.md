@@ -13,5 +13,5 @@ into an instantiated [condition set](../../../classes/ConditionSet.md) object.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="conditions"></a> `conditions` | `readonly` | [`ConditionCollector`](../../../classes/ConditionCollector.md) |
-| <a id="conditionsetindex"></a> `conditionSetIndex?` | `public` | `number` |
+| <a id="property-conditions"></a> `conditions` | `readonly` | [`ConditionCollector`](../../../classes/ConditionCollector.md) |
+| <a id="property-conditionsetindex"></a> `conditionSetIndex?` | `public` | `number` |

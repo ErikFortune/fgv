@@ -6,6 +6,6 @@
 
 # Variable: KEYSTORE\_FORMAT
 
-> `const` **KEYSTORE\_FORMAT**: [`KeyStoreFormat`](../type-aliases/KeyStoreFormat.md) = `'keystore-v1'`
+> `const` **KEYSTORE\_FORMAT**: [`KeyStoreFormat`](../type-aliases/KeyStoreFormat.md) = `'keystore-v3'`
 
-Current format version constant.
+Current format version constant. New vaults are written as `'keystore-v3'`.

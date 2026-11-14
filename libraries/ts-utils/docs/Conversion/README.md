@@ -118,6 +118,15 @@ Options for an Conversion.ObjectConverter | ObjectConverter.
 Options for Conversion.StringConverter | StringConverter
 
 </td></tr>
+<tr><td>
+
+[SingleLineOptions](./interfaces/SingleLineOptions.md)
+
+</td><td>
+
+Options for Conversion.StringConverter.singleLine.
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases
@@ -202,6 +211,29 @@ Formats an incoming error message and value that failed validation.
 </td><td>
 
 Per-property converters or validators for each of the properties in type T.
+
+</td></tr>
+</tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[allOnError](./variables/allOnError.md)
+
+</td><td>
+
+Exhaustive list of all Conversion.OnError | OnError values.
 
 </td></tr>
 </tbody></table>

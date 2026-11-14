@@ -229,6 +229,32 @@ Calls a supplied ErrorFormatter | error formatter if
 </td></tr>
 <tr><td>
 
+[thenOnSuccess(cb)](./DetailedSuccess.thenOnSuccess.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Invokes the supplied AsyncDetailedSuccessContinuation | async success callback,
+
+</td></tr>
+<tr><td>
+
+[thenOnFailure(__cb)](./DetailedSuccess.thenOnFailure.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Propagates this DetailedSuccess into an AsyncDetailedResult chain without
+
+</td></tr>
+<tr><td>
+
 [report(reporter, options)](./DetailedSuccess.report.md)
 
 </td><td>
@@ -294,6 +320,19 @@ Gets the value associated with a successful IResult | result,
 </td></tr>
 <tr><td>
 
+[orDefaultWith(cb)](./Success.orDefaultWith.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the value associated with a successful IResult | result, or a
+
+</td></tr>
+<tr><td>
+
 [getValueOrThrow(__logger)](./Success.getValueOrThrow.md)
 
 </td><td>
@@ -317,32 +356,6 @@ or throws the error message if the corresponding operation failed.
 </td><td>
 
 Gets the value associated with a successful IResult | result,
-
-</td></tr>
-<tr><td>
-
-[thenOnSuccess(cb)](./Success.thenOnSuccess.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Calls a supplied AsyncSuccessContinuation | async success continuation if
-
-</td></tr>
-<tr><td>
-
-[thenOnFailure(__)](./Success.thenOnFailure.md)
-
-</td><td>
-
-
-
-</td><td>
-
-Calls a supplied AsyncFailureContinuation | async failure continuation if
 
 </td></tr>
 <tr><td>

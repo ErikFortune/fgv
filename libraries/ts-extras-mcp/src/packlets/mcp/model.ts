@@ -25,8 +25,8 @@
  * @packageDocumentation
  */
 
-import { type Logging, type StringOneOf } from '@fgv/ts-utils';
-import { type AiAssist, type SaferFetch } from '@fgv/ts-extras';
+import { type Logging } from '@fgv/ts-utils';
+import { AiAssist, type SaferFetch } from '@fgv/ts-extras';
 import { type JsonSchema, type JsonValue } from '@fgv/ts-json-base';
 
 import { type McpOAuthClientProvider } from './sdkTypes';
@@ -559,17 +559,28 @@ export interface IMcpToolAnnotations {
 
 /**
  * Every MCP `Tool.execution.taskSupport` value, as a runtime list — the vocabulary of the SDK's own
- * `ToolExecutionSchema`. {@link McpTaskSupport} is derived from it, so the two cannot diverge.
+ * `ToolExecutionSchema`.
+ *
+ * @remarks
+ * This is the `@fgv/ts-extras` declaration, `AiAssist.MCP_TASK_SUPPORT_VALUES`, bound here so this
+ * package's surface keeps the name: it is the same array, not a copy. The vocabulary lives in
+ * `@fgv/ts-extras` because it is MCP-spec-level and a browser consumer needs it without this
+ * Node-only package.
  * @public
  */
-export const MCP_TASK_SUPPORT_VALUES = ['forbidden', 'optional', 'required'] as const;
+export const MCP_TASK_SUPPORT_VALUES: typeof AiAssist.MCP_TASK_SUPPORT_VALUES =
+  AiAssist.MCP_TASK_SUPPORT_VALUES;
 
 /**
  * Whether a tool may, must or must not be invoked as an MCP task (task-augmented execution) — the
  * MCP `Tool.execution.taskSupport` vocabulary. Per the MCP spec an absent value means `'forbidden'`.
+ *
+ * @remarks
+ * This is the `@fgv/ts-extras` declaration, `AiAssist.McpTaskSupport`, bound here so this package's
+ * surface keeps the name.
  * @public
  */
-export type McpTaskSupport = StringOneOf<typeof MCP_TASK_SUPPORT_VALUES>;
+export type McpTaskSupport = AiAssist.McpTaskSupport;
 
 /**
  * Normalized MCP `Tool.execution` — the tool's execution metadata.

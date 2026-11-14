@@ -13,12 +13,12 @@ by randomly selecting from dictionaries in a supplied set.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="candidates"></a> `candidates` | readonly readonly `T`[][] |
-| <a id="count"></a> `count` | `number` |
-| <a id="how"></a> `how` | `"random"` |
+| <a id="property-candidates"></a> `candidates` | readonly (readonly `T`[])[] |
+| <a id="property-count"></a> `count` | `number` |
+| <a id="property-how"></a> `how` | `"random"` |

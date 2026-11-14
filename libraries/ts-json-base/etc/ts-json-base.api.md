@@ -936,16 +936,11 @@ class InMemoryTreeAccessors<TCT extends string = string> implements IMutableFile
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     fileIsMutable(path: string): DetailedResult<boolean, SaveDetail>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getAtomicWriteCapabilities(directory: string): Result<IAtomicWriteCapabilities>;
     getBaseName(path: string, suffix?: string): string;
     getChildren(path: string): Result<ReadonlyArray<FileTreeItem<TCT>>>;
     getExtension(path: string): string;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
     getFileBytes(path: string): Result<Uint8Array>;
     getFileContents(path: string): Result<string>;
     getFileContentType(path: string, provided?: string): Result<TCT | undefined>;

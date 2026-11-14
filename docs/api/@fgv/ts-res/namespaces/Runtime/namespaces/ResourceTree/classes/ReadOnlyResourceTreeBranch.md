@@ -13,7 +13,7 @@ Branch nodes organize other nodes in a hierarchical structure and may optionally
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Implements
 
@@ -23,9 +23,9 @@ Branch nodes organize other nodes in a hierarchical structure and may optionally
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="children"></a> `children` | `readonly` | [`IReadOnlyValidatingResourceTreeChildren`](../interfaces/IReadOnlyValidatingResourceTreeChildren.md)\<`T`\> |
-| <a id="id"></a> `id` | `readonly` | [`ResourceId`](../../../../../type-aliases/ResourceId.md) |
-| <a id="name"></a> `name` | `readonly` | [`ResourceName`](../../../../../type-aliases/ResourceName.md) |
+| <a id="property-children"></a> `children` | `public readonly` | [`IReadOnlyValidatingResourceTreeChildren`](../interfaces/IReadOnlyValidatingResourceTreeChildren.md)\<`T`\> |
+| <a id="property-id"></a> `id` | `public readonly` | [`ResourceId`](../../../../../type-aliases/ResourceId.md) |
+| <a id="property-name"></a> `name` | `public readonly` | [`ResourceName`](../../../../../type-aliases/ResourceName.md) |
 
 ## Accessors
 
@@ -41,7 +41,7 @@ Branch nodes organize other nodes in a hierarchical structure and may optionally
 
 #### Implementation of
 
-[`IReadOnlyResourceTreeBranch`](../interfaces/IReadOnlyResourceTreeBranch.md).[`isBranch`](../interfaces/IReadOnlyResourceTreeBranch.md#isbranch)
+[`IReadOnlyResourceTreeBranch`](../interfaces/IReadOnlyResourceTreeBranch.md).[`isBranch`](../interfaces/IReadOnlyResourceTreeBranch.md#property-isbranch)
 
 ***
 
@@ -57,7 +57,7 @@ Branch nodes organize other nodes in a hierarchical structure and may optionally
 
 #### Implementation of
 
-[`IReadOnlyResourceTreeBranch`](../interfaces/IReadOnlyResourceTreeBranch.md).[`isLeaf`](../interfaces/IReadOnlyResourceTreeBranch.md#isleaf)
+[`IReadOnlyResourceTreeBranch`](../interfaces/IReadOnlyResourceTreeBranch.md).[`isLeaf`](../interfaces/IReadOnlyResourceTreeBranch.md#property-isleaf)
 
 ***
 
@@ -73,7 +73,7 @@ Branch nodes organize other nodes in a hierarchical structure and may optionally
 
 #### Implementation of
 
-[`IReadOnlyResourceTreeBranch`](../interfaces/IReadOnlyResourceTreeBranch.md).[`isRoot`](../interfaces/IReadOnlyResourceTreeBranch.md#isroot)
+[`IReadOnlyResourceTreeBranch`](../interfaces/IReadOnlyResourceTreeBranch.md).[`isRoot`](../interfaces/IReadOnlyResourceTreeBranch.md#property-isroot)
 
 ## Methods
 
@@ -87,7 +87,7 @@ Creates a new ReadOnlyResourceTreeBranch instance.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-1"></a> `T` |
 
 #### Parameters
 

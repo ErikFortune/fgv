@@ -7,5 +7,5 @@ Checks if a resource ID corresponds to a pending addition.
 ## Signature
 
 ```typescript
-function isPendingAddition(resourceId: string, pendingResources: Map<string, ILooseResourceDecl>): boolean
+function isPendingAddition(resourceId: string, pendingResources: Map<string, ILooseResourceDecl<string>>): boolean
 ```

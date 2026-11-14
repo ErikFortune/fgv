@@ -5,5 +5,5 @@
 **Signature:**
 
 ```typescript
-readonly models: "gemini-2.5-flash-image"[];
+readonly models: GeminiFlashImageModelNames[];
 ```

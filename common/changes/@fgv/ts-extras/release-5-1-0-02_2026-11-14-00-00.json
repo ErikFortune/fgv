@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "ai-assist tool use and structured output: client-defined tools (`executeClientToolTurn`, `runClientToolLoop`), native structured output with an enforcement report, `generateJsonCompletion<T>` with fence-tolerant JSON parsing, prompt-cache requests and usage, and `resolveMaxOutputTokens`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

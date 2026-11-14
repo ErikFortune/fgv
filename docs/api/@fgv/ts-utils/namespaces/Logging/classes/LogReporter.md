@@ -13,8 +13,8 @@ both [ILogger](../interfaces/ILogger.md) and [IResultReporter](../../../interfac
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TD` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-td"></a> `TD` | `unknown` |
 
 ## Implements
 
@@ -43,9 +43,9 @@ Creates a new LogReporter.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_messageformatter"></a> `_messageFormatter` | `readonly` | [`LogMessageFormatter`](../type-aliases/LogMessageFormatter.md)\<`TD`\> | **`Internal`** The formatter to use for messages. |
-| <a id="_valueformatter"></a> `_valueFormatter` | `readonly` | [`LogValueFormatter`](../type-aliases/LogValueFormatter.md)\<`T`, `TD`\> | **`Internal`** The formatter to use for values. |
-| <a id="logger"></a> `logger` | `readonly` | [`ILogger`](../interfaces/ILogger.md) | Base logger used to by this reporter. |
+| <a id="property-_messageformatter"></a> `_messageFormatter` | `protected readonly` | [`LogMessageFormatter`](../type-aliases/LogMessageFormatter.md)\<`TD`\> | **`Internal`** The formatter to use for messages. |
+| <a id="property-_valueformatter"></a> `_valueFormatter` | `protected readonly` | [`LogValueFormatter`](../type-aliases/LogValueFormatter.md)\<`T`, `TD`\> | **`Internal`** The formatter to use for values. |
+| <a id="property-logger"></a> `logger` | `public readonly` | [`ILogger`](../interfaces/ILogger.md) | Base logger used to by this reporter. |
 
 ## Accessors
 
@@ -65,13 +65,13 @@ The level of logging to be used.
 
 #### Implementation of
 
-[`IDetailLogger`](../interfaces/IDetailLogger.md).[`logLevel`](../interfaces/IDetailLogger.md#loglevel)
+[`IDetailLogger`](../interfaces/IDetailLogger.md).[`logLevel`](../interfaces/IDetailLogger.md#property-loglevel)
 
 ## Methods
 
 ### detail()
 
-> **detail**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **detail**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs a detail message.
 
@@ -97,7 +97,7 @@ Logs a detail message.
 
 ### error()
 
-> **error**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **error**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs an error message.
 
@@ -146,7 +146,7 @@ Logs a short error summary at `error` level, then emits `detail` at `detail` lev
 
 ### info()
 
-> **info**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **info**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs an info message.
 
@@ -172,7 +172,7 @@ Logs an info message.
 
 ### log()
 
-> **log**(`level`, `message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **log**(`level`, `message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs a message at the given level.
 
@@ -248,7 +248,7 @@ Reports a successful result at the specified log level.
 
 ### warn()
 
-> **warn**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **warn**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs a warning message.
 
@@ -305,7 +305,7 @@ Creates a new LogReporter with the same logger but a different value formatter.
 
 | Type Parameter |
 | ------ |
-| `TN` |
+| <a id="type-parameter-tn"></a> `TN` |
 
 #### Parameters
 
@@ -350,8 +350,8 @@ Generic method to try to format an object for logging.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | `unknown` |
-| `TD` | `unknown` |
+| <a id="type-parameter-t-1"></a> `T` | `unknown` |
+| <a id="type-parameter-td-1"></a> `TD` | `unknown` |
 
 #### Parameters
 

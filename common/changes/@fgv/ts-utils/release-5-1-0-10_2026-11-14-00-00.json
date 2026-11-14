@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Packaging: source maps and `CAPABILITIES.md` now ship in the package; test helper files no longer do.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

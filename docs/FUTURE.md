@@ -1323,21 +1323,21 @@ three branches at the same Node rollup.
 `bundler`-mode sweep resolved every dual-entry package to its browser build. Finding at
 `.ai/tasks/active/module-resolution-upgrade/findings/inbox/2026-08-10-twenty-one-packages-declare-an-unreachable-types-condition.md`.
 
-## Type-check the three webpack apps
+## Type-check the two webpack apps
 
-`apps/sudoku`, `tools/ts-res-browser`, and `tools/ts-res-ui-playground` compile via `babel-loader`,
+`tools/ts-res-browser` and `tools/ts-res-ui-playground` compile via `babel-loader`,
 which strips types without checking them, and their `build` script is bare `webpack --mode
 production` — Heft's TypeScript plugin never runs. **Nothing in `rush build` or `rush test` type-checks
-them.** Running `tsc --noEmit` by hand: `ts-res-browser` 0 errors, `ts-res-ui-playground` **22**,
-`apps/sudoku` **13** — ordinary API drift (`IConfigInitFactory` no longer exported by `@fgv/ts-res`,
-`ViewStateTools.Message` → `IMessage`, `GridTools.GridViewInitParams` → `IGridViewInitParams`),
-unused locals, and two test-only deps missing from `apps/sudoku`.
+them.** Running `tsc --noEmit` by hand: `ts-res-browser` 0 errors, `ts-res-ui-playground` **22** —
+ordinary API drift (`IConfigInitFactory` no longer exported by `@fgv/ts-res`,
+`ViewStateTools.Message` → `IMessage`, `GridTools.GridViewInitParams` → `IGridViewInitParams`) and
+unused locals.
 
 Add a type-check step (a `tsc --noEmit` pre-step or `fork-ts-checker-webpack-plugin`) **and** fix the
-35 errors in the same change — adding the step first turns `rush build` red.
+22 errors in the same change — adding the step first turns `rush build` red.
 
 **Why deferred**: out of scope for the stream that found it, which was reconciling `moduleResolution`
-across these three projects. Note the interaction: that reconciliation is correct and currently buys
+across these projects. Note the interaction: that reconciliation is correct and currently buys
 nothing, because whatever these tsconfigs declare, no compiler reads them.
 
 **Dependencies**: none.

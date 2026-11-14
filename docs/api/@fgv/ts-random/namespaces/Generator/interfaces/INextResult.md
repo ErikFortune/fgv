@@ -12,5 +12,5 @@ Result of an internal next() operation.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="nextstate"></a> `nextState` | `number` |
-| <a id="value"></a> `value` | `number` |
+| <a id="property-nextstate"></a> `nextState` | `number` |
+| <a id="property-value"></a> `value` | `number` |

@@ -14,4 +14,4 @@ Type for an item in a file tree.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |

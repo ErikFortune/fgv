@@ -15,7 +15,7 @@ or a default value if the property does not exist.
 
 | Type Parameter |
 | ------ |
-| `T` *extends* `object` |
+| <a id="type-parameter-t"></a> `T` *extends* `object` |
 
 ## Parameters
 

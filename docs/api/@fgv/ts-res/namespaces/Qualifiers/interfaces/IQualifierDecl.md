@@ -12,9 +12,9 @@ Simple declaration for a [Qualifier](../../../classes/Qualifier.md).
 
 | Property | Type |
 | ------ | ------ |
-| <a id="defaultpriority"></a> `defaultPriority` | `number` |
-| <a id="defaultvalue"></a> `defaultValue?` | `string` |
-| <a id="name"></a> `name` | `string` |
-| <a id="token"></a> `token?` | `string` |
-| <a id="tokenisoptional"></a> `tokenIsOptional?` | `boolean` |
-| <a id="typename"></a> `typeName` | `string` |
+| <a id="property-defaultpriority"></a> `defaultPriority` | `number` |
+| <a id="property-defaultvalue"></a> `defaultValue?` | `string` |
+| <a id="property-name"></a> `name` | `string` |
+| <a id="property-token"></a> `token?` | `string` |
+| <a id="property-tokenisoptional"></a> `tokenIsOptional?` | `boolean` |
+| <a id="property-typename"></a> `typeName` | `string` |

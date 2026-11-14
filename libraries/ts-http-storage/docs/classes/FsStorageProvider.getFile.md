@@ -2,10 +2,12 @@
 
 ## FsStorageProvider.getFile() method
 
+Reads a file.
+
 **Signature:**
 
 ```typescript
-getFile(itemPath: string): Promise<Result<IStorageFileResponse>>;
+getFile(itemPath: string, encoding?: StorageContentEncoding): Promise<Result<IStorageFileResponse>>;
 ```
 
 **Parameters:**
@@ -13,6 +15,10 @@ getFile(itemPath: string): Promise<Result<IStorageFileResponse>>;
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
 <tr><td>itemPath</td><td>string</td><td></td></tr>
+<tr><td>encoding</td><td>StorageContentEncoding</td><td>Preferred wire encoding for the returned `contents`. A
+provider that does not implement the requested encoding MUST answer in
+`'utf8'` and report that on the response, rather than failing — the field is
+a preference and the response is the authority.</td></tr>
 </tbody></table>
 
 **Returns:**

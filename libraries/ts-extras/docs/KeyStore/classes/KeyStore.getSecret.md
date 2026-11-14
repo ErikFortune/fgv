@@ -6,6 +6,11 @@ Gets a secret by name. Returns the CryptoUtils.KeyStore.IKeyStoreEntry | discrim
 — callers must check `entry.type` before accessing `key`/`id` since asymmetric
 entries carry no raw key material.
 
+SECURITY: for an escrow-enabled asymmetric-keypair entry the returned object
+carries `escrowedPrivateKeyJwk` in cleartext (same custody class as
+`publicKeyJwk`, gated by the same unlock) — do not log or serialize a
+`getSecret()` result casually.
+
 **Signature:**
 
 ```typescript

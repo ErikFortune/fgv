@@ -33,5 +33,5 @@ const result: IDiffResult = {
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="changes"></a> `changes` | [`IDiffChange`](IDiffChange.md)[] | Array of all changes detected between the two JSON objects. Changes are ordered by the path where they occur. For nested structures, parent changes appear before child changes. |
-| <a id="identical"></a> `identical` | `boolean` | True if the objects are identical, false otherwise. When true, the `changes` array will be empty (unless `includeUnchanged` option was used, in which case it may contain 'unchanged' entries). |
+| <a id="property-changes"></a> `changes` | [`IDiffChange`](IDiffChange.md)[] | Array of all changes detected between the two JSON objects. Changes are ordered by the path where they occur. For nested structures, parent changes appear before child changes. |
+| <a id="property-identical"></a> `identical` | `boolean` | True if the objects are identical, false otherwise. When true, the `changes` array will be empty (unless `includeUnchanged` option was used, in which case it may contain 'unchanged' entries). |

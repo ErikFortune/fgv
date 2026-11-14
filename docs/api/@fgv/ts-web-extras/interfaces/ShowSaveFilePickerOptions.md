@@ -12,8 +12,8 @@ Save file picker options
 
 | Property | Type |
 | ------ | ------ |
-| <a id="excludeacceptalloption"></a> `excludeAcceptAllOption?` | `boolean` |
-| <a id="id"></a> `id?` | `string` |
-| <a id="startin"></a> `startIn?` | [`FileSystemHandle`](FileSystemHandle.md) \| [`WellKnownDirectory`](../type-aliases/WellKnownDirectory.md) |
-| <a id="suggestedname"></a> `suggestedName?` | `string` |
-| <a id="types"></a> `types?` | [`FilePickerAcceptType`](FilePickerAcceptType.md)[] |
+| <a id="property-excludeacceptalloption"></a> `excludeAcceptAllOption?` | `boolean` |
+| <a id="property-id"></a> `id?` | `string` |
+| <a id="property-startin"></a> `startIn?` | [`FileSystemHandle`](FileSystemHandle.md) \| [`WellKnownDirectory`](../type-aliases/WellKnownDirectory.md) |
+| <a id="property-suggestedname"></a> `suggestedName?` | `string` |
+| <a id="property-types"></a> `types?` | [`FilePickerAcceptType`](FilePickerAcceptType.md)[] |

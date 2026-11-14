@@ -17,8 +17,8 @@ property that enables validated use of the underlying map with weakly-typed keys
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv"></a> `TV` | `unknown` |
 
 ## Implements
 
@@ -50,8 +50,8 @@ Constructs a new ValidatingResultMap.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_inner"></a> `_inner` | `readonly` | `Map`\<`TK`, `TV`\> | Protected raw access to the inner `Map<TK, TV>` object. |
-| <a id="validating"></a> `validating` | `readonly` | [`ResultMapValidator`](ResultMapValidator.md)\<`TK`, `TV`\> | A [ResultMapValidator](ResultMapValidator.md) which validates keys and values before inserting them into this collection. |
+| <a id="property-_inner"></a> `_inner` | `public readonly` | `Map`\<`TK`, `TV`\> | Protected raw access to the inner `Map<TK, TV>` object. |
+| <a id="property-validating"></a> `validating` | `public readonly` | [`ResultMapValidator`](ResultMapValidator.md)\<`TK`, `TV`\> | A [ResultMapValidator](ResultMapValidator.md) which validates keys and values before inserting them into this collection. |
 
 ## Accessors
 
@@ -71,7 +71,7 @@ Returns the number of entries in the map.
 
 #### Implementation of
 
-[`IReadOnlyValidatingResultMap`](../interfaces/IReadOnlyValidatingResultMap.md).[`size`](../interfaces/IReadOnlyValidatingResultMap.md#size)
+[`IReadOnlyValidatingResultMap`](../interfaces/IReadOnlyValidatingResultMap.md).[`size`](../interfaces/IReadOnlyValidatingResultMap.md#property-size)
 
 #### Inherited from
 
@@ -89,8 +89,8 @@ Determines if a value is a [ResultMapValueFactory](../type-aliases/ResultMapValu
 
 | Type Parameter |
 | ------ |
-| `TK` *extends* `string` |
-| `TV` |
+| <a id="type-parameter-tk-1"></a> `TK` *extends* `string` |
+| <a id="type-parameter-tv-1"></a> `TV` |
 
 #### Parameters
 
@@ -487,6 +487,8 @@ Creates a new [ResultMap](ResultMap.md).
 
 #### Param
 
+**elementsOrParams**
+
 An optional iterable to initialize the map, or a set of parameters
 to configure the map.
 
@@ -500,8 +502,8 @@ Creates a new [ResultMap](ResultMap.md).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk-2"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv-2"></a> `TV` | `unknown` |
 
 ##### Parameters
 
@@ -530,8 +532,8 @@ Creates a new [ResultMap](ResultMap.md).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk-3"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv-3"></a> `TV` | `unknown` |
 
 ##### Parameters
 
@@ -562,8 +564,8 @@ Creates a new ValidatingResultMap instance.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk-4"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv-4"></a> `TV` | `unknown` |
 
 #### Parameters
 

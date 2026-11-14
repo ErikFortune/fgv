@@ -10,5 +10,5 @@
 
 | Property | Type |
 | ------ | ------ |
-| <a id="allowunknownmockwrite"></a> `allowUnknownMockWrite?` | `boolean` |
-| <a id="mockwriteonly"></a> `mockWriteOnly?` | `boolean` |
+| <a id="property-allowunknownmockwrite"></a> `allowUnknownMockWrite?` | `boolean` |
+| <a id="property-mockwriteonly"></a> `mockWriteOnly?` | `boolean` |

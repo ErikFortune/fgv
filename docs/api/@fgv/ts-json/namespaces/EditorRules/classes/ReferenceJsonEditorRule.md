@@ -55,7 +55,7 @@ Creates a new ReferenceJsonEditorRule.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_options"></a> `_options?` | `public` | [`IJsonEditorOptions`](../../../interfaces/IJsonEditorOptions.md) | Stored fully-resolved [editor options](../../../interfaces/IJsonEditorOptions.md) for this rule. |
+| <a id="property-_options"></a> `_options?` | `public` | [`IJsonEditorOptions`](../../../interfaces/IJsonEditorOptions.md) | Stored fully-resolved [editor options](../../../interfaces/IJsonEditorOptions.md) for this rule. |
 
 ## Methods
 

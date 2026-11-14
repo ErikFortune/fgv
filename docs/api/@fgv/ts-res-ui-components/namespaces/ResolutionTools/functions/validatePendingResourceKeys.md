@@ -15,7 +15,7 @@ This is a diagnostic function to ensure the pending resource key invariant is ma
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `pendingResources` | `Map`\<`string`, [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs)\> | Map of pending resources to validate |
+| `pendingResources` | `Map`\<`string`, [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs)\<`string`\>\> | Map of pending resources to validate |
 
 ## Returns
 

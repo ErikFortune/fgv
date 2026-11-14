@@ -205,7 +205,7 @@ Whether edits are currently being applied to the system
 
 </td><td>
 
-Map&lt;string, ILooseResourceDecl&gt;
+Map&lt;string, ILooseResourceDecl&lt;string&gt;&gt;
 
 </td><td>
 

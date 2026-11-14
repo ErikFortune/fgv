@@ -8,8 +8,14 @@
 
 ## Variables
 
+- [jsonWebKeyShape](variables/jsonWebKeyShape.md)
+- [keyPairAlgorithm](variables/keyPairAlgorithm.md)
+- [keystoreAsymmetricEntryJson](variables/keystoreAsymmetricEntryJson.md)
+- [keystoreAsymmetricSecretType](variables/keystoreAsymmetricSecretType.md)
 - [keystoreFile](variables/keystoreFile.md)
 - [keystoreFormat](variables/keystoreFormat.md)
 - [keystoreSecretEntryJson](variables/keystoreSecretEntryJson.md)
 - [keystoreSecretType](variables/keystoreSecretType.md)
+- [keystoreSymmetricEntryJson](variables/keystoreSymmetricEntryJson.md)
+- [keystoreSymmetricSecretType](variables/keystoreSymmetricSecretType.md)
 - [keystoreVaultContents](variables/keystoreVaultContents.md)

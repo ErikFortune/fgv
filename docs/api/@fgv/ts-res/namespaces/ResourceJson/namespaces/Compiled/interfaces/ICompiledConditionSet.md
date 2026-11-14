@@ -12,5 +12,5 @@ Represents a compiled set of conditions that must be satisfied together.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="conditions"></a> `conditions` | readonly [`ConditionIndex`](../../../../../type-aliases/ConditionIndex.md)[] | Array of indices referencing the conditions in this set. |
-| <a id="metadata"></a> `metadata?` | [`ICompiledConditionSetMetadata`](ICompiledConditionSetMetadata.md) | Optional metadata containing human-readable information about this condition set. |
+| <a id="property-conditions"></a> `conditions` | readonly [`ConditionIndex`](../../../../../type-aliases/ConditionIndex.md)[] | Array of indices referencing the conditions in this set. |
+| <a id="property-metadata"></a> `metadata?` | [`ICompiledConditionSetMetadata`](ICompiledConditionSetMetadata.md) | Optional metadata containing human-readable information about this condition set. |

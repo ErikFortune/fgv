@@ -145,6 +145,23 @@ Default model specification — string or context-aware map.
 </td></tr>
 <tr><td>
 
+[aliases](./IAiProviderDescriptor.aliases.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IModelAliasMap](../../interfaces/IModelAliasMap.md)
+
+</td><td>
+
+Canonical fgv alias → concrete model map for this provider.
+
+</td></tr>
+<tr><td>
+
 [supportedTools](./IAiProviderDescriptor.supportedTools.md)
 
 </td><td>
@@ -158,6 +175,24 @@ readonly "web_search"[]
 </td><td>
 
 Which server-side tools this provider supports (empty = none).
+
+</td></tr>
+<tr><td>
+
+[serverToolsExclusiveWithClientTools](./IAiProviderDescriptor.serverToolsExclusiveWithClientTools.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly "web_search"[]
+
+</td><td>
+
+Server tools this provider's API refuses to accept in the *same request* as
+client (function) tools.
 
 </td></tr>
 <tr><td>
@@ -215,23 +250,6 @@ Whether this provider's chat completions API accepts image input
 </td></tr>
 <tr><td>
 
-[thinkingMode](./IAiProviderDescriptor.thinkingMode.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[AiThinkingMode](../../type-aliases/AiThinkingMode.md)
-
-</td><td>
-
-Whether this provider supports thinking/reasoning mode.
-
-</td></tr>
-<tr><td>
-
 [imageGeneration](./IAiProviderDescriptor.imageGeneration.md)
 
 </td><td>
@@ -245,6 +263,253 @@ readonly [IAiImageModelCapability](../../interfaces/IAiImageModelCapability.md)[
 </td><td>
 
 Image-generation capabilities, scoped to model id prefixes.
+
+</td></tr>
+<tr><td>
+
+[embedding](./IAiProviderDescriptor.embedding.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [IAiEmbeddingModelCapability](../../interfaces/IAiEmbeddingModelCapability.md)[]
+
+</td><td>
+
+Embedding capabilities, scoped to model id prefixes.
+
+</td></tr>
+<tr><td>
+
+[structuredOutput](./IAiProviderDescriptor.structuredOutput.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [IAiStructuredOutputCapability](../../interfaces/IAiStructuredOutputCapability.md)[]
+
+</td><td>
+
+Per-model-family structured-output capability, longest-prefix matched against
+the **resolved** completion model id.
+
+</td></tr>
+<tr><td>
+
+[maxOutputTokens](./IAiProviderDescriptor.maxOutputTokens.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [IAiMaxOutputTokensCapability](../../interfaces/IAiMaxOutputTokensCapability.md)[]
+
+</td><td>
+
+Per-model maximum output tokens — the largest `maxTokens` the provider accepts for a
+completion on that model.
+
+</td></tr>
+<tr><td>
+
+[chatOutputTokensField](./IAiProviderDescriptor.chatOutputTokensField.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[ChatOutputTokensField](../../type-aliases/ChatOutputTokensField.md)
+
+</td><td>
+
+The Chat Completions request field that carries `maxTokens` on this provider's
+OpenAI-format chat path: `'max_completion_tokens'`, or the legacy `'max_tokens'` (the
+default when undefined).
+
+</td></tr>
+<tr><td>
+
+[responsesOnlyModelPrefixes](./IAiProviderDescriptor.responsesOnlyModelPrefixes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly string[]
+
+</td><td>
+
+Concrete model ids (prefix-matched) that must be invoked via the OpenAI
+Responses API rather than chat completions — e.g.
+
+</td></tr>
+<tr><td>
+
+[adaptiveThinkingModelPrefixes](./IAiProviderDescriptor.adaptiveThinkingModelPrefixes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly string[]
+
+</td><td>
+
+Concrete Anthropic model ids (exact-or-dash-bounded-prefix-matched) that require the
+adaptive thinking wire shape (`thinking: { type: 'adaptive' }` + top-level
+`output_config: { effort }`) rather than the legacy manual-budget shape
+(`thinking: { type: 'enabled', budget_tokens }`).
+
+</td></tr>
+<tr><td>
+
+[thinkingRequiredModelPrefixes](./IAiProviderDescriptor.thinkingRequiredModelPrefixes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly string[]
+
+</td><td>
+
+Concrete model ids (exact-or-dash-bounded-prefix-matched, like
+IAiProviderDescriptor.adaptiveThinkingModelPrefixes) that cannot run with thinking off.
+
+</td></tr>
+<tr><td>
+
+[anthropicThinkingOffTypes](./IAiProviderDescriptor.anthropicThinkingOffTypes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [IAnthropicThinkingOffRule](../../interfaces/IAnthropicThinkingOffRule.md)[]
+
+</td><td>
+
+Per-model Anthropic thinking-off values for adaptive-thinking models that turn thinking off
+with something other than `thinking: { type: 'disabled' }`, the default.
+
+</td></tr>
+<tr><td>
+
+[geminiThinkingLevels](./IAiProviderDescriptor.geminiThinkingLevels.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [IGeminiThinkingLevelRule](../../interfaces/IGeminiThinkingLevelRule.md)[]
+
+</td><td>
+
+Gemini models sent `thinkingLevel` rather than `thinkingBudget`, each with the levels it
+accepts, lowest first; matched exact-or-dash-bounded, longest prefix wins (see
+AiAssist.resolveGeminiThinkingLevels).
+
+</td></tr>
+<tr><td>
+
+[geminiThinkingLevelRejectedModelPrefixes](./IAiProviderDescriptor.geminiThinkingLevelRejectedModelPrefixes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly string[]
+
+</td><td>
+
+Gemini models (exact-or-dash-bounded) that do not support `thinkingLevel` at all and take only
+`thinkingBudget`.
+
+</td></tr>
+<tr><td>
+
+[samplingParamsRejectedModelPrefixes](./IAiProviderDescriptor.samplingParamsRejectedModelPrefixes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly string[]
+
+</td><td>
+
+Concrete model ids (exact-or-dash-bounded-prefix-matched, like
+IAiProviderDescriptor.thinkingRequiredModelPrefixes) that reject a caller-supplied
+`temperature` with or without thinking — every value, or every value but
+IAiProviderDescriptor.samplingParamsAcceptedTemperature when the descriptor declares
+one.
+
+</td></tr>
+<tr><td>
+
+[samplingParamsRejectedWithThinkingModelPrefixes](./IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly string[]
+
+</td><td>
+
+Concrete model ids (exact-or-dash-bounded-prefix-matched, like
+IAiProviderDescriptor.samplingParamsRejectedModelPrefixes) that reason by default and
+reject a caller-supplied `temperature` only while reasoning — every value, or every value but
+IAiProviderDescriptor.samplingParamsAcceptedTemperature when the descriptor declares
+one.
+
+</td></tr>
+<tr><td>
+
+[samplingParamsAcceptedTemperature](./IAiProviderDescriptor.samplingParamsAcceptedTemperature.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+The one `temperature` that the models on
+IAiProviderDescriptor.samplingParamsRejectedModelPrefixes still accept, with or without
+thinking, and that the models on
+IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes still accept while
+reasoning — the provider's own default, which a provider that rejects only non-default values
+lets through.
 
 </td></tr>
 </tbody></table>

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "tsconfig comment: name tools/ts-res-ui-playground as the other webpack app now that apps/sudoku has left the repo",
+      "type": "none",
+      "packageName": "@fgv/ts-res-browser"
+    }
+  ],
+  "packageName": "@fgv/ts-res-browser",
+  "email": "ErikFortune@outlook.com"
+}

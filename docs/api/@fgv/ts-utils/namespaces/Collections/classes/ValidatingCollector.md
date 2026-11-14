@@ -17,7 +17,7 @@ property that enables validated use of the underlying map with weakly-typed keys
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
 
 ## Constructors
 
@@ -46,8 +46,8 @@ from the supplied [parameters](../interfaces/IValidatingCollectorConstructorPara
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_converters"></a> `_converters` | `readonly` | [`KeyValueConverters`](KeyValueConverters.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TITEM`\> | - |
-| <a id="validating"></a> `validating` | `readonly` | [`CollectorValidator`](CollectorValidator.md)\<`TITEM`\> | A [CollectorValidator](CollectorValidator.md) which validates keys and values before inserting them into this collector. |
+| <a id="property-_converters"></a> `_converters` | `protected readonly` | [`KeyValueConverters`](KeyValueConverters.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TITEM`\> | - |
+| <a id="property-validating"></a> `validating` | `public readonly` | [`CollectorValidator`](CollectorValidator.md)\<`TITEM`\> | A [CollectorValidator](CollectorValidator.md) which validates keys and values before inserting them into this collector. |
 
 ## Accessors
 
@@ -389,7 +389,7 @@ Creates a new [Collector](Collector.md) instance.
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem-1"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
 
 #### Parameters
 
@@ -421,7 +421,7 @@ the supplied [parameters](../interfaces/IValidatingCollectorConstructorParams.md
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem-2"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
 
 #### Parameters
 

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-random",
+      "comment": "Initial release: seeded, reproducible pseudo-random generation for test data, sampling, shuffles and procedural content. Not cryptographically secure — use `ICryptoProvider.generateRandomBytes` from `@fgv/ts-extras` for tokens, salts or keys.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-random",
+  "email": "noreply@anthropic.com"
+}

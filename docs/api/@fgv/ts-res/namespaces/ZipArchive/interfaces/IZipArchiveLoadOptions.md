@@ -12,4 +12,4 @@ Options for loading a ZIP archive
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="strictmanifestvalidation"></a> `strictManifestValidation?` | `boolean` | Validate manifest strictly |
+| <a id="property-strictmanifestvalidation"></a> `strictManifestValidation?` | `boolean` | Validate manifest strictly |

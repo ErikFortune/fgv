@@ -13,6 +13,7 @@ Abstract base class which implements [IDetailLogger](../interfaces/IDetailLogger
 - [`InMemoryLogger`](InMemoryLogger.md)
 - [`ConsoleLogger`](ConsoleLogger.md)
 - [`NoOpLogger`](NoOpLogger.md)
+- [`RetainingLogger`](RetainingLogger.md)
 
 ## Implements
 
@@ -38,13 +39,13 @@ Abstract base class which implements [IDetailLogger](../interfaces/IDetailLogger
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="loglevel"></a> `logLevel` | `public` | [`ReporterLogLevel`](../type-aliases/ReporterLogLevel.md) | `'info'` | The level of logging to be used. |
+| <a id="property-loglevel"></a> `logLevel` | `public` | [`ReporterLogLevel`](../type-aliases/ReporterLogLevel.md) | `'info'` | The level of logging to be used. |
 
 ## Methods
 
 ### \_format()
 
-> **\_format**(`message?`, ...`parameters?`): `string`
+> **\_format**(`message?`, ...`parameters`): `string`
 
 Formats a message and parameters into a string.
 
@@ -84,9 +85,34 @@ Inner method called for logged messages. Should be implemented by derived classe
 
 ***
 
+### \_logStructured()
+
+> **\_logStructured**(`__level`, `__formatted`, `__message?`, `__parameters?`): `void`
+
+Inner hook called for logged messages alongside [\_log](#_log),
+exposing the structured `(level, formatted, message, parameters)` form before it is
+collapsed to the formatted string. The default implementation is a no-op; subclasses
+that need to retain structured records (e.g. [RetainingLogger](RetainingLogger.md))
+override this. Fired only in the `shouldLog` branch, so suppressed messages never reach it.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `__level` | [`MessageLogLevel`](../../../type-aliases/MessageLogLevel.md) | The [level](../../../type-aliases/MessageLogLevel.md) of the message. |
+| `__formatted` | `string` | The formatted message (same string passed to `_log`). |
+| `__message?` | `unknown` | The raw message argument before formatting. |
+| `__parameters?` | readonly `unknown`[] | The raw parameter arguments before formatting. |
+
+#### Returns
+
+`void`
+
+***
+
 ### \_suppressLog()
 
-> **\_suppressLog**(`__level`, `__message?`, ...`__parameters?`): [`Success`](../../../classes/Success.md)\<`undefined`\>
+> **\_suppressLog**(`__level`, `__message?`, ...`__parameters`): [`Success`](../../../classes/Success.md)\<`undefined`\>
 
 Inner method called for suppressed log messages.
 
@@ -106,7 +132,7 @@ Inner method called for suppressed log messages.
 
 ### detail()
 
-> **detail**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **detail**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs a detail message.
 
@@ -132,7 +158,7 @@ Logs a detail message.
 
 ### error()
 
-> **error**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **error**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs an error message.
 
@@ -181,7 +207,7 @@ Logs a short error summary at `error` level, then emits `detail` at `detail` lev
 
 ### info()
 
-> **info**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **info**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs an info message.
 
@@ -207,7 +233,7 @@ Logs an info message.
 
 ### log()
 
-> **log**(`level`, `message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **log**(`level`, `message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs a message at the given level.
 
@@ -234,7 +260,7 @@ Logs a message at the given level.
 
 ### warn()
 
-> **warn**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **warn**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs a warning message.
 

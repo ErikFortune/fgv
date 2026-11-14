@@ -35,17 +35,17 @@ Constructs a LanguageTag.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_iana"></a> `_iana` | `readonly` | [`LanguageRegistries`](../../Iana/classes/LanguageRegistries.md) | **`Internal`** |
-| <a id="_iscanonical"></a> `_isCanonical` | `protected` | `boolean` \| `undefined` | **`Internal`** |
-| <a id="_ispreferred"></a> `_isPreferred` | `protected` | `boolean` \| `undefined` | **`Internal`** |
-| <a id="_isstrictlyvalid"></a> `_isStrictlyValid` | `protected` | `boolean` \| `undefined` | **`Internal`** |
-| <a id="_isvalid"></a> `_isValid` | `protected` | `boolean` \| `undefined` | **`Internal`** |
-| <a id="_normalization"></a> `_normalization` | `protected` | [`TagNormalization`](../type-aliases/TagNormalization.md) | **`Internal`** |
-| <a id="_suppressedscript"></a> `_suppressedScript` | `protected` | `false` \| [`ScriptSubtag`](../../Iana/namespaces/LanguageSubtags/type-aliases/ScriptSubtag.md) \| `undefined` | **`Internal`** |
-| <a id="_validity"></a> `_validity` | `protected` | [`TagValidity`](../type-aliases/TagValidity.md) | **`Internal`** |
-| <a id="registry"></a> `registry` | `readonly` | [`LanguageRegistryData`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | Details about this language tag from the IANA language registries. |
-| <a id="subtags"></a> `subtags` | `readonly` | `Readonly`\<[`ISubtags`](../interfaces/ISubtags.md)\> | The individual [subtags](../namespaces/Subtags/README.md) for this language tag. |
-| <a id="tag"></a> `tag` | `readonly` | `string` | A string representation of this language tag. |
+| <a id="property-_iana"></a> `_iana` | `protected readonly` | [`LanguageRegistries`](../../Iana/classes/LanguageRegistries.md) | **`Internal`** |
+| <a id="property-_iscanonical"></a> `_isCanonical` | `protected` | `boolean` \| `undefined` | **`Internal`** |
+| <a id="property-_ispreferred"></a> `_isPreferred` | `protected` | `boolean` \| `undefined` | **`Internal`** |
+| <a id="property-_isstrictlyvalid"></a> `_isStrictlyValid` | `protected` | `boolean` \| `undefined` | **`Internal`** |
+| <a id="property-_isvalid"></a> `_isValid` | `protected` | `boolean` \| `undefined` | **`Internal`** |
+| <a id="property-_normalization"></a> `_normalization` | `protected` | [`TagNormalization`](../type-aliases/TagNormalization.md) | **`Internal`** |
+| <a id="property-_suppressedscript"></a> `_suppressedScript` | `protected` | `false` \| [`ScriptSubtag`](../../Iana/namespaces/LanguageSubtags/type-aliases/ScriptSubtag.md) \| `undefined` | **`Internal`** |
+| <a id="property-_validity"></a> `_validity` | `protected` | [`TagValidity`](../type-aliases/TagValidity.md) | **`Internal`** |
+| <a id="property-registry"></a> `registry` | `public readonly` | [`LanguageRegistryData`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | Details about this language tag from the IANA language registries. |
+| <a id="property-subtags"></a> `subtags` | `public readonly` | `Readonly`\<[`ISubtags`](../interfaces/ISubtags.md)\> | The individual [subtags](../namespaces/Subtags/README.md) for this language tag. |
+| <a id="property-tag"></a> `tag` | `public readonly` | `string` | A string representation of this language tag. |
 
 ## Accessors
 

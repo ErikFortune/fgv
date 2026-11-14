@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-prompt-assist",
+      "comment": "`HorizontalComposer` merges several resolved prompts into one, with provenance ordering.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist",
+  "email": "noreply@anthropic.com"
+}

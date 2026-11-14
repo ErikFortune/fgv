@@ -10,5 +10,5 @@
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="children"></a> `children` | `readonly` | `ReactNode` |
-| <a id="title"></a> `title` | `readonly` | `string` |
+| <a id="property-children"></a> `children` | `readonly` | `ReactNode` |
+| <a id="property-title"></a> `title` | `readonly` | `string` |

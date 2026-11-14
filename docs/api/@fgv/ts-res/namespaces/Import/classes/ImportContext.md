@@ -35,8 +35,8 @@ Public consumers use [create](#create) to create new instances.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="baseid"></a> `baseId` | `readonly` | [`ResourceId`](../../../type-aliases/ResourceId.md) \| `undefined` | Base ID for the import context for resources imported in this context. |
-| <a id="conditions"></a> `conditions` | `readonly` | readonly [`ILooseConditionDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseConditionDecl.md)[] | Conditions to be applied to resources imported in this context. |
+| <a id="property-baseid"></a> `baseId` | `public readonly` | [`ResourceId`](../../../type-aliases/ResourceId.md) \| `undefined` | Base ID for the import context for resources imported in this context. |
+| <a id="property-conditions"></a> `conditions` | `public readonly` | readonly [`IConditionDecl`](../../Conditions/type-aliases/IConditionDecl.md)[] | Conditions to be applied to resources imported in this context. |
 
 ## Methods
 
@@ -72,7 +72,7 @@ Adds conditions to the import context.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `conditions` | [`ILooseConditionDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseConditionDecl.md)[] | Conditions to be added to the import context. |
+| `conditions` | [`IConditionDecl`](../../Conditions/type-aliases/IConditionDecl.md)[] | Conditions to be added to the import context. |
 
 #### Returns
 

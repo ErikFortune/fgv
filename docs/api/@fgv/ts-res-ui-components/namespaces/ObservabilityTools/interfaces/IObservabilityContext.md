@@ -12,6 +12,6 @@ Observability context that provides both diagnostic and user logging capabilitie
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="diag"></a> `diag` | `readonly` | [`LogReporter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`unknown`\> | Diagnostic logger for internal system diagnostics. |
-| <a id="policy"></a> `policy?` | `readonly` | `IObservabilityPolicy` | Optional policy configuration for context behavior. |
-| <a id="user"></a> `user` | `readonly` | `IUserLogReporter` | User logger for user-facing messages and feedback. |
+| <a id="property-diag"></a> `diag` | `readonly` | [`LogReporter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`unknown`\> | Diagnostic logger for internal system diagnostics. |
+| <a id="property-policy"></a> `policy?` | `readonly` | `IObservabilityPolicy` | Optional policy configuration for context behavior. |
+| <a id="property-user"></a> `user` | `readonly` | `IUserLogReporter` | User logger for user-facing messages and feedback. |

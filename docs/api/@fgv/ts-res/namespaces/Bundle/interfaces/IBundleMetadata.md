@@ -12,7 +12,7 @@ Metadata for a resource bundle, including build information and integrity verifi
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="checksum"></a> `checksum` | `string` | SHA-256 checksum of the serialized compiled resource collection for integrity verification. |
-| <a id="datebuilt"></a> `dateBuilt` | `string` | ISO timestamp indicating when the bundle was built. |
-| <a id="description"></a> `description?` | `string` | Optional human-readable description of the bundle. |
-| <a id="version"></a> `version?` | `string` | Optional version identifier for the bundle. |
+| <a id="property-checksum"></a> `checksum` | `string` | SHA-256 checksum of the serialized compiled resource collection for integrity verification. |
+| <a id="property-datebuilt"></a> `dateBuilt` | `string` | ISO timestamp indicating when the bundle was built. |
+| <a id="property-description"></a> `description?` | `string` | Optional human-readable description of the bundle. |
+| <a id="property-version"></a> `version?` | `string` | Optional version identifier for the bundle. |

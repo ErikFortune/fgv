@@ -2,7 +2,7 @@
 
 # Variable: MODEL_SPEC_BASE_KEY
 
-Default context key used as fallback when resolving a ModelSpec.
+Default context key used as fallback when resolving a AiAssist.ModelSpec.
 
 ## Type
 

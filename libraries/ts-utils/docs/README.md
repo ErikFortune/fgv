@@ -145,6 +145,15 @@ Wraps a `Promise` of a Result to enable fluent chaining of both
 </td></tr>
 <tr><td>
 
+[AsyncDetailedResult](./classes/AsyncDetailedResult.md)
+
+</td><td>
+
+Wraps a `Promise` of a DetailedResult to enable fluent chaining of both synchronous
+
+</td></tr>
+<tr><td>
+
 [AggregatedResultMap](./classes/AggregatedResultMap.md)
 
 </td><td>
@@ -178,11 +187,29 @@ Description
 <tbody>
 <tr><td>
 
+[IFormatValueForMessageOptions](./interfaces/IFormatValueForMessageOptions.md)
+
+</td><td>
+
+Options for formatValueForMessage.
+
+</td></tr>
+<tr><td>
+
 [PopulateObjectOptions](./interfaces/PopulateObjectOptions.md)
 
 </td><td>
 
 Options for the populateObject function.
+
+</td></tr>
+<tr><td>
+
+[IAsyncResultOptions](./interfaces/IAsyncResultOptions.md)
+
+</td><td>
+
+Options for the bounded-parallel asynchronous members of this family.
 
 </td></tr>
 <tr><td>
@@ -273,6 +300,105 @@ String-keyed record of initialization functions to be passed to populateObject
 </td></tr>
 <tr><td>
 
+[AsyncDeferredResult](./type-aliases/AsyncDeferredResult.md)
+
+</td><td>
+
+A unit of asynchronous work, deferred so that a scheduler can decide when to start it.
+
+</td></tr>
+<tr><td>
+
+[AsyncFieldInitializers](./type-aliases/AsyncFieldInitializers.md)
+
+</td><td>
+
+String-keyed record of asynchronous initialization functions to be passed to
+
+</td></tr>
+<tr><td>
+
+[DetailedSuccessContinuation](./type-aliases/DetailedSuccessContinuation.md)
+
+</td><td>
+
+Callback to be called when a DetailedResult | DetailedResult encounters success.
+
+</td></tr>
+<tr><td>
+
+[DetailedFailureContinuation](./type-aliases/DetailedFailureContinuation.md)
+
+</td><td>
+
+Callback to be called when a DetailedResult | DetailedResult encounters a failure.
+
+</td></tr>
+<tr><td>
+
+[DetailedResult](./type-aliases/DetailedResult.md)
+
+</td><td>
+
+Represents a result with additional detail.
+
+</td></tr>
+<tr><td>
+
+[DetailedResultValueType](./type-aliases/DetailedResultValueType.md)
+
+</td><td>
+
+Type inference to determine the result type `T` of a DetailedResult | DetailedResult<T, TD>.
+
+</td></tr>
+<tr><td>
+
+[ResultDetailType](./type-aliases/ResultDetailType.md)
+
+</td><td>
+
+Type inference to determine the detail type `TD` of a DetailedResult | DetailedResult<T, TD>.
+
+</td></tr>
+<tr><td>
+
+[AsyncSuccessContinuation](./type-aliases/AsyncSuccessContinuation.md)
+
+</td><td>
+
+Async continuation callback to be called in the event that a
+
+</td></tr>
+<tr><td>
+
+[AsyncFailureContinuation](./type-aliases/AsyncFailureContinuation.md)
+
+</td><td>
+
+Async continuation callback to be called in the event that a
+
+</td></tr>
+<tr><td>
+
+[AsyncDetailedSuccessContinuation](./type-aliases/AsyncDetailedSuccessContinuation.md)
+
+</td><td>
+
+Async continuation callback to be called in the event that a
+
+</td></tr>
+<tr><td>
+
+[AsyncDetailedFailureContinuation](./type-aliases/AsyncDetailedFailureContinuation.md)
+
+</td><td>
+
+Async continuation callback to be called in the event that a
+
+</td></tr>
+<tr><td>
+
 [Result](./type-aliases/Result.md)
 
 </td><td>
@@ -354,69 +480,6 @@ The severity level at which a message should be logged.
 </td></tr>
 <tr><td>
 
-[DetailedSuccessContinuation](./type-aliases/DetailedSuccessContinuation.md)
-
-</td><td>
-
-Callback to be called when a DetailedResult | DetailedResult encounters success.
-
-</td></tr>
-<tr><td>
-
-[DetailedFailureContinuation](./type-aliases/DetailedFailureContinuation.md)
-
-</td><td>
-
-Callback to be called when a DetailedResult | DetailedResult encounters a failure.
-
-</td></tr>
-<tr><td>
-
-[DetailedResult](./type-aliases/DetailedResult.md)
-
-</td><td>
-
-Represents a result with additional detail.
-
-</td></tr>
-<tr><td>
-
-[DetailedResultValueType](./type-aliases/DetailedResultValueType.md)
-
-</td><td>
-
-Type inference to determine the result type `T` of a DetailedResult | DetailedResult<T, TD>.
-
-</td></tr>
-<tr><td>
-
-[ResultDetailType](./type-aliases/ResultDetailType.md)
-
-</td><td>
-
-Type inference to determine the detail type `TD` of a DetailedResult | DetailedResult<T, TD>.
-
-</td></tr>
-<tr><td>
-
-[AsyncSuccessContinuation](./type-aliases/AsyncSuccessContinuation.md)
-
-</td><td>
-
-Async continuation callback to be called in the event that a
-
-</td></tr>
-<tr><td>
-
-[AsyncFailureContinuation](./type-aliases/AsyncFailureContinuation.md)
-
-</td><td>
-
-Async continuation callback to be called in the event that a
-
-</td></tr>
-<tr><td>
-
 [OneOf](./type-aliases/OneOf.md)
 
 </td><td>
@@ -466,6 +529,15 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[formatValueForMessage](./functions/formatValueForMessage.md)
+
+</td><td>
+
+Renders an arbitrary value as text for inclusion in a failure or diagnostic message.
+
+</td></tr>
 <tr><td>
 
 [mapResults](./functions/mapResults.md)
@@ -531,11 +603,65 @@ Populates an an object based on a prototype full of field initializers that retu
 </td></tr>
 <tr><td>
 
-[isDeferredResult](./functions/isDeferredResult.md)
+[mapResultsAsync](./functions/mapResultsAsync.md)
 
 </td><td>
 
-Checks if a result is a deferred result.
+Aggregates successful result values from a collection of deferred asynchronous work, running
+
+</td></tr>
+<tr><td>
+
+[mapDetailedResultsAsync](./functions/mapDetailedResultsAsync.md)
+
+</td><td>
+
+Aggregates successful results from a collection of deferred asynchronous work which produces
+
+</td></tr>
+<tr><td>
+
+[mapSuccessAsync](./functions/mapSuccessAsync.md)
+
+</td><td>
+
+Aggregates successful results from a collection of deferred asynchronous work, running at most
+
+</td></tr>
+<tr><td>
+
+[mapFailuresAsync](./functions/mapFailuresAsync.md)
+
+</td><td>
+
+Aggregates error messages from a collection of deferred asynchronous work, running at most
+
+</td></tr>
+<tr><td>
+
+[allSucceedAsync](./functions/allSucceedAsync.md)
+
+</td><td>
+
+Determines whether a collection of deferred asynchronous work all succeeded, running at most
+
+</td></tr>
+<tr><td>
+
+[populateObjectAsync](./functions/populateObjectAsync.md)
+
+</td><td>
+
+Populates an object based on a prototype full of asynchronous field initializers that return
+
+</td></tr>
+<tr><td>
+
+[firstSuccessAsync](./functions/firstSuccessAsync.md)
+
+</td><td>
+
+Returns the first successful result from an ordered collection of deferred asynchronous work.
 
 </td></tr>
 <tr><td>
@@ -644,6 +770,15 @@ Wraps a function which might throw to convert exception results
 </td><td>
 
 Wraps an async function which might throw to convert exception results
+
+</td></tr>
+<tr><td>
+
+[isDeferredResult](./functions/isDeferredResult.md)
+
+</td><td>
+
+Checks if a result is a deferred result.
 
 </td></tr>
 <tr><td>
@@ -808,6 +943,56 @@ Type guard that returns `true` when the input is a canonical UUIDv4 string.
 
 Generates a cryptographically random UUIDv4 using the platform's Web Crypto
 API (`globalThis.crypto.randomUUID`).
+
+</td></tr>
+</tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[DEFAULT_FORMAT_VALUE_MAX_LENGTH](./variables/DEFAULT_FORMAT_VALUE_MAX_LENGTH.md)
+
+</td><td>
+
+Default IFormatValueForMessageOptions.maxLength | maximum length used by
+
+</td></tr>
+<tr><td>
+
+[DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH](./variables/DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH.md)
+
+</td><td>
+
+Default IFormatValueForMessageOptions.maxLength | maximum length used by
+
+</td></tr>
+<tr><td>
+
+[DEFAULT_RESULT_CONCURRENCY](./variables/DEFAULT_RESULT_CONCURRENCY.md)
+
+</td><td>
+
+The default maximum number of operations which the asynchronous members of this family
+
+</td></tr>
+<tr><td>
+
+[allMessageLogLevels](./variables/allMessageLogLevels.md)
+
+</td><td>
+
+Exhaustive list of all MessageLogLevel values.
 
 </td></tr>
 </tbody></table>

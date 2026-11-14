@@ -12,5 +12,5 @@ Interface for parameters to the [ResourceManagerBuilder create method](../../../
 
 | Property | Type |
 | ------ | ------ |
-| <a id="qualifiers"></a> `qualifiers` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) |
-| <a id="resourcetypes"></a> `resourceTypes` | [`ReadOnlyResourceTypeCollector`](../../ResourceTypes/type-aliases/ReadOnlyResourceTypeCollector.md) |
+| <a id="property-qualifiers"></a> `qualifiers` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) |
+| <a id="property-resourcetypes"></a> `resourceTypes` | [`ReadOnlyResourceTypeCollector`](../../ResourceTypes/type-aliases/ReadOnlyResourceTypeCollector.md) |

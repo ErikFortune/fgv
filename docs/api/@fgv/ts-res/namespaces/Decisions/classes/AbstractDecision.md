@@ -43,9 +43,9 @@ Constructor for an AbstractDecision object.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="candidates"></a> `candidates` | `readonly` | readonly [`Candidate`](Candidate.md)\<`number`\>[] | The sorted [ConditionSets](../../Conditions/classes/ConditionSet.md) that make up this decision. |
-| <a id="defaultonlydecisionkey"></a> `DefaultOnlyDecisionKey` | `readonly` | [`DecisionKey`](../../../type-aliases/DecisionKey.md) | Key for the default-only decision (single condition set with no conditions). |
-| <a id="emptydecisionkey"></a> `EmptyDecisionKey` | `readonly` | [`DecisionKey`](../../../type-aliases/DecisionKey.md) | Key for the empty decision (no condition sets). |
+| <a id="property-candidates"></a> `candidates` | `public readonly` | readonly [`Candidate`](Candidate.md)\<`number`\>[] | The sorted [ConditionSets](../../Conditions/classes/ConditionSet.md) that make up this decision. |
+| <a id="property-defaultonlydecisionkey"></a> `DefaultOnlyDecisionKey` | `public static readonly` | [`DecisionKey`](../../../type-aliases/DecisionKey.md) | Key for the default-only decision (single condition set with no conditions). |
+| <a id="property-emptydecisionkey"></a> `EmptyDecisionKey` | `public static readonly` | [`DecisionKey`](../../../type-aliases/DecisionKey.md) | Key for the empty decision (no condition sets). |
 
 ## Accessors
 
@@ -212,7 +212,7 @@ Helper function to return a stable key for a set of condition sets.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="type-parameter-tvalue"></a> `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
 
 #### Parameters
 

@@ -12,11 +12,11 @@ Represents a generic range of some comparable type `<T>`.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="max"></a> `max?` | `readonly` | `T` |
-| <a id="min"></a> `min?` | `readonly` | `T` |
+| <a id="property-max"></a> `max?` | `readonly` | `T` |
+| <a id="property-min"></a> `min?` | `readonly` | `T` |

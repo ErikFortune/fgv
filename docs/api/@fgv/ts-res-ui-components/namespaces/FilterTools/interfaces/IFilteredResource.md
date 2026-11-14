@@ -113,7 +113,7 @@ function analyzeFilteredResources(filteredResources: IFilteredResource[]) {
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="filteredcandidatecount"></a> `filteredCandidateCount` | `number` | Number of candidates remaining after filtering |
-| <a id="haswarning"></a> `hasWarning` | `boolean` | Whether this resource has potential filtering issues or warnings |
-| <a id="id"></a> `id` | `string` | The resource ID that was filtered |
-| <a id="originalcandidatecount"></a> `originalCandidateCount` | `number` | Number of candidates before filtering was applied |
+| <a id="property-filteredcandidatecount"></a> `filteredCandidateCount` | `number` | Number of candidates remaining after filtering |
+| <a id="property-haswarning"></a> `hasWarning` | `boolean` | Whether this resource has potential filtering issues or warnings |
+| <a id="property-id"></a> `id` | `string` | The resource ID that was filtered |
+| <a id="property-originalcandidatecount"></a> `originalCandidateCount` | `number` | Number of candidates before filtering was applied |

@@ -2,8 +2,7 @@
 
 ## IObjectSchemaOptions.additionalProperties property
 
-When `false` (default), the validator rejects unrecognized properties and the emitted schema
-sets `additionalProperties: false`. Set `true` to allow extra fields.
+Whether the object is open to properties it does not declare.
 
 **Signature:**
 

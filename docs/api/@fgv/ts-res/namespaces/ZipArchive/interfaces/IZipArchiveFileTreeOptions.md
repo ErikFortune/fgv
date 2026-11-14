@@ -12,5 +12,5 @@ Options for creating a ZIP archive buffer from a file tree
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="configitem"></a> `configItem?` | [`IFileTreeFileItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`string`\> | Optional configuration file |
-| <a id="inputitem"></a> `inputItem?` | [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | Input file or directory |
+| <a id="property-configitem"></a> `configItem?` | [`IFileTreeFileItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`string`\> | Optional configuration file |
+| <a id="property-inputitem"></a> `inputItem?` | [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | Input file or directory |

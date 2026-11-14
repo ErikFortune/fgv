@@ -79,6 +79,8 @@ declare namespace AiAssist {
         IAiWebSearchToolConfig,
         IAiClientToolConfig,
         IAiToolAnnotations,
+        MCP_TASK_SUPPORT_VALUES,
+        McpTaskSupport,
         IAiClientTool,
         IAiClientToolExecuteContext,
         IAiClientToolCallSummary,
@@ -224,6 +226,7 @@ declare namespace AiAssist {
         aiWebSearchToolConfig,
         aiServerToolConfig,
         aiToolAnnotations,
+        mcpTaskSupport,
         aiClientToolConfig,
         aiToolEnablement,
         aiAssistProviderConfig,
@@ -951,7 +954,6 @@ type FetchFailureReason =
 * or the response carried no usable `Location`, or following it would revisit a URL already
 * in the chain.
 *
-* @remarks
 * The three are deliberately one kind. Splitting them would buy a caller almost nothing and
 * would widen the scanning oracle this taxonomy already is — and the two follow-time cases
 * are facts about the chain the redirecting server produced, not about the network behind
@@ -3161,6 +3163,15 @@ const keystoreVaultContents: Converter<IKeyStoreVaultContents>;
 
 // @public
 const MAX_DEADLINE_MS: number;
+
+// @public
+const MCP_TASK_SUPPORT_VALUES: readonly ["forbidden", "optional", "required"];
+
+// @public
+type McpTaskSupport = StringOneOf<typeof MCP_TASK_SUPPORT_VALUES>;
+
+// @public
+const mcpTaskSupport: Converter<McpTaskSupport>;
 
 // @public
 class Md5Normalizer extends Hash_2.HashingNormalizer {

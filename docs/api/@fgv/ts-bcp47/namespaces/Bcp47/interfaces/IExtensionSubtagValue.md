@@ -10,5 +10,5 @@
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="singleton"></a> `singleton` | `readonly` | [`ExtensionSingleton`](../../Iana/namespaces/LanguageTagExtensions/namespaces/Model/type-aliases/ExtensionSingleton.md) |
-| <a id="value"></a> `value` | `readonly` | [`ExtensionSubtag`](../type-aliases/ExtensionSubtag.md) |
+| <a id="property-singleton"></a> `singleton` | `readonly` | [`ExtensionSingleton`](../../Iana/namespaces/LanguageTagExtensions/namespaces/Model/type-aliases/ExtensionSingleton.md) |
+| <a id="property-value"></a> `value` | `readonly` | [`ExtensionSubtag`](../type-aliases/ExtensionSubtag.md) |

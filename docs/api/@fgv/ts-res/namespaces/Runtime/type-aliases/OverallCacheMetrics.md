@@ -14,4 +14,4 @@ Overall cache metrics across all cache types.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TM` *extends* [`ICacheMetrics`](../interfaces/ICacheMetrics.md) | [`ICacheMetrics`](../interfaces/ICacheMetrics.md) |
+| <a id="type-parameter-tm"></a> `TM` *extends* [`ICacheMetrics`](../interfaces/ICacheMetrics.md) | [`ICacheMetrics`](../interfaces/ICacheMetrics.md) |

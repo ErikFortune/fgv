@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-prompt-assist",
+      "comment": "`PromptLibrary`: one YAML file per scope and prompt id, scope-chained resolution, slot bindings — including a slot bound to another prompt — and typed validation of JSON or free-text model output.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-prompt-assist",
+  "email": "noreply@anthropic.com"
+}

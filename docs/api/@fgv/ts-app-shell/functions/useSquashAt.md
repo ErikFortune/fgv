@@ -21,15 +21,4 @@ Keeps stack entries up to and including `depth`, then appends `entry`.
 
 ## Returns
 
-> (`depth`, `entry`): `void`
-
-### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `depth` | `number` |
-| `entry` | [`ICascadeEntryBase`](../interfaces/ICascadeEntryBase.md) |
-
-### Returns
-
-`void`
+(`depth`, `entry`) => `void`

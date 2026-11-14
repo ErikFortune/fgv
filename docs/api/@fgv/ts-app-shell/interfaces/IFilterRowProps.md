@@ -12,15 +12,15 @@ Props for the FilterRow component.
 
 | Type Parameter |
 | ------ |
-| `TValue` |
+| <a id="type-parameter-tvalue"></a> `TValue` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="isequal"></a> `isEqual?` | `readonly` | (`a`, `b`) => `boolean` | Custom equality check for values (default: ===) |
-| <a id="label"></a> `label` | `readonly` | `string` | Filter label (e.g., 'Categories', 'Tags') |
-| <a id="multiple"></a> `multiple?` | `readonly` | `boolean` | Whether multiple selections are allowed (default: true) |
-| <a id="onselectionchange"></a> `onSelectionChange` | `readonly` | (`selected`) => `void` | Callback when selection changes |
-| <a id="options"></a> `options` | `readonly` | readonly [`IFilterOption`](IFilterOption.md)\<`TValue`\>[] | Available options |
-| <a id="selected"></a> `selected` | `readonly` | readonly `TValue`[] | Currently selected values |
+| <a id="property-isequal"></a> `isEqual?` | `readonly` | (`a`, `b`) => `boolean` | Custom equality check for values (default: ===) |
+| <a id="property-label"></a> `label` | `readonly` | `string` | Filter label (e.g., 'Categories', 'Tags') |
+| <a id="property-multiple"></a> `multiple?` | `readonly` | `boolean` | Whether multiple selections are allowed (default: true) |
+| <a id="property-onselectionchange"></a> `onSelectionChange` | `readonly` | (`selected`) => `void` | Callback when selection changes |
+| <a id="property-options"></a> `options` | `readonly` | readonly [`IFilterOption`](IFilterOption.md)\<`TValue`\>[] | Available options |
+| <a id="property-selected"></a> `selected` | `readonly` | readonly `TValue`[] | Currently selected values |

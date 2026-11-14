@@ -16,6 +16,6 @@ Represents a filesystem item to be imported.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="context"></a> `context?` | [`ImportContext`](../classes/ImportContext.md) |
-| <a id="item"></a> `item` | [`FsItem`](../classes/FsItem.md) |
-| <a id="type"></a> `type` | `"fsItem"` |
+| <a id="property-context"></a> `context?` | [`ImportContext`](../classes/ImportContext.md) |
+| <a id="property-item"></a> `item` | [`FsItem`](../classes/FsItem.md) |
+| <a id="property-type"></a> `type` | `"fsItem"` |

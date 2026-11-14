@@ -92,7 +92,7 @@ HPKE base-mode seal (sender side).
 </td></tr>
 <tr><td>
 
-[openBase(recipientPrivateKey, info, aad, enc, ciphertext)](./HpkeProvider.openBase.md)
+[openBase(recipientPrivateKey, info, aad, enc, ciphertext, recipientPublicKey)](./HpkeProvider.openBase.md)
 
 </td><td>
 

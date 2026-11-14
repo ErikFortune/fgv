@@ -20,7 +20,7 @@
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="_languageregistries"></a> `_languageRegistries?` | `static` | [`LanguageRegistries`](LanguageRegistries.md) | `undefined` | **`Internal`** |
+| <a id="property-_languageregistries"></a> `_languageRegistries?` | `protected static` | [`LanguageRegistries`](LanguageRegistries.md) | `undefined` | **`Internal`** |
 
 ## Accessors
 

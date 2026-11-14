@@ -36,7 +36,7 @@ Aggregate cache metrics for a specific cache type.
 
 #### Implementation of
 
-[`ICacheMetrics`](../interfaces/ICacheMetrics.md).[`clears`](../interfaces/ICacheMetrics.md#clears)
+[`ICacheMetrics`](../interfaces/ICacheMetrics.md).[`clears`](../interfaces/ICacheMetrics.md#property-clears)
 
 ***
 
@@ -64,7 +64,7 @@ Aggregate cache metrics for a specific cache type.
 
 #### Implementation of
 
-[`ICacheMetrics`](../interfaces/ICacheMetrics.md).[`errors`](../interfaces/ICacheMetrics.md#errors)
+[`ICacheMetrics`](../interfaces/ICacheMetrics.md).[`errors`](../interfaces/ICacheMetrics.md#property-errors)
 
 ***
 
@@ -80,7 +80,7 @@ Aggregate cache metrics for a specific cache type.
 
 #### Implementation of
 
-[`ICacheMetrics`](../interfaces/ICacheMetrics.md).[`hitRate`](../interfaces/ICacheMetrics.md#hitrate)
+[`ICacheMetrics`](../interfaces/ICacheMetrics.md).[`hitRate`](../interfaces/ICacheMetrics.md#property-hitrate)
 
 ***
 
@@ -96,7 +96,7 @@ Aggregate cache metrics for a specific cache type.
 
 #### Implementation of
 
-[`ICacheMetrics`](../interfaces/ICacheMetrics.md).[`hits`](../interfaces/ICacheMetrics.md#hits)
+[`ICacheMetrics`](../interfaces/ICacheMetrics.md).[`hits`](../interfaces/ICacheMetrics.md#property-hits)
 
 ***
 
@@ -112,7 +112,7 @@ Aggregate cache metrics for a specific cache type.
 
 #### Implementation of
 
-[`ICacheMetrics`](../interfaces/ICacheMetrics.md).[`misses`](../interfaces/ICacheMetrics.md#misses)
+[`ICacheMetrics`](../interfaces/ICacheMetrics.md).[`misses`](../interfaces/ICacheMetrics.md#property-misses)
 
 ***
 
@@ -128,7 +128,7 @@ Aggregate cache metrics for a specific cache type.
 
 #### Implementation of
 
-[`ICacheMetrics`](../interfaces/ICacheMetrics.md).[`totalAccesses`](../interfaces/ICacheMetrics.md#totalaccesses)
+[`ICacheMetrics`](../interfaces/ICacheMetrics.md).[`totalAccesses`](../interfaces/ICacheMetrics.md#property-totalaccesses)
 
 ## Methods
 

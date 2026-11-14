@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-utils](../../../README.md) / [Validation](../README.md) / ValidationErrorFormatter
 
-# Type Alias: ValidationErrorFormatter()\<TC\>
+# Type Alias: ValidationErrorFormatter\<TC\>
 
 > **ValidationErrorFormatter**\<`TC`\> = (`val`, `message?`, `context?`) => `string`
 
@@ -14,7 +14,7 @@ Formats an incoming error message and value that failed validation.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TC` | `unknown` |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Parameters
 

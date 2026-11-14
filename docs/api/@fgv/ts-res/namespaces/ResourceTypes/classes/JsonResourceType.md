@@ -41,7 +41,7 @@ Use [JsonResourceType.create](#create) to create a new instance.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="systemtypename"></a> `systemTypeName` | `readonly` | [`ResourceTypeName`](../../../type-aliases/ResourceTypeName.md) | Name of the underlying system type. |
+| <a id="property-systemtypename"></a> `systemTypeName` | `public readonly` | [`ResourceTypeName`](../../../type-aliases/ResourceTypeName.md) | Name of the underlying system type. |
 
 ## Accessors
 
@@ -87,7 +87,7 @@ The key for this resource type.
 
 ### createTemplate()
 
-> **createTemplate**(`resourceId`, `init?`, `conditions?`, `resolver?`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`ILooseResourceDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseResourceDecl.md)\>
+> **createTemplate**(`resourceId`, `init?`, `conditions?`, `resolver?`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`ILooseResourceDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseResourceDecl.md)\<`string`\>\>
 
 Creates a template for a new resource of this type.
 Default implementation provides a basic template.
@@ -99,12 +99,12 @@ Subclasses can override to provide type-specific templates.
 | ------ | ------ | ------ |
 | `resourceId` | [`ResourceId`](../../../type-aliases/ResourceId.md) | The id for the new resource |
 | `init?` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | An optional initial value for the resource. |
-| `conditions?` | [`ConditionSetDecl`](../../ResourceJson/namespaces/Json/type-aliases/ConditionSetDecl.md) | An optional set of conditions that must be met for the resource to be selected. |
+| `conditions?` | [`ConditionSetDecl`](../../ResourceJson/namespaces/Json/type-aliases/ConditionSetDecl.md)\<`string`\> | An optional set of conditions that must be met for the resource to be selected. |
 | `resolver?` | [`IResourceResolver`](../../../interfaces/IResourceResolver.md) | An optional resource resolver that can be used to create the template. |
 
 #### Returns
 
-[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`ILooseResourceDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseResourceDecl.md)\>
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`ILooseResourceDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseResourceDecl.md)\<`string`\>\>
 
 A loose resource declaration with default values for this resource type
 
@@ -116,7 +116,7 @@ A loose resource declaration with default values for this resource type
 
 ### getDefaultTemplateCandidate()
 
-> **getDefaultTemplateCandidate**(`json?`, `conditions?`, `__resolver?`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IChildResourceCandidateDecl`](../../ResourceJson/namespaces/Json/interfaces/IChildResourceCandidateDecl.md)\>
+> **getDefaultTemplateCandidate**(`json?`, `conditions?`, `__resolver?`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IChildResourceCandidateDecl`](../../ResourceJson/namespaces/Json/interfaces/IChildResourceCandidateDecl.md)\<`string`\>\>
 
 Gets the default template value for this resource type.
 Subclasses should override this to provide type-specific default values.
@@ -126,12 +126,12 @@ Subclasses should override this to provide type-specific default values.
 | Parameter | Type |
 | ------ | ------ |
 | `json?` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
-| `conditions?` | [`ConditionSetDecl`](../../ResourceJson/namespaces/Json/type-aliases/ConditionSetDecl.md) |
+| `conditions?` | [`ConditionSetDecl`](../../ResourceJson/namespaces/Json/type-aliases/ConditionSetDecl.md)\<`string`\> |
 | `__resolver?` | [`IResourceResolver`](../../../interfaces/IResourceResolver.md) |
 
 #### Returns
 
-[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IChildResourceCandidateDecl`](../../ResourceJson/namespaces/Json/interfaces/IChildResourceCandidateDecl.md)\>
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IChildResourceCandidateDecl`](../../ResourceJson/namespaces/Json/interfaces/IChildResourceCandidateDecl.md)\<`string`\>\>
 
 The default JSON value for a new resource of this type
 

@@ -12,7 +12,7 @@ Interface for parameters to create a [DeltaGenerator](../classes/DeltaGenerator.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="baselineresolver"></a> `baselineResolver` | [`IResourceResolver`](../../../interfaces/IResourceResolver.md) | The baseline resource resolver to compare against. |
-| <a id="deltaresolver"></a> `deltaResolver` | [`IResourceResolver`](../../../interfaces/IResourceResolver.md) | The delta resource resolver containing changes. |
-| <a id="logger"></a> `logger?` | [`ILogger`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | Optional logger for status and error reporting. |
-| <a id="resourcemanager"></a> `resourceManager` | [`ResourceManagerBuilder`](../../../classes/ResourceManagerBuilder.md) | The resource manager to clone and update. |
+| <a id="property-baselineresolver"></a> `baselineResolver` | [`IResourceResolver`](../../../interfaces/IResourceResolver.md) | The baseline resource resolver to compare against. |
+| <a id="property-deltaresolver"></a> `deltaResolver` | [`IResourceResolver`](../../../interfaces/IResourceResolver.md) | The delta resource resolver containing changes. |
+| <a id="property-logger"></a> `logger?` | [`ILogger`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | Optional logger for status and error reporting. |
+| <a id="property-resourcemanager"></a> `resourceManager` | [`ResourceManagerBuilder`](../../../classes/ResourceManagerBuilder.md) | The resource manager to clone and update. |

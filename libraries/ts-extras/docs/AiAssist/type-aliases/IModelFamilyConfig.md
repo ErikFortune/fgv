@@ -8,5 +8,5 @@ Discriminated on `provider` + `family` fields.
 ## Type
 
 ```typescript
-type IModelFamilyConfig = IDallEModelOptions | IGptImageModelOptions | IGrokImagineModelOptions | IImagen4ModelOptions | IGeminiFlashImageModelOptions | IOtherModelOptions
+type IModelFamilyConfig = IGptImageModelOptions | IGrokImagineModelOptions | IGeminiFlashImageModelOptions | IOtherModelOptions
 ```

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "`FileTreeTaskRepository`: crash-safe, one-record-atomic persistence with indexed queries, paging, due and owed-update selection.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks",
+  "email": "noreply@anthropic.com"
+}

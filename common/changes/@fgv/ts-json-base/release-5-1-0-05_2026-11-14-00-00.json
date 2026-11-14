@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "Filesystem trees: atomic writes (temporary file, flush, rename) via `writeChildAtomically`, and an `absolutePathPolicy` (`'unconfined'` default, `'confined'` or `'verified'`) to keep a tree inside its prefix.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "noreply@anthropic.com"
+}

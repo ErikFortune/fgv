@@ -14,4 +14,4 @@ Union type for tree node initialization data.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |

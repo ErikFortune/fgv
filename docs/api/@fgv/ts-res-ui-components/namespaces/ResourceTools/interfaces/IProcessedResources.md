@@ -18,15 +18,15 @@ This is the primary data structure used by all UI components.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="compiledcollection"></a> `compiledCollection` | [`ICompiledResourceCollection`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) | Compiled version of the resource collection for efficient resolution |
-| <a id="resolver"></a> `resolver` | [`ResourceResolver`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) | Resource resolver for runtime resource resolution |
-| <a id="resourcecount"></a> `resourceCount` | `number` | Total count of resources in the system |
-| <a id="summary"></a> `summary` | `object` | Summary information about the resource system |
+| <a id="property-compiledcollection"></a> `compiledCollection` | [`ICompiledResourceCollection`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) | Compiled version of the resource collection for efficient resolution |
+| <a id="property-resolver"></a> `resolver` | [`ResourceResolver`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) | Resource resolver for runtime resource resolution |
+| <a id="property-resourcecount"></a> `resourceCount` | `number` | Total count of resources in the system |
+| <a id="property-summary"></a> `summary` | `object` | Summary information about the resource system |
 | `summary.errorCount` | `number` | Number of errors encountered during processing |
 | `summary.resourceIds` | `string`[] | Array of all resource identifiers |
 | `summary.totalResources` | `number` | Total number of resources |
 | `summary.warnings` | `string`[] | Array of warning messages from processing |
-| <a id="system"></a> `system` | `object` | Core ts-res system components |
+| <a id="property-system"></a> `system` | `object` | Core ts-res system components |
 | `system.contextQualifierProvider` | [`ValidatingSimpleContextQualifierProvider`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) | Provider for validating and managing runtime context |
 | `system.importManager` | [`ImportManager`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) | Manager for handling resource imports |
 | `system.qualifiers` | [`IReadOnlyQualifierCollector`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) | Collection of qualifier declarations |

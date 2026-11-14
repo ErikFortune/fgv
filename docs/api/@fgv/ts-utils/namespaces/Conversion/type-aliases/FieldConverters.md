@@ -14,8 +14,8 @@ Per-property converters or validators for each of the properties in type T.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Remarks
 

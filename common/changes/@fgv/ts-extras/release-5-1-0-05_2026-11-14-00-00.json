@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "New `SaferFetch` namespace (also at `@fgv/ts-extras/safer-fetch`): server-side fetch with a required address guard (`blockPrivateNetworks()` against SSRF), redirect, size, deadline and content-type controls, opt-in retry, and `createGuardedFetch` for streamed responses.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

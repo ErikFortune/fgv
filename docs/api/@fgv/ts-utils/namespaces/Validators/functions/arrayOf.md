@@ -15,8 +15,8 @@ validates an array in place.
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `TC` |
+| <a id="type-parameter-t"></a> `T` |
+| <a id="type-parameter-tc"></a> `TC` |
 
 ## Parameters
 

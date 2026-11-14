@@ -10,14 +10,14 @@
 
 Partial cascade entry for operations that set mode and origin automatically.
 
+## Type Parameters
+
+| Type Parameter | Default type |
+| ------ | ------ |
+| <a id="type-parameter-tentry"></a> `TEntry` *extends* [`ICascadeEntryBase`](../interfaces/ICascadeEntryBase.md) | [`ICascadeEntryBase`](../interfaces/ICascadeEntryBase.md) |
+
 ## Type Declaration
 
 | Name | Type |
 | ------ | ------ |
 | `mode?` | [`CascadeColumnMode`](CascadeColumnMode.md) |
-
-## Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TEntry` *extends* [`ICascadeEntryBase`](../interfaces/ICascadeEntryBase.md) | [`ICascadeEntryBase`](../interfaces/ICascadeEntryBase.md) |

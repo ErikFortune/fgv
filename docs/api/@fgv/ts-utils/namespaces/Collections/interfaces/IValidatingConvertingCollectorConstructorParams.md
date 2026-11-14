@@ -12,13 +12,13 @@ Parameters for constructing a [ValidatingConvertingCollector](../classes/Validat
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TITEM` *extends* [`ICollectible`](ICollectible.md)\<`any`, `any`\> | - |
-| `TSRC` | `TITEM` |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](ICollectible.md)\<`any`, `any`\> | - |
+| <a id="type-parameter-tsrc"></a> `TSRC` | `TITEM` |
 
 ## Properties
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="converters"></a> `converters` | [`KeyValueConverters`](../classes/KeyValueConverters.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TSRC`\> | The key-value converters for validation. |
-| <a id="entries"></a> `entries?` | [`KeyValueEntry`](../type-aliases/KeyValueEntry.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TSRC`\>[] | An optional array of entries to add to the collector. |
-| <a id="factory"></a> `factory` | [`CollectibleFactory`](../type-aliases/CollectibleFactory.md)\<`TITEM`, `TSRC`\> | The default [factory](../type-aliases/CollectibleFactory.md) to create items. |
+| <a id="property-converters"></a> `converters` | [`KeyValueConverters`](../classes/KeyValueConverters.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TSRC`\> | The key-value converters for validation. |
+| <a id="property-entries"></a> `entries?` | [`KeyValueEntry`](../type-aliases/KeyValueEntry.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TSRC`\>[] | An optional array of entries to add to the collector. |
+| <a id="property-factory"></a> `factory` | [`CollectibleFactory`](../type-aliases/CollectibleFactory.md)\<`TITEM`, `TSRC`\> | The default [factory](../type-aliases/CollectibleFactory.md) to create items. |

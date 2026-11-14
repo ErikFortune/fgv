@@ -12,6 +12,6 @@ Dropdown option for cell editing.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="disabled"></a> `disabled?` | `boolean` | Whether this option is disabled |
-| <a id="label"></a> `label` | `string` | The label to display for this option |
-| <a id="value"></a> `value` | `string` | The value to store when this option is selected |
+| <a id="property-disabled"></a> `disabled?` | `boolean` | Whether this option is disabled |
+| <a id="property-label"></a> `label` | `string` | The label to display for this option |
+| <a id="property-value"></a> `value` | `string` | The value to store when this option is selected |

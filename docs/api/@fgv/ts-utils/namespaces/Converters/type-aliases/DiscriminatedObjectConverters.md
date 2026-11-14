@@ -15,6 +15,6 @@ A string-keyed `Record<string, Converter>` which maps specific [converters](../.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TD` *extends* `string` | `string` |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-td"></a> `TD` *extends* `string` | `string` |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |

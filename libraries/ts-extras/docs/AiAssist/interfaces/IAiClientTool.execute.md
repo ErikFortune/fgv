@@ -7,5 +7,5 @@ Execute the tool with validated parameters.
 **Signature:**
 
 ```typescript
-readonly execute: (args: TParams) => Promise<Result<unknown>>;
+readonly execute: (args: TParams, context?: IAiClientToolExecuteContext) => Promise<Result<unknown>>;
 ```

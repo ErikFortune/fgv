@@ -9,6 +9,7 @@
 ## Interfaces
 
 - [ICompositeId](interfaces/ICompositeId.md)
+- [ICompositeIdOptions](interfaces/ICompositeIdOptions.md)
 - [IPartialCompositeId](interfaces/IPartialCompositeId.md)
 - [KeyedConverterOptions](interfaces/KeyedConverterOptions.md)
 - [TransformObjectOptions](interfaces/TransformObjectOptions.md)
@@ -22,8 +23,10 @@
 ## Variables
 
 - [boolean](variables/boolean.md)
+- [messageLogLevel](variables/messageLogLevel.md)
 - [number](variables/number.md)
 - [numberArray](variables/numberArray.md)
+- [onError](variables/onError.md)
 - [optionalBoolean](variables/optionalBoolean.md)
 - [optionalNumber](variables/optionalNumber.md)
 - [optionalString](variables/optionalString.md)

@@ -15,7 +15,7 @@ values are the names of their parents.
 
 | Type Parameter |
 | ------ |
-| `T` *extends* `string` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` |
 
 ## Remarks
 

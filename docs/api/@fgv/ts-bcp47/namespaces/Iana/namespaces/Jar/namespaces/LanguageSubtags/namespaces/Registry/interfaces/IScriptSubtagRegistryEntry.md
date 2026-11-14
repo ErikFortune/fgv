@@ -14,10 +14,10 @@ Strongly-typed JAR format script subtag entry
 
 | Property | Type |
 | ------ | ------ |
-| <a id="added"></a> `Added` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
-| <a id="comments"></a> `Comments?` | `string`[] |
-| <a id="deprecated"></a> `Deprecated?` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
-| <a id="description"></a> `Description` | `string`[] |
-| <a id="preferred-value"></a> `Preferred-Value?` | [`ScriptSubtag`](../../../../../../LanguageSubtags/type-aliases/ScriptSubtag.md) |
-| <a id="subtag"></a> `Subtag` | [`ScriptSubtag`](../../../../../../LanguageSubtags/type-aliases/ScriptSubtag.md) \| [`ScriptSubtag`](../../../../../../LanguageSubtags/type-aliases/ScriptSubtag.md)[] |
-| <a id="type"></a> `Type` | `"script"` |
+| <a id="property-added"></a> `Added` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
+| <a id="property-comments"></a> `Comments?` | `string`[] |
+| <a id="property-deprecated"></a> `Deprecated?` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
+| <a id="property-description"></a> `Description` | `string`[] |
+| <a id="property-preferred-value"></a> `Preferred-Value?` | [`ScriptSubtag`](../../../../../../LanguageSubtags/type-aliases/ScriptSubtag.md) |
+| <a id="property-subtag"></a> `Subtag` | [`ScriptSubtag`](../../../../../../LanguageSubtags/type-aliases/ScriptSubtag.md) \| [`ScriptSubtag`](../../../../../../LanguageSubtags/type-aliases/ScriptSubtag.md)[] |
+| <a id="property-type"></a> `Type` | `"script"` |

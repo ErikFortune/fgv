@@ -15,10 +15,10 @@ strongly-typed composite ID.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* `string` | `string` |
-| `TCOLLECTIONID` *extends* `string` | `string` |
-| `TITEMID` *extends* `string` | `string` |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` | `string` |
+| <a id="type-parameter-tcollectionid"></a> `TCOLLECTIONID` *extends* `string` | `string` |
+| <a id="type-parameter-titemid"></a> `TITEMID` *extends* `string` | `string` |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Parameters
 

@@ -14,7 +14,7 @@ Generic app sidebar component with configurable tools list
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TTool` | `unknown` |
+| <a id="type-parameter-ttool"></a> `TTool` | `unknown` |
 
 ## Parameters
 

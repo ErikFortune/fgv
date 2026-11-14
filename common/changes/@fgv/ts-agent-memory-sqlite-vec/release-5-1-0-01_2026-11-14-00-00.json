@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory-sqlite-vec",
+      "comment": "Initial release: durable vector indexes for `@fgv/ts-agent-memory`, backed by SQLite `vec0` (`better-sqlite3` + `sqlite-vec`), so a reopened vault answers queries without re-embedding. Node only.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory-sqlite-vec",
+  "email": "noreply@anthropic.com"
+}

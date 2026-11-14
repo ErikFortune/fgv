@@ -6,7 +6,7 @@ Read-only file tree accessors for ZIP archives.
 ZIP archives are read-only by design — use FileTree.isMutableAccessors | isMutableAccessors
 to check before attempting mutations.
 
-**Implements:** `IFileTreeAccessors<TCT>`
+**Implements:** `IBinaryFileTreeAccessors<TCT>`, `IStrictTextFileTreeAccessors<TCT>`
 
 ## Methods
 
@@ -152,6 +152,32 @@ Gets an item from the file tree.
 </td><td>
 
 Gets the contents of a file in the file tree.
+
+</td></tr>
+<tr><td>
+
+[getFileBytes(path)](./ZipFileTreeAccessors.getFileBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the raw bytes of a ZIP entry, with no text decoding applied.
+
+</td></tr>
+<tr><td>
+
+[getFileTextStrict(path)](./ZipFileTreeAccessors.getFileTextStrict.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the contents of a file in the file tree, decoding UTF-8 strictly.
 
 </td></tr>
 <tr><td>

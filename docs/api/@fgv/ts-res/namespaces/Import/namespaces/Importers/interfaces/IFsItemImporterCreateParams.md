@@ -12,6 +12,6 @@ Parameters for creating a [FsItemImporter](../classes/FsItemImporter.md).
 
 | Property | Type |
 | ------ | ------ |
-| <a id="filecontentconverter"></a> `fileContentConverter?` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](../../../../../../ts-res-ui-components/type-aliases/JsonValue.md), `unknown`\> |
-| <a id="filecontentextensions"></a> `fileContentExtensions?` | readonly `string`[] |
-| <a id="qualifiers"></a> `qualifiers` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) |
+| <a id="property-filecontentconverter"></a> `fileContentConverter?` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](../../../../../../ts-res-ui-components/type-aliases/JsonValue.md), `unknown`\> |
+| <a id="property-filecontentextensions"></a> `fileContentExtensions?` | readonly `string`[] |
+| <a id="property-qualifiers"></a> `qualifiers` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) |

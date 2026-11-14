@@ -16,13 +16,13 @@ Generic Result-aware logger interface with multiple levels of logging.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="loglevel"></a> `logLevel` | `readonly` | [`ReporterLogLevel`](../type-aliases/ReporterLogLevel.md) | The level of logging to be used. |
+| <a id="property-loglevel"></a> `logLevel` | `readonly` | [`ReporterLogLevel`](../type-aliases/ReporterLogLevel.md) | The level of logging to be used. |
 
 ## Methods
 
 ### detail()
 
-> **detail**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **detail**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs a detail message.
 
@@ -44,7 +44,7 @@ Logs a detail message.
 
 ### error()
 
-> **error**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **error**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs an error message.
 
@@ -66,7 +66,7 @@ Logs an error message.
 
 ### info()
 
-> **info**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **info**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs an info message.
 
@@ -88,7 +88,7 @@ Logs an info message.
 
 ### log()
 
-> **log**(`level`, `message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **log**(`level`, `message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs a message at the given level.
 
@@ -111,7 +111,7 @@ Logs a message at the given level.
 
 ### warn()
 
-> **warn**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **warn**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs a warning message.
 

@@ -31,7 +31,7 @@ Provides common functionality and enforces the contract for derived classes.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="qualifiers"></a> `qualifiers` | `abstract` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The readonly qualifier collector that defines and validates the qualifiers for this context. |
+| <a id="property-qualifiers"></a> `qualifiers` | `public abstract readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The readonly qualifier collector that defines and validates the qualifiers for this context. |
 
 ## Methods
 

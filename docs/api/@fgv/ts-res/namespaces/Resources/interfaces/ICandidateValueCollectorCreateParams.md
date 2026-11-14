@@ -12,5 +12,5 @@ Parameters for creating a [Resources.CandidateValueCollector](../classes/Candida
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="candidatevalues"></a> `candidateValues?` | ([`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) \| [`CandidateValue`](../classes/CandidateValue.md))[] | Optional initial candidate values to add to the collection. |
-| <a id="normalizer"></a> `normalizer?` | [`HashingNormalizer`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | Optional normalizer to use for normalizing JSON values. If not provided, a default Crc32Normalizer will be used. |
+| <a id="property-candidatevalues"></a> `candidateValues?` | ([`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) \| [`CandidateValue`](../classes/CandidateValue.md))[] | Optional initial candidate values to add to the collection. |
+| <a id="property-normalizer"></a> `normalizer?` | [`HashingNormalizer`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | Optional normalizer to use for normalizing JSON values. If not provided, a default Crc32Normalizer will be used. |

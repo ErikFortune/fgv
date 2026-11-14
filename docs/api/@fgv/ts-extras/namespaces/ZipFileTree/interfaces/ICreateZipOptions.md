@@ -12,4 +12,4 @@ Options for creating a zip file from text files.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="level"></a> `level?` | `readonly` | [`ZipCompressionLevel`](../type-aliases/ZipCompressionLevel.md) |
+| <a id="property-level"></a> `level?` | `readonly` | [`ZipCompressionLevel`](../type-aliases/ZipCompressionLevel.md) |

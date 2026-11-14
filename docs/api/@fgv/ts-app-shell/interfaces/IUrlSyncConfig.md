@@ -14,13 +14,13 @@ parse and validate URL hash segments.
 
 | Type Parameter |
 | ------ |
-| `TMode` *extends* `string` |
-| `TTab` *extends* `string` |
+| <a id="type-parameter-tmode"></a> `TMode` *extends* `string` |
+| <a id="type-parameter-ttab"></a> `TTab` *extends* `string` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="defaulttabs"></a> `defaultTabs` | `readonly` | `Record`\<`TMode`, `TTab`\> | Default tab for each mode (used when hash has a valid mode but no valid tab) |
-| <a id="validmodes"></a> `validModes` | `readonly` | readonly `TMode`[] | All valid mode identifiers |
-| <a id="validtabs"></a> `validTabs` | `readonly` | `Record`\<`TMode`, `ReadonlyArray`\<`TTab`\>\> | Valid tabs per mode |
+| <a id="property-defaulttabs"></a> `defaultTabs` | `readonly` | `Record`\<`TMode`, `TTab`\> | Default tab for each mode (used when hash has a valid mode but no valid tab) |
+| <a id="property-validmodes"></a> `validModes` | `readonly` | readonly `TMode`[] | All valid mode identifiers |
+| <a id="property-validtabs"></a> `validTabs` | `readonly` | `Record`\<`TMode`, `ReadonlyArray`\<`TTab`\>\> | Valid tabs per mode |

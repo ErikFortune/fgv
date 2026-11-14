@@ -17,7 +17,7 @@ the appropriate callback.
 
 | Type Parameter | Description |
 | ------ | ------ |
-| `T` | The expected validated type |
+| <a id="type-parameter-t"></a> `T` | The expected validated type |
 
 ## Parameters
 

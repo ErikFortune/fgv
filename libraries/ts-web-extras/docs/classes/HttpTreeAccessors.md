@@ -6,7 +6,7 @@ HTTP-backed file tree accessors that cache data in memory and persist via REST A
 
 **Extends:** `InMemoryTreeAccessors<TCT>`
 
-**Implements:** `IPersistentFileTreeAccessors<TCT>`
+**Implements:** `IPersistentFileTreeAccessors<TCT>`, `IBinaryFileTreeAccessors<TCT>`
 
 ## Methods
 
@@ -208,6 +208,32 @@ Gets the contents of a file in the file tree.
 </td></tr>
 <tr><td>
 
+[getFileBytes(path)](./HttpTreeAccessors.getFileBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the contents of a file in the file tree as bytes, with no text decoding applied.
+
+</td></tr>
+<tr><td>
+
+[getFileTextStrict(path)](./HttpTreeAccessors.getFileTextStrict.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Reads a file's contents, decoding UTF-8 strictly.
+
+</td></tr>
+<tr><td>
+
 [getFileContentType(path, provided)](./HttpTreeAccessors.getFileContentType.md)
 
 </td><td>
@@ -256,6 +282,45 @@ Creates a directory at the given path, including any missing parent directories.
 </td><td>
 
 Deletes a directory at the given path.
+
+</td></tr>
+<tr><td>
+
+[getAtomicWriteCapabilities(directory)](./HttpTreeAccessors.getAtomicWriteCapabilities.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Reports what atomic replacement this store can offer for writes into the
+
+</td></tr>
+<tr><td>
+
+[writeFileAtomically(path, contents, options)](./HttpTreeAccessors.writeFileAtomically.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Replaces (or creates) a file's contents such that a reader never observes
+
+</td></tr>
+<tr><td>
+
+[cleanupAtomicTemporaries(directory)](./HttpTreeAccessors.cleanupAtomicTemporaries.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Removes any working files this store reserves for interrupted atomic
 
 </td></tr>
 </tbody></table>

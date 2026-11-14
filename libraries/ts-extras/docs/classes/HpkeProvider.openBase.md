@@ -19,7 +19,7 @@ Returns `Failure` on any of:
 **Signature:**
 
 ```typescript
-openBase(recipientPrivateKey: CryptoKey, info: Uint8Array, aad: Uint8Array, enc: Uint8Array, ciphertext: Uint8Array): Promise<Result<Uint8Array<ArrayBufferLike>>>;
+openBase(recipientPrivateKey: CryptoKey, info: Uint8Array, aad: Uint8Array, enc: Uint8Array, ciphertext: Uint8Array, recipientPublicKey?: Uint8Array<ArrayBufferLike>): Promise<Result<Uint8Array<ArrayBufferLike>>>;
 ```
 
 **Parameters:**
@@ -28,12 +28,20 @@ openBase(recipientPrivateKey: CryptoKey, info: Uint8Array, aad: Uint8Array, enc:
 <tbody>
 <tr><td>recipientPrivateKey</td><td>CryptoKey</td><td>Recipient's X25519 private `CryptoKey`
   (`algorithm.name === 'X25519'`, `type === 'private'`, `usages` includes `'deriveBits'`).
-  **Must be extractable** (`extractable: true`) — the recipient's public key bytes
-  are recovered from the JWK `x` field during Decap.</td></tr>
+  **Must be extractable** (`extractable: true`) only when `recipientPublicKey` is not
+  supplied — the recipient's public key bytes are then recovered from the JWK `x` field
+  during Decap. When `recipientPublicKey` is supplied, `recipientPrivateKey` may be
+  non-extractable.</td></tr>
 <tr><td>info</td><td>Uint8Array</td><td>Context-binding bytes. Must exactly match `info` from `sealBase`.</td></tr>
 <tr><td>aad</td><td>Uint8Array</td><td>Must exactly match `aad` from `sealBase`.</td></tr>
 <tr><td>enc</td><td>Uint8Array</td><td>The encapsulated key from `sealBase` — exactly 32 bytes.</td></tr>
 <tr><td>ciphertext</td><td>Uint8Array</td><td>The ciphertext from `sealBase` — `plaintext.length + 16` bytes.</td></tr>
+<tr><td>recipientPublicKey</td><td>Uint8Array&lt;ArrayBufferLike&gt;</td><td>Optional raw 32-byte X25519 public key matching
+  `recipientPrivateKey` (`pkRm` in RFC 9180 §4.1). Public material — supplying it lets
+  Decap build `kem_context` without exporting `recipientPrivateKey` to JWK, so
+  `recipientPrivateKey` no longer needs to be extractable. A mismatched value only breaks
+  the caller's own decryption (AEAD authentication fails) — it cannot be used to attack
+  another party's ciphertext.</td></tr>
 </tbody></table>
 
 **Returns:**

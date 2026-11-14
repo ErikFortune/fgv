@@ -10,12 +10,12 @@
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | `unknown` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="hasunsavedchanges"></a> `hasUnsavedChanges` | `boolean` |
-| <a id="iswarningopen"></a> `isWarningOpen` | `boolean` |
-| <a id="pendingtool"></a> `pendingTool` | `T` \| `null` |
+| <a id="property-hasunsavedchanges"></a> `hasUnsavedChanges` | `boolean` |
+| <a id="property-iswarningopen"></a> `isWarningOpen` | `boolean` |
+| <a id="property-pendingtool"></a> `pendingTool` | `T` \| `null` |

@@ -13,13 +13,13 @@ index converter.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TKEY` *extends* `string` | `string` |
-| `TINDEX` *extends* `number` | `number` |
+| <a id="type-parameter-tkey"></a> `TKEY` *extends* `string` | `string` |
+| <a id="type-parameter-tindex"></a> `TINDEX` *extends* `number` | `number` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="index"></a> `index?` | `number` |
-| <a id="indexconverter"></a> `indexConverter` | [`Validator`](../../Validation/interfaces/Validator.md)\<`TINDEX`, `unknown`\> \| [`Converter`](../../Conversion/interfaces/Converter.md)\<`TINDEX`, `unknown`\> \| [`ConverterFunc`](../../Conversion/type-aliases/ConverterFunc.md)\<`TINDEX`, `undefined`\> |
-| <a id="key"></a> `key` | `TKEY` |
+| <a id="property-index"></a> `index?` | `number` |
+| <a id="property-indexconverter"></a> `indexConverter` | [`Validator`](../../Validation/interfaces/Validator.md)\<`TINDEX`, `unknown`\> \| [`Converter`](../../Conversion/interfaces/Converter.md)\<`TINDEX`, `unknown`\> \| [`ConverterFunc`](../../Conversion/type-aliases/ConverterFunc.md)\<`TINDEX`, `undefined`\> |
+| <a id="property-key"></a> `key` | `TKEY` |

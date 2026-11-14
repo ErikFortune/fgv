@@ -27,7 +27,7 @@ Description
 <tbody>
 <tr><td>
 
-[argon2id(password, salt, params)](./IArgon2idProvider.argon2id.md)
+[argon2id(password, salt, params, options)](./IArgon2idProvider.argon2id.md)
 
 </td><td>
 

@@ -8,4 +8,5 @@
 
 > `const` **keystoreSecretType**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`KeyStoreSecretType`](../../../type-aliases/KeyStoreSecretType.md)\>
 
-Converter for [key store secret type](../../../type-aliases/KeyStoreSecretType.md) discriminator.
+Converter for [any key store secret type](../../../type-aliases/KeyStoreSecretType.md) discriminator.
+Accepts both symmetric and asymmetric type values.

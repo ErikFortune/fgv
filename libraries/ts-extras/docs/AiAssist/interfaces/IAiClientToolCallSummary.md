@@ -107,7 +107,24 @@ boolean
 
 </td><td>
 
-Whether execution failed (schema validation failure, execute error, or unknown tool).
+Whether execution failed (schema validation failure, execute error, unknown tool, or an aborted turn).
+
+</td></tr>
+<tr><td>
+
+[durationMs](./IAiClientToolCallSummary.durationMs.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+How long deciding and running this call took, in milliseconds on the turn's clock
 
 </td></tr>
 </tbody></table>

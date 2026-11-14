@@ -12,5 +12,5 @@ Call-to-action for the empty state.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="label"></a> `label` | `readonly` | `string` | Button label |
-| <a id="onclick"></a> `onClick` | `readonly` | () => `void` | Callback when clicked |
+| <a id="property-label"></a> `label` | `readonly` | `string` | Button label |
+| <a id="property-onclick"></a> `onClick` | `readonly` | () => `void` | Callback when clicked |

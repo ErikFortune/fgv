@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-utils](../../../README.md) / [Validation](../README.md) / TypeGuardWithContext
 
-# Type Alias: TypeGuardWithContext()\<T, TC\>
+# Type Alias: TypeGuardWithContext\<T, TC\>
 
 > **TypeGuardWithContext**\<`T`, `TC`\> = (`from`, `context?`) => `from is T`
 
@@ -15,8 +15,8 @@ that can be used to shape the validation.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Parameters
 

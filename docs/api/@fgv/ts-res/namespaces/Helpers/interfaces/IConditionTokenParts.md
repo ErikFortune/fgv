@@ -12,5 +12,5 @@ The values needed to create a [condition token](../../../type-aliases/ConditionT
 
 | Property | Type |
 | ------ | ------ |
-| <a id="qualifier"></a> `qualifier?` | `string` |
-| <a id="value"></a> `value` | `string` |
+| <a id="property-qualifier"></a> `qualifier?` | `string` |
+| <a id="property-value"></a> `value` | `string` |

@@ -12,11 +12,11 @@ Filtered suggestions split by tier.
 
 | Type Parameter |
 | ------ |
-| `TId` *extends* `string` |
+| <a id="type-parameter-tid"></a> `TId` *extends* `string` |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="catalog"></a> `catalog` | `readonly` | readonly [`ITypeaheadSuggestion`](ITypeaheadSuggestion.md)\<`TId`\>[] |
-| <a id="priority"></a> `priority` | `readonly` | readonly [`ITypeaheadSuggestion`](ITypeaheadSuggestion.md)\<`TId`\>[] |
+| <a id="property-catalog"></a> `catalog` | `readonly` | readonly [`ITypeaheadSuggestion`](ITypeaheadSuggestion.md)\<`TId`\>[] |
+| <a id="property-priority"></a> `priority` | `readonly` | readonly [`ITypeaheadSuggestion`](ITypeaheadSuggestion.md)\<`TId`\>[] |

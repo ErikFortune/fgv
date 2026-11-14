@@ -19,11 +19,12 @@ of predicates which return `Result<T>`.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Indexable
 
-\[`n`: `number`\]: `T`
+> \[`n`: `number`\]: `T`
+
 **`Beta`**
 
 ## Constructors
@@ -55,7 +56,7 @@ Constructs an ExtendedArray.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="unscopables"></a> `[unscopables]` | `readonly` | `object` | **`Beta`** Is an object whose properties have the value 'true' when they will be absent when used in a 'with' statement. |
+| <a id="property-unscopables"></a> `[unscopables]` | `readonly` | `object` | **`Beta`** Is an object whose properties have the value 'true' when they will be absent when used in a 'with' statement. |
 | `[unscopables].[iterator]?` | `public` | `boolean` | - |
 | `[unscopables].[unscopables]?` | `readonly` | `boolean` | Is an object whose properties have the value 'true' when they will be absent when used in a 'with' statement. |
 | `[unscopables].at?` | `public` | `boolean` | - |
@@ -91,9 +92,9 @@ Constructs an ExtendedArray.
 | `[unscopables].toString?` | `public` | `boolean` | - |
 | `[unscopables].unshift?` | `public` | `boolean` | - |
 | `[unscopables].values?` | `public` | `boolean` | - |
-| <a id="itemdescription"></a> `itemDescription` | `readonly` | `string` | **`Beta`** |
-| <a id="length"></a> `length` | `public` | `number` | **`Beta`** Gets or sets the length of the array. This is a number one higher than the highest index in the array. |
-| <a id="species"></a> `[species]` | `readonly` | `ArrayConstructor` | **`Beta`** |
+| <a id="property-itemdescription"></a> `itemDescription` | `public readonly` | `string` | **`Beta`** |
+| <a id="property-length"></a> `length` | `public` | `number` | **`Beta`** Gets or sets the length of the array. This is a number one higher than the highest index in the array. |
+| <a id="property-species"></a> `[species]` | `static readonly` | `ArrayConstructor` | **`Beta`** |
 
 ## Methods
 
@@ -288,7 +289,7 @@ Determines whether all the members of an array satisfy the specified test.
 
 | Type Parameter |
 | ------ |
-| `S` |
+| <a id="type-parameter-s"></a> `S` |
 
 ##### Parameters
 
@@ -370,7 +371,7 @@ Returns the elements of an array that meet the condition specified in a callback
 
 | Type Parameter |
 | ------ |
-| `S` |
+| <a id="type-parameter-s-1"></a> `S` |
 
 ##### Parameters
 
@@ -427,7 +428,7 @@ otherwise.
 
 | Type Parameter |
 | ------ |
-| `S` |
+| <a id="type-parameter-s-2"></a> `S` |
 
 ##### Parameters
 
@@ -530,8 +531,8 @@ specified depth.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `A` | - |
-| `D` *extends* `number` | `1` |
+| <a id="type-parameter-a"></a> `A` | - |
+| <a id="type-parameter-d"></a> `D` *extends* `number` | `1` |
 
 #### Parameters
 
@@ -564,8 +565,8 @@ This is identical to a map followed by flat with depth 1.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `U` | - |
-| `This` | `undefined` |
+| <a id="type-parameter-u"></a> `U` | - |
+| <a id="type-parameter-this"></a> `This` | `undefined` |
 
 #### Parameters
 
@@ -738,7 +739,7 @@ Calls a defined callback function on each element of an array, and returns an ar
 
 | Type Parameter |
 | ------ |
-| `U` |
+| <a id="type-parameter-u-1"></a> `U` |
 
 #### Parameters
 
@@ -857,7 +858,7 @@ Calls the specified callback function for all the elements in an array. The retu
 
 | Type Parameter |
 | ------ |
-| `U` |
+| <a id="type-parameter-u-2"></a> `U` |
 
 ##### Parameters
 
@@ -933,7 +934,7 @@ Calls the specified callback function for all the elements in an array, in desce
 
 | Type Parameter |
 | ------ |
-| `U` |
+| <a id="type-parameter-u-3"></a> `U` |
 
 ##### Parameters
 
@@ -1262,7 +1263,7 @@ Creates an array from an array-like object.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-1"></a> `T` |
 
 ##### Parameters
 
@@ -1290,8 +1291,8 @@ Creates an array from an iterable object.
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `U` |
+| <a id="type-parameter-t-2"></a> `T` |
+| <a id="type-parameter-u-4"></a> `U` |
 
 ##### Parameters
 
@@ -1321,7 +1322,7 @@ Creates an array from an iterable object.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-3"></a> `T` |
 
 ##### Parameters
 
@@ -1349,8 +1350,8 @@ Creates an array from an iterable object.
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `U` |
+| <a id="type-parameter-t-4"></a> `T` |
+| <a id="type-parameter-u-5"></a> `U` |
 
 ##### Parameters
 
@@ -1405,7 +1406,7 @@ Experimental.ExtendedArray
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-5"></a> `T` |
 
 #### Parameters
 
@@ -1434,7 +1435,7 @@ Returns a new array from a set of elements.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-6"></a> `T` |
 
 #### Parameters
 

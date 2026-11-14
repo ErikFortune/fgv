@@ -14,5 +14,5 @@ Generic key-value entry.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv"></a> `TV` | `unknown` |

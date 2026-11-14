@@ -35,11 +35,11 @@ Constructor for a Resource object.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="candidates"></a> `candidates` | `readonly` | readonly [`ResourceCandidate`](ResourceCandidate.md)[] | The array of [candidates](ResourceCandidate.md) for the resource. |
-| <a id="decision"></a> `decision` | `readonly` | [`ConcreteDecision`](../namespaces/Decisions/classes/ConcreteDecision.md) | [Decision](../namespaces/Decisions/classes/ConcreteDecision.md) for optimized resource resolution. |
-| <a id="id"></a> `id` | `readonly` | [`ResourceId`](../type-aliases/ResourceId.md) | The unique [id](../type-aliases/ResourceId.md) of the resource. |
-| <a id="name"></a> `name` | `readonly` | [`ResourceName`](../type-aliases/ResourceName.md) | The name of the resource. |
-| <a id="resourcetype"></a> `resourceType` | `readonly` | [`ResourceType`](ResourceType.md) | The [type](ResourceType.md) of the resource. |
+| <a id="property-candidates"></a> `candidates` | `public readonly` | readonly [`ResourceCandidate`](ResourceCandidate.md)[] | The array of [candidates](ResourceCandidate.md) for the resource. |
+| <a id="property-decision"></a> `decision` | `public readonly` | [`ConcreteDecision`](../namespaces/Decisions/classes/ConcreteDecision.md) | [Decision](../namespaces/Decisions/classes/ConcreteDecision.md) for optimized resource resolution. |
+| <a id="property-id"></a> `id` | `public readonly` | [`ResourceId`](../type-aliases/ResourceId.md) | The unique [id](../type-aliases/ResourceId.md) of the resource. |
+| <a id="property-name"></a> `name` | `public readonly` | [`ResourceName`](../type-aliases/ResourceName.md) | The name of the resource. |
+| <a id="property-resourcetype"></a> `resourceType` | `public readonly` | [`ResourceType`](ResourceType.md) | The [type](ResourceType.md) of the resource. |
 
 ## Accessors
 

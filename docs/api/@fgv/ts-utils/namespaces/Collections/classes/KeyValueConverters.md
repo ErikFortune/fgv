@@ -13,8 +13,8 @@ from unknown values.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv"></a> `TV` | `unknown` |
 
 ## Constructors
 
@@ -38,8 +38,8 @@ Constructs a new key-value validator.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="key"></a> `key` | `readonly` | [`Validator`](../../Validation/interfaces/Validator.md)\<`TK`, `unknown`\> \| [`Converter`](../../Conversion/interfaces/Converter.md)\<`TK`, `unknown`\> | Required key [validator](../../Validation/interfaces/Validator.md) or [converter](../../Conversion/interfaces/Converter.md). |
-| <a id="value"></a> `value` | `readonly` | [`Validator`](../../Validation/interfaces/Validator.md)\<`TV`, `unknown`\> \| [`Converter`](../../Conversion/interfaces/Converter.md)\<`TV`, `unknown`\> | Required value [validator](../../Validation/interfaces/Validator.md) or [converter](../../Conversion/interfaces/Converter.md). |
+| <a id="property-key"></a> `key` | `public readonly` | [`Validator`](../../Validation/interfaces/Validator.md)\<`TK`, `unknown`\> \| [`Converter`](../../Conversion/interfaces/Converter.md)\<`TK`, `unknown`\> | Required key [validator](../../Validation/interfaces/Validator.md) or [converter](../../Conversion/interfaces/Converter.md). |
+| <a id="property-value"></a> `value` | `public readonly` | [`Validator`](../../Validation/interfaces/Validator.md)\<`TV`, `unknown`\> \| [`Converter`](../../Conversion/interfaces/Converter.md)\<`TV`, `unknown`\> | Required value [validator](../../Validation/interfaces/Validator.md) or [converter](../../Conversion/interfaces/Converter.md). |
 
 ## Methods
 

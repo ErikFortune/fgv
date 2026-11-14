@@ -17,7 +17,7 @@ which alternate is displayed.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TId` *extends* `string` | `string` |
+| <a id="type-parameter-tid"></a> `TId` *extends* `string` | `string` |
 
 ## Parameters
 

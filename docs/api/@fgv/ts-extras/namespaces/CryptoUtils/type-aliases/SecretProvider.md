@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-extras](../../../README.md) / [CryptoUtils](../README.md) / SecretProvider
 
-# Type Alias: SecretProvider()
+# Type Alias: SecretProvider
 
 > **SecretProvider** = (`secretName`) => `Promise`\<[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\>\>
 

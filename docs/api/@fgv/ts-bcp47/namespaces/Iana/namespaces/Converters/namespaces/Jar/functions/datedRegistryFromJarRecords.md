@@ -17,8 +17,8 @@ containing entries of supplied template type `T`.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Parameters
 

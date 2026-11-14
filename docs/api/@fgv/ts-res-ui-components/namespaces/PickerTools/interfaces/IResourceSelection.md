@@ -31,13 +31,13 @@ const handleResourceSelect = (selection: IResourceSelection<MyResourceType>) => 
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | `unknown` |
 
 ## Properties
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="ispending"></a> `isPending?` | `boolean` | Whether this is a pending (unsaved) resource |
-| <a id="pendingtype"></a> `pendingType?` | `"deleted"` \| `"new"` \| `"modified"` | Type of pending operation for unsaved resources |
-| <a id="resourcedata"></a> `resourceData?` | `T` | The actual resource data if available and typed |
-| <a id="resourceid"></a> `resourceId` | `string` \| `null` | The ID of the selected resource, or null if no selection |
+| <a id="property-ispending"></a> `isPending?` | `boolean` | Whether this is a pending (unsaved) resource |
+| <a id="property-pendingtype"></a> `pendingType?` | `"deleted"` \| `"new"` \| `"modified"` | Type of pending operation for unsaved resources |
+| <a id="property-resourcedata"></a> `resourceData?` | `T` | The actual resource data if available and typed |
+| <a id="property-resourceid"></a> `resourceId` | `string` \| `null` | The ID of the selected resource, or null if no selection |

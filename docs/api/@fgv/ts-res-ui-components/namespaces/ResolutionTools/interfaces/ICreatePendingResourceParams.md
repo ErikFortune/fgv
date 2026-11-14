@@ -22,13 +22,13 @@ const params: ICreatePendingResourceParams = {
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | `unknown` |
-| `TV` *extends* [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> | [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> |
+| <a id="type-parameter-t"></a> `T` | `unknown` |
+| <a id="type-parameter-tv"></a> `TV` *extends* [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> | [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> |
 
 ## Properties
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="id"></a> `id` | `string` | Full resource ID (e.g., 'platform.languages.az-AZ') - must be unique |
-| <a id="json"></a> `json?` | `TV` | JSON content for the resource candidate. If undefined, the resource type's base template will be used. |
-| <a id="resourcetypename"></a> `resourceTypeName` | `string` | Name of the resource type to use for validation and template creation |
+| <a id="property-id"></a> `id` | `string` | Full resource ID (e.g., 'platform.languages.az-AZ') - must be unique |
+| <a id="property-json"></a> `json?` | `TV` | JSON content for the resource candidate. If undefined, the resource type's base template will be used. |
+| <a id="property-resourcetypename"></a> `resourceTypeName` | `string` | Name of the resource type to use for validation and template creation |

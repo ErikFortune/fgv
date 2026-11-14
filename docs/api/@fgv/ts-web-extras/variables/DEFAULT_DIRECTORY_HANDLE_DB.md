@@ -6,6 +6,6 @@
 
 # Variable: DEFAULT\_DIRECTORY\_HANDLE\_DB
 
-> `const` **DEFAULT\_DIRECTORY\_HANDLE\_DB**: `"chocolate-lab-storage"` = `'chocolate-lab-storage'`
+> `const` **DEFAULT\_DIRECTORY\_HANDLE\_DB**: `string` = `'chocolate-lab-storage'`
 
 Default IndexedDB database name for directory handles.

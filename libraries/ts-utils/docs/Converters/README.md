@@ -43,6 +43,15 @@ Represents a partial composite ID, where separator is optional.
 </td></tr>
 <tr><td>
 
+[ICompositeIdOptions](./interfaces/ICompositeIdOptions.md)
+
+</td><td>
+
+Options for `compositeIdFromString` and
+
+</td></tr>
+<tr><td>
+
 [TransformObjectOptions](./interfaces/TransformObjectOptions.md)
 
 </td><td>
@@ -343,6 +352,24 @@ Description
 </td><td>
 
 A converter to convert unknown to string.
+
+</td></tr>
+<tr><td>
+
+[messageLogLevel](./variables/messageLogLevel.md)
+
+</td><td>
+
+A ready-made Converter | Converter for MessageLogLevel values.
+
+</td></tr>
+<tr><td>
+
+[onError](./variables/onError.md)
+
+</td><td>
+
+A ready-made Converter | Converter for Conversion.OnError | OnError values.
 
 </td></tr>
 <tr><td>

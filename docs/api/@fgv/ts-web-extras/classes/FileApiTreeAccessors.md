@@ -4,26 +4,20 @@
 
 [@fgv Monorepo API Documentation](../../../README.md) / [@fgv/ts-web-extras](../README.md) / FileApiTreeAccessors
 
-# Class: FileApiTreeAccessors\<TCT\>
+# Class: FileApiTreeAccessors
 
 Helper class to create FileTree instances from various file sources.
 Supports File API (FileList) and File System Access API handles.
-
-## Type Parameters
-
-| Type Parameter | Default type |
-| ------ | ------ |
-| `TCT` *extends* `string` | `string` |
 
 ## Constructors
 
 ### Constructor
 
-> **new FileApiTreeAccessors**\<`TCT`\>(): `FileApiTreeAccessors`\<`TCT`\>
+> **new FileApiTreeAccessors**(): `FileApiTreeAccessors`
 
 #### Returns
 
-`FileApiTreeAccessors`\<`TCT`\>
+`FileApiTreeAccessors`
 
 ## Methods
 
@@ -37,7 +31,7 @@ Create FileTree from various file sources using TreeInitializer array.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |
 
 #### Parameters
 
@@ -64,7 +58,7 @@ Create a persistent FileTree from an HTTP storage service.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-1"></a> `TCT` *extends* `string` | `string` |
 
 #### Parameters
 
@@ -91,7 +85,7 @@ Changes to files can be synced back to localStorage.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-2"></a> `TCT` *extends* `string` | `string` |
 
 #### Parameters
 
@@ -138,7 +132,7 @@ Changes to files can be synced back to disk.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-3"></a> `TCT` *extends* `string` | `string` |
 
 #### Parameters
 
@@ -173,7 +167,7 @@ Changes can be synced back to the original file via `syncToDisk()`.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-4"></a> `TCT` *extends* `string` | `string` |
 
 #### Parameters
 
@@ -220,7 +214,7 @@ Create FileTree from directory upload with webkitRelativePath.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-5"></a> `TCT` *extends* `string` | `string` |
 
 #### Parameters
 
@@ -247,7 +241,7 @@ Create FileTree from FileList (e.g., from input[type="file"]).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-6"></a> `TCT` *extends* `string` | `string` |
 
 #### Parameters
 

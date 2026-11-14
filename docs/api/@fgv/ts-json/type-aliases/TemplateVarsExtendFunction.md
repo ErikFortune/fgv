@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../README.md) / [@fgv/ts-json](../README.md) / TemplateVarsExtendFunction
 
-# Type Alias: TemplateVarsExtendFunction()
+# Type Alias: TemplateVarsExtendFunction
 
 > **TemplateVarsExtendFunction** = (`base`, `values`) => [`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<[`TemplateVars`](TemplateVars.md) \| `undefined`\>
 

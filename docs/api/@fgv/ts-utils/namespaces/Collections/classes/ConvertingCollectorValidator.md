@@ -14,8 +14,8 @@ the converting collector expects the items to be in the source type of the conve
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> | - |
-| `TSRC` | `TITEM` |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> | - |
+| <a id="type-parameter-tsrc"></a> `TSRC` | `TITEM` |
 
 ## Implements
 
@@ -43,8 +43,8 @@ Constructs a new ConvertingCollectorValidator.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="_collector"></a> `_collector` | `protected` | [`ConvertingCollector`](ConvertingCollector.md)\<`TITEM`, `TSRC`\> |
-| <a id="converters"></a> `converters` | `readonly` | [`KeyValueConverters`](KeyValueConverters.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TSRC`\> |
+| <a id="property-_collector"></a> `_collector` | `protected` | [`ConvertingCollector`](ConvertingCollector.md)\<`TITEM`, `TSRC`\> |
+| <a id="property-converters"></a> `converters` | `public readonly` | [`KeyValueConverters`](KeyValueConverters.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TSRC`\> |
 
 ## Accessors
 
@@ -64,7 +64,7 @@ The underlying map.
 
 #### Implementation of
 
-[`IReadOnlyCollectorValidator`](../interfaces/IReadOnlyCollectorValidator.md).[`map`](../interfaces/IReadOnlyCollectorValidator.md#map)
+[`IReadOnlyCollectorValidator`](../interfaces/IReadOnlyCollectorValidator.md).[`map`](../interfaces/IReadOnlyCollectorValidator.md#property-map)
 
 ## Methods
 

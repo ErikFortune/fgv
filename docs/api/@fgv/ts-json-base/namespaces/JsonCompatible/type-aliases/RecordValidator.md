@@ -14,6 +14,6 @@ A validator which validates a record of [JsonCompatible](../../../type-aliases/J
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
-| `TK` *extends* `string` | `string` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |

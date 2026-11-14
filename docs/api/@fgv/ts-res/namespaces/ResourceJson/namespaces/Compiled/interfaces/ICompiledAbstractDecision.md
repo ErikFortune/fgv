@@ -12,5 +12,5 @@ Represents a compiled abstract decision with condition sets.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="conditionsets"></a> `conditionSets` | readonly [`ConditionSetIndex`](../../../../../type-aliases/ConditionSetIndex.md)[] | Array of indices referencing the condition sets for this decision. |
-| <a id="metadata"></a> `metadata?` | [`ICompiledDecisionMetadata`](ICompiledDecisionMetadata.md) | Optional metadata containing human-readable information about this decision. |
+| <a id="property-conditionsets"></a> `conditionSets` | readonly [`ConditionSetIndex`](../../../../../type-aliases/ConditionSetIndex.md)[] | Array of indices referencing the condition sets for this decision. |
+| <a id="property-metadata"></a> `metadata?` | [`ICompiledDecisionMetadata`](ICompiledDecisionMetadata.md) | Optional metadata containing human-readable information about this decision. |

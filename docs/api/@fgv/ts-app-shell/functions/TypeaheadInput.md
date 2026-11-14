@@ -18,7 +18,7 @@ single partial match → auto-select, else fires `onUnresolved`.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TId` *extends* `string` | `string` |
+| <a id="type-parameter-tid"></a> `TId` *extends* `string` | `string` |
 
 ## Parameters
 

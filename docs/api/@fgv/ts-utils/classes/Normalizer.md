@@ -24,6 +24,30 @@ Normalizes an arbitrary JSON object
 
 ## Methods
 
+### \_canonicalizeRfc8785()
+
+> `protected` **\_canonicalizeRfc8785**(`value`): `string`
+
+Recursively builds a byte-identical RFC 8785 JSON string.
+
+#### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `value` | `unknown` |
+
+#### Returns
+
+`string`
+
+#### Throws
+
+For non-JSON-serializable types (non-finite numbers, Date, RegExp,
+  Map, Set, class instances, function, symbol, bigint, undefined).
+  Callers must wrap in captureResult.
+
+***
+
 ### \_compareKeys()
 
 > `protected` **\_compareKeys**(`k1`, `k2`): `number`
@@ -64,6 +88,33 @@ Compares two property names from some object being normalized.
 
 ***
 
+### canonicalize()
+
+> **canonicalize**(`from`): [`Result`](../type-aliases/Result.md)\<`string`\>
+
+Produces a stable, byte-identical JSON string following RFC 8785
+(JSON Canonicalization Scheme) key-ordering rules.
+
+Builds the output string directly rather than constructing an intermediate
+JS object, so integer-string keys (`"10"`, `"2"`) retain lexicographic
+order instead of being reordered numerically by the JS engine during
+`JSON.stringify`.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `from` | `unknown` | Any JSON-compatible value (string, number, boolean, null, plain object, or array). Fails for non-JSON types (Map, Set, Date, RegExp, function, symbol, bigint, undefined). |
+
+#### Returns
+
+[`Result`](../type-aliases/Result.md)\<`string`\>
+
+`Result<string>` — the canonical JSON string, or a failure if
+  `from` contains non-serializable types.
+
+***
+
 ### normalize()
 
 > **normalize**\<`T`\>(`from`): [`Result`](../type-aliases/Result.md)\<`T`\>
@@ -74,7 +125,7 @@ Normalizes the supplied value
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 #### Parameters
 
@@ -100,7 +151,7 @@ Normalizes an array of object property entries (e.g. as returned by `Object.entr
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | `unknown` |
+| <a id="type-parameter-t-1"></a> `T` | `unknown` |
 
 #### Parameters
 
@@ -130,7 +181,7 @@ Normalizes the supplied literal value
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-2"></a> `T` |
 
 #### Parameters
 

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "New `JsonSchema` namespace: typed JSON Schema for LLM tools and structured output, where the schema is also the validator — `string`, `number`, `integer`, `boolean`, `enumOf`, `array`, `object`, `record` and `optional`, with `nullable`, constraint and annotation keywords, `Static<S>` type inference and `toJson()`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "noreply@anthropic.com"
+}

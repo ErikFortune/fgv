@@ -17,15 +17,15 @@ and [Failure\<T\>](../classes/Failure.md).
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="message"></a> `message` | `readonly` | `string` \| `undefined` | Error message returned by a failed operation, undefined for a successful operation. |
-| <a id="success"></a> `success` | `readonly` | `boolean` | Indicates whether the operation was successful. |
-| <a id="value"></a> `value` | `readonly` | `T` \| `undefined` | Value returned by a successful operation, undefined for a failed operation. |
+| <a id="property-message"></a> `message` | `readonly` | `string` \| `undefined` | Error message returned by a failed operation, undefined for a successful operation. |
+| <a id="property-success"></a> `success` | `readonly` | `boolean` | Indicates whether the operation was successful. |
+| <a id="property-value"></a> `value` | `readonly` | `T` \| `undefined` | Value returned by a successful operation, undefined for a failed operation. |
 
 ## Methods
 
@@ -167,7 +167,7 @@ the operation was a success.
 
 | Type Parameter |
 | ------ |
-| `TN` |
+| <a id="type-parameter-tn"></a> `TN` |
 
 #### Parameters
 
@@ -226,6 +226,42 @@ or a default value if the corresponding operation failed.
 
 The return value, if the operation was successful, or
 `undefined` if an error occurs.
+
+***
+
+### orDefaultWith()
+
+> **orDefaultWith**(`cb`): `T`
+
+Gets the value associated with a successful result, or a
+default produced by the supplied callback if the corresponding operation
+failed.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `cb` | () => `T` | Produces the default. Invoked only when the operation failed. |
+
+#### Returns
+
+`T`
+
+The result value if the operation succeeded, otherwise the value
+returned by `cb`.
+
+#### Remarks
+
+The deferring sibling of [orDefault(T)](#ordefault). The
+callback runs **only on failure**, so an expensive default — a computation, a
+file read, an allocation — costs nothing on the success path. Reach for this
+whenever the default is anything more than a literal or an already-held
+value; `orDefault(expensive())` evaluates its argument before the call and
+pays that cost every time, which is a defect a reader has to look at the
+*argument* to spot.
+
+The name follows this library's `with*` convention for a method that takes a
+callback (see [withErrorFormat](#witherrorformat)).
 
 ***
 
@@ -298,6 +334,61 @@ Reports the result to the supplied reporter
 
 ***
 
+### shouldNotFail()
+
+> **shouldNotFail**(`label?`, `frameDepth?`): `T`
+
+Asserts at the call site that this result MUST be a success.
+Returns the value on success; on failure, throws an `Error` whose message
+is composed from the original failure message and the captured call-site
+location (file, line, and where useful function name).
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `label?` | `string` | Optional human-meaningful identifier (e.g. the constant name) prefixed to the error message. |
+| `frameDepth?` | `number` | Optional 1-indexed depth into the caller stack. Default `1` (immediate caller). Library authors wrapping `shouldNotFail` inside their own helper pass `2` to attribute to their caller. |
+
+#### Returns
+
+`T`
+
+The result value, if the operation was successful.
+
+#### Remarks
+
+Use for declaration-time / setup-time invariants — module-level `const`
+initializers, static class properties, static initialization blocks, and
+test fixtures — where a failure indicates a coding bug that should
+surface at the call site rather than propagate as a `Result`. For chains
+where the throw is intentional control flow, prefer `orThrow`.
+
+On V8 (Node + Chromium) `Error.captureStackTrace` is used to elide
+`shouldNotFail` itself from the captured stack so the parsed frame is
+the user's call site directly. On WebKit (where `captureStackTrace` is
+unavailable) the stack is parsed manually and frames whose **parsed
+function name** contains `shouldNotFail` are filtered out — the raw
+stack-line text (including the file path) is deliberately NOT inspected,
+so consumer files named after `shouldNotFail` are not collateral damage.
+Function names and exact line numbers depend on source-map availability
+in the runtime. When no caller frame is recoverable (e.g. `frameDepth`
+out of range, or `frameDepth: 0`) the message falls back to the
+label-only form (or the bare original message when no label is given).
+
+Error message format (depending on whether a label and a usable function
+name are available):
+- both: `<label> (at <fn> in <file>:<line>): <original>`
+- label only: `<label> (at <file>:<line>): <original>`
+- fn only: `<fn> at <file>:<line>: <original>`
+- neither: `<file>:<line>: <original>`
+
+#### Throws
+
+`Error` if the result was a failure.
+
+***
+
 ### thenOnFailure()
 
 > **thenOnFailure**(`cb`): [`AsyncResult`](../classes/AsyncResult.md)\<`T`\>
@@ -336,7 +427,7 @@ the operation was a success, bridging into an [AsyncResult](../classes/AsyncResu
 
 | Type Parameter |
 | ------ |
-| `TN` |
+| <a id="type-parameter-tn-1"></a> `TN` |
 
 #### Parameters
 
@@ -369,7 +460,7 @@ adding supplied details.
 
 | Type Parameter |
 | ------ |
-| `TD` |
+| <a id="type-parameter-td"></a> `TD` |
 
 #### Parameters
 
@@ -422,7 +513,7 @@ adding a supplied detail if the operation failed.
 
 | Type Parameter |
 | ------ |
-| `TD` |
+| <a id="type-parameter-td-1"></a> `TD` |
 
 #### Parameters
 

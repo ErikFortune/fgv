@@ -12,5 +12,5 @@ File picker accept type
 
 | Property | Type |
 | ------ | ------ |
-| <a id="accept"></a> `accept` | `Record`\<`string`, `string` \| `string`[]\> |
-| <a id="description"></a> `description?` | `string` |
+| <a id="property-accept"></a> `accept` | `Record`\<`string`, `string` \| `string`[]\> |
+| <a id="property-description"></a> `description?` | `string` |

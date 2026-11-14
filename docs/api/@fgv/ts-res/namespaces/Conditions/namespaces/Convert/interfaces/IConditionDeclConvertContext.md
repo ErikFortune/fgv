@@ -13,5 +13,5 @@ a [validated condition declaration](../../../interfaces/IValidatedConditionDecl.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="conditionindex"></a> `conditionIndex?` | `public` | `number` |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) |
+| <a id="property-conditionindex"></a> `conditionIndex?` | `public` | `number` |
+| <a id="property-qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) |

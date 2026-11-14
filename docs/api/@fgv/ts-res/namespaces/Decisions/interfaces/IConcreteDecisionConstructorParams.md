@@ -14,12 +14,12 @@ and a list of values.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="type-parameter-tvalue"></a> `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="basedecision"></a> `baseDecision` | [`AbstractDecision`](../classes/AbstractDecision.md) |
-| <a id="index"></a> `index?` | [`DecisionIndex`](../../../type-aliases/DecisionIndex.md) |
-| <a id="values"></a> `values` | `TVALUE`[] |
+| <a id="property-basedecision"></a> `baseDecision` | [`AbstractDecision`](../classes/AbstractDecision.md) |
+| <a id="property-index"></a> `index?` | [`DecisionIndex`](../../../type-aliases/DecisionIndex.md) |
+| <a id="property-values"></a> `values` | `TVALUE`[] |

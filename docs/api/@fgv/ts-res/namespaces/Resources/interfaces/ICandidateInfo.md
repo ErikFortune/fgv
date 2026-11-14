@@ -12,8 +12,8 @@ Information about a candidate being processed by the reducer.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="action"></a> `action` | `public` | [`CandidateAction`](../type-aliases/CandidateAction.md) |
-| <a id="conditions"></a> `conditions` | `public` | [`ILooseConditionDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseConditionDecl.md)[] |
-| <a id="conditionsetkey"></a> `conditionSetKey` | `public` | `string` |
-| <a id="json"></a> `json?` | `readonly` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
-| <a id="originalcandidate"></a> `originalCandidate` | `readonly` | [`ResourceCandidate`](../../../classes/ResourceCandidate.md) |
+| <a id="property-action"></a> `action` | `public` | [`CandidateAction`](../type-aliases/CandidateAction.md) |
+| <a id="property-conditions"></a> `conditions` | `public` | [`ILooseConditionDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseConditionDecl.md)\<`string`\>[] |
+| <a id="property-conditionsetkey"></a> `conditionSetKey` | `public` | `string` |
+| <a id="property-json"></a> `json?` | `readonly` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
+| <a id="property-originalcandidate"></a> `originalCandidate` | `readonly` | [`ResourceCandidate`](../../../classes/ResourceCandidate.md) |

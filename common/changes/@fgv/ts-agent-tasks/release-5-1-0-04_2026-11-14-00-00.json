@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "`TaskContextRenderer` and `checkTaskPrompt` / `prepareTaskPrompt` render task snapshots into bounded, cacheable prompt context with a receipt of exactly what was included.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks",
+  "email": "noreply@anthropic.com"
+}

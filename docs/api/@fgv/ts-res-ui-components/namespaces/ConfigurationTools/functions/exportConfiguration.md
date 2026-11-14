@@ -6,7 +6,7 @@
 
 # Function: exportConfiguration()
 
-> **exportConfiguration**(`config`, `options`): [`Result`](../../../type-aliases/Result.md)\<`string`\>
+> **exportConfiguration**(`config`, `options?`): [`Result`](../../../type-aliases/Result.md)\<`string`\>
 
 Exports a system configuration to a formatted string representation.
 
@@ -19,7 +19,7 @@ and can include comments and custom filenames for enhanced usability.
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `config` | [`ISystemConfiguration`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) | The configuration to export |
-| `options` | `IConfigurationExportOptions` | Export formatting options |
+| `options?` | `IConfigurationExportOptions` | Export formatting options |
 
 ## Returns
 

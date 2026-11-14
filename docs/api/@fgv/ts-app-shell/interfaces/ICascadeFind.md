@@ -12,11 +12,11 @@ Describes a located entry in the cascade stack.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TEntry` *extends* [`ICascadeEntryBase`](ICascadeEntryBase.md) | [`ICascadeEntryBase`](ICascadeEntryBase.md) |
+| <a id="type-parameter-tentry"></a> `TEntry` *extends* [`ICascadeEntryBase`](ICascadeEntryBase.md) | [`ICascadeEntryBase`](ICascadeEntryBase.md) |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="depth"></a> `depth` | `readonly` | `number` |
-| <a id="entry"></a> `entry` | `readonly` | `TEntry` |
+| <a id="property-depth"></a> `depth` | `readonly` | `number` |
+| <a id="property-entry"></a> `entry` | `readonly` | `TEntry` |

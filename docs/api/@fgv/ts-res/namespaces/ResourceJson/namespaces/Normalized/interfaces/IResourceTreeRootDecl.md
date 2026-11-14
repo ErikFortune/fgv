@@ -16,7 +16,7 @@ Normalized non-validated declaration of a [resource](../../../../../classes/Reso
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="children"></a> `children?` | `readonly` | `Record`\<`string`, [`IResourceTreeChildNodeDecl`](IResourceTreeChildNodeDecl.md)\> |
-| <a id="context"></a> `context?` | `readonly` | [`IContainerContextDecl`](IContainerContextDecl.md) |
-| <a id="metadata"></a> `metadata?` | `readonly` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
-| <a id="resources"></a> `resources?` | `readonly` | `Record`\<`string`, [`IChildResourceDecl`](IChildResourceDecl.md)\> |
+| <a id="property-children"></a> `children?` | `readonly` | `Record`\<`string`, [`IResourceTreeChildNodeDecl`](IResourceTreeChildNodeDecl.md)\> |
+| <a id="property-context"></a> `context?` | `readonly` | [`IContainerContextDecl`](IContainerContextDecl.md) |
+| <a id="property-metadata"></a> `metadata?` | `readonly` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
+| <a id="property-resources"></a> `resources?` | `readonly` | `Record`\<`string`, [`IChildResourceDecl`](IChildResourceDecl.md)\> |

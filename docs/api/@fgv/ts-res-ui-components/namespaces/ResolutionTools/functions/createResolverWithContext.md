@@ -6,7 +6,7 @@
 
 # Function: createResolverWithContext()
 
-> **createResolverWithContext**(`processedResources`, `contextValues`, `options`): [`Result`](../../../type-aliases/Result.md)\<[`ResourceResolver`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs)\>
+> **createResolverWithContext**(`processedResources`, `contextValues`, `options?`): [`Result`](../../../type-aliases/Result.md)\<[`ResourceResolver`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs)\>
 
 Create a resolver with context for resource resolution.
 
@@ -20,7 +20,7 @@ qualification context, with optional caching and debugging features.
 | ------ | ------ | ------ |
 | `processedResources` | [`IProcessedResources`](../../ResourceTools/interfaces/IProcessedResources.md) | The processed resource system containing all resources and configuration |
 | `contextValues` | `Record`\<`string`, `string` \| `undefined`\> | Context values for qualification (e.g., language, region, platform) |
-| `options` | [`IResolutionOptions`](../interfaces/IResolutionOptions.md) | Configuration options for resolution behavior |
+| `options?` | [`IResolutionOptions`](../interfaces/IResolutionOptions.md) | Configuration options for resolution behavior |
 
 ## Returns
 

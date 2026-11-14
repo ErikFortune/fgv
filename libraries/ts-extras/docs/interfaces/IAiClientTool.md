@@ -51,7 +51,7 @@ The tool's configuration (name, description, parameters schema).
 
 </td><td>
 
-(args: TParams) =&gt; Promise&lt;Result&lt;unknown&gt;&gt;
+(args: TParams, context?: [IAiClientToolExecuteContext](IAiClientToolExecuteContext.md)) =&gt; Promise&lt;Result&lt;unknown&gt;&gt;
 
 </td><td>
 

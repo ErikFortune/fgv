@@ -24,7 +24,7 @@ The hierarchy can be created in two modes:
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* `string` | `string` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` | `string` |
 
 ## Constructors
 
@@ -46,8 +46,8 @@ The hierarchy can be created in two modes:
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="isopenvalues"></a> `isOpenValues` | `readonly` | `boolean` | Indicates whether this hierarchy was created with open values (no enumerated values provided), allowing any value to be used in matching operations. |
-| <a id="values"></a> `values` | `readonly` | `ReadonlyMap`\<`T`, [`ILiteralValue`](../interfaces/ILiteralValue.md)\<`T`\>\> | A map of all allowed literal values to the corresponding [ILiteralValue](../interfaces/ILiteralValue.md) validated definition. |
+| <a id="property-isopenvalues"></a> `isOpenValues` | `public readonly` | `boolean` | Indicates whether this hierarchy was created with open values (no enumerated values provided), allowing any value to be used in matching operations. |
+| <a id="property-values"></a> `values` | `public readonly` | `ReadonlyMap`\<`T`, [`ILiteralValue`](../interfaces/ILiteralValue.md)\<`T`\>\> | A map of all allowed literal values to the corresponding [ILiteralValue](../interfaces/ILiteralValue.md) validated definition. |
 
 ## Methods
 
@@ -215,7 +215,7 @@ A [QualifierMatchScore](../../../type-aliases/QualifierMatchScore.md) indicating
 
 | Type Parameter |
 | ------ |
-| `T` *extends* `string` |
+| <a id="type-parameter-t-1"></a> `T` *extends* `string` |
 
 #### Parameters
 
@@ -239,7 +239,7 @@ Creates a new LiteralValueHierarchy instance.
 
 | Type Parameter |
 | ------ |
-| `T` *extends* `string` |
+| <a id="type-parameter-t-2"></a> `T` *extends* `string` |
 
 #### Parameters
 

@@ -55,7 +55,7 @@ unknown
 
 </td><td>
 
-The contents of the file
+The contents of the file.
 
 </td></tr>
 <tr><td>
