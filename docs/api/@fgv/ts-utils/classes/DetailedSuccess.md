@@ -547,9 +547,9 @@ Back-compatible form of the overload above, for a callback which returns a plain
 
 ##### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `__cb` | [`AsyncFailureContinuation`](../type-aliases/AsyncFailureContinuation.md)\<`T`\> |
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `__cb` | [`AsyncFailureContinuation`](../type-aliases/AsyncFailureContinuation.md)\<`T`\> | The async failure callback to be invoked. |
 
 ##### Returns
 

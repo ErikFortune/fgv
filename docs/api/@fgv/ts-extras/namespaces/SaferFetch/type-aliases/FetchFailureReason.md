@@ -40,6 +40,18 @@ A redirect status was received that this call would not follow: the policy is `'
 or the response carried no usable `Location`, or following it would revisit a URL already
 in the chain.
 
+The three are deliberately one kind. Splitting them would buy a caller almost nothing and
+would widen the scanning oracle this taxonomy already is — and the two follow-time cases
+are facts about the chain the redirecting server produced, not about the network behind
+this process. "The chain got too long" is a different question and stays
+`'too-many-redirects'`.
+
+`url` is always the URL that **issued** the rejected redirect — the hop this call actually
+requested and got a 3xx back from — never the `Location` target it pointed at. That holds
+for all three cases, including the revisit case, where the target is the URL already in the
+chain and naming it here would make the same field mean two different things. The target is
+named in the message instead. `status` is the redirect status that was received.
+
 ***
 
 ### Type Literal

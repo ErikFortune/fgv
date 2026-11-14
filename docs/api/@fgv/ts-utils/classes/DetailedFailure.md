@@ -625,9 +625,9 @@ Back-compatible form of the overload above, for a callback which returns a plain
 
 ##### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `__cb` | [`AsyncSuccessContinuation`](../type-aliases/AsyncSuccessContinuation.md)\<`T`, `TN`\> |
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `__cb` | [`AsyncSuccessContinuation`](../type-aliases/AsyncSuccessContinuation.md)\<`T`, `TN`\> | The async success callback to be invoked. |
 
 ##### Returns
 

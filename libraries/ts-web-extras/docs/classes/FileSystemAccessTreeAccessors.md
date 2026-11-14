@@ -230,7 +230,7 @@ Gets the contents of a file in the file tree.
 
 </td><td>
 
-FileTree.IBinaryFileTreeAccessors.getFileBytes
+Gets the contents of a file in the file tree as bytes, with no text decoding applied.
 
 </td></tr>
 <tr><td>
@@ -308,7 +308,7 @@ Deletes a directory at the given path.
 
 </td><td>
 
-FileTree.IAtomicFileTreeAccessors.getAtomicWriteCapabilities
+Reports what atomic replacement this store can offer for writes into the
 
 </td></tr>
 <tr><td>

@@ -209,17 +209,21 @@ Implements `FileTree.IMutableFileTreeAccessors.fileIsMutable`
 
 > **getAtomicWriteCapabilities**(`directory`): [`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<[`IAtomicWriteCapabilities`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
 
-FileTree.IAtomicFileTreeAccessors.getAtomicWriteCapabilities
+Reports what atomic replacement this store can offer for writes into the
+given directory.
 
 #### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `directory` | `string` |
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `directory` | `string` | Absolute path of the containing directory. |
 
 #### Returns
 
 [`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<[`IAtomicWriteCapabilities`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
+
+`Success` with the store's [capabilities](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), or `Failure` if the directory does not exist or the path
+names a file rather than a directory.
 
 #### Inherited from
 
@@ -332,17 +336,24 @@ The extension of the path.
 
 > **getFileBytes**(`path`): [`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
 
-FileTree.IBinaryFileTreeAccessors.getFileBytes
+Gets the contents of a file in the file tree as bytes, with no text decoding applied.
 
 #### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | Absolute path of the file. |
 
 #### Returns
 
 [`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+`Success` with the raw bytes of the file, or `Failure` with an error message.
+
+#### Remarks
+
+The returned array must be treated as read-only — implementations are free to
+return their internal buffer rather than a copy.
 
 #### Implementation of
 

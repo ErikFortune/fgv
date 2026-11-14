@@ -10,21 +10,21 @@
 
 > **stringifiedJson**(): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](../../../type-aliases/JsonValue.md)\>
 
-Creates a converter that accepts a string, parses it as JSON, and optionally
-applies the supplied inner converter or validator to the parsed value.
+Creates a converter that accepts a string and parses it as JSON, with no
+inner conversion step.
 
 ### Returns
 
 [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`JsonValue`](../../../type-aliases/JsonValue.md)\>
 
-Converter that parses a JSON string into `T` (or `JsonValue` when
-no inner step is supplied).
+Converter that parses a JSON string into a `JsonValue`.
 
 ### Remarks
 
-Unlike [Converters.jsonConverter](jsonConverter.md), the inner step is optional. When omitted, the
-converter resolves to the parsed `JsonValue` (object, array, or primitive).
-Both `Converter<T>` and `Validator<T>` are accepted because both expose
+Unlike [Converters.jsonConverter](jsonConverter.md), the inner step is optional. This form
+omits it, so the converter resolves to the parsed `JsonValue` (object, array,
+or primitive). The overload that takes an inner step accepts both
+`Converter<T>` and `Validator<T>`, because both expose
 `convert(unknown): Result<T>`.
 
 ## Call Signature

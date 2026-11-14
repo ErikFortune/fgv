@@ -17,6 +17,11 @@ non-streaming feature on every provider the package supports, so the field
 would have nowhere to go here. A caller that needs it must use
 `callProviderCompletion`.
 
+Carries the unified [AiAssist.IChatRequest](IChatRequest.md) shape (`system?` + ordered
+`messages`): the last message is the current user turn and the preceding
+messages are history, linearized before the current turn (identical to the
+completion and client-tool turn paths).
+
 ## Extends
 
 - [`IChatRequest`](IChatRequest.md)
