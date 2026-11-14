@@ -25,15 +25,18 @@ jobs:
       # rule from eroding on the next workflow edit. Local ./ reusable workflows are exempt.
       - name: Verify actions are pinned to a commit SHA
         run: |
-          UNPINNED=$(grep -rnE '^[[:space:]]*(-[[:space:]]+)?uses:' .github/workflows \
-            | grep -vE "uses:[[:space:]]*['\"]?\./" \
-            | grep -vE "uses:[[:space:]]*['\"]?[^@[:space:]'\"]+@[0-9a-f]{40}['\"]?([[:space:]]|$)" || true)
+          FILES=$(find .github/workflows .github/actions -type f \( -name '*.yml' -o -name '*.yaml' \) 2>/dev/null \
+            | grep -E '^\.github/(workflows/[^/]+|actions/.+/action)\.ya?ml$' || true)
+          # shellcheck disable=SC2086 # FILES is a newline-separated list of paths without spaces
+          UNPINNED=$(grep -nE '^[[:space:]]*(-[[:space:]]+)?uses:' /dev/null $FILES \
+            | grep -vE "^[^:]+:[0-9]+:[[:space:]]*(-[[:space:]]+)?uses:[[:space:]]*['\"]?\./" \
+            | grep -vE "^[^:]+:[0-9]+:[[:space:]]*(-[[:space:]]+)?uses:[[:space:]]*['\"]?[^@[:space:]'\"]+@[0-9a-f]{40}['\"]?([[:space:]]|$)" || true)
           if [ -n "$UNPINNED" ]; then
             echo "::error title=Unpinned action::every uses: must name a 40-character commit SHA"
             echo "$UNPINNED"
             exit 1
           fi
-          echo "All uses: references are pinned to a commit SHA."
+          echo "All uses: references in $(echo "$FILES" | wc -l) files are pinned to a commit SHA."
       - name: Git config user
         run: |
           git config user.name "ErikFortune"
@@ -42,13 +45,16 @@ jobs:
         with:
           node-version: 24.15.0
       - name: Verify Change Logs
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            TARGET_BRANCH="${{ github.base_ref }}"
+          if [ "$EVENT_NAME" == "pull_request" ]; then
+            TARGET_BRANCH="$BASE_REF"
           else
             TARGET_BRANCH="main"
           fi
-          node common/scripts/install-run-rush.js change --verify --target-branch origin/$TARGET_BRANCH
+          node common/scripts/install-run-rush.js change --verify --target-branch "origin/$TARGET_BRANCH"
       - name: Rush Install
         run: node common/scripts/install-run-rush.js install
       - name: Rush rebuild

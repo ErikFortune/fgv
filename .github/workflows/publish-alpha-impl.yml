@@ -8,6 +8,11 @@ name: Publish Alpha (Implementation)
 
 on:
   workflow_call:
+    secrets:
+      GH_USER_NAME:
+        required: true
+      GH_USER_EMAIL:
+        required: true
 
 permissions:
   contents: read
@@ -47,6 +52,8 @@ jobs:
       - name: Upgrade npm for OIDC support
         run: npm install -g npm@11.21.2 && npm --version
 
+      # Compares prerelease with itself, so it only checks the branch is well-formed; the stable
+      # path compares against origin/release/<major>.
       - name: Verify Change Logs
         run: node common/scripts/install-run-rush.js change --verify --target-branch "origin/${GITHUB_REF_NAME}"
 
