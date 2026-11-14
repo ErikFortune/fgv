@@ -1,0 +1,30 @@
+id: release-compat
+status: shipped
+packages: ['@fgv/ts-web-extras', '@fgv/ts-res-browser', '@fgv/ts-res-browser-cli']
+prs: [] # PR #TBD; fill in on open
+openPrs: []
+opened: 2026-11-14
+closed: 2026-11-14
+summary:
+  intended: >
+    Release prep for the 5.1.0 non-alpha publish: restore BrowserHashProvider as a root export of
+    ts-web-extras (lost in #652) alongside CryptoUtils.BrowserHashProvider, check the whole root
+    surface against main, and relax engines.node on ts-res-browser and ts-res-browser-cli to
+    >=22.22.0, checking every other published package for an upper bound.
+  shipped: >
+    Root export restored via a barrel re-export of the same class, with a test asserting identity
+    and a SHA-256 vector; api.md changes by one line. The root-surface diff against main found
+    nothing else missing. Both tools now declare >=22.22.0; no other published package carries an
+    upper bound.
+  diverged: ''
+  sourceLine: '**Shipped:** `BrowserHashProvider` is a root export of `@fgv/ts-web-extras` again, as it was in 5.0.2, beside `CryptoUtils.BrowserHashProvider` (the same class), and the published `engines.node` of `@fgv/ts-res-browser` and `@fgv/ts-res-browser-cli` is `>=22.22.0`, so Node 23 and later are no longer excluded.'
+  headline: '' # compatibility repair of a 5.0.2 surface, not a new capability
+keywords:
+  - semver audit
+  - 5.0.2 compatibility
+  - root export regression
+  - barrel re-export
+  - engines upper bound
+  - Node 23
+  - release prep
+sourceHash: sha256:d93c590a8fff8590 # over brief.md + state.md + result.md
