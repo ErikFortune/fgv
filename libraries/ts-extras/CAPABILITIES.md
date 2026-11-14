@@ -77,6 +77,7 @@
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-11-14** — MCP's taskSupport vocabulary and a converter for it now ship in ai-assist, so a browser consumer can use them without the Node-only MCP package, which reuses the same declarations.
 - **2026-11-11** — ai-assist's @anthropic:fable alias now reaches Claude Fable 5.2, and Fable 5.2 and Mythos 5.2 get JSON-outputs structured output, thinking and temperature guards, and a 128K output limit. ([#773](https://github.com/ErikFortune/fgv/pull/773))
 - **2026-11-11** — ai-assist sends Gemini's thinkingLevel from a declared per-model table — 'none' is minimal on Flash-Lite — and @google-gemini:pro now reaches Gemini 4 Argon. ([#775](https://github.com/ErikFortune/fgv/pull/775))
 - **2026-11-11** — ai-assist sends temperature 1 beside a reasoning effort on GPT-6 Luna and refuses any other value while it reasons, from a declared list of models that restrict temperature only while thinking. ([#776](https://github.com/ErikFortune/fgv/pull/776))

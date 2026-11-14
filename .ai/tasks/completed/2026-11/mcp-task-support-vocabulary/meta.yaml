@@ -1,0 +1,38 @@
+id: mcp-task-support-vocabulary
+status: shipped
+packages: ['@fgv/ts-extras', '@fgv/ts-extras-mcp']
+prs: []
+openPrs: []
+opened: 2026-11-14
+closed: 2026-11-14
+summary:
+  intended: >
+    personaility#725: move MCP_TASK_SUPPORT_VALUES / McpTaskSupport (MCP Tool.execution.taskSupport)
+    from the Node-only ts-extras-mcp into ts-extras's browser-safe ai-assist packlet beside
+    IAiToolAnnotations, add a converter that converts a present value only, and have ts-extras-mcp
+    use the ts-extras declarations while keeping both names on its surface. No behaviour change.
+  shipped: >
+    AiAssist.MCP_TASK_SUPPORT_VALUES, AiAssist.McpTaskSupport and AiAssist.mcpTaskSupport
+    (Converters.enumeratedValue) in ai-assist/toolTypes.ts and converters.ts. ts-extras-mcp binds
+    the same array and type under its existing names and converts execution.taskSupport with
+    AiAssist.mcpTaskSupport; its existing taskSupport tests pass unchanged, and a new test asserts
+    the two arrays are identical.
+  diverged: >
+    The converter is exported flat as AiAssist.mcpTaskSupport rather than the brief's example
+    AiAssist.Converters.mcpTaskSupport, following the packlet's convention as the brief directed.
+    The ts-extras-mcp binding needed an explicit typeof annotation (lint typedef-var), so its
+    api.md line reads typeof AiAssist.MCP_TASK_SUPPORT_VALUES rather than the literal tuple.
+  sourceLine: "**Shipped:** MCP's `Tool.execution.taskSupport` vocabulary is now declared once, in `@fgv/ts-extras`'s browser-safe `ai-assist` packlet — `AiAssist.MCP_TASK_SUPPORT_VALUES`, `AiAssist.McpTaskSupport` and a new `AiAssist.mcpTaskSupport` converter — and `@fgv/ts-extras-mcp` binds those same declarations under its existing names."
+  headline: >
+    MCP's taskSupport vocabulary and a converter for it now ship in ai-assist, so a browser
+    consumer can use them without the Node-only MCP package, which reuses the same declarations.
+keywords:
+  - MCP Tool.execution.taskSupport
+  - task-augmented execution
+  - browser-safe vocabulary
+  - single declaration
+  - enumerated value converter
+  - absent means forbidden
+  - redeclaration avoided
+  - fgv-ask
+sourceHash: sha256:9e378a9b93a910d7 # over brief.md + state.md + result.md
