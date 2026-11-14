@@ -1,7 +1,7 @@
 id: release-compat
 status: shipped
 packages: ['@fgv/ts-web-extras', '@fgv/ts-res-browser', '@fgv/ts-res-browser-cli']
-prs: [] # PR #TBD; fill in on open
+prs: [785]
 openPrs: []
 opened: 2026-11-14
 closed: 2026-11-14

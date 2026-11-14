@@ -1,6 +1,6 @@
 # release-compat — 5.0.2 compatibility fixes before the 5.1.0 publish
 
-**Shipped**: 2026-11-14 into `integration/asks` via #TBD.
+**Shipped**: 2026-11-14 into `integration/asks` via #785.
 Packages: `@fgv/ts-web-extras`, `@fgv/ts-res-browser`, `@fgv/ts-res-browser-cli` (change files
 `patch`).
 
