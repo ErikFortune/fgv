@@ -35,4 +35,4 @@ keywords:
   - absent means forbidden
   - redeclaration avoided
   - fgv-ask
-sourceHash: sha256:9e378a9b93a910d7 # over brief.md + state.md + result.md
+sourceHash: sha256:fb2cf3d02c683f1f # over brief.md + state.md + result.md

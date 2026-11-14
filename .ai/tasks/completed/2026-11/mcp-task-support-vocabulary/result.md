@@ -41,4 +41,18 @@ See `state.md` § Decisions (converter placement/naming, the lint-required annot
 
 ## Gates
 
-Recorded in the stream's report and the PR description.
+Run from the worktree root on 2026-11-14, at the finalize commit, each in the foreground (logs under
+the session scratchpad `mcpvocab/`):
+
+| gate | result |
+|---|---|
+| `rush install` | exit 0 |
+| `rush change --verify --target-branch origin/integration/asks` | exit 0; both change files found |
+| `rush rebuild` | `SUCCESS: 39 operations` |
+| `rush lint` | `SUCCESS: 34 operations` |
+| `rush test` | `SUCCESS: 38 operations`; `ts-extras` and `ts-extras-mcp` at 100% on all four metrics |
+
+Fail-grep (`not met|Operations failed|error TS|Jest tests? failed|ERR_PNPM`) is 0 in every log. The
+only warning line in each is the tracked-symlink notice; no NUL padding in any log.
+`generate-capability-feed.mjs --check` and `verify-capability-docs.mjs` pass (router 23,924 / 24,000);
+`prettier@2.8.8 --check` passes on every touched `.md`.
