@@ -1,0 +1,79 @@
+id: sqlite-vec-throwaway-clear-statement
+status: shipped
+packages:
+  - '@fgv/ts-agent-memory-sqlite-vec'
+prs: [654]
+openPrs: []
+opened: 2026-08-22
+summary:
+  intended: >
+    Answer a PersonAIlity report sent deliberately BEFORE either side spent a
+    test cycle on the linux-arm64 measurement the sqlite-vec-statement-lifetime
+    stream was waiting on. Two findings: release() could not run on their side
+    at all (their registry retained the index and discarded the handle, and the
+    handle carries close()), so a retest as-is could not have distinguished
+    "release() does not fix it" from "release() never ran"; and release() does
+    not cover every statement the package prepares, because _clear() prepares
+    one that nothing retains.
+  shipped: >
+    _clear() runs Database.exec instead of prepare(...).run() on both index
+    classes. A statement referenced by nothing is the dangerous kind: it was
+    never in _stmts, so release() could not drop it and no correct consumer
+    usage would have helped, and its native destructor ran whenever GC reached
+    it — possibly during environment teardown, the frame the reported abort
+    fires in. exec creates no Statement at all, which is strictly stronger than
+    the remedy proposed (cache it so release() drops it), since release() only
+    makes a statement collectable earlier and better-sqlite3 exposes no public
+    finalize(). Four tests, watched failing against the pre-exec shape first.
+  diverged: >
+    One of the consumer's three cited sites was wrong: del and ins in _prepare()
+    are locals but are CAPTURED — delete: del is returned and replaceTxn closes
+    over both and is returned as replace — so they live exactly as long as
+    _stmts and release() does drop them. A fourth site they did not find does
+    qualify: _readExistingDimension prepares a throwaway sqlite_master probe on
+    every create()/open() in both classes, and it cannot become exec because it
+    needs a bound parameter and a returned row. So one Statement per index
+    construction survives; the residue shrinks from every-rebuild-plus-every-
+    construction to every-construction, and the platform question stays open.
+    The larger finding was a defect in OUR artifact, not theirs: the teardown
+    probe drove add / addFragments / query and never a rebuild, so it exercised
+    only the cached statements and was structurally blind to the one statement
+    release() could not reach. A green arm64 run of the old probe would have
+    read as "the fix holds" while their boot path went untested. Widened to
+    drive a rebuild and a failing rebuild in every pass, plus a matched PAIR of
+    passes that differ in _clear alone so arm64 can isolate its contribution.
+    Two review rounds landed on that pair and the second is the instructive one:
+    the first draft claimed a green pass exonerated the statement, and the fix
+    for that introduced a second confound in the same edit — the new pass
+    skipped the forced GC while the pass it was compared against did not, so an
+    abort was equally explained by a released-but-uncollected cached statement.
+    Hence forceGc is now an explicit axis and the one-axis-per-comparison rule
+    is stated at the top of the harness rather than re-derived per pair.
+  sourceLine: >
+    **Shipped:** the rebuild-path table clear runs through `exec`, so the one
+    statement `release()` could never reach no longer exists.
+keywords:
+  - a statement nobody holds cannot be released
+  - eliminate the object, do not lengthen its life
+  - exec creates no Statement
+  - better-sqlite3 has no public finalize
+  - harness blind to the lane that mattered
+  - right number about the wrong lane
+  - watched-it-fail gate
+  - compare passes that differ in one axis
+  - a confound introduced by the fix for an overclaim
+  - an abort attributed to the wrong variable
+  - report arrived before the test cycle
+  - residue stated rather than glossed
+relatedStreams:
+  - id: sqlite-vec-statement-lifetime
+    relationship: >
+      direct predecessor; shipped release(), whose coverage this stream corrects
+      in both the code and the measurement harness, and whose result.md and
+      ledger entry are amended here to say what the probe did not drive
+  - id: personaility-asks-2026-08
+    relationship: >
+      origin; same consumer channel
+  - id: filetree-faithful-copy
+    relationship: >
+      concurrent stream from the same consumer channel on the same day

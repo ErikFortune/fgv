@@ -1,0 +1,9 @@
+[Home](../../../README.md) > [Jar](../../README.md) > [LanguageSubtags](../README.md) > variantSubtag
+
+# Variable: variantSubtag
+
+
+
+## Type
+
+`Converter<VariantSubtag, unknown>`

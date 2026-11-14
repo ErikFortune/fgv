@@ -1,0 +1,181 @@
+id: ai-assist-message-ordering
+status: shipped
+packages:
+  - '@fgv/ts-extras'
+  - '@fgv/ts-app-shell'
+  - '@fgv/testbed'
+prs: [478, 480]
+opened: 2026-06-06
+closed: 2026-06
+summary:
+  intended: >
+    Kill a consumer-reported (PersonAIlity, 2026-06-06) **silent history-reorder
+    footgun** in `@fgv/ts-extras/ai-assist`: the two turn entry points put
+    conversation history on opposite sides of the current user turn.
+    `callProviderCompletion` / `callProviderCompletionStream` passed history as
+    `tail:` (linearizing `[system, user, …history]`) while `executeClientToolTurn`
+    passed it as `head:` (`[system, …history, user]`), so a consumer holding one
+    flat ordered list and reusing a single adapter got the oldest turn promoted to
+    the current prompt — invisible to prompt-level logging, since only the order
+    was wrong. `brief.md` commissioned a design-note-then-implement stream against
+    Erik's already-chosen **option (a)**: "both entry points accept a single ordered
+    `messages[]` and own the system/user/history split internally", explicitly over
+    rename-alignment (b) and docs-only (c) *"the failure is silent, so eliminate it
+    at the API, not paper over it"*. Breaking change sanctioned (active surface; the
+    only consumers are this repo + PersonAIlity, migrated in lockstep). Named
+    deliverables: the unified shape, an `AiPrompt` disposition, keeping
+    `continuationMessages` distinct, unifying the proxy wire body, migrating all
+    in-repo callers, and — *"do not skip"* — a load-bearing regression test proving
+    the two paths linearize identically on Anthropic + an OpenAI-shaped provider +
+    Gemini.
+  shipped: >
+    Exactly option (a), via #478 into the integration branch and #480 to `release`
+    (both merged 2026-06-07). Public `IChatRequest { system?: string; messages:
+    ReadonlyArray<IChatMessage> }` — last entry is the current user turn, preceding
+    entries are history — with all five turn entry points (`callProviderCompletion`,
+    `callProviderCompletionStream`, `executeClientToolTurn`, `callProxiedCompletion`,
+    `callProxiedCompletionStream`, plus `generateJsonCompletion` inheriting the
+    completion params) declared `extends IChatRequest`. A shared internal
+    `splitChatRequest(system, messages)` peels the last message as the current turn
+    and the rest as `head`, so the completion path switched `tail → head` and both
+    paths linearize `[system, …history, current user turn, …continuation]`; it fails
+    loudly on empty `messages` or a trailing non-`user` turn rather than silently
+    relabelling. The now-dead builder `tail` option was removed (`head` and `rawTail`
+    remain). `system` stayed a distinct top-level field; `AiPrompt` was kept as a
+    convenience and gained `toRequest()`; `IChatMessage` gained optional
+    `attachments`, honoured on the current turn only; `continuationMessages` stayed
+    the distinct post-current-turn provider-native axis flowing through `rawTail`.
+    Proxy wire body unified to `{ system?, messages }` (breaking for proxy servers).
+    Callers migrated: `ts-app-shell` `useAiAssist.ts` (external hook signatures
+    preserved, so `samples/ai-image-gen-sample` needed no change), the four testbed
+    `*ClientTools` scenarios, and the ts-extras tests. `messageOrdering.test.ts` is
+    the structural guard — same ordered `[user h1, assistant h2, user current]`
+    through both paths, `expect(toolConv).toEqual(completionConv)` on Anthropic, an
+    OpenAI-shaped provider, and Gemini.
+  diverged: >
+    **The design's central call was followed exactly — the divergence is that the
+    design under-scoped the work it created.** `design.md` pinned the *shape*
+    (unified `IChatRequest`, `system` distinct, `AiPrompt` kept with `toRequest()`,
+    `tail` removed, `continuationMessages` untouched, proxy body unified) and every
+    one of those decisions shipped verbatim. What neither `brief.md` nor `design.md`
+    anticipated is that giving five entry points *the same shape* immediately exposed
+    a **validation-parity seam** — five call sites that now accept identical input
+    but were applying different guards to it. The entire Copilot loop (rounds R1–R3,
+    each finding building on the prior fix) walked that seam outward: R1 found the
+    proxy paths skipping the `splitChatRequest` invariants and the image-input
+    preflight; R2 found `acceptsImageInput` still non-uniform on proxy-stream and the
+    tool turn; R3 found the proxy paths forwarding `messages` verbatim so **history
+    attachments leaked onto the wire**, which produced `normalizeOutboundMessages`
+    (a helper the design never contemplated) and prompted a proactive end-to-end sweep
+    that added the `executeClientToolTurn` empty-model guard. `result.md`'s
+    "Entry-point parity (final state)" matrix — the five-column table and its two
+    *intentional* residual asymmetries (temp/thinking conflict and client-side model
+    resolution left server-side on the proxy paths, because the proxy does not resolve
+    the model client-side and could not replicate them without duplicating the
+    resolver) — is entirely post-design output. The design should have carried it.
+
+    **Two smaller deltas.** (1) `IChatMessage.attachments` is in `design.md` §2 but
+    nowhere in `brief.md` — it was introduced by the design as the consequence of
+    dissolving `AiPrompt` from the entry-point contract (attachments had ridden on the
+    prompt object), and shipped. (2) The brief named the **live** testbed `*ClientTools`
+    scenarios as *"the empirical check — message-order bugs are exactly what they
+    catch"*, with unit-level order assertions as the stated fallback. The fallback was
+    taken: neither `result.md` nor `state.md` nor #478 claims a live-wire run, and the
+    evidence offered is the mocked-transport `messageOrdering.test.ts`. Recording this
+    as a deviation rather than a defect **because the stream was candid about it** —
+    which is the pointed contrast with the sibling `ai-assist-client-tools` stream,
+    whose canonical failure was an exit artifact asserting a live success the code
+    could not have produced. Here the coverage claim and the evidence match.
+  sourceLine: '**Status:** complete, gates green, Copilot loop converged. Awaiting merge of PR #478 into the `ai-assist-message-ordering` integration branch.'
+relatedStreams:
+  - id: ai-assist-client-tools
+    relationship: >
+      Predecessor and proximate cause. It shipped `executeClientToolTurn` taking
+      history as `messagesBefore` (head) while the older completion path already took
+      it as `additionalMessages` (tail) — that is the asymmetry this stream removed.
+      It also introduced `continuationMessages` / `IBuildMessagesOptions.rawTail` as a
+      deliberately separate axis, and this stream's design §3 re-affirms that
+      separation rather than collapsing it into `messages`.
+  - id: ai-assist-tool-continuation
+    relationship: >
+      Successor on the same surface. Its brief opens *"PersonAIlity consumer footgun
+      (the second after message-ordering)"* and works the continuation axis this
+      stream deliberately left alone — together the two streams own the two halves of
+      `executeClientToolTurn`'s input (`messages` = history, `continuationMessages` =
+      post-current-turn wire tail).
+  - id: per-provider-testbed-scenarios
+    relationship: >
+      Sibling cluster owning the live `*ClientTools` scenarios that `brief.md` named
+      as this stream's empirical check and that `result.md` does not claim to have run.
+notes:
+  - >
+    VERIFIED AGAINST CURRENT SOURCE (2026-08-14, read-only). The shape survived a
+    later refactor intact. `apiClient.ts` no longer exists — #620 split it into
+    `completionClient.ts` / `streamingClient.ts` / `imageGenerationClient.ts` /
+    `listModelsClient.ts` (+ `embeddingClient.ts` from `ai-assist-embeddings`) — yet
+    every claim this stream made still holds at the new addresses. `IChatRequest` is
+    at `model.ts:187`; `splitChatRequest` at `chatRequestBuilders.ts:60` with both
+    guards intact; all five turn entry points call it (`completionClient.ts:581` and
+    `:731`, `streamingClient.ts:118`, `streamingAdapters/proxy.ts:143`,
+    `streamingAdapters/clientToolContinuationBuilder.ts:606`), and
+    `generateJsonCompletion` delegates to `callProviderCompletion` after only
+    rewriting `system`. The builders expose `head?` and `rawTail?` and **no `tail`**
+    (`chatRequestBuilders.ts:167,186`). Both proxy paths still serialize
+    `body.messages = normalizeOutboundMessages(split)` with `body.system` set only
+    when defined. `AiPrompt.toRequest()` is at `model.ts:129`. The regression test
+    lives at `src/test/unit/ai-assist/messageOrdering.test.ts` (330 lines) and still
+    asserts `expect(toolConv).toEqual(completionConv)` across the three providers.
+  - >
+    THE ONE STALE ARTIFACT IS THIS STREAM'S OWN FOLLOW-UP. `result.md` recorded a P3
+    to decompose `apiClient.ts` (PR #478 repeatedly trimmed JSDoc to fit proxy guards
+    under the 2000-line `max-lines` cap; Erik: *"we won't be able to cut lines every
+    time"*), and `docs/TECH_DEBT.md:222` still carries that entry as open — including
+    an August correction warning that *"whoever next edits `apiClient.ts` should
+    assume they have zero headroom"* — for a file that no longer exists. #620 did the
+    split, along the same lines the entry's own "scope sketch" proposed. The debt is
+    discharged and the entry should be closed; flagged here, not edited, since
+    `TECH_DEBT.md` is outside this stream's directory.
+  - >
+    NO LEDGER ENTRY. `docs/WORKSTREAMS.md` contains no `### \`ai-assist-message-ordering\``
+    heading and no mention of the stream id at all — the string `message-ordering`
+    does not appear in the file. A drafted entry accompanies this backfill and is
+    presented for review, not committed.
+  - >
+    LIBRARY_CAPABILITIES.md is accurate on this surface and needs no amendment. Every
+    clause of its `IChatRequest` paragraph was checked against source: "every turn
+    entry point" (true for all five plus `generateJsonCompletion`), "the last entry is
+    the current user turn and the preceding entries are history" (enforced, not merely
+    documented — `splitChatRequest` rejects a trailing non-`user` turn), "no head/tail
+    asymmetry" (the `tail` option is gone from the builders entirely), "`AiPrompt.toRequest()`
+    lowers a system+user prompt to this shape", "the proxy wire body serializes
+    `{ system?, messages }`", and the load-bearing warning *"Do not put continuation
+    wire objects in `messages`"* — `messages` is `ReadonlyArray<IChatMessage>` and
+    `continuationMessages` is `ReadonlyArray<JsonObject>`, so the two are not
+    interchangeable at compile time and reach the wire through different builder slots
+    (`head` vs `rawTail`).
+keywords:
+  - silent-history-reorder
+  - history-positioning-footgun
+  - head-tail-asymmetry
+  - IChatRequest
+  - splitChatRequest
+  - unified-request-shape
+  - entry-point-parity
+  - validation-parity-seam
+  - trailing-user-turn-guard
+  - normalizeOutboundMessages
+  - history-attachment-leak
+  - proxy-wire-contract-break
+  - AiPrompt-toRequest
+  - continuationMessages-distinct
+  - rawTail
+  - symmetric-ordering-regression-test
+  - structural-guard
+  - consumer-reported-footgun
+  - personaility
+  - breaking-change-active-surface
+  - lockstep-caller-migration
+  - copilot-loop-4-rounds
+  - max-lines-cap
+  - design-then-implement
+sourceHash: 9a3c8ace606a2501

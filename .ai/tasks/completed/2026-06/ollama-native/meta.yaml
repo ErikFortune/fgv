@@ -1,0 +1,91 @@
+id: ollama-native
+status: shipped
+packages: ['@fgv/ts-extras-ollama', '@fgv/ts-extras']
+prs: [468, 472, 473, 474, 475, 477]
+opened: 2026-06-06
+closed: 2026-06
+summary:
+  intended: >
+    Two activities. Task A (implement now): make the already-working local-Ollama
+    completion path discoverable — add `ollama`/`openai-compat` entries to
+    `DEFAULT_MODEL_CAPABILITY_CONFIG` and write an ai-assist recipe covering the
+    empty-key header omission, the `defaultModel: ''` caveat, the `endpoint`
+    override, and the `OLLAMA_ORIGINS` browser-CORS caveat. Task B (design only,
+    implement later): a full design for `@fgv/ts-extras-ollama`, a Node
+    Result-integration boundary owning ONLY the native surface the OpenAI-compat
+    `/v1` layer cannot express — ~7 primitives including model management, streamed
+    `pullModel`, grammar-constrained `chatStructured`, and native `embed`. Option C
+    (a new `'ollama-native'` `AiApiFormat` inside ai-assist's adapter set) was
+    rejected up front in the brief.
+  shipped: >
+    Both tasks, and Task B went past design into a shipped package. Task A landed
+    direct to `release` (#468). Task B produced the design doc AND the implemented
+    package across four reviewed phases O-1…O-4 (#472–#475 onto the `ollama-native`
+    integration branch), promoted to `release` via #477: `createOllamaClient` plus
+    six primitives — `listModels` / `listRunning` / `showModel` / `deleteModel` /
+    `pullModel` (streamed JSON-lines progress as a terminal `Result` + `onProgress`
+    callback, `AbortSignal`-cancellable) / `chatStructured<T>` (one-declaration
+    no-drift: the same `JsonSchema.ISchemaValidator` is both the wire `format` via
+    `toJson()` — draft-07-sanitized — and the reply validator via `validate()`).
+    `ollama` and `@fgv/ts-utils` are peer+dev deps; `@fgv/ts-json-base` is a hard
+    dep. Every phase at 100% coverage with a `code-reviewer` pass; two-layer
+    offline test strategy (structural client mocks + fetch-level JSON-lines /
+    wire-`format` proofs), no live daemon. Copilot converged in 2 rounds on #477.
+  diverged: >
+    Three deltas, one of them the headline. (1) SCOPE CUT — native `embed`.
+    The brief scoped `embed` (`/api/embed`) in as a primitive, flagged only as
+    "an open question whether it belongs here" given the transformers facade
+    already ships `embed`; design.md §3.6 specified it fully and counted it as the
+    7th primitive of the surface. It was then HELD at design close (OQ-1, Erik
+    2026-06-06) and elevated to a prerequisite — a sibling design stream,
+    `ai-assist-embeddings`, was commissioned to decide where Ollama embeddings
+    belong. That design concluded they are reachable through `/v1/embeddings` and
+    owned by the cross-provider `AiAssist.callProviderEmbedding`; native `/api/embed`
+    adds only marginal diagnostics (`total_duration` / `prompt_eval_count`), so
+    `embed` was CUT rather than merely deferred. The shipped package has six
+    primitives, not seven, and `docs/FUTURE.md` records it as "RESOLVED → CUT (do
+    not build)" rather than as a parking-lot item. A capability cut because a
+    sibling stream's design resolved where it belonged. (2) SCOPE EXPANDED — the
+    brief made Task B explicitly design-only ("no scaffolding, no `rush add`, no
+    source"), gated on Task A plus the MCP slice landing. Task A cleared the same
+    day (#468 merged 2026-06-06), but the MCP slice promoted later (#479, after
+    this stream's own #477) — so the stream ran design, implementation and
+    promotion in one pass ahead of its stated second gate. Note the CUT verdict
+    also postdates promotion: `embed` was still recorded as HELD at #477 (see
+    `state.md`), and only became CUT when `ai-assist-embeddings` promoted (#486);
+    `result.md` is written from the later vantage.
+    (3) DESIGN DEVIATION RATIFIED — `chatStructured` ships over the STREAMING chat
+    path (`stream: true` + `AbortableAsyncIterator.abort()`), not design §4's
+    `stream: false` sketch, because the `ollama` lib threads an `AbortSignal` only
+    on the streaming path and the locked OQ-3 amendment requires one. The document
+    is still assembled and validated whole. Vetted by `code-reviewer` and ratified
+    by the owner; design.md was corrected in the #477 Copilot round rather than
+    left to drift.
+  sourceLine: 'Shipped first-class Ollama support across two activities.'
+keywords:
+  [
+    local-ai,
+    sidecar,
+    result-integration-boundary,
+    grammar-constrained-output,
+    structured-output,
+    json-schema-no-drift,
+    draft-07-sanitizer,
+    json-lines-streaming,
+    abort-signal,
+    model-management,
+    peer-dependency-posture,
+    openai-compat,
+    scope-cut,
+    design-then-implement
+  ]
+relatedStreams:
+  - id: ai-assist-embeddings
+    relationship: >
+      sibling design stream commissioned by this stream's OQ-1; its verdict CUT
+      native `embed` from this package's surface
+  - id: local-ai-exploration
+    relationship: >
+      predecessor cluster; `@fgv/ts-extras-transformers` is the structural template
+      this package's boundary shape mirrors
+sourceHash: fcb6a54189680af6

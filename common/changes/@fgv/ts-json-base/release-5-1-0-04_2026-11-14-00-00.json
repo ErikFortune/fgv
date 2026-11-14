@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "`FileTree.copyItemInto` / `copyContentsInto` copy between trees faithfully — bytes verbatim where the destination is byte-native — and fail, or skip with `onUnfaithfulFile: 'skip'`, on any file that would change.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "noreply@anthropic.com"
+}

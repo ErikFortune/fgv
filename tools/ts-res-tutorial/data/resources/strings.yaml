@@ -1,0 +1,85 @@
+# ts-res supports several JSON shapes. This file uses the
+# "collection" shape: a top-level "resources" array, each entry with an
+# explicit id plus its candidate list.
+#
+# When imported from the file system, the importer prefixes every id
+# with the path it was imported from (parent directories + file basename).
+# For this file at data/resources/strings.yaml the resulting ids are
+#   resources.strings.greetings
+#   resources.strings.uiLabels
+
+resources:
+  # --------------------------------------------------------------------
+  # "resources.strings.greetings" demonstrates territory-priority resolution.
+  # The qualifier priorities in data/config/system.yaml are:
+  #   currentTerritory = 850  (wins)
+  #   language         = 800
+  # so a US territory match outranks a French language match even though
+  # both score PerfectMatch individually.
+  # --------------------------------------------------------------------
+  - id: greetings
+    resourceTypeName: json
+    candidates:
+      - json:
+          hello: Hello
+          goodbye: Goodbye
+          source: DEFAULT
+
+      - conditions:
+          currentTerritory: US
+        json:
+          hello: Howdy
+          goodbye: See ya later
+          source: 'TERRITORY: US'
+
+      - conditions:
+          currentTerritory: GB
+        json:
+          hello: Good day
+          goodbye: Cheerio
+          source: 'TERRITORY: GB'
+
+      - conditions:
+          language: fr
+        json:
+          hello: Bonjour
+          goodbye: Au revoir
+          source: 'LANGUAGE: fr'
+
+      - conditions:
+          language: fr
+          currentTerritory: CA
+        json:
+          hello: Salut
+          goodbye: À bientôt
+          source: 'BOTH: fr + CA'
+
+      - conditions:
+          language: fr
+          currentTerritory: FR
+        json:
+          hello: Bonjour monsieur/madame
+          goodbye: Au revoir et bonne journée
+          source: 'BOTH: fr + FR'
+
+  # --------------------------------------------------------------------
+  # "resources.strings.uiLabels" is a second resource in the same file
+  # to show that a single YAML document can define any number of
+  # resources.
+  # --------------------------------------------------------------------
+  - id: uiLabels
+    resourceTypeName: json
+    candidates:
+      - json:
+          welcome: Welcome
+          save: Save
+          cancel: Cancel
+          source: DEFAULT
+
+      - conditions:
+          language: fr
+        json:
+          welcome: Bienvenue
+          save: Enregistrer
+          cancel: Annuler
+          source: 'LANGUAGE: fr'

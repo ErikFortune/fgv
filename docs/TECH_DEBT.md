@@ -1,0 +1,1990 @@
+# Tech Debt — fgv
+
+Already-shipped imperfections. Priority-ranked; addressed
+opportunistically when the right surface area is touched.
+
+---
+
+## Disposition pass — 2026-08-14
+
+Every entry was verified against current source. **Four retired, ten kept, four of those
+rewritten.** The ledger went from 14 entries to 10.
+
+**Retired** (evidence in git history; nothing carried forward):
+`IProvenance.derivedFrom` bare-id ambiguity (all three sub-resolutions shipped — the entry was
+pure history and longer than any live item) · `ts-web-extras` lint cleanup (`eslint src` now
+exits **0**, not the recorded 126 violations) · `"sideEffects": false` convention (already stated
+in `MONOREPO_GUIDE.md`; audit of all 25 libraries found one real miss, filed as a chore rather
+than standing debt) · `apiClient.ts` at the `max-lines` cap (#620 split it; the only durable
+lesson was already codified verbatim in `CODING_STANDARDS.md`).
+
+### Four triggers have already fired without anyone acting
+
+This is the finding worth acting on, and it is the same failure the recent artifact sweep found
+everywhere else: **a trigger phrased as "next time someone touches X" depends on a person
+recalling a ledger entry at the moment they are busy with something else.** These four fired and
+nobody noticed:
+
+| entry | trigger | what actually happened |
+|---|---|---|
+| `ts-prompt-assist` TSDoc | "once the v0.1 surface is stable" | v0.1 shipped; two features were built on top of it |
+| cross-runtime export parity | "anytime an `index.browser.ts` is touched" | `ts-web-extras` took three export-adding features; **9 of 10 packages still untested** |
+| `createMemoryTools` codec duplication | "when the temporal write path lands" | it landed, with tests |
+| `AsyncDeferredResult` invoker | "the third consumer" | there are now **four** |
+
+The cross-runtime one is the instructive case: its trigger has fired at least three times, so the
+fix is not to restate it but to **replace recall with a mechanical gate** — see that entry.
+
+---
+
+## Priority key
+
+- **P1** — blocking / structural; address before resuming major feature work.
+- **P2** — fix before the next major feature in the affected area.
+- **P3** — opportunistic cleanup.
+- **P4** — doc / minor consistency.
+
+## Entry format
+
+```markdown
+- **[Pn] Title.**
+  Description with file pointers.
+
+  **Trigger**: when this should be addressed.
+
+  **Scope sketch**: one-paragraph fix shape.
+
+  **Not a P(n+1)**: why this priority and not lower.
+
+  **Reference**: PR / commit / session context that surfaced it.
+```
+
+---
+
+## P1 — Blocking
+
+*(none currently outstanding — the `ts-prompt-assist` validator-chain caller-controlled `T` cluster was fully retired by the surface-tidy round, which split `resolveAndValidateOutput<T>` into `resolveJsonOutput<K>` + `resolveFreeTextOutput` and replaced the remaining caller-asserted-`T` boundary with a runtime-evidenced kind check.)*
+
+## P2 — Fix before next major feature in affected area
+
+- **[P2] ~~`ts-agent-tasks` `TaskBroker.bindDelivery` lets any principal drain any subscription
+  whose `consumerId` it can name.~~ Resolved by #781 (`agent-tasks-drain-principals`): `subscribe`
+  records the principals allowed to drain (default the registrant), and `bindDelivery`, every bound
+  delivery operation, `dispose` and a disposing `closeSubscription` refuse any other with
+  `not-found-or-denied`. The sibling `disposeWithheld` gap is closed by a policy identity recorded on
+  the subscription. Promoted to `release` with #762 via #782. The one residual is the P3 below on
+  receipts a removed drain principal prepared.
+
+- **[P2] The Heft toolchain family is held at its 2026-09-14 pins.**
+  `@rushstack/heft` 1.3.0, `heft-node-rig` 2.11.50, `heft-web-rig` 1.4.34, `heft-jest-plugin`
+  2.0.17, `heft-lint-plugin` 1.2.27 and the api-extractor / sass / webpack5 plugins. The latest
+  versions fail `rush rebuild`. `heft-lint-plugin` 1.3.0 lints files outside the TypeScript program,
+  so an `eslint.config.js` block that sets `@rushstack/packlets/mechanics` without a `files` glob
+  becomes a config error (36 configs set that rule). And `@rushstack/eslint-config` 4.9.0 enables
+  `@rushstack/prefer-ecmascript-private-members: 'warn'`, which flags every `private _member`. The
+  plugins pin `@rushstack/heft` exactly, so the family cannot be split. `eslint` 10 waits on it,
+  and 9.x is already marked unsupported upstream.
+
+  **Trigger**: the next dependency refresh, or any need for a Heft or eslint fix newer than these
+  pins.
+
+  **Scope sketch**: add `files` scoping to the affected config blocks. Then decide the
+  private-members rule: migrate to `#private`, which changes runtime semantics and the
+  `enforceLeadingUnderscoreWhenPrivate` naming rule, or make a repo-level, reasoned rule
+  disposition. Then take the family together.
+
+  **Not a P3**: the toolchain falls further behind upstream fixes, including security ones, until
+  this is done.
+
+  **Reference**: `.ai/tasks/completed/2026-11/deps-refresh/result.md` § 4c, § 4d.
+
+- *Closed — `FsFileTreeAccessors`' prefix did not confine (absolute paths escaped it; plain writes
+  never checked).* Resolved by the `filetree-prefix-confinement` stream (PR #TBD), which added the
+  user-decided `absolutePathPolicy: 'unconfined' | 'confined' | 'verified'` and `realPath` options on
+  `IFsFileTreeInitParams`, applied to every operation; the default stays `'unconfined'`. Escape and
+  revert matrices: `.ai/tasks/completed/2026-10/filetree-prefix-confinement/result.md`.
+
+- **[P2] No shared ESLint layer — `no-prototype-builtins` is on in 4 of the 33 projects with an ESLint config.**
+  Every project carries its own flat `eslint.config.js` (33 files, 8 distinct variants) extending
+  `@rushstack/eslint-config/flat/profile/node`; the `heft-dual-rig` carries no ESLint config. So a
+  rule the whole repo should follow has to be copied into 33 files (six more projects have no ESLint config at all), and a new package starts without
+  it. `null-prototype-property-guard` fixed nine `obj.hasOwnProperty(k)` sites and enabled
+  `no-prototype-builtins` as an error **only in the four packages it touched** (`ts-utils`, `ts-json`,
+  `ts-res-ui-components`, `ts-utils-jest`). The other 29 have zero violations today (verified by
+  `git grep` on 2026-09-27), so nothing is broken — but nothing stops the class recurring there.
+
+  **Trigger**: the next rule that should apply repo-wide, or the first `hasOwnProperty` /
+  `isPrototypeOf` / `propertyIsEnumerable` call on an object in an ungated package.
+
+  **Scope sketch**: a single shared config module (in the rig, or a small private
+  `@fgv/eslint-config` package) exporting the common rule set, which each `eslint.config.js` spreads
+  after the rushstack profile; move `no-prototype-builtins` there and drop the four per-package
+  copies. Mechanical across 33 files, but it touches every package, so it is its own small stream.
+
+  **Not a P3**: the rule is the durable half of a shipped fix, and 29 packages currently lack it.
+
+  **Reference**: `null-prototype-property-guard` (2026-09-27); decision (by the user, when surfaced) to enable in the
+  four touched packages and defer the shared layer.
+
+- **[P2] CI reddens for reasons unrelated to the diff — three known causes, each costing an
+  investigation before it is recognised.** Every one was hit during the 2026-09-23/24 publish and
+  agent-tasks cluster work, and each cost a log read to distinguish from a real failure. None
+  affects published output; all of them waste reviewer and agent time and erode the signal that a
+  red check means something.
+
+  **(a) Wall-clock assertions.** `libraries/ts-extras/src/test/unit/md5Normalizer.browser.test.ts:165`
+  asserts `expect(endTime - startTime).toBeLessThan(300)`. It failed CI at **335 ms** on #691 — 12%
+  over a hardcoded threshold on a shared runner — having passed on the same branch nine hours
+  earlier. `TESTING_GUIDELINES.md` already states the rule this breaks: *"A millisecond assertion on
+  a CI runner measures the runner."* Siblings, tightest first: the same file's 300 ms;
+  `ts-extras/.../saferFetchRetry.test.ts:502` at 500 ms; `ts-res` `deltaGenerator.enumeration` at
+  2000 ms and `deltaGenerator.core` at 5000 ms. **Remedy:** assert the property the test is really about —
+  a counter, a call count, an absence of quadratic blowup — or delete the assertion. Raising the
+  threshold buys time and keeps the defect. *(Checked 2026-11-11: the `md5Normalizer.browser` and
+  `saferFetchRetry` assertions are gone — `deterministic-timing-tests`, #745 — leaving the two
+  `deltaGenerator` bounds.)*
+
+  **(b) `rush install` does not retry a dependency fetch.** On #687 the job died in 71 seconds:
+  `onnxruntime-node`'s postinstall hit `ETIMEDOUT`/`ENETUNREACH` fetching its native binary and Rush
+  reported *"Giving up after 1 attempts"*, having built nothing. It reads like a broken lockfile
+  rather than a network blip. **Remedy:** a retry around the install step, or a cached/vendored
+  binary for that package.
+
+  **(c) ~~An Argon2id test mock derives colliding keys from distinct salts.~~ Resolved by
+  `model-followups` (2026-11-11):** the test now flips one bit of the stored salt instead of drawing a
+  fresh one, which always moves the mock's seed. The original text follows.
+  `libraries/ts-extras/src/test/unit/crypto/keystore/keyStoreArgon2id.test.ts`'s
+  `makeDeterministicKey` folds the salt in as `seed += salt[i] * (i + 1)` — a weighted **sum**. Two
+  different 16-byte salts sharing that sum derive an identical key, so *"returns false when salt does
+  not match"* gets `true`. Roughly **1 run in 7,000** by the spread of that sum. Observed once on
+  #687. **Remedy:** make the mock's derivation depend on salt *content* rather than a weighted sum —
+  hashing the salt bytes, or folding position-sensitively (e.g. `seed = seed * 31 + salt[i]`).
+
+  **Trigger**: the next time any of these reddens a PR, or the next person who has to explain to a
+  reviewer that a red check is not real. **(a) is the one worth doing first** — it is the only one
+  that fires on ordinary runner load rather than needing bad luck or a network fault.
+
+  **Not a P3**: the cost is not the individual failure, it is that a red check stops meaning
+  anything. Three separate "this one isn't real" investigations in two days is the evidence.
+
+  **Reference**: #691 (a), #687 (b and c).
+
+- **[P2 → CLOSED 2026-09-26 by `agent-tasks-t8b`] The default capacity profile advertised 1,000
+  concurrent non-archived tasks and admitted 146.** Recorded across five slices (T4 found it, T6 and
+  T7 added the command and baseline terms, T8 PR 1 did the arithmetic). **Closed by decision, not
+  amended again.** What was decided, what shipped, and what it admits:
+
+  | | decision (design authority, 2026-09-26) | as shipped |
+  |---|---|---|
+  | 1 | reserve the update's **derived schema maximum**, not `maxUpdateBytes` | `maximumUpdateBytes(profile)` = `maxEnvelopeBytes` + fixed framing = **37,417 B** at the defaults; closeout, first resolution and settlement all reserve it |
+  | 2 | `resident-payload-bytes` 64 → **384 MiB** | done |
+  | 3 | `non-archived-tasks` stays 1,000 | done — but see below: not reachable under the defaults |
+  | 4 | `maxConsumerRecordBytes` 8 → **32 MiB** | done, with the per-record `record-bytes` ceiling raised 8 → 32 MiB alongside, without which it was capped at 8 MiB |
+  | 5 | `maxAcknowledgementIdsPerSubscription` stays 50,000 | done — 50,000 × 512 B = 24.41 MiB, now covered |
+  | 6 | `maxUpdateBytes` stays 64 KiB, the 37,417 B maximum documented beside it | done |
+
+  **The arithmetic.** Per plain registration the closeout reserves 7 × 37,417 B = 255.8 KiB of
+  resident payload (was 448 KiB): 1,537 registrations at 384 MiB (1,345 with one in-flight command
+  each, 1,195 with a command and one `current` subscription's baseline). The same registration
+  reserves **~976 KiB of `logical-bytes`** (32 + 64 KiB snapshot, 7 × 37,417 B of updates,
+  2 × 256 KiB of operation evidence, 224 × 512 B of acknowledgement evidence) and **224
+  `audience-links` / `acknowledgement-ids`**. Measured (`agent-tasks-t8b` saturation suite, *the
+  default profile*): **536 plain registrations, refused by `logical-bytes`** (512 MiB); links and ids
+  would bind next at 892.
+
+  **The finding that remains, and was decided rather than fixed.** The decision's table modelled
+  `resident-payload-bytes` alone; with it raised, `logical-bytes` binds first, so "1,000 is true in
+  every modelled mix" does not hold. Raising `logical-bytes` to 1.5 GiB and `audience-links` /
+  `acknowledgement-ids` to 300,000 would make it hold (probe: 1,339 plain registrations; the heaviest
+  mix needs 1,353 MiB and 257,000 links). **Asked 2026-09-26; the answer was to ship the six changes
+  and document 536**, which `defaultTaskCapacityLimits`' remarks and the `CAPABILITIES.md` runbook now
+  do. The open question is carried by the smaller entry below.
+
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-t8b/result.md` § *Profile*; the history of this
+  entry is in `agent-tasks-t4` … `agent-tasks-t8` `result.md` files and
+  [#687](https://github.com/ErikFortune/fgv/pull/687).
+
+- **[P3] The default profile's `non-archived-tasks` (1,000) is a ceiling `logical-bytes` never lets it
+  reach.** Under `defaultTaskCapacityProfile` 536 plain registrations fill `logical-bytes`; the
+  1,000 is reachable only for a host that raises `logical-bytes`, `audience-links` and
+  `acknowledgement-ids` together. That is documented at the profile site and in the runbook, and it
+  errs in the safe direction — every limit here can still be raised in place, none lowered.
+
+  **Trigger**: the first consumer sizing a deployment above ~500 concurrent tasks, or M1's
+  production-profile cohort (the plan's "report absolute steady-state and peak memory for the
+  production profile's limiting fixtures"), whichever comes first.
+
+  **Scope sketch**: decide whether the default should admit its own headline figure. The raises that
+  would (logical-bytes 1.5 GiB, links/ids 300,000) are measured in `agent-tasks-t8b` `result.md`;
+  the cost is a larger on-disk logical budget for every repository created under the default.
+
+  **Trigger fired 2026-10-01** (`agent-tasks-m1-stop`, M1's production-profile cohort). Measured:
+  `logical-bytes` refuses at the 520th–533rd live task in every live mix (plain, owed, fanout), and
+  at the 443rd beside 9,000 archived; at refusal 97–99% of it is reservation — the repository holds
+  5–13 MB written.
+  Resident cost is small (~12.7 MiB heap at 529 owed tasks), so admitting 1,000 costs memory little
+  and disk budget much.
+
+  **Decided 2026-10-01 (user): keep the default profile as shipped. Closed.** ~500 concurrent tasks
+  is sufficient for the foreseeable future, so the measured ceiling — 519–532 live tasks admitted,
+  refused at the 520th–533rd — is accepted, and the ~1.5 GiB of logical budget per repository that
+  admitting 1,000 would cost is not bought.
+  `capacityProfile.ts` is untouched. The declared `non-archived-tasks: 1000` **stays as it is**, and
+  stays documented as unreachable under the default's own `logical-bytes`: it is accurate once read
+  with the concurrent-constraints note, and it is the direction that can be raised in place rather
+  than lowered. A host that genuinely needs 1,000 raises `logical-bytes`, `audience-links` and
+  `acknowledgement-ids` together; `agent-tasks-m1-stop` `result.md` has the figures to size it.
+
+- **[P3] `ts-agent-tasks` a released or settled stop keeps ~1 KB per target resident, and stops on one
+  root are never compacted.** After release the stop book keeps one marked-command entry per paused
+  target until that target is archived: 913–963 B per target over a stop-free paused tree (M1). Every
+  released or settled intent also stays in the root record, so a root admits 24 stop/release cycles
+  at 1,000 targets (then `record-bytes`, its 8 MiB task-record ceiling) and 61 at the default
+  profile's 200 (then the root's `operations` slots).
+
+  **Trigger**: a host that stops the same large tree repeatedly, or holds many once-stopped tasks.
+
+  **Scope sketch**: drop settled marked commands of non-latching intents from the resident book;
+  compact released intents to a summary once their targets are archived.
+
+  **Not a P2**: bounded by the retained-task ceiling and visible as a refusal, never silent.
+
+  **Reference**: `agent-tasks-m1-stop` `result.md` § *Cohort 1*.
+
+- **[P3] `ts-agent-tasks` stop pump cost grows with concurrently latched tasks.** Stop plus pump to
+  satisfied: 19 ms per target at 1×1,000, 46 ms per target at 10×1,000 (M1, descriptive, measured
+  under a concurrent run). Per-commit stop-book work appears to scale with the latched population.
+
+  **Trigger**: a host running several wide stops at once.
+
+  **Scope sketch**: profile the per-commit stop-book recount; index it by root.
+
+  **Not a P2**: a latency, with no correctness or capacity effect.
+
+  **Reference**: `agent-tasks-m1-stop` `result.md` § *Cohort 1*, *Latency*.
+
+  **Not a P2**: nothing is wrong or unsafe — the limit that binds is reported exactly, with
+  `reclaimableByCleanup`, and the documentation says which binds.
+
+  **Reference**: `agent-tasks-t8b` `result.md` § *Profile*.
+
+- **[P3] At the default context budget an older revision of a maximum-size task can never be
+  delivered.** `defaultTaskContextBudget` is 8,000 characters; the renderer shows a task's current
+  revision before an owed older one, and a task at the field bounds (4,096-character description,
+  2,048-character summary) needs more than that for both. The older update stays owed — never
+  dropped — and every `prepare` at the default omits it, so a consumer that only ever prepares at the
+  default never acknowledges it; a larger budget or a host disposition discharges it.
+
+  **Trigger**: a consumer that cannot drain a subscription at the default budget, or I1's tool factory
+  choosing a budget for model-facing delivery.
+
+  **Scope sketch**: either raise the default budget to fit two maximum-size revisions, or have the
+  renderer surface an obligation it can never fit (an omission reason distinct from "over budget
+  this time") so a host can act on it. `saturation.test.ts` *delivery at the default context budget*
+  pins today's behaviour.
+
+  **Not a P2**: nothing is lost and the runbook names the remedy; it costs a drain that looks stuck.
+
+  **Reference**: `agent-tasks-t8b` `result.md`.
+
+- **[P3] An expired, orphaned receipt keeps pinning until something evicts it, and `outstanding()`
+  calls its task prunable.** Pin evidence ignores `expiresAt`; an expired unacknowledged manifest is
+  evicted only by the next `issueReceipt`, `disposeObligations` or `abandonReceipt` on that
+  subscription — `cleanup` does none of them — so a receipt whose process died pins its updates
+  indefinitely on an otherwise idle subscription, while `outstanding().prunable` lists the task and
+  `cleanup` reports it `unchanged` with no reason. Nothing is lost and the runbook names the remedy
+  (abandon it), but "expire … receipt pins" in design §8.6 implies expiry is enough.
+
+  **Trigger**: a host that relies on expiry to drain. **Scope sketch**: either treat an expired
+  unacknowledged manifest as not pinning at prune time (disposal already does, since T8 PR 1's
+  antagonist finding), or have `cleanup` evict expired manifests; and keep `prunable` consistent with
+  what cleanup will do. **Reference**: `agent-tasks-t8b` `state.md` § *antagonist*.
+
+- **[P3] `ts-agent-tasks` a receipt a removed drain principal prepared stays acknowledgeable by
+  another.** After `TaskBroker.setSubscriptionDrain` removes a principal, a receipt it prepared stays
+  issued; a principal still named can acknowledge it under its own authority, discharging what the
+  removed principal was shown. Manifests (`IIssuedTaskReceipt`) do not record who prepared them, so
+  the broker cannot tell. Host-reachable only — the host holds the receipt object.
+
+  **Trigger**: a host that removes a drain principal while that principal has receipts in flight, or
+  hands receipts between principals. **Scope sketch**: record the preparing principal on the
+  manifest and either abandon a removed principal's receipts in `setSubscriptionDrain`'s write or
+  refuse to acknowledge a receipt prepared by another principal. **Not a P2**: it needs the host to
+  pass one principal's receipt to another, and every acknowledged id was shown to someone the host
+  named. **Reference**: `agent-tasks-drain-principals` `result.md` § *Open questions*.
+
+- **[P4] A baseline is never checked against `maxUpdateBytes`, and a profile may set `maxUpdateBytes`
+  below an envelope plus framing.** `_checkBaseline` has no size check, so under such a profile a
+  baseline can exceed both `maxUpdateBytes` and `maximumUpdateBytes(profile)`. It is charged at its
+  actual size, so nothing is under-reserved; the bound is simply not the bound it says. **Scope
+  sketch**: check baselines like updates, or require `maxUpdateBytes ≥ maxEnvelopeBytes + framing`
+  in the profile converter. **Reference**: `agent-tasks-t8b` antagonist (from reading, not run).
+
+- **[P4] `source-replay` envelope validation still measures against `maxUpdateBytes`.**
+  `storage/claims.ts` `replayCharges` refuses an envelope whose declared bytes exceed
+  `n × maxUpdateBytes`. Since T8 the reservation unit is `maximumUpdateBytes` (37,417 B at the
+  defaults), so an envelope declaring more than `n × 37,417` bytes is accepted and reserves bytes its
+  updates can never use. It over-reserves the host's own declaration and nothing else, which is why
+  T8b left it rather than narrow what the check accepts inside a profile change.
+
+  **Trigger**: the next change to replay envelopes. **Scope sketch**: measure against
+  `maximumUpdateBytes(profile)`. **Reference**: `agent-tasks-t8b` `state.md` work log.
+
+- **[P2] `ts-agent-tasks` broker hand-offs T5 left for T6/T7/T8 by design — each has a trigger
+  that is the next slice's first step.**
+  (1) ~~**T7:** audiences come from an internal seam that answers "nobody"; filling it must reserve
+  per-audience acknowledgement evidence first.~~ **Resolved by T7** — storage computes and verifies
+  every audience and charges its evidence in the accepting commit; the seam is removed. (2) ~~**T8:** `archive`
+  refuses a task while any retained update has a non-empty audience (`retention-blocked`); T8
+  replaces that with acknowledgement/disposition evidence and pruning.~~ **Resolved by T8** — an
+  update leaves a record only on each audience member's durable acknowledgement or disposition, and
+  archive writes a tombstone with no payloads (`agent-tasks-t8` `result.md`). (3) ~~**T6:** an external
+  task's commands are `rejected: unsupported` and recorded under their key until dispatch exists.~~
+  **Resolved by T6** — external commands dispatch through their source (see the next entry for
+  what T6 hands on). (4) ~~**T9:** no stop latch is checked by list completion or relationship operations yet.~~
+  **Resolved by T9** — the repository refuses list completion, new children, reparenting and archive
+  of a latched task on every commit, and the broker names each refusal `stop-active`
+  (`agent-tasks-t9` `result.md` § *The admission freeze*).
+  **Trigger:** the start of T6, T7, T8 and T9 respectively. **Reference:** the `agent-tasks-t5`
+  stream's `result.md` § *What a later slice must decide* (at `.ai/tasks/completed/2026-10/agent-tasks-t5/`).
+
+- **[P2] `ts-agent-tasks` source hand-offs T6 left for T7/T8/T9 — each is the named slice's to
+  decide, and none is safe to leave implicit.**
+  (1) ~~**T8 — held commands never settle on their own.**~~ **Resolved by T8** —
+  `TaskBroker.abandonCommand` settles a held, never-sent or feed-awaiting command as
+  `{ state: 'abandoned', from }`, releasing its reservation without claiming an outcome. A `possibly-sent` command the pump holds
+  (non-idempotent with no lookup answer, or its source key expired) stays unsettled indefinitely,
+  keeping its settlement reservation (one update at `maximumUpdateBytes` since T8b) and blocking
+  `archive` (`retention-blocked`, "unsettled command"). Only a later `lookupCommand` that finds it settles it; an ordinary observation does
+  not, and a source with no lookup never will. The same holds for a `source-replay` command settled
+  `accepted` while it awaits a feed revision the feed never reaches (e.g. one reported under an
+  epoch the feed cannot order against): archive is refused while it awaits. T8 needs an explicit, audited host disposition for a held command
+  (e.g. "abandoned: outcome unknown") that consumes the reservation without claiming an outcome.
+  (2) ~~**T8 — a `source-replay` task registered after the feed passed its revisions.**~~
+  **Resolved by T8, by enforcement** — a `source-replay` pass stops with the cursor unmoved at a
+  revision for a binding no task holds (`stopped: 'unregistered-binding'`); registering the binding
+  lets the next pass apply it. The feed
+  reports an observation for a binding no task holds as `unknown-binding` and the pass moves on,
+  so revisions emitted before registration are never replayed into the task. Hosts must register
+  (or register with an `initialObservation`) before the source emits for that binding; T8's
+  recovery journeys should either enforce that ordering or detect the gap.
+  (3) ~~**T7 — audience charges on the T6 claims.**~~ **Resolved by T7** — the evidence is spent
+  from these claims, pinned by the charge (`agent-tasks-t7` `result.md` § *How the T6 claims were
+  spent*).
+  (4) ~~**T9 — `ITaskSource.capabilities()` and the source side of a stop.**~~ **Resolved by T9** —
+  an optional `capabilities(binding)` declares the stable-stop contract (`pause`, `cancel`,
+  `contractVersion`) and names the kind's command for each mode; asked on every stop pass, its
+  evidence revalidated after reopen.
+  **Trigger:** the start of T7, T8 and T9 respectively. **Reference:** the `agent-tasks-t6`
+  stream's `result.md` § *Hand-offs* (at `.ai/tasks/completed/2026-10/agent-tasks-t6/`).
+
+- **[P2] `ts-agent-tasks` stop hand-offs T9 left open — each named with the slice or trigger that
+  owns it.**
+  (1) **Explicit abandonment of a blocked cancel** (design § 10 step 8: "explicit disposition *may*
+  record abandonment"). Not built: a root whose cancel stays `blocked` — an observation-only child
+  that never terminates, say — is simply `retention-blocked` at archive, and its tree stays frozen.
+  The disposition must retain the unresolved partial-stop report and never claim success, and must
+  decide whether the latch outlives it. **Trigger:** the first host that needs to archive such a
+  root. (2) **The attempt bundle uses schema maxima**: one `maxStoredOperationBytes` for the command
+  plus a full `maximumSettlementCharges` — 643,625 logical bytes per target under the default
+  profile, so 400 plain registrations admit a stop over at most 210 of them. A stop's own command is
+  broker-composed and much smaller than the schema maximum; a derived maximum (as `maximumUpdateBytes`
+  does for updates) would shrink the reservation severalfold, but must also bound the source-designated
+  parameters. **Trigger:** a consumer that needs larger stops under the default profile.
+  (3) ~~**M1's stop-state cohort** is not run by T9~~ *Resolved by `agent-tasks-m1-stop`* (2026-10-01):
+  run, with the stop's resident and on-disk cost per target, latch and evidence record, and its
+  bounds — breadth by the 1,000-target cap, repetition by the root's record (`record-bytes`) or
+  per-task `operations`. **Reference:** `agent-tasks-t9` `result.md` (at `.ai/tasks/completed/2026-10/agent-tasks-t9/`) and `agent-tasks-m1-stop` `result.md`.
+
+- **[P2] `ts-agent-tasks` receipt preparation's working set follows owed volume, not the receipt.**
+  `BoundTaskDelivery.prepare` (`broker/delivery.ts`) gathers up to `maxPreparedUpdates` (1,000) owed
+  updates, projects each, and queries a 200-task current page, whatever the context budget. M1's
+  owed fixture (529 terminal tasks, 1,587 owed updates, 4,000-character descriptions): one receipt of
+  ~8,000 characters read **200 task records** and peaked **25.4 MiB** above settled (8.7 MiB
+  old-space), against M1's frozen ≤ 16 MiB. Bounded — by those two constants — but its worst case at
+  maximal envelopes (37,417-byte updates) is not measured.
+
+  **Trigger**: the P1 slice, or a host preparing receipts in a memory-constrained process.
+
+  **Scope sketch**: stop gathering once the budget's inclusion is decided (render incrementally, or
+  bound the candidate window by the budget), and measure the maximal-envelope worst case either way.
+
+  **Not a P3**: it is the per-call working set of the delivery path every consumer runs.
+
+  **Reference**: `agent-tasks-m1-stop` `result.md` § *Misses* (4).
+
+- **[P2] `ts-agent-tasks` a consumer-record rewrite costs ~28× the record's bytes.** At the 50,000-id
+  per-subscription cap (49,954 disposals, a 3.29 MiB record) one acknowledgement rewrite peaked
+  **92.4 MiB** above settled, 58.6 MiB of it old-space, and took 1.3 s; process maxRSS 194 MiB. The
+  whole history is parsed, validated and re-encoded on every rewrite. At maximal evidence (512 B per
+  id) the cap admits a record near 24.4 MiB, under `maxConsumerRecordBytes` (32 MiB): at the observed
+  ratio a transient of several hundred MiB — **extrapolated, not measured**.
+
+  **Trigger**: the profile decision below, or a consumer expected to approach the cap.
+
+  **Scope sketch**: measure the maximal-evidence record first; then either lower the per-subscription
+  cap the default admits, or keep exact history out of the rewrite path (append-only segments).
+
+  **Not a P3**: it is the largest per-operation transient in the default profile, and a host sizes
+  memory by it.
+
+  **Reference**: `agent-tasks-m1-stop` `result.md` § *Misses* (5).
+
+- **[P2] `ts-agent-tasks` open and rebuild working space near the 8 MiB task-record ceiling.** M1's
+  evidence fixture (67 external tasks of ~7 MB, 447.8 MiB on disk, at `logical-bytes`' ceiling)
+  peaked **140 MiB** above settled at open and rebuild (old-space +61.6 MiB, maxRSS 274 MiB), with one
+  record materialized at a time. The cold-history bound M1 qualified on 60 KB records (25% of cold
+  bytes + 16 MiB) does not hold here; V8 collects successive large parses lazily. Settled state is
+  clean.
+
+  **Trigger**: the profile decision, or a host whose records can approach the task-record ceiling.
+
+  **Scope sketch**: document the working-space budget by record size in the runbook; consider a
+  lower default task-record ceiling, or yielding to a collection between large records.
+
+  **Not a P3**: a host provisioning by the qualified bound would be ~110 MiB short.
+
+  **Reference**: `agent-tasks-m1-stop` `result.md` § *Misses* (6).
+
+- **[P2] `ts-agent-tasks` delivery hand-offs T7 left for T8 — each is T8's to decide.**
+  *(T8: (1), (3) and (4) resolved — see each. (2) resolved by `agent-tasks-t8b`'s profile change — noted at the cluster close, 2026-10-01.)*
+  (1) ~~**`archive` is `retention-blocked` for every task a subscription covers, even fully
+  acknowledged.**~~ *Resolved by T8.* The inherited rule refuses archive while any retained update names an audience,
+  and T7 never prunes a stored audience; with one matching subscription no covered task can ever be
+  archived. T8's pruning against exact acknowledgement history and disposition evidence is what
+  unblocks it (evidence: `delivery/retention.test.ts`). (2) ~~**Profile inconsistency:** a
+  subscription record reserves E (512 B) record bytes per owed or future link, so
+  `maxConsumerRecordBytes` (8 MiB) admits ≈16,384 while `maxAcknowledgementIdsPerSubscription`
+  advertises 50,000.~~ *Resolved by `agent-tasks-t8b`*, which raised `maxConsumerRecordBytes` (and
+  `record-bytes`) to 32 MiB — room for 65,536 links at 512 B — while the per-subscription cap stayed
+  50,000; M1 reached the 50,001st id on the per-subscription cap (`agent-tasks-m1-stop` § *Cohort 2*). (3) ~~**Subscription closure and disposition** (`closed`, `disposed`,
+  `coalesceProgress`) and the capacity each releases~~ *Resolved by T8* — closure releases the
+  future-update reservation and, once nothing is owed, the preparation claim; exact history stays a
+  lifetime charge. (4) ~~Baseline payloads of `current` subscriptions hold resident bytes until
+  acknowledged~~ *Resolved by T8* — a baseline payload leaves the record, and the resident charge,
+  in the write that acknowledges or disposes it.
+  **Trigger:** the start of T8. **Reference:** the `agent-tasks-t7` stream's `result.md` §
+  *Hand-offs* (at `.ai/tasks/completed/2026-10/agent-tasks-t7/`).
+
+*(`ts-agent-tasks` — T8's second body of work: **retired 2026-09-26 by `agent-tasks-t8b`**, which
+delivered the A3 saturation journeys with exact transfers at every crash point, lifetime
+acknowledgement exhaustion, the remaining saturation cases, the M1 cohorts and the profile decision.
+What it left open is carried by the three smaller entries after the closed capacity entry above.)*
+
+*(The `checkThreshold` zero-byte-section measure gap (shipped in C2, #669) was fixed by C3 of
+`ai-assist-prompt-caching`: a section with `chars === 0` now contributes `0` to the measured total
+via an explicit filter before every check in `checkThreshold`, rather than being incidentally
+in-or-out of the slice depending on `prefixEnd`'s position. Regression tests use non-zero
+`measured` on the empty section in both of the original bug's layouts — see
+`cacheStabilityAnalysis.test.ts`, the tests following "counts genuinely cacheable bytes past a
+zero-byte stable run in the prefix". Design rule recorded at design.md §5.1b. This item is
+retired; the `as Record<string, …>` item below remains outstanding.)*
+
+- **[P2] D2 does not treat a body as conditional when no winning candidate is a conditional
+  `'match'` — a conditional candidate that lost this resolve is invisible to it.**
+  `checkConditionalBody` in `libraries/ts-prompt-assist/src/packlets/resolve/cacheStabilityAnalysis.ts`
+  marks a body qualifier-conditional only when a *winning* candidate matched (`matchType ===
+  'match'`, not `'matchAsDefault'`) on a non-empty condition set. The same blind spot covers a
+  body whose only conditional winners matched as `matchAsDefault`: their axes are folded in when
+  some other winner is a conditional `'match'`, and ignored otherwise. Take the common shape: an unconditional full base plus partials conditioned on a
+  volatile axis. On a resolve where no partial matches, the body reads `'frozen'`. On the next
+  resolve a partial can match and change it. That is a false `'frozen'`, the expensive direction
+  under design.md §1's asymmetry.
+  `prompt-assist-qualifier-stability` (#689) folds losing candidates in **once some winner is
+  conditional**, because its own relaxation would otherwise have introduced exactly this shape. It
+  left the all-unconditional-winners case as it found it: closing it adds refutations to bodies
+  that are not refuted today, which was outside that stream's compatibility contract.
+
+  **Trigger**: the next change to D2, or the first report of a cache miss on a prompt whose
+  diagnostics called it `'frozen'`.
+
+  **Scope sketch**: when `candidates` is supplied, treat any candidate with a non-empty condition
+  set as conditioning the body whether or not it won. With the axis declarations from #689 this
+  costs a consumer nothing on `'frozen'`-declared axes. It will add refutations for undeclared
+  ones, so run the repo-wide `rush test` and expect downstream fixtures that count findings.
+
+  **Not a P3**: it produces a false `'frozen'` on an ordinary authoring shape, and a false
+  `'frozen'` costs the whole prefix silently on every request.
+
+  **Reference**: `.ai/tasks/completed/2026-09/prompt-assist-qualifier-stability/result.md`
+  § "Found during implementation — losing candidates".
+
+- **[P2] `as Record<string, …>` after a `typeof` guard — a P1 anti-pattern, 32 sites in
+  production source across 11 packages.**
+  `CODE_REVIEW_CHECKLIST.md` lists "manual type checking with unsafe casts" as **P1 CRITICAL** and
+  names `as Record<string, unknown>` in its own quick-detection greps. The recurring shape is:
+
+  ```ts
+  if (raw === null || typeof raw !== 'object') { return false; }
+  const node = raw as Record<string, JsonValue | undefined>;   // ← the violation
+  ```
+
+  **Measured, not assumed.** `grep -rn "as Record<string" --include=*.ts libraries/*/src tools/*/src`
+  excluding tests returns 33 lines, one of which is a comment (`fromJson.ts:58`) — so **32 code
+  sites** across 11 packages (`ts-extras` 12, `ts-json-base` 5, `ts-res-ui-components` 4, `ts-web-extras` / `ts-utils` / `ts-app-shell` 2 each, and one each in `ts-res`, `ts-prompt-assist`, `ts-agent-memory`, `repo-template`, `ks`).
+
+  **Triaged and queued as a chore batch** — see `CHORES.md` § *"`as Record<string, …>` after a type
+  guard"*, which splits the sites into mechanically-removable (≈8), missing-Converter (≈16, design
+  work, do not batch with the rest) and benign (≈8).
+
+  **At least the `JsonValue` family of them is unnecessary, proven by construction.** `JsonObject` is
+  `{ [key: string]: JsonValue }`, so once the `typeof` / `null` / `Array.isArray` guard has run,
+  TypeScript has already narrowed to `JsonObject` and the property is directly accessible. Three such
+  casts were removed from `structuredOutput.ts` in the `schema-optional-translation` stream with **no
+  signature change, no behaviour change, lint clean and coverage still 100%** — including one in
+  `hasOptionalProperties` that had shipped, and which a later stream copied *because it was there*.
+  That copy is the whole reason this entry exists: the checklist calls the pattern blocking, and it
+  still propagated, because the nearest example in the file was a violation.
+
+  Not every instance will be the same shape — some cast a genuinely-`unknown` value where a Converter
+  is the right answer instead. **Triage before bulk-editing**; the `JsonValue`-narrowing ones are the
+  cheap and provably-safe subset.
+
+*(The repo-wide `rush test` gate is **fully restored as of 2026-09-19**, in two steps. #673 fixed
+the root-only `mutableFsTree` assertion that stopped the run at `@fgv/ts-json-base` with 29 of 36
+packages never executing. The Jest 30 / Heft 1.3 upgrade then removed the four `SUCCESS WITH
+WARNINGS` packages, whose only warning was the Node `punycode` DEP0040 deprecation emitted by
+`tr46@3`'s `require("punycode")` — jsdom 26 brings tr46 5, which requires `"punycode/"` instead.
+Both `rush test` and `rush rebuild` are now exit 0 with no warnings bucket at all, so
+`CODING_STANDARDS.md`'s repo-wide-test acceptance checkbox is honestly tickable for the first
+time. The override route that looked cheaper was never taken and was right to avoid: pnpm itself
+logged "The `pnpm` field in package.json is no longer read by pnpm … `pnpm.overrides` ignored"
+during the upgrade, confirming it would have done nothing on Rush 5.177.2. This item is retired.)*
+
+
+
+
+- **[P2] The `samples/testbed` fake `IVectorIndex` has broken on two consecutive `ts-agent-memory`
+  contract changes, with the rule codified in between.**
+  `samples/testbed/src/test/unit/scenarios/sqliteVecMemoryPersistence.test.ts` hand-implements
+  `IVectorIndex` (via `fakeIndex(overrides: Partial<IVectorIndex>)`). It broke on
+  `personaility-asks-2026-08` (#614, which promoted `size` / `rebuild` onto the contract) and again
+  on `vector-rebuild-report-by-kind` (2026-08-15, which reshaped the report and widened `rebuild`'s
+  return type). Both times it was invisible to `rushx build` / `rushx test` in **both** libraries
+  and surfaced only in a repo-wide `rush rebuild`.
+
+  `CODING_STANDARDS.md` § "Widening a shared interface needs a repo-wide build" is written **from
+  this exact file**, and it did not prevent the second break — because it is advice a person has to
+  recall at the moment they are busy with something else, which is the failure mode the 2026-08-14
+  disposition pass named as the reason four tech-debt triggers fired unnoticed. A third restatement
+  is not the answer.
+
+  **Trigger**: the next change to `IVectorIndex`, `IFragmentVectorIndex`, `IMemoryIndex` or
+  `IMemoryRecordSource`.
+
+  **RESOLVED (b), 2026-08-15, after a FOURTH firing.** `derived-state-phase1` broke the same file
+  again — two fake indexes in `sqliteVec*Persistence.test.ts` — bringing it to four consecutive
+  streams on this contract family. Remedy (b) is adopted: the repo-wide `rush rebuild` is now an
+  **acceptance-criteria checkbox** in `CODING_STANDARDS.md` for any stream changing a shared
+  contract, rather than advice a person has to recall. Remedy (a), the shared exported test double,
+  is **not** adopted and is downgraded to a P3: of the four observed casualties one was a *source*
+  file, so (a) covers half the cases and (b) covers all of them. This entry stays open only for that
+  P3 remnant.
+
+  **THIRD FIRING, 2026-08-15 — and it widened the class.** `agent-memory-index-partial-read` broke
+  `samples/testbed` again, and this time the casualty was **`scenarios/memoryToolsGate/index.ts`, a
+  *source* file**, not a test double: it constructs retrievers, and the `{ index, resolver }`
+  widening reached it. So remedy (a) — a shared exported test double — would **not** have caught
+  this one; only (b), the repo-wide build, did. That reweights the sketch: (b) is no longer merely
+  the cheap option, it is the only one demonstrated to cover the observed cases. Three streams,
+  three catches, all by `rush rebuild` after green per-package gates.
+
+  **Scope sketch**: two candidates, not exclusive. (a) Replace the hand-rolled fake with a shared
+  test double exported from a single place, so a contract change updates one file rather than
+  N — this is the `succeed()`/`fail()`-over-hand-rolled-Result-shapes lesson applied to interfaces.
+  (b) Put `node common/scripts/install-run-rush.js rebuild` on the acceptance-criteria list for any
+  stream whose brief declares a shared-contract change, so it is a checked box rather than a
+  remembered practice. (b) is cheap and mechanical; (a) removes the class.
+
+  **Not a P3**: P3 is opportunistic, and the trigger has now fired **three times in three
+  consecutive streams** on the same contract. The cost each time is a red repo-wide build discovered after the
+  per-package gates were green — i.e. after an implementer reasonably believed they were done.
+
+  **Reference**: `docs/WORKSTREAMS.md` § `personaility-asks-2026-08` (the #614 break) and
+  § `vector-rebuild-report-by-kind` (the second). Escalated by that stream's antagonist pass, which
+  observed that its README had closed the same observation with "nothing new to codify" while the
+  *other* recurrence it hit — this file's line cap — was correctly escalated.
+
+- **[P1] The 2000-line `max-lines` cap is collected as a per-stream toll — PROMOTED 2026-08-18,
+  widened from one file to the pattern 2026-08-22.**
+
+  **`fileTreeMemoryStore.ts`** is the origin instance and paid the toll in four consecutive streams,
+  which is exactly the promotion condition this entry wrote for itself. `fragment-query-scoping`
+  (2026-08-18) needed `IMemoryStore` to implement `IIdentityResolver`, found the file already at
+  **1999** with no room at all, and extracted
+  `libraries/ts-agent-memory/src/packlets/store/storeIdentity.ts` (codec lookup, identity resolution,
+  loaded-identity verification) to get under it — landing at **1989**. Then a fifth: the
+  kind-collision fix (#648) needed a `verifyOccupantKind` guard threaded through the read paths, and
+  extracted `storeFileAccess.ts` (scope-directory resolution, record file write/delete) to make room
+  — **1907** as of that merge. Five extractions in five streams is not debt being deferred; it is a
+  toll being collected, and every one of them was discovered mid-implementation rather than planned.
+
+  **The second file arrived 2026-08-22, which is what widens this entry.** `orDefaultWith` (#649) —
+  a *four-line* addition to `libraries/ts-utils/src/packlets/base/result.ts` — took that file from
+  1992 to 2000 and turned a green `rushx build` into a repo-wide `rush rebuild` failure, and its test
+  file (`result.test.ts`, 1989) has the same one stream of headroom left. The seam was chosen under
+  the same pressure the four `ts-agent-memory` extractions were: the first candidate
+  (moving `AsyncResult` / `AsyncDetailedResult`) had to be abandoned after finding `new AsyncResult(…)`
+  constructed at runtime in ten places, which would have introduced a circular import into ts-utils'
+  foundation file. The types-only cut that shipped (`resultTypes.ts`, re-exported from `result.ts`,
+  516 lines) is defensible and leaves the public surface byte-identical — but it was not *designed*,
+  it was the seam that fit.
+
+  **What this means for the entry:** the problem is not that one store class grew large. It is that
+  the repo has no mechanism that notices a file approaching the cap, so the discovery is always a red
+  check on a PR whose actual change is unrelated and often tiny, and the remedy is always chosen in
+  the worst possible frame of mind.
+
+  **The sweep nobody had run, run 2026-08-22** (`find libraries tools -name '*.ts' -not -path
+  '*/node_modules/*' -not -path '*/lib/*' -not -path '*/dist/*' -exec wc -l {} + | sort -rn`):
+
+  | lines | file | headroom |
+  |---|---|---|
+  | **2000** | `ts-extras/src/test/unit/ai-assist/streamingAdapters.test.ts` | **none** |
+  | **2000** | `ts-extras/src/test/unit/ai-assist/clientToolContinuationBuilder.test.ts` | **none** |
+  | 1997 | `ts-extras/src/test/unit/ai-assist/apiClient.test.ts` | 3 |
+  | 1989 | `ts-utils/src/test/unit/result.test.ts` | 11 |
+  | 1982 | `ts-json-base/src/test/unit/jsonCompatible.test.ts` | 18 |
+  | 1957 | `ts-extras/src/packlets/ai-assist/model.ts` | 43 |
+  | 1945 | `ts-extras/src/test/unit/crypto/keystore/keyStore.test.ts` | 55 |
+  | 1907 | `ts-agent-memory/src/packlets/store/fileTreeMemoryStore.ts` | 93 |
+
+  **Three of the top four are `ai-assist` test files with 0–3 lines between them, and
+  `ai-assist-structured-output` is the next stream queued.** That stream adds a capability-reporting
+  surface and a structured-output path — work that lands tests in exactly those files. It will hit
+  this wall on its first commit unless the splits are done first, which is the whole point of the
+  promotion: this is now a **prerequisite of that stream**, not something to discover inside it.
+
+  **What P1 changes**: the split is no longer something to fold into the next feature stream. It is
+  its own piece of work, to be scheduled before the next `ts-agent-memory` feature rather than
+  alongside it — because folding it in is precisely what the last four streams did, and each one
+  chose its extraction under time pressure to clear a cap rather than on the seam that belonged
+  there. The `storeIdentity` / `storeCoverage` / `vectorRecordSource` boundaries are all defensible,
+  but none of them was chosen; they were the smallest thing that fit.
+
+  **Re-swept 2026-09-26 by `agent-tasks-t8b`, before its first change** (same command). The three
+  `ai-assist` files at 1997–2000 are gone from the list (split since); `ts-agent-tasks`'
+  `storage/repository.ts` had arrived at **1993**, and was refactored *before* the stream's work
+  rather than inside it — its committed-files layer (manifest fingerprint, classified atomic writes,
+  fingerprint-verified record reads) moved to `storage/committedFiles.ts`, chosen because it is a
+  layer the class calls down into through two callbacks rather than a protocol that would need a
+  twenty-member host into the class's state (`agent-tasks-t8b` `result.md` § *Phase 0*). **1808**
+  after; `etc/ts-agent-tasks.api.md` byte-identical.
+
+  | lines | file | headroom |
+  |---|---|---|
+  | 1989 | `ts-utils/src/test/unit/result.test.ts` | 11 |
+  | 1982 | `ts-json-base/src/test/unit/jsonCompatible.test.ts` | 18 |
+  | 1945 | `ts-extras/src/test/unit/crypto/keystore/keyStore.test.ts` | 55 |
+  | 1907 | `ts-agent-memory/src/packlets/store/fileTreeMemoryStore.ts` | 93 |
+  | 1899 | `ts-prompt-assist/src/test/unit/foundation.test.ts` | 101 |
+  | 1870 | `ts-extras/src/test/unit/ai-assist/apiClient.structuredOutput.test.ts` | 130 |
+  | 1849 | `ts-extras/src/packlets/ai-assist/model.ts` | 151 |
+  | 1808 | `ts-agent-tasks/src/packlets/storage/repository.ts` | 192 (was 7) |
+
+  The first four remain this entry's open work, for a chore outside any feature stream.
+
+  *(Superseded framing, kept for the measurement trail:)* **1995 lines as of
+  `agent-memory-derived-state-reconciliation` (2026-08-15)** — the headroom
+  narrowed again, and by the mechanism this entry predicted. It was 1991 after
+  `vector-rebuild-report-by-kind` (2026-08-15), which spent most of its own headroom: that stream's
+  inline version measured 2012, and the `asRecordSource()` filter-and-tally had to be extracted to
+  `libraries/ts-agent-memory/src/packlets/store/vectorRecordSource.ts` purely to get back under the
+  cap — a saving of 4 lines, leaving 9. The derived-state stream then hit the same wall a third
+  time: `coverage()` inlined took the file to 2009, and `storeCoverage.ts` was extracted for the
+  same reason, landing at 1995. In this repo a `max-lines` warning is a **CI failure** — `rush
+  rebuild` exits non-zero on "SUCCESS WITH WARNINGS" while a per-project `rushx build` exits 0 — so
+  the next feature that adds a handful of lines to this file turns a green local build into a red PR.
+
+  This file has been here before. `CODING_STANDARDS.md` § "A local warning is a CI failure" is
+  written from *this exact file* crossing the cap on the PersonAIlity Stream A stack. There is no
+  standing entry for it because the only max-lines entry the ledger carried was `apiClient.ts`,
+  retired 2026-08-14 when #620 split it.
+
+  **Trigger**: the next stream that adds a public member, a create param, or a write-path branch to
+  `FileTreeMemoryStore` — i.e. almost any `ts-agent-memory` feature — or the next one that adds a
+  member to `IResult`, since `result.test.ts` will need the corresponding test. Do the split first,
+  not after the red check. The cheap prophylactic, which nothing currently runs:
+  `find libraries tools -name '*.ts' -exec wc -l {} + | sort -rn | head -20` before starting a stream
+  that will touch any file it names.
+
+  **Scope sketch**: the collaborator-extraction pattern already used four times on
+  `fileTreeMemoryStore.ts` is the answer there — `VectorMaintenance` (`agent-memory-store-vector-slice`), `vectorRecordSource`
+  (`vector-rebuild-report-by-kind`), and `storeCoverage` / `storeReconcile`
+  (`agent-memory-derived-state-reconciliation`). The next candidates are the temporal projection
+  helpers (`_projectAsOf` and friends) and the observation fan-out, both of which are self-contained
+  and take the store structurally rather than importing it. Neither is a public-surface change, so
+  both ship as `"type": "none"`.
+
+  **Not a P3, and the evidence is now four streams deep**: P3 is opportunistic, and single-digit
+  headroom means the trigger is not "if someone touches this" but "the next time anyone does" —
+  which has now been *every* consecutive `ts-agent-memory` stream, each of which discovered the cap
+  mid-implementation and paid an unplanned extraction to get under it. The failure mode is also
+  invisible locally, which is what makes it cost a review cycle rather than a minute. The
+  "consider promoting to P1 if a fourth stream pays this tax" condition written here fired on
+  2026-08-18; the promotion is recorded above.
+
+  **Reference**: `vector-rebuild-report-by-kind` (2026-08-15) — its `result.md` records the first
+  extraction as a deviation from its brief, with the measured 2012 / 1995 / 1991 numbers —
+  `agent-memory-derived-state-reconciliation` (2026-08-15) for the 2009 → 1995 repeat, and
+  `fragment-query-scoping` (2026-08-18) for the fourth — which started from **1999** (the file had
+  drifted up 4 lines since the 1995 measurement above) with *no* room for the identity resolution it
+  needed, and landed at 1989 after extracting `storeIdentity.ts`.
+
+- **[P2] `ts-prompt-assist` needs a *member-level* TSDoc pass — 66 undocumented members, plus one thrice-repeated inline union.**
+  **Re-scoped 2026-08-14. The top-level half of this entry is DONE and the original framing is now
+  misleading.** Measured against `etc/ts-prompt-assist.api.md`: **135 of 135 top-level exported
+  symbols carry TSDoc; zero undocumented.** What remains is **66 `(undocumented)` markers on
+  interface and class *members*** — concentrated in `IPromptSlot` (5), `IChainWalkResult` (4),
+  `IPromptStoreFixtureSeedRecord` (4), `IResourceSlotBinding` (4), `ISafeguardFinding` (4),
+  `IStoredPromptRecord` (4), then a tail of threes.
+
+  The named anti-pattern also still stands: `Qualifiers.IReadOnlyQualifierCollector | ReadonlyArray<string | Qualifiers.IQualifierDecl>`
+  is spelled inline **three times** in `resolve/promptLibrary.ts` (`:90`, `:1342`, `:1362`) with no
+  named type to attach docs to.
+
+  That makes this a bounded, gradeable task rather than the open-ended audit it was written as —
+  which is the main reason it has sat: "audit TSDoc presence and quality" has no finish line, and
+  "close 66 markers and extract one union" does.
+
+  *Original framing, superseded: it described the surface as carrying "minimal TSDoc" on methods,
+  parameters and return shapes. True in 2026-06; not true now.*
+
+  PR #380 review surfaced that the recently-extended `ts-prompt-assist` surface — `PromptLibrary` + `IPromptLibraryCreateParams` + `IPromptResolveRequest` + the related fixture / resource-binding / resolve-output types — carries minimal TSDoc on individual methods, parameters, and return shapes. The v0.1 surface has been moving fast (Phase B sub-phases + post-merge cleanups + surface-tidy + round-1 ergonomics absorption), so documenting heavily during churn was the right call; with v0.1 effectively settled now, the next concern is consumer-facing TSDoc quality on the public surface.
+
+  A related pattern Erik flagged in the same PR #380 review: **inline anonymous types + union types should be extracted to named `type` / `interface` declarations** so they have a single place to attach TSDoc. The library currently has a few patterns like `qualifiers: IReadOnlyQualifierCollector | ReadonlyArray<TAxes | (IQualifierDecl & { readonly name: TAxes })>` that would benefit from a named extracted type.
+
+  **Trigger — FIRED.** The stated trigger was "post-round-2 pressure-test, once the surface is
+  stable". v0.1 shipped, `LIBRARY_CAPABILITIES.md` documents it as settled, and both
+  `HorizontalComposer` and the observation store have since been built *on top of* it. The
+  surface is stable; the wait is over. Re-triggered on: just do it, or the next substantive
+  change to the packlet.
+
+  **Scope sketch**: commission a documentation-pass agent against `@fgv/ts-prompt-assist`'s public surface (and any new `@fgv/ts-res` qualifier surface from PR B). For each exported type / class / method:
+  - Audit TSDoc presence + quality (does it answer "why" not just "what"; do `@public` symbols have useful `@remarks`).
+  - Extract inline anonymous types + unions to named declarations where extraction creates a meaningful single-attach-point for documentation.
+  - Cross-link related types via `{@link}` directives.
+  - Run api-extractor; verify all `// @public` types have non-`(undocumented)` flags.
+
+  Compare quality bar to `@fgv/ts-utils`'s base packlet, which is the reference for documentation depth.
+
+  **Not a P3**: the surface is public alpha-stage and being consumed; opaque type signatures degrade the consumer-port experience materially. P2 trigger ("post-round-2 stable") puts it on a natural cadence.
+
+  **Not a P1**: no functional gap; the surface works; this is documentation polish on shipped code.
+
+  **Reference**: PR #380 (round-1 ergonomics PR C) — Erik's review surfaced both the doc gap and the inline-types pattern. Cluster spans `libraries/ts-prompt-assist` + the `ts-res` qualifier collector surface PR B extended.
+
+- **[P2] Cross-runtime entry-point export parity is not systematically tested.**
+  Libraries with both Node (`src/index.ts`) and browser (`src/index.browser.ts`) entry points can drift in export names without CI catching it. api-extractor runs only on the Node entry point, so a typo or rename in the browser entry slips through. Pattern has bitten the team three times: `@fgv/ts-extras` exported `Crypto` instead of `CryptoUtils` (personaility web app); `@fgv/ts-extras` missed `Yaml` entirely (ts-prompt-assist sample app, fixed in #377); plus the earlier `repo-template` issue. **`@fgv/ts-extras` now has the recommended micro-test** (`src/test/unit/index.browser.test.ts` asserts every top-level name in `index.ts` is also in `index.browser.ts`); other libraries with browser entries still need it.
+
+  **Namespace members are now covered for `@fgv/ts-extras` too.** The top-level check cannot see a
+  namespace whose name exists on both entries while its members differ — which is how
+  `CryptoUtils.fromBase64Strict` went missing from the browser entry and broke recovery unlock in a
+  browser (`ts-extras-browser-barrel-gaps`). The same test now walks every namespace the Node entry
+  exports, recursively, and fails on any member absent from the browser entry unless it is on a
+  commented Node-only allowlist of seven entries (`NodeCryptoProvider`, `nodeCryptoProvider`,
+  `KeyStore.EncryptedFilePrivateKeyStorage`, `readCsvFileSync`, `readRecordJarFileSync`,
+  `blockPrivateNetworks`, `nodeHostResolver`). The allowlist is itself checked for staleness. The walk
+  descends into every non-array object, including plain data and object instances such as
+  converters, and stops at functions, classes and arrays. Not covered: class members (statics),
+  array contents, and subpath exports whose Node condition the root entry never reaches (e.g.
+  `./hash` → `hash/index.node.js`). An exported object instance whose own keys legitimately differ
+  between runtimes would fail this test and need an allowlist entry. `ts-web-extras` additionally has one suite that runs the
+  crypto provider and HTTP tree against the browser entry; the rest of its suite still resolves
+  `@fgv/ts-extras` to the Node entry, because several tests compare against `NodeCryptoProvider`.
+
+  Comprehensive per-export coverage on every library is too expensive given the API surface. The right scope is opportunistic per-library micro-tests.
+
+  **Libraries with `*.browser.ts` entries that still need the micro-test:** `ts-bcp47`, `ts-res`, `ts-web-extras`, `ts-app-shell`, `ts-res-ui-components`, `ts-json`, `ts-json-base`.
+
+  **Trigger — FIRED repeatedly without effect; needs replacing, not restating (2026-08-14).**
+  The stated trigger is "anytime one of those libraries' `index.browser.ts` is touched
+  substantively". Verified today: **nine of the ten packages shipping an `index.browser.ts` still
+  have no parity test** — `grep -rl "index.browser" --include=*.test.ts` returns three files, all
+  in `ts-extras`. Meanwhile `ts-web-extras` alone has taken safer-fetch, `IdbPrivateKeyStorage`
+  and the base64 `contentEncoding` work since this was written, every one of them export-adding,
+  and still has none.
+
+  A trigger that has fired three times unnoticed is not a trigger — it relies on an author
+  remembering a ledger entry at the moment they are busy with something else. **Replace it with a
+  mechanical gate**: fold the parity check into something CI already runs (the change-file gate is
+  the natural host, since it already keys off "which packages did this branch touch"), so the
+  question is asked by the machine rather than recalled by a person. That reframing is the actual
+  work item now; the per-package micro-tests are the easy part.
+
+  **Scope sketch**: copy the pattern from `@fgv/ts-extras/src/test/unit/index.browser.test.ts` — imports both `index.ts` and `index.browser.ts` directly via relative paths, asserts every top-level name exported from Node is also exported from browser. Browser may have additional names (e.g. back-compat aliases) but nothing Node ships may go missing on browser. Per-library cost: ~15 lines.
+
+  **Not a P3**: the pattern has recurred multiple times across the team; the consumer-impact cost (production-visible undefined exports) is real. P2 trigger ("next time the browser entry is touched") puts it on a natural cadence.
+
+  **Reference**: PR #377 (ts-extras Yaml fix + micro-test pattern landed); original L13 lessons-pending entry; earlier ts-extras `Crypto` bug.
+
+- **[P2] `Converters.recordOf` (`@fgv/ts-utils`) and `Converters.jsonObject` (`@fgv/ts-json-base`) mishandle an own `__proto__` key.**
+  Both build their result by assignment (`result[key] = value`), where the key `__proto__` sets the
+  result's prototype instead of creating a property. `JSON.parse('{"__proto__": …}')` produces exactly
+  such an own key, so untrusted JSON reaches this path.
+  - **`@fgv/ts-utils` `Converters.recordOf`** (`libraries/ts-utils/src/packlets/conversion/basicConverters.ts`,
+    `recordOf`): the key is dropped silently, and **when its value is an object, that object becomes
+    the result's prototype**, so every property on it reads through the result. Reproduced on
+    2026-10-08 against the built package. `recordOf(identity)` over
+    `JSON.parse('{"x":0.5,"__proto__":{"evil":1}}')` succeeds, `Object.keys` is `['x']`, and
+    `Object.getPrototypeOf(result).evil === 1`. With a number value, `{"x":0.5,"__proto__":0}`
+    succeeds as `{"x":0.5}`.
+  - **`@fgv/ts-json-base` `jsonObject`**, and with it **`jsonValue`**, which delegates to it for
+    objects (`libraries/ts-json-base/src/packlets/converters/converters.ts`). Before #720 the key
+    was assigned (`obj[name] = v`) at any depth, with the same effect as `recordOf`:
+    `jsonValue.convert(JSON.parse('{"a":{"__proto__":{"x":1},"b":2}}'))` succeeded, serialized as
+    `{"a":{"b":2}}`, and `value.a.x === 1` (reproduced 2026-10-08 on
+    `integration/system-one-decisions`). **#720 changed this to an explicit, documented drop**, and
+    the promotion of that branch (#726) brought it in. The prototype hazard is gone, but the key is
+    still discarded silently, and the result still reports success. The in-place `Validators.jsonObject` copies nothing and is not affected.
+
+  **Interim measure.** `@fgv/ts-extras-system-one` guards both locally, in
+  `libraries/ts-extras-system-one/src/shapes.ts`:
+  - `ownRecordOf` refuses any record holding an own `__proto__` before `recordOf` sees it. This
+    covers answer sets, probability distributions and legends (`invalid-response`), and question
+    ids, choice labels and request/parameter objects (`invalid-request`).
+  - `withoutReservedKeys` walks every JSON entry (state, instructions, criterion values) before
+    `jsonValue`. It refuses the key at any depth and snapshots with `Object.fromEntries`.
+  - **One site is not guarded:** `jsonRecord` (`shapes.ts`, a plain `recordOf(anyValue)`), used in
+    `validate.ts` only to *describe* a body that has already failed (which top-level fields, which
+    answers are malformed). A received body such as `{"__proto__":{"model":…}}` can make
+    `rejectedFields` read through an injected prototype and misname the fields at fault. The call
+    still fails `invalid-response`, so the effect is limited to the diagnostic message.
+
+  Tests U33 and U38 pin both guards, and revert-matrix rows R60, R61 and R76 confirm them. The
+  package refuses rather than drops: a caller's or a server's data must never change silently
+  between the check and the send.
+
+  **What lifts the guards: the upstream fix.**
+  - `recordOf` must create keys rather than assign them (`Object.defineProperty`, or
+    `Object.fromEntries`), or refuse the key. Then `ownRecordOf` can become plain `recordOf`, and
+    `jsonRecord`'s diagnostic gap closes with no local change.
+  - `jsonObject` must **refuse** the key, or offer an opt-in that does. #720's drop does **not**
+    lift `withoutReservedKeys`, because the package would then send a state that differs from the
+    caller's without saying so.
+  - The promotion to `release` (#726) brought #720 in: `jsonObject` now drops the key rather than
+    assigning it, and `withoutReservedKeys`' docstring says so. The guard stays, because a drop is
+    still a silent change to what is sent.
+
+  **Trigger**: any `ts-utils` conversion or `ts-json-base` converter touch, or a third consumer
+  needing either guard.
+
+  **Scope sketch**: decide the policy once for both libraries. Refuse, drop, or keep as a real own
+  property. `JsonEditor` deliberately skips `__proto__` / `constructor` / `prototype`, and #720
+  drops, so "drop, documented" may be the policy for `jsonObject`. If it is, offer a strict refusal
+  for boundaries that must not lose data. `recordOf` setting a prototype from input is wrong under
+  every policy. This is a behaviour change on established surfaces, so run a repo-wide `rush test`.
+  It is a sibling of the `jsonThreeWayDiff` `__proto__` P3 below, and both should take one policy.
+
+  **Not a P3**: `recordOf`, and `jsonObject` / `jsonValue` until #720 is promoted, let input choose
+  an object's prototype, at converters that are commonly the trust boundary. That is a correctness and prototype-injection hazard, not a cosmetic loss.
+
+  **Reference**: `.ai/tasks/completed/2026-10/system-one-impl/result.md`: deviations 27 and 32, and
+  Copilot rounds 4 and 6 on #721 (threads r4213291067, r4214989996).
+
+## P3 — Opportunistic cleanup
+
+- **[P3] `@fgv/ts-extras-mcp` `egress.test`: a resumed-GET over-cap test flaked once under full-suite load.** "an answer over the cap on a resumed (Last-Event-ID) GET fails its request promptly as egress-blocked too-large" failed once in a repo-wide `rush test` on the `model-alias-refresh` branch (2026-11-08), passed on retry; the branch does not touch the package.
+
+  **Narrowed by `model-followups` (2026-11-11) — it is not a timing margin.** The recorded failure
+  is `MCP error -32001: Request timed out` with `{ kind: 'timeout' }` after the call's full 15 s, not
+  the over-cap failure arriving late: the 20 000-character answer never reached the client at all,
+  so raising a bound would not have helped. The answer reaches the client only through the SDK's
+  resume path — it reconnects a `POST` stream with `Last-Event-ID` only after it has read a priming
+  event with an id from that stream, and then retries at most twice — and the egress guard fails
+  the request only when the over-cap read happens in that `POST`'s request context. One of those
+  steps did not happen. It did not reproduce: 25 runs of the test alone and 12 runs of the whole
+  file, each under 6–8 CPU-bound loops on 4 cores, all passed. No change was made, for want of a
+  failure to diagnose against.
+
+  **Trigger**: a second failure. Capture that run's log, and if possible rerun with the session's
+  logger attached, which records every egress cut-off at `detail`.
+
+  **Scope sketch**: decide from the second failure which step was lost — no priming event read
+  before the close, a resume that exhausted its two retries, or an over-cap read outside the
+  request's context — and pin that step in `realHttpServer.ts`'s `polled` fixture or the egress.
+
+- **[P3] `executeClientToolTurn`'s `onBeforeToolExecute` gate never receives the turn's signal.**
+  The gate is called as `onBeforeToolExecute(tool, args)` in `dispatchCall`
+  (`libraries/ts-extras/src/packlets/ai-assist/streamingAdapters/clientToolContinuationBuilder.ts`),
+  with no way to observe an abort. A gate that waits on something slow — a human confirmation, a
+  remote policy check — keeps waiting after the turn stops, and the orphaned event generator stays
+  pinned on it. `runClientToolLoop` still releases its caller, because the round is raced, but the
+  generator and whatever the gate holds are not freed until the gate returns. This predates the
+  runner; the runner only made orphaned rounds a normal outcome.
+
+  **Trigger**: a host whose gate can wait indefinitely, or a leak report from one.
+
+  **Scope sketch**: pass `{ signal }` to the gate as a third, optional context argument, the way
+  `IAiClientTool.execute` receives it. Additive for gate implementations.
+
+  **Not a P2**: the caller is never held; only background resources are.
+
+  **Reference**: the independent review of `ai-assist-client-tool-loop`
+  (`.ai/tasks/completed/2026-10/ai-assist-client-tool-loop/result.md`).
+
+- **[P3] safer-fetch's internal `DeadlineWatch` duplicates `AsyncControl.raceStopConditions`.**
+  `libraries/ts-extras/src/packlets/safer-fetch/deadline.ts` composes a caller signal with
+  deadlines through its own `AbortController` and listeners, and races a promise against them. The
+  `async-control` packlet now publishes that mechanism as `raceStopConditions`
+  (`libraries/ts-extras/src/packlets/async-control/stopConditions.ts`), with an injectable timer,
+  deadline-range validation and release on every path. Two implementations of the same ordering
+  logic can drift: a fix to one (a late stop, a listener leak) does not reach the other.
+
+  **Trigger**: the next change to `deadline.ts`, or a defect found in either implementation.
+
+  **Scope sketch**: `DeadlineWatch` tracks two deadlines (overall and headers) and remembers which
+  one stopped the call, so it cannot be replaced one-for-one. Either extend `IStopConditions` with
+  a named-deadline form, or rebuild `DeadlineWatch` on two nested `raceStopConditions` calls. The
+  safer-fetch tests in `src/test/unit/safer-fetch/deadline.test.ts` are the behaviour to keep.
+
+  **Not a P2**: both implementations are tested, and nothing is known to be wrong in either.
+
+  **Reference**: `.ai/tasks/completed/2026-10/ai-assist-client-tool-loop/` (brief § 1).
+
+- **[P3] Wall-clock assertions remain in tests outside the `deterministic-timing-tests` scope.**
+  That stream made `ts-extras` and `ts-extras-mcp` deterministic, except for one file. It reported
+  the rest without fixing them:
+  - `libraries/ts-extras-mcp/src/test/unit/terminate.test.ts`: `PROMPT_MS` (1 s) bounds at six
+    sites, and `TERMINATE_TIMEOUT_MS ± …` around a real 2 s hold, all over real loopback HTTP.
+  - `libraries/ts-res/src/test/unit/resources/deltaGenerator.{enumeration,core}.test.ts`:
+    `duration < 2000` and `duration < 5000`.
+
+  **Trigger**: any of these failing under a loaded gate.
+
+  **Scope sketch**:
+  - For `terminate.test.ts`, use `useFakeTimeouts()` in `oauth.test.ts`: fake `setTimeout` only,
+    and keep the clock, promise jobs, `nextTick` and `setImmediate` real. Then advance the bound
+    explicitly.
+  - For the performance assertions, assert the property the bound guarded, as
+    `md5Normalizer.browser.test.ts` now does. Measure speed in a `perf/` script, not in the suite.
+
+  **Not a P2**: none of them has been observed failing yet.
+
+  **Reference**: `.ai/tasks/completed/2026-10/deterministic-timing-tests/result.md` § Sweep.
+
+- **[P3] `ts-extras-mcp` tool schemas can lose an own `__proto__` key without the package seeing it.**
+  `listMcpTools` (`libraries/ts-extras-mcp/src/packlets/mcp/operations.ts`) reads `tools/list` through
+  the SDK's `client.listTools`, which parses the page with its own `ListToolsResultSchema` first.
+  Measured against `@modelcontextprotocol/sdk` 1.29.0 in `mcp-round-2a`, that parse **drops** an own
+  `__proto__` key in two places: at an `outputSchema`'s top level, and as a name among its
+  `properties`. A key nested deeper (inside a property's own schema) survives and reaches the
+  package. So:
+  - `outputSchema`'s refusal (`receivedJson`, refusing the whole value on an own `__proto__`) sees
+    only the deeper keys. The shallow ones are gone before it runs, and the descriptor is returned
+    with a property silently missing.
+  - `inputSchema` has the same SDK-side loss, and it still goes through plain `Converters.jsonValue`.
+    Since #720 that drops an own `__proto__` at any depth, also silently, so `adaptMcpTools` can
+    build a tool whose validated arguments omit a property the server declared.
+
+  `callMcpTool` is not affected: `mcp-round-2a` moved it to the SDK's generic `ResultSchema`, which
+  passes `content` and `structuredContent` through by reference.
+
+  **Trigger**: the SDK v2 client-package rename, which rewrites `sdk.ts`; or the next stream whose
+  scope includes reading `tools/list`. *`mcp-round-2b` (2026-10-14) edited `operations.ts` and
+  `sdk.ts` but passed on this deliberately: its brief was egress and OAuth, and the fix changes how
+  `tools/list` is read and validated — its own reviewable change.*
+
+  **Scope sketch**:
+  - Read `tools/list` with `client.request({ method: 'tools/list', params }, ResultSchema, options)`
+    and validate each tool in the package, as `callMcpTool` now does for results.
+  - The cost is that the SDK's `cacheToolMetadata` no longer runs. That cache feeds `callTool`'s
+    `outputSchema` validation of `structuredContent` and its task-required checks. So either call it
+    with the package-validated tools, or replace both checks deliberately.
+  - Then route `inputSchema` through `receivedJson`. A refused schema becomes `null`, which
+    `adaptMcpTools` already reports as un-adaptable, so a schema with the key is skipped with a
+    reason rather than adapted with a property missing.
+  - It should follow the policy the `recordOf` / `jsonObject` P2 above settles for `__proto__`.
+
+  **Not a P2**: a schema property literally named `__proto__` is rare in a real tool, and the effect
+  is a missing optional property rather than a prototype hazard: the SDK's zod parse and #720's
+  `jsonValue` both drop the key rather than assign it.
+
+  **Reference**: `.ai/tasks/completed/2026-10/mcp-round-2a/result.md` § "The #723 and #721 lessons"
+  (the measurement against SDK 1.29.0) and § "Second review round" (where filing it was asked for).
+
+- **[P3] `ts-agent-tasks` — deferrals the agent-tasks slices recorded only in their own `result.md`.**
+  Found by the cluster close (`agent-tasks-cluster-close`, 2026-10-01), which read all eighteen
+  slices' results against this file. Each item was left by a slice as "a later slice decides", "a
+  follow-up" or "recorded here, not built", and no later artifact picked it up. None blocks
+  promotion; listed so they are not lost when the slices' directories stop being read. Paths below
+  are under `.ai/tasks/completed/2026-10/`.
+  - **M1's history-growth and cache-saturation cohorts** (the plan's § 8 table: 0/1k/10k/40k ids on
+    one subscription; ten cycles past LRU/cursor/receipt bounds) are unbuilt. Only the plan's M1
+    heading recorded them. (`agent-tasks-m1-stop/result.md` § *Routed*.)
+  - **M1 peak sizing needs an allocation-profile or `--max-old-space-size` arm** before a sampled
+    peak is used to size a host: sampled heap cannot tell unreclaimed garbage from live records.
+    m1-stop added old-space sampling, not this arm. (`agent-tasks-t4/result.md` § *What a later
+    slice must decide*, item 6.)
+  - **A per-source index of reconciliation work** (T4 item 4, left "to T6"; T6 does not address it)
+    and **a distinct failure classification for the read-concurrency refusal**, which today is
+    indistinguishable from a concurrent writer (T4 item 5).
+  - **The snapshot prompt path trusts its context to be one render** — the receipt-to-text pairing is
+    trusted, not verified; verifying needs a text hash in the receipt, a T2/T7 surface change.
+    Documented only on `checkTaskPrompt`. (`agent-tasks-i2/result.md`, layer-1 P2-a.)
+  - **An inspect-only stop surface still needs a writer** — a host that wants a model to watch stops
+    but never request one must still pass a writer. "Recorded here, not built."
+    (`agent-tasks-i1d/result.md` § *Layer 1*, P3.)
+  - **T2's input-size bounds are sanity bounds, not measured** (10,000 entries per list, 200 items
+    per receipt), and **`allTaskResults`** — now used in two files — was to be recorded as a
+    `ts-utils` candidate at close. (`agent-tasks-t2/result.md` § *Things a later slice must decide*.)
+  - **`development-design.md` § 9's tie-break wording** ("task ID and update ID") was flagged by T2
+    for correction and is unchanged.
+  - **Per-owner vs repository-wide limit structure** — T1 called it "T3's call"; T3's result gives
+    it no disposition. (`agent-tasks-t1/result.md` items 4–5.)
+  - **FileTree upstream gaps found by T3:** no child-by-name lookup, and two session repositories
+    over one directory reached via two items are not detected ("Residual, documented").
+    (`agent-tasks-t3/result.md` § *Review*, round 6.)
+  - **A shared decoder for `_taskOf`** (T8 layer-1 P3.6, "a follow-up" in its `state.md`) and the
+    brief's **index repair** deliverable, which neither T8 artifact addresses.
+  - **`rushx coverage` fails in `ts-agent-tasks` with a babel-parser error** (pre-existing at T1;
+    `rushx test` carries the coverage gate). (`agent-tasks-t1/result.md` § *Gate results*.)
+  - **A stale comment in source:** `src/test/unit/journey/publicJourney.test.ts` points at
+    `.ai/tasks/active/agent-tasks-p1/result.md`, now at `.ai/tasks/completed/2026-10/agent-tasks-p1/`.
+    The cluster close changes no `src/` file, so it is left for the next stream to touch that file.
+
+  **Trigger**: each item's own surface — the next stream touching that packlet, measurement or
+  design section. The first two belong with any future M1 run.
+
+  **Scope sketch**: individual; most are a test, a measurement arm or a one-line doc fix. Split an
+  item into its own entry when someone picks it up.
+
+  **Not a P2**: none is a correctness defect in shipped behaviour; each is an unmeasured bound, an
+  unbuilt convenience or a doc drift.
+
+  **Reference**: `agent-tasks-cluster-close` `result.md` § *Recorded nowhere durable*.
+
+- ~~**[P3] `task_inspect` returns a task's details as unframed host JSON beside the framed context.**~~
+  **Resolved by I2 (2026-10-01): details are data, framed like task prose.** `context` publishes
+  `serializeTaskData` (the renderer's `quoteData` escaping applied to every string of a JSON value,
+  keys included); `task_inspect` returns `details` as that one-line text, and `maxDetailsChars`
+  bounds the escaped text. The reason it is "yes": the hazards the renderer escapes — tag-block
+  smuggling, bidi overrides, invisible characters, frame and Mustache delimiters — do not depend on
+  which channel carries the text, and a model reads a tool result as readily as a system prompt.
+  `.ai/tasks/completed/2026-10/agent-tasks-i2/result.md`. Original entry follows.
+  `libraries/ts-agent-tasks/src/packlets/tools/presentation.ts`. Task state reaches the model only
+  inside `TaskContextRenderer`'s framed, escaped text; details, when the view's `ITaskProjector`
+  exposes them, are returned as structured JSON beside it — size-bounded (`maxDetailsChars`) but not
+  framed, and without the renderer's escaping of invisible and frame-breaking characters. Documented
+  on `ITaskInspectResolvedToolResult` and in `CAPABILITIES.md`: a host that exposes details chooses
+  their content. The renderer's escaping (`quoteData`) is internal to the `context` packlet, so
+  reusing it would need a new public primitive.
+
+  **Trigger**: I2 (prompt trust framing is its review gate), or a host exposing details it does not
+  control.
+
+  **Scope sketch**: decide whether details are data to be framed like task prose. If so, publish an
+  escaping helper from `context` (or render details inside the framed text) and route them through
+  it; if not, record that as the design.
+
+  **Not a P4**: it is a trust-framing asymmetry on a model-facing surface, not a doc gap.
+
+  **Reference**: `agent-tasks-i1a` layer-1 review P3-b; `.ai/tasks/completed/2026-10/agent-tasks-i1a/result.md`.
+
+- **[P3] I2's revert-matrix rows live outside `perf/mutationMatrix.js`.**
+  `.ai/tasks/completed/2026-10/agent-tasks-i2/i2Matrix.js` holds rows `I2-1…I2-36` with the same mechanics as
+  `libraries/ts-agent-tasks/perf/mutationMatrix.js`, because I2 ran beside the M1 stop-state cohort,
+  which owned `perf/`. Two scripts means a refactor that moves a protected line can re-point one and
+  leave the other's rows stale, and the artifact directory migrates at cluster close.
+
+  **Trigger**: the M1 stop-state cohort lands, or cluster close — whichever is first.
+
+  **Scope sketch**: move the thirty-six rows into `MUTATIONS` (suite pattern
+  `prompt/|context/|tools/|publicSurface`), run `--check`, delete the I2 script.
+
+  **Not a P4**: a stale row is a protection nobody is checking.
+
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-i2/result.md` § Revert matrix.
+
+- **[P3] `JsonConverters.jsonValue` admits `Infinity`, which has no JSON form.**
+  `@fgv/ts-json-base`: `Converters.jsonValue.convert(Infinity)` succeeds (and `JSON.stringify` then
+  writes `null`), while `NaN` is refused. Found by I2: a view's details pass that converter, so a
+  projector returning `{ ratio: Infinity }` reached `task_inspect`. `serializeTaskData` now refuses it
+  there; other consumers of `jsonValue` still accept a value they will silently change on output.
+
+  **Trigger**: any consumer that round-trips `jsonValue` output through `JSON.stringify`, or a
+  `ts-json-base` touch.
+
+  **Scope sketch**: decide whether `jsonValue` should refuse non-finite numbers (consistent with its
+  `NaN` refusal) — a behaviour change on an established surface, so a repo-wide `rush test`.
+
+  **Not a P4**: a value that changes silently on serialization is a correctness hazard, not a doc gap.
+
+  **Second consumer, 2026-10-08: `@fgv/ts-extras-system-one`.** Its request gate checks the state,
+  every instruction and every criterion value with `jsonValue`. So a non-finite number nested in a
+  caller's state passes, and the SDK's `JSON.stringify` sends it as `null`: what is sent differs from
+  what was checked. Re-verified 2026-10-08 against the built package: `jsonValue.convert(Infinity)`
+  succeeds, and `{r: Infinity}` converts and serializes as `{"r":null}`, while `NaN` is refused. The
+  request side was first left to this upstream fix (`system-one-impl/result.md`, Copilot round 4,
+  the note under item 2); **the promotion to `release` (#726) added the local guard**:
+  `withoutReservedKeys` now refuses a non-finite number at any depth (test U39, matrix row R80), and
+  the live harness's `--check` does the same (S9, H16). Its range checks already rejected non-finite
+  *received* numbers. The upstream fix would let the local guard go.
+
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-i2/result.md` § The framing decision;
+  `.ai/tasks/completed/2026-10/system-one-impl/result.md` § Copilot round 4.
+
+- **[P3] `@fgv/ts-agent-tasks` needs a global `structuredClone`, and says so nowhere.**
+  The broker clones every authorization request (`broker/access.ts`), and projections
+  (`broker/projection.ts`) and checkpoint records (`storage/checkpoints.ts`), with the global
+  `structuredClone`. Node ≥ 17 and current browsers have it; jsdom does not. Under jsdom the first
+  policy check throws, a throwing check is (correctly) a denial, and every operation fails
+  *"'create' is not permitted"* — the cause is only in the logger's warning. Found by P1: the testbed's
+  Jest environment is jsdom, and `samples/testbed/config/jest.setup.js` now polyfills it.
+
+  **Trigger**: the next host that tests under jsdom, or any `ts-agent-tasks` touch to those files.
+
+  **Scope sketch**: either state the requirement in `CAPABILITIES.md` / the README, or clone with a
+  JSON-value copy the package owns — every cloned value is JSON already.
+
+  **Not a P4**: the failure is silent at the call site and reads as an authorization decision.
+
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § finding 1.
+
+- **[P3] Query work is observable only through an internal module.**
+  `ts-agent-tasks` promises that query, due and owed work stays tied to matching candidates as history
+  grows; its own counter suite measures candidate visits through `packlets/storage/internals`
+  (`inspectRepository`). From outside the package the only evidence is task-record reads, which a host
+  sees only by subclassing the FileTree accessor it injects — P1's scenario does exactly that, and can
+  show zero reads and identical results, but not visits tied to matches.
+
+  **Trigger**: a consumer that needs to verify query cost in its own deployment, or M1's follow-up.
+
+  **Scope sketch**: an exported, read-only work counter on `ITaskRepository` (or a `work` field on a
+  page) — candidate visits and record reads since open.
+
+  **Not a P2**: the guarantee itself is pinned by `storage/counters.test.ts`; this is observability.
+
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § finding 2.
+
+- **[P3] ai-assist has no per-call transport, so capturing a request means replacing `fetch`.**
+  `AiAssist.callProviderCompletion` calls the global `fetch`. A host that wants to see the request its
+  builders produce without a network call — the testbed's `memoryToolsGate` and P1's `agentTasks`
+  scenarios, and `ts-agent-tasks`' own `prompt/outbound.test.ts` — substitutes `globalThis.fetch` for
+  the call, which `CODING_STANDARDS.md` lists as a workaround to avoid.
+
+  **Trigger**: the next consumer that captures or proxies ai-assist requests.
+
+  **Scope sketch**: an optional `fetch` (or transport) parameter on the completion/stream calls,
+  defaulting to the global — additive, on an active surface.
+
+  **Not a P4**: three call sites already work around it.
+
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § finding 3.
+
+- **[P3] P1's revert-matrix rows live outside `perf/mutationMatrix.js`.**
+  `.ai/tasks/completed/2026-10/agent-tasks-p1/p1Matrix.js` holds rows `P1-1…P1-10`, which mutate the library and
+  run both `journey/` and the testbed's `agentTasks` suite, because P1 ran beside the M1 stop-state
+  cohort, which owned `perf/`. Same hazard as I2's rows: a refactor can re-point one script's patterns
+  and leave the other's stale, and the directory migrates at cluster close.
+
+  **Trigger**: the M1 stop-state cohort lands, or cluster close — whichever is first.
+
+  **Scope sketch**: fold the rows into `MUTATIONS` with the testbed linkage as an option, or keep the
+  testbed rows as a separate documented script under `perf/`; run `--check`.
+
+  **Not a P4**: a stale row is a protection nobody is checking.
+
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-p1/result.md` § Revert matrix.
+
+- **[P3] `JsonSchema.integer` cannot state a range, so `task_query`'s `limit` bound is prose on the
+  wire.** `libraries/ts-json-base/src/packlets/json-schema-builder/factories.ts` has no
+  `minimum` / `maximum`. `task_query` enforces `1 ≤ limit ≤ budget.context.maxItems` inside `execute`
+  and says so in the property's description, but the emitted schema cannot, so a provider that
+  constrains arguments by schema cannot constrain this one.
+
+  **Trigger**: the next tool schema that needs a numeric range, or any `JsonSchema` change.
+  **Fired in I1b and deliberately not acted on there:** `task_update` / `task_reassign`'s
+  `expectedRevision` (≥ 1) and `task_update`'s progress amounts (≥ 0) are enforced by the broker's
+  converters but unstated on the wire. I1b's package surface is `ts-agent-tasks` only, and the fix is
+  a `ts-json-base` extension. **Re-armed for I1c**, whose generated command tools must encode the
+  registry's parameter types — take it there, or as its own chore before I1c.
+  **I1c (2026-09-29): not taken, and the trigger is narrower than it looked.** A generated command
+  tool carries the command's *registered* schema unchanged, so any range in it is the registering
+  host's to state, and this package cannot add one. What remains ours is the envelope's
+  `expectedRevision` (≥ 1), now on six tools. The fix is still a `ts-json-base` extension outside a
+  `ts-agent-tasks` slice's surface; take it as its own chore.
+  **I1d (2026-10-01): fired again, not taken** — `task_stop` adds a seventh `expectedRevision`. Its
+  `mode` enum and `task_stop_inspect`'s ids need no range. Same disposition: its own chore.
+
+  **Scope sketch**: additive `minimum` / `maximum` (and `exclusive*`) options on `number` /
+  `integer`, emitted by `toJson()` and enforced by the validator; check each provider's schema
+  sanitizer (Gemini's in particular) passes them through. Then state the bound in the schema.
+
+  **Not a P4**: the runtime check holds, but the wire contract under-describes the tool.
+
+  **Reference**: `agent-tasks-i1a`.
+
+- **[P3] Six storage rows of `ts-agent-tasks`' revert matrix no longer apply.**
+  `node libraries/ts-agent-tasks/perf/mutationMatrix.js --check` reports `M13`, `M20`, `M23`, `M34`,
+  `M49` (pattern found 0 times) and `M39` (found 3 times) as `UNVERIFIED`: later refactors of
+  `src/packlets/storage/` moved the lines they mutate. The script's own header says a moved line's row
+  is re-pointed, not deleted — these were not. Their protections are unmeasured by the matrix until
+  they are. Present at the I1a landing (`387969ed`); first recorded as stale by `agent-tasks-t8b`
+  ("left as found"), routed here by I1b's `--check`; I1b touches no storage source, so it did not
+  re-point them. Still UNVERIFIED at the cluster close (2026-10-01).
+
+  **Trigger**: the next stream that touches `src/packlets/storage/`, or any matrix run that selects
+  storage rows.
+
+  **Scope sketch**: for each row, find the protection's current line, re-point `from`/`to`, run the row
+  and confirm the tests it names go red (the I1a/I1b lesson: a row can be red for the wrong reason).
+
+  **Not a P4**: an UNVERIFIED row is a protection nobody is checking.
+
+  **Reference**: `agent-tasks-i1b` result.md § Revert matrix.
+
+- ~~**[P3] Nothing enforces that I1c's generated command tool names avoid the fixed task tool names.**~~
+  **Resolved by I1c (2026-09-29)** — generated names default to `task_command_<command>`; a name equal
+  to any of the five fixed names is refused whether or not that tool is offered, and two commands
+  under one name refuse the whole tool set at build time (`fixedTaskToolNames`, `commandTools.ts`).
+  I1d added `task_stop` and `task_stop_inspect` to that list (2026-10-01). Original entry follows.
+  `createTaskTools` emits a fixed set — `task_query`, `task_inspect`, `task_create`, `task_update`,
+  `task_reassign` — and a test pins them distinct. Generated command tools (I1c) will be named from
+  the registry, and a command named, say, `update` must not become a second `task_update`: ai-assist
+  would receive two tools under one name.
+
+  **Trigger**: I1c.
+
+  **Scope sketch**: give generated tools a prefix no fixed name uses (e.g. `task_command_…`), and have
+  the factory refuse a tool set with a duplicate name at build time — a check that becomes testable
+  only once generated names exist, which is why I1b did not add it.
+
+  **Not a P4**: a collision would silently shadow a tool the host opted into.
+
+  **Reference**: `agent-tasks-i1b`; `.ai/tasks/completed/2026-10/agent-tasks-i1b/result.md`.
+
+- **[P3] A model can name only the stops it requested: a bound view cannot list a task's stops.**
+  `task_stop_inspect` takes an `intentId`, and the only place a model learns one is `task_stop`'s
+  result (or its unknown-outcome line). `IBoundTaskView` has `inspectStop(taskId, intentId)` but no way
+  to ask which stops a visible task is the root of, and `task_inspect` does not report them. So a model
+  cannot see a stop another principal — or an earlier conversation — placed on a task it can see,
+  unless the host puts the id in its context. The safe direction (I1d deliberately keeps `stop-active`
+  as `conflict` everywhere, so a latch from a hidden ancestor is never disclosed), but a real gap for a
+  host that wants a model to reason about stops it did not request.
+
+  **Trigger**: a consumer that wants a model to see existing stops on tasks it can read.
+
+  **Scope sketch**: an additive view read — the stops a visible root holds, each presented exactly as
+  `inspectStop` presents it (only visible targets, `restrictedWorkRemains`) — then either a field on
+  `task_inspect` or a `task_stop_inspect` that takes a root alone. A latch inherited from an ancestor
+  must stay undisclosed unless that ancestor is visible.
+
+  **Not a P4**: a model-facing surface under-reports state the principal is entitled to read.
+
+  **Reference**: `.ai/tasks/completed/2026-10/agent-tasks-i1d/result.md`.
+
+- **[P3] A command receipt does not say whether an `accepted` intent has been dispatched.**
+  `dispatchIntent` (`broker/externalCommands.ts`) returns the stored receipt unchanged when another
+  caller — the `resolveCommands` pump, racing the original `execute` — already holds the
+  `possibly-sent` marker. That receipt is the intent's provisional `accepted`, and its dispatch may
+  still end `indeterminate`. `ICommandReceipt` carries no dispatch state, so I1c's command tools cannot
+  tell this from a source's settled `accepted`; they word `accepted` as "recorded for the executor" and
+  say nothing about delivery. Harmless for the model (it is told not to resend either way), but a
+  host reading receipts has the same blind spot.
+
+  **Trigger**: a consumer that acts on `accepted` as "the source has it", or the next change to
+  `ICommandReceipt`.
+
+  **Scope sketch**: return the command's dispatch state beside the receipt from `execute`, or return
+  a distinct in-flight state when the caller did not own the send.
+
+  **Not a P4**: a receipt state reads as stronger than the broker knows it to be.
+
+  **Reference**: `agent-tasks-i1c` layer-1 review P2-2.
+
+- **[P3] A command tool tells the model "do not send it again" for a native command the broker
+  refused before recording anything.** `fgv.tracked@1`'s registered schemas cannot state the
+  converter's bounds (the `JsonSchema` subset has no lengths, patterns or ranges), so a
+  schema-valid value — an empty or two-line title, a code outside identifier syntax, a
+  non-canonical `notBefore`, `total` below `completed`, too many references — reaches the writer,
+  whose `_prepare` (`broker/commands.ts`) refuses it as `invalid` **before any write**. I1c's tool
+  (`tools/commandTools.ts`) reads every writer failure except `not-found-or-denied` as the unknown
+  line, which is right for an external command (an intent may already be recorded) and wrong here:
+  nothing was recorded, and the model could correct the value. The safe direction — a model told
+  to stop does not double-apply anything — so a usability gap, not a safety one. Pinned:
+  `trackedCommandTools.test.ts` › *a value only the converter refuses…*.
+
+  **Trigger**: ~~I1d, which owns `packlets/tools/`~~ — I1d (#706) neither took nor mentioned it, so
+  that trigger passed unacted (found at the cluster close, 2026-10-01). Now: the next stream that
+  touches `packlets/tools/commandTools.ts`, or the first consumer whose model hits it.
+
+  **Also in that file, a stale comment.** `_send`'s comment ("the writer canonicalizes them — once —
+  through the registered handle's `validate`") is true for external kinds only; for `fgv.tracked@1`
+  the writer converts through the broker's own converter and never calls the handle. Not edited by
+  `agent-tasks-tracked-commands`, which may not touch `packlets/tools/`.
+
+  **Scope sketch**: either the writer distinguishes "refused, nothing recorded" in its failure
+  detail and the tool reads that as a determinate `invalid` line, or the tool treats `invalid` as
+  determinate for a native kind (every native refusal precedes the writer section). A fixed line,
+  never the converter's message — it names bounds and values.
+
+  **Not a P4**: the model is told the opposite of the truth about whether to retry.
+
+  **Reference**: `agent-tasks-tracked-commands` (`.ai/tasks/completed/2026-10/agent-tasks-tracked-commands/result.md`).
+
+- **[P3] `JsonSchema.fromJson` silently ignores validating keywords it does not model, so its converter can be looser than the source schema.**
+  **Constraint class resolved by the `json-schema-constraints` stream** (PersonAIlity#682, PR #734): `minimum`, `maximum`,
+  `exclusiveMinimum`/`exclusiveMaximum`, `multipleOf`, `minLength` and `maxLength` are now enforced
+  by the derived validator and emitted by `toJson()`, `format`/`title`/`default`/`examples` are
+  emitted as annotations, and every provider wire passes, translates or folds each one
+  (`.ai/tasks/completed/2026-10/json-schema-constraints/result.md`). **`const` resolved by the
+  `json-schema-shapes` stream** (PersonAIlity#683): a scalar `const` is now the enforced one-value
+  enum of its type, and an object, array or `null` `const` is refused
+  (`.ai/tasks/completed/2026-10/json-schema-shapes/result.md`). **Still open, as written below:**
+  the array constraints (`minItems`, `maxItems`, `uniqueItems`), the key-count keywords beside an
+  open object (`minProperties`, `maxProperties`), the object-key and array keywords, and the
+  unvalidated `"__proto__"` drop.
+
+  The header of `FORBIDDEN_KEYWORDS` (`ts-json-base` `json-schema-builder/fromJson.ts`) is the stated
+  safety rule — a keyword that cannot be honoured is refused, never dropped — but it lists only the
+  structural keywords. Accepted and neither enforced nor emitted: constraint keywords (`const`,
+  `minimum`, `maximum`, `exclusiveMinimum`/`exclusiveMaximum`, `multipleOf`, `minLength`,
+  `maxLength`, `format`, `minItems`, `maxItems`, `uniqueItems`, `minProperties`, `maxProperties`);
+  object-key keywords beside an **open** object (`patternProperties`, `propertyNames`,
+  `unevaluatedProperties`, `dependentRequired`, `dependentSchemas`, `dependencies`); and array
+  keywords (`prefixItems`, `contains`, `additionalItems`, `unevaluatedItems`). Each makes an MCP
+  tool's arguments pass our validation and then fail at the server — not unsafe in the sense of
+  silent data loss, but a gap against the "converter enforces what the schema says" rule. The
+  `json-schema-fromjson-widening` stream refuses the object-key and key-count keywords beside a
+  *record* (where it introduced the shape) and leaves the rest. Also looser than its schema: an open object or a record
+  drops an own `"__proto__"` key **without validating it** (so `record(number)` accepts
+  `{"__proto__": "x"}`, which the source schema rejects); nothing invalid reaches the output, but
+  the call is accepted rather than refused.
+
+  **Trigger**: PersonAIlity#682 (constraint keywords through `toJson()`), whose faithful half is
+  enforcing them.
+
+  **Scope sketch**: per keyword, enforce (and emit, per provider) or refuse. Refusing outright would
+  skip most real MCP tools (`minimum`/`maxLength`/`format` are everywhere), so the constraint class
+  wants enforcement, not refusal; the object-key and array keywords are rarer and can be refused.
+
+  **Not a P4**: the subset's own header claims the opposite of what it does.
+
+- **[P3] Gemini has not been shown to accept a nested object schema with no properties.** `start`
+  and `resume` (and any registered command with no parameters) put `parameters: { type: 'object',
+  properties: {} }` inside the command tool's declaration once the Gemini adapter
+  (`ts-extras` `toolFormats.ts`, `toGeminiParameterSchema`) has dropped `additionalProperties`.
+  Gemini's OpenAPI-subset `parameters` has historically refused an `OBJECT` with empty `properties`
+  ("should be non-empty for OBJECT type"); whether that applies to a nested property today is not
+  established, and no test here can call the live API. I1c already sent the same shape for an
+  external `resume`. Pinned as sent: `trackedCommandTools.test.ts` › *Gemini receives…*.
+
+  **Trigger**: the first live Gemini run that offers a no-parameter command tool.
+
+  **Scope sketch**: verify live. If refused, the likeliest fix is in `packlets/tools/`: omit
+  `parameters` from a command tool's envelope when the registered schema has no properties, and
+  supply `{}` to the writer. (The adapter cannot drop the property alone — the tool's validator
+  would then refuse the call.)
+
+  **Not a P4**: if Gemini refuses, every tool set offering one of these commands fails on Gemini.
+
+  **Reference**: `agent-tasks-tracked-commands`.
+
+- **[P3] `fgv.task-list@1` registers no commands, so a model cannot cancel, fail or edit a list
+  through command tools.** A list accepts `fail`, `cancel` and the `set-*` commands through
+  `execute` (`listRefusedCommands` excludes only the own-work transitions), but
+  `taskListDescriptor()` registers none, and I1c's tools are per kind. Not taken by
+  `agent-tasks-tracked-commands`, whose brief is `fgv.tracked@1`.
+
+  **Trigger**: a consumer that wants a model to close or edit a task list.
+
+  **Scope sketch**: register the six list-accepted commands on `taskListDescriptor()` with the same
+  schemas (they are the same converter) and extend the agreement fixtures to the list registration.
+
+  **Not a P4**: a class of commands the broker supports is unreachable from the tool surface.
+
+  **Reference**: `agent-tasks-tracked-commands`.
+
+- **[P3] `jsonThreeWayDiff` silently drops an own `__proto__` key.**
+  `libraries/ts-json/src/packlets/diff/threeWayDiff.ts` builds `onlyInA` / `onlyInB` / `unchanged`
+  as plain objects by assignment. `onlyInA['__proto__'] = value` sets the prototype instead of
+  creating a property. So an own `__proto__` key, which `JSON.parse('{"__proto__": …}')` produces,
+  vanishes from every side of the diff. Downstream,
+  `ts-res-ui-components` `computeResourceDelta` then reports a resource whose only change is
+  deleting `__proto__` as unchanged (`null`). Verified 2026-09-27 against the built packages.
+
+  **Trigger**: any diff or delta consumer that must round-trip arbitrary JSON keys, or the next
+  change to `threeWayDiff.ts`.
+
+  **Scope sketch**: decide first whether the diff should represent `__proto__` at all. `JsonEditor`
+  deliberately skips `__proto__` / `constructor` / `prototype` as a prototype-pollution guard, so
+  "drop it" may be the intended policy, in which case it should be explicit and documented rather
+  than an accident of assignment. If it should be kept, build the result objects with
+  `Object.create(null)` or `Object.defineProperty` and add a round-trip test.
+
+  **Not a P2**: it needs a key almost no resource carries, and the failure is a missed deletion,
+  not corruption.
+
+  **Reference**: Copilot round-2 summary on #700 (`null-prototype-property-guard`), which noted it
+  without a thread. It was out of that stream's scope, being a different defect in a different
+  package.
+
+- **[P3] ai-assist sends a forced `tool_choice` alongside manual extended thinking on pre-Claude-5 Anthropic lines, which Anthropic rejects.**
+  On a model outside `adaptiveThinkingModelPrefixes` (`claude-haiku-4-5-20251001`, which `@anthropic:haiku` reaches, and the `claude-opus-4-*` / `claude-sonnet-4-*` lines), a completion with a thinking `effort` sends `thinking: { type: 'enabled', budget_tokens }`. With `structuredOutput` on the same request, the `''` catch-all adds `anthropic-tool-forced`'s `tool_choice: { type: 'tool' }`. Anthropic's thinking page: *"tool use with manual extended thinking (`thinking: {type: "enabled"}`) only supports `tool_choice: {"type": "auto"}` … or `{"type": "none"}`. Using `{"type": "any"}` or `{"type": "tool", …}` results in an error"* (<https://platform.claude.com/docs/en/build-with-claude/thinking> § "Thinking with tool use", fetched 2026-09-25). Nothing in `resolveStructuredOutput` or the adapter refuses the combination, so it fails at the provider. The same page says forced tool use *"works with adaptive thinking"*, so the Claude 5 lines on the forced format (`claude-sonnet-5`, `claude-opus-5`, `claude-fable-5`) are unaffected.
+
+  **Trigger**: a caller using thinking with structured output on `@anthropic:haiku` or a 4.x `modelOverride`, or the next change to the forced format.
+
+  **Scope sketch**: the cheapest correct fix is to route manual-thinking requests on those lines through `anthropic-output-format` rather than refusing. The structured-outputs page lists `claude-haiku-4-5-20251001`, `claude-opus-4-5` through `4-8`, `claude-sonnet-4-5` and `4-6` as supported, and JSON outputs set no `tool_choice`. A narrower alternative is a thinking-aware conflict check routed through `onUnsupported`. Either needs a request-body test for effort + schema on a manual-thinking id, and a live row (the canary's `structuredOutputEfforts` on an `@anthropic:haiku` extra model would do).
+
+  **Not a P2**: no tier reaches a manual-thinking line, since base and advanced are both adaptive. `@anthropic:haiku` retires not sooner than 2026-10-15, and the failure is a loud provider 400, not a silent one.
+
+  **Reference**: found while adding the effort + schema canary rows in `ai-assist-anthropic-structured-output` (`.ai/tasks/completed/2026-09/ai-assist-anthropic-structured-output/result.md` §6).
+
+- **[P3] ai-assist refuses `anthropic-output-format` structured output with `web_search` on documented grounds that the docs do not settle for web search itself.**
+  `resolveStructuredOutput` (`ts-extras/src/packlets/ai-assist/structuredOutput.ts`) refuses a schema request on `claude-opus-5-5` / `claude-fable-5-1` / `claude-mythos-5-1` when `web_search` is on the same request. This is not the forced format's wire clash (`output_config.format` is nowhere near `tools`, and Anthropic documents JSON outputs combined with tools). It rests on citations: web search "always" returns them, and Anthropic documents citations as incompatible with `output_config.format` because they "require interleaving citation blocks with text output". The documented 400 is scoped to citations on user-provided `document` / `search_result` blocks. No fetched page says whether web search's own citations trigger it or are dropped (<https://platform.claude.com/docs/en/build-with-claude/structured-outputs> § "Feature compatibility", <https://platform.claude.com/docs/en/build-with-claude/citations>, <https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool> § "Citations", all fetched 2026-09-25). If the combination is actually accepted with citations intact, the refusal withholds a working capability.
+
+  **Trigger**: a consumer that wants grounded search and a schema-constrained reply from the same Anthropic call, or an Anthropic doc change that addresses it.
+
+  **Scope sketch**: send one raw request (web search + `output_config.format`) to `claude-opus-5-5` from a keyed environment, outside the library, since the library refuses it. If the call succeeds and the reply still carries citations, drop `anthropic-output-format` from `conflictsWithServerTools`, drop its arm of the comment, and flip the test in `apiClient.structuredOutput.test.ts` § *anthropic output format*. If it 400s, cite the error in the comment and close this entry.
+
+  **Not a P2**: the refusal is loud and names its reason, so nothing fails silently, and no consumer has asked for the combination.
+
+  **Reference**: `ai-assist-anthropic-structured-output` stream (`.ai/tasks/completed/2026-09/ai-assist-anthropic-structured-output/result.md`).
+
+- **[P3] `createChildFile` / `createChildFileBytes` accept a child name containing a path
+  separator and silently `joinPaths` it into a nested path.**
+  `DirectoryItem.createChildFile` / `createChildFileBytes`
+  (`ts-json-base/src/packlets/file-tree/directoryItem.ts`) pass `name` straight to
+  `hal.joinPaths(this.absolutePath, name)` with no validation. A caller handing them
+  `'sub/child.txt'` gets a file one level down; on Windows `'sub\\child.txt'` does the same,
+  because `joinPaths` is `path.join`. `'..'` is worse, because `path.join` **normalizes** it —
+  `joinPaths('/a/b', '..')` is `/a`, a path outside the directory entirely.
+
+  The sibling `writeChildAtomically`, added by the `filetree-atomic-write` stream, rejects all
+  of these before touching the store. So the package now has two adjacent child-creating methods
+  with different name contracts, which is the actual defect: a caller who learns the strict rule
+  from one reasonably assumes it of the other.
+
+  **Trigger**: the next change that touches `DirectoryItem`'s child-creation methods for any
+  other reason, or the first consumer report of a traversal through one of them.
+
+  **Scope sketch**: lift the validation `writeChildAtomically` already performs into a shared
+  private helper and call it from all three. The work is small; the cost is that it is a
+  **behavior change on two established methods** of a stability-obligated package — a call that
+  succeeds today starts failing. That needs its own change file and a note in
+  `CAPABILITIES.md`, and it wants to be someone's deliberate decision rather than a rider on an
+  unrelated stream.
+
+  **Not a P2**: no known consumer passes a separator-bearing name, and neither method is
+  reachable from the atomic protocol, so nothing is currently exposed to it. It is a contract
+  inconsistency and a latent traversal, not a live one.
+
+  **Reference**: dispositioned out of F1 of `filetree-atomic-write` by its `code-reviewer` pass,
+  and out of F2 for the same reason — see
+  `.ai/tasks/completed/2026-09/filetree-atomic-write/result.md` § *Known follow-up*.
+
+- **[P3] A field added to a converted entity can be silently dropped — and the compiler cannot
+  catch it. The dangerous shape is an entity with *more than one* converter.**
+  `FieldConverters<T>` (`ts-utils/src/packlets/conversion/objectConverter.ts:61`) is
+  `{ [key in keyof T]: Converter<T[key]> | Validator<T[key]> }` — a **homomorphic** mapped type,
+  so it preserves `?` from `T`. An optional interface field is therefore optional in the
+  converter's field map, and a converter that omits it type-checks clean. Verified 2026-09-18
+  against the real project config. This is a structural property of the pattern, not a defect in
+  `Converters.object` (the mandated idiom) or in any particular converter: interface and
+  converter are two declarations with nothing linking them, and the compiler enforces only the
+  *required* half.
+
+  **The single-converter case is largely handled by practice, and the entry should say so.**
+  The working habit is to define the model entity and its converter as a pair, and to update
+  them as a pair. That discipline holds well and is why this is P3 rather than higher.
+
+  **What the habit does not scale to is N.** The habit is singular — *"the* converter" — so an
+  entity with a second converter (a legacy reader, a wire-format transformer, a persisted-JSON
+  shape) has no moment that prompts you about the others. You update the primary, the sibling
+  goes stale, and every gate stays green. Reported as a recurring real-world miss by the repo
+  owner, independent of the instance below.
+
+  **And that case evades the obvious detector**, which is why it is worth writing down. A sibling
+  converter usually converts a *differently named* type — `Converters.object<IFooJson>`, not a
+  second `Converters.object<IFoo>` — so grepping for two converters over the same type parameter
+  finds nothing. Checked 2026-09-18: **no production entity in `libraries/*/src` has two
+  converters over the same type**, so the easy form is currently absent.
+
+  **The live shape is in `ts-extras`' KeyStore**: `IKeyStoreAsymmetricEntry` /
+  `IKeyStoreAsymmetricEntryJson` and the symmetric pair (`crypto-utils/keystore/model.ts:207`
+  and `:342`), each with its own converter. **Currently in sync — 8 fields each on the
+  asymmetric pair, 7 each on the symmetric** — so this is a place to check when either side
+  changes, not a present defect. (An earlier revision of this entry said 5 each; that count came
+  from a `grep -A 25` window that truncated both interface bodies. Corrected 2026-09-18 from the
+  sweep below, which counted full bodies.)
+
+  **Observed live (single-converter form)**: C2 (#669) added `IPromptSlot.cacheStability?` and
+  `slotConverter` silently discarded it on every load through the store, with build, lint and
+  type-check green. Caught only by end-to-end tests that happened to round-trip through the
+  store; a unit test of the analysis would have passed.
+
+  **Trigger**: adding a field to any entity that has a converter — and especially to one with a
+  `*Json` / legacy / wire sibling.
+
+  **Scope sketch**, two parts of very different difficulty:
+  (a) *Single-converter sweep* — for each `Converters.object<T>`, diff `keyof T` against the
+  declared field map. Mechanical and cheap; tells you whether #669 was the only instance.
+  (b) *Sibling drift* — compare the field sets of naming-convention-paired types
+  (`I<X>` ↔ `I<X>Json` / `Raw` / `Dto` / `Legacy`). Heuristic rather than sound, since the two
+  shapes legitimately differ, so it wants to report *asymmetries for review* rather than fail a
+  gate. This is the half that matches the recurring real-world miss, and the half no type-level
+  trick fixes.
+
+  **Not a P2**: it drops data rather than corrupting it, the omission is inert until someone sets
+  the field, and (a) is cheap enough that exposure is measurable on demand.
+
+  **Reference**: #669; `objectConverter.ts:61`; `ts-prompt-assist/src/packlets/converters/descriptorConverter.ts`; `ts-extras/src/packlets/crypto-utils/keystore/model.ts`.
+
+
+- **[P3] `supportsCacheUsageReporting` withholds *all* token usage from Groq, Mistral, Ollama
+  and `openai-compat`, not just cache fields.**
+  C1 (#668) attaches `IAiCompletionResponse.usage` on the shared `apiFormat: 'openai'` path only
+  when `supportsCacheUsageReporting(descriptor)` is true, which is `'openai' || 'xai-grok'`
+  (`streamUsageCapability.ts`). The gate exists for a real reason — Copilot round 4 found that
+  every `apiFormat: 'openai'` descriptor shares those call sites, so an ordinary usage block
+  from a provider with no cache concept was being normalized into a **false cache-reporting
+  signal**.
+
+  But the gate is cache-scoped and it is withholding **general** token accounting as collateral.
+  Groq, Mistral, Ollama and self-hosted `openai-compat` all report `prompt_tokens` /
+  `completion_tokens`; C1 now discards those for exactly the providers a cost-conscious consumer
+  is most likely to be self-hosting. Anthropic and Gemini are unaffected — their paths are not
+  behind this gate.
+
+  **Trigger**: a consumer asks why token counts are missing on a self-hosted or non-flagship
+  provider, or any stream that touches `streamUsageCapability.ts`.
+
+  **Scope sketch**: separate the two questions the single predicate currently conflates — *does
+  this provider report tokens at all* versus *does it report cache fields*. Arguably `reports`
+  is already the right home for the second, which would let usage attach broadly while
+  `reports` stays honest about the cache half. Note the `'none'` member that C1's layer-1 review
+  removed from `AiCacheReportingLevel` may want reconsidering as part of that — it was dropped
+  because nothing produced it, and this would give it a producer.
+
+  **Not a P2**: it withholds a number rather than reporting a wrong one, and the providers
+  affected are the ones with no cache concept, so nothing about caching is misreported.
+
+  **Reference**: #668; `design.md` §8; `streamUsageCapability.ts`.
+
+- **[P3] Gemini 4 Argon ignores `temperature`, and ai-assist still sends a caller's value.**
+  Google's Argon migration notes say: "Remove deprecated parameters: Remove `temperature`, `top_p`,
+  `top_k`, and `candidate_count` from requests. If provided, sampling parameters are ignored."
+  (https://aistudio.google.com/docs/whats-new-gemini-4-argon.md?generate-content=true, fetched
+  2026-11-11). `samplingParamsRejectedModelPrefixes` covers models that **reject** sampling
+  parameters with a 400; Argon accepts and drops them, so a caller's `temperature` on
+  `@google-gemini:pro` is silently ineffective and nothing says so.
+
+  **Scope sketch**: a sibling declaration for models that *ignore* sampling parameters (a descriptor
+  list, matched like the rejected list), and a decision on what a call with `temperature` does there
+  — refuse, or send it and report it as ignored. Not done in `gemini-thinking-level`, which kept
+  behaviour unchanged.
+
+  **Trigger**: a consumer relies on `temperature` with `@google-gemini:pro`, or any stream that touches
+  the sampling-parameter declarations.
+
+  **Not a P2**: nothing on the wire is wrong and nothing fails; the cost is a setting that has no
+  effect.
+
+  **Reference**: `.ai/tasks/completed/2026-11/gemini-thinking-level/` (`state.md` Q1).
+
+- ~~**[P3] Generic `effort: 'none'` maps to a Gemini value that errors on Pro-family models.**~~
+  **Resolved by `gemini-thinking-level` (PR #775).** A generic `'none'` never sends
+  `thinkingBudget: 0` to a Pro-family model: every Pro id with evidence (`gemini-3.1-pro-preview`,
+  `gemini-3-pro-preview`, `gemini-2.5-pro`) is on `thinkingRequiredModelPrefixes`, so `'none'` is sent
+  as the low budget or, under `onUnsupported: 'fail'`, refused with "the model cannot run with thinking
+  off". Gemini 4 (`gemini-4-argon`, `gemini-4-carbon`) is on the level wire and degrades to `low` or is
+  refused naming its lowest level. An explicit `{ thinkingBudget: 0 }` block is still sent verbatim
+  (the caller owns the wire). Original entry kept below.
+  `ai-assist-thinking-anchoring` (#667) added `'none'` to `IThinkingConfig.effort` as the
+  cross-provider spelling for "thinking off". On Gemini it maps to `thinkingBudget: 0` in
+  `thinkingOptionsResolver.ts`'s `genericEffortToGemini`. But
+  `IGeminiThinkingConfig.thinkingBudget`'s own doc comment — one field away in `model.ts` —
+  states that `0` is valid on **Flash and Flash-Lite only and errors on Pro**. So a caller who
+  writes `thinking: { effort: 'none' }` and routes to a Gemini Pro model gets a provider-side
+  400.
+
+  The stream's layer-1 `code-reviewer` pass caught the *doc comment* overclaiming this and fixed
+  it by adding the caveat, on the reasoning that the same footgun already existed via an explicit
+  `providers: [{ provider: 'google', config: { thinkingBudget: 0 } }]` block. That reasoning is
+  sound but incomplete, which is why this entry exists: the pre-existing door was **Gemini-
+  specific**, where reading the Gemini field's docs is the natural thing to do, while the new one
+  is the **generic** field whose entire purpose is not having to think about providers. The
+  library's own cross-provider abstraction is where the leak now is.
+
+  **Not covered by the `FUTURE.md` entry it looks adjacent to.** That entry ("Gate thinking
+  requests on the per-model capability table") is about models that cannot think at all. Gemini
+  Pro *does* think — it simply cannot express "off" as a budget of zero. Different problem, and
+  it would survive that entry being implemented.
+
+  **Trigger**: a consumer reports a Gemini Pro 400 on `effort: 'none'`, or any stream that
+  touches `genericEffortToGemini`.
+
+  **Scope sketch**: the resolver already has model-prefix machinery
+  (`isExactOrDashBoundedPrefix`, used by `isAdaptiveThinkingModel`), so the cheap fix is to fail
+  fast in `mergeThinkingConfig` with a message naming the Pro-family constraint, rather than
+  emitting a value the provider will reject. Note the alternatives are both worse: omitting
+  `thinkingConfig` entirely means "model default", which on a thinking-by-default Pro model
+  leaves thinking **on** and silently fails to honour `'none'`; and `-1` is dynamic, not off.
+
+  **Not a P4**: it is a wrong value on the wire reachable from the generic public surface, not a
+  documentation inconsistency. The failure is loud (a provider 400 rather than silent corruption),
+  which is what keeps it out of P2.
+
+  **Reference**: #667; `.ai/tasks/completed/2026-09/ai-assist-thinking-anchoring/` (README
+  § "The easy part hid a real edge", `meta.yaml` `summary.diverged`); surfaced by the
+  `finalize-task` antagonist pass, not by the stream itself.
+
+- **[P3] `rushx update-snapshot` writes snapshots with a different Jest config than
+  `rushx test` reads them with — nine packages.**
+  The two halves of the snapshot loop disagree: `"test": "heft test --clean"` runs under
+  Heft, which applies the package's `config/jest.config.json` (test environment, and
+  crucially Heft's **pinned** jest / `pretty-format` version), while
+  `"update-snapshot": "jest --updateSnapshot"` runs plain Jest with none of it.
+
+  Two consequences, and the second is the expensive one. Under jsdom-configured packages
+  the update run also *fails* unrelated DOM-dependent tests, which is noisy but obvious.
+  The quiet one is that the two `pretty-format` versions serialize an array header
+  differently — `Array [` vs `[` — so a freshly "updated" snapshot **does not match** and
+  has to be hand-corrected line by line. Observed 2026-08-22 in `samples/testbed` while
+  adding four scenario ids: the regenerated file differed from the expected one in exactly
+  that header, and nothing about the failure says so.
+
+  **Verified repo-wide** rather than assumed — nine packages carry the plain form:
+  `ts-agent-memory-sqlite-vec`, `ts-extras-mcp`, `ts-extras-ollama`, `ts-extras-transformers`,
+  `ts-extras-webauthn`, `ts-utils-jest`, `ts-web-extras-transformers`,
+  `ts-web-extras-webauthn`, `samples/testbed`. (`ts-utils-jest` — the package that *ships*
+  this repo's Result matchers — is among them, which is the tell that nobody has exercised
+  this path recently.)
+
+  **Trigger**: the next time anyone regenerates a snapshot, in any of the nine.
+
+  **Scope sketch**: point the script at the same config the test run uses — `jest --config
+  config/jest.config.json --updateSnapshot`, or better a Heft-native equivalent so the
+  pinned toolchain is used by construction rather than by a path that can drift again.
+  One-line edit per package; worth doing all nine at once since the fix is mechanical and
+  the diagnosis is not.
+
+  **Not a P2**: it never reddens CI — the checked-in snapshots are correct. It costs a
+  confusing half-hour to whoever next updates one.
+
+  **Reference**: surfaced by the `ai-assist-structured-output` stream's testbed scenarios,
+  which added four registry ids and had to hand-fix the regenerated snapshot's header.
+
+- **[P3] A `ts-json-base` file-tree test asserts a permission denial that cannot occur for
+  uid 0, so it fails on any root container and passes in CI.**
+  `libraries/ts-json-base/src/test/unit/file-tree/mutableFsTree.test.ts` §
+  *"returns permission-denied for read-only file"* (line ~83) chmods a file to `0o444` and
+  expects `fileIsMutable` to fail with `'permission-denied'`. **Root bypasses the file mode
+  bits**, so the write succeeds and the assertion fails — verified 2026-08-22 in a root
+  dev container (`id -u` → 0; appending to a fresh `0444` file succeeds).
+
+  The implementation is correct and CI is green, because CI's runner is not root. What is
+  wrong is a test whose verdict is a function of the uid it happens to run under, with no
+  signal saying so — the same defect class as the `openFdCountFor` helper two files over,
+  which *does* say so out loud (`console.warn`: "the connection-leak assertion is NOT
+  running") rather than degrading silently.
+
+  **Trigger**: the next stream that touches `ts-json-base`'s file-tree packlet, or the
+  next time someone loses ten minutes to a red local suite on a clean tree.
+
+  **Scope sketch**: follow the sibling's precedent — detect `process.getuid?.() === 0`,
+  skip the assertion, and `console.warn` that it was skipped. Do **not** delete the test:
+  it is the only coverage of the `'permission-denied'` detail, and it is real on the
+  runner that matters.
+
+  **Not a P2**: it costs local-only confusion, never a red PR.
+
+  **Reference**: surfaced incidentally by the `ai-assist-structured-output` stream, which
+  ran `rushx test` in `ts-json-base` after adding `isSchemaValidator` and had to establish
+  that the one red test predated the change.
+
+- **[P3] `etc/*.api.md` is not a faithful proxy for what a consumer's editor shows, and a stale doc comment used that gap to ship.**
+  A member can carry **two** stacked doc comments — an older prose block, then a
+  `/** {@inheritDoc Other.member} */` line immediately above the declaration. TSDoc binds the
+  *second*, so the first documents nothing and **never appears in `etc/*.api.md`** — but
+  API Extractor's rollup emits both, and `"types"` points at the rollup
+  (`dist/<pkg>.d.ts`). So the orphaned text is **invisible to the api.md review gate and fully
+  visible on IDE hover** for every consumer.
+
+  Found 2026-08-18 when PersonAIlity reported that
+  `InMemoryFragmentCosineIndex.rebuild`'s `@remarks` still said it "deliberately still returns a
+  bare count" long after it began returning a `DetailedResult<IFragmentVectorRebuildReport>`.
+  Their report was right and the diagnosis on our side was initially wrong: a first pass checked
+  `api.md`, found nothing, and nearly concluded the text had never shipped. It had — twice over
+  in `dist/ts-agent-memory.d.ts`. Fixed by deleting the orphaned block; the `{@inheritDoc}` line
+  below it already delegated to an accurate interface doc, so rewording would have re-created the
+  second drift-prone account that `{@inheritDoc}` exists to prevent.
+
+  **Why it matters beyond the one instance.** `CODE_REVIEW_CHECKLIST.md` § "PR description and
+  docs accurately frame the change" asks that TSDoc claims be walked back to the implementation
+  before merge — and a reviewer doing exactly that, against the artifact the repo treats as the
+  API record, would not have seen this. The stale claim also did not merely misdescribe the
+  return: it *justified an asymmetry that no longer exists*, so a reader who trusted it would
+  conclude the fragment path is less observable than it is and never look for the report.
+
+  **The sweep was run 2026-08-18** — a doc block immediately followed by another doc block, over
+  every non-test `libraries/*/src` and `tools/*/src` file. **33 sites, of which one is a genuine
+  instance of this defect and the rest are not**, so this is a small cleanup rather than a
+  contagion:
+
+  | shape | count | verdict |
+  |---|---|---|
+  | column-0 file-level block above the first member | 23 | **benign** — an intentional file-header note (e.g. `ts-utils/base/shouldNotFail.ts`) |
+  | indented section-header comment inside an interface (`/** Visibility options */`) | 9 | **cosmetic** — all in `ts-res-ui-components`; should be `//`, since `/** */` silently orphans, but nothing is misdescribed |
+  | indented orphaned member doc carrying `@param`/`@returns` | **1** | **the real one** |
+
+  The real one is `libraries/ts-res/src/packlets/resources/resourceManagerBuilder.ts:837`: an
+  orphaned block documenting a condition-set-token helper sits directly above
+  `_applyEditsToResourceDeclaration`, so a reader hovering gets `@param`/`@returns` for **a
+  different method entirely**. It is `@internal`, so unlike the `ts-agent-memory` case it never
+  reached a published rollup — which is exactly why it is P3 and not higher.
+
+  **No lint rule proposed.** One genuine instance across the repo does not earn one, and the
+  discriminator that matters (is the first block orphaned, or a deliberate section header?) is
+  not mechanically decidable — the 9 cosmetic hits would all be false positives. Re-run the sweep
+  opportunistically instead.
+
+- **[P3] `@fgv/ts-web-extras`'s safer-fetch suite cannot exercise a successful response — jsdom ships no Fetch globals.**
+  `libraries/ts-web-extras/src/test/unit/browserSaferFetch.test.ts` drives only a *failing*
+  scripted transport, because the jsdom test environment provides no `Response` constructor, so
+  the suite cannot build one to return. Every success-path semantic on the browser entry points —
+  the content-type gate firing on a real header set, the streaming size cap counting decoded
+  bytes, body-guard dispatch, the shape of a returned `ISaferFetchResponse<T>` — is covered
+  **solely** by the `@fgv/ts-extras` suite, on the shared runtime-agnostic core.
+
+  That is *mostly* fine by construction: the core genuinely is shared verbatim, which is the
+  design's whole premise. The gap is that the premise is untested on the browser side, so a
+  browser-specific regression in the thin wrapper — an option not threaded, a guard not passed
+  through — would not be caught by either suite.
+
+  **Trigger**: next substantive change to the browser safer-fetch packlet, or whenever the test
+  environment gains Fetch globals.
+
+  **Scope sketch**: either point the browser package's jest environment at one that supplies
+  `Response` (Node 20+ has it natively — `testEnvironment: 'node'` for this file alone, since it
+  tests no DOM), or inject a minimal `Response` polyfill into the suite's setup. Then port the
+  success-path cases from the `ts-extras` suite so the wrapper is exercised end to end.
+
+  **Not a P2**: the shared core is well covered and the wrapper is thin; this is a coverage-shape
+  gap rather than a known defect. It earns an entry because it is a **security** primitive whose
+  browser posture is already the weaker of the two — three guarantees are structurally absent
+  there and stated rather than degraded — so the wrapper is exactly where a silent regression
+  would be least visible and most costly.
+
+  **Reference**: `safer-fetch-s3` (#601) `result.md` / `README.md`, which record the constraint;
+  surfaced 2026-08-14 by the retroactive `finalize-task` sweep, which found it recorded in no
+  durable ledger. Note `docs/TECH_DEBT.md` and `docs/FUTURE.md` contain no other safer-fetch
+  entry at all.
+
+- **[P3] `importPublicKeyFromMultibaseSpki` still early-returns instead of chaining; the bridge pattern it was waiting for has shipped.**
+  `libraries/ts-extras/src/packlets/crypto-utils/spkiHelpers.ts` breaks its `Result` chain at the
+  sync→async transition — `const decodeResult = multibaseBase64UrlDecode(encoded); if
+  (decodeResult.isFailure()) { return fail(...); }` — rather than chaining into the awaited
+  `provider.importPublicKeySpki(...)`. Its sibling `exportPublicKeyAsMultibaseSpki` chains cleanly, so
+  the two read differently for no reason a caller can see.
+
+  **Trigger**: fired already, and that is the point of this entry. The
+  `auth-primitives-batch1` README deferred it explicitly — "a candidate to revisit if a clean
+  `Result`-to-`AsyncResult` bridge pattern emerges" — and `AsyncResult` with `thenOnSuccess` /
+  `thenOnFailure` has since shipped in `@fgv/ts-utils` and is documented in `CODING_STANDARDS.md`
+  § "Async Result Chaining". Address on the next substantive change to `crypto-utils`.
+
+  **Scope sketch**: `return multibaseBase64UrlDecode(encoded).thenOnSuccess(async (bytes) =>
+  provider.importPublicKeySpki(bytes, algorithm)).withErrorFormat((e) =>
+  `importPublicKeyFromMultibaseSpki: ${e}`)`. Behaviour-preserving; the existing tests should pass
+  unchanged, which is the check that it was purely stylistic.
+
+  **Not a P2**: it is a readability defect in a correct function, not a correctness or type-safety
+  one. It earns an entry only because it was a *recorded deferral whose stated precondition is now
+  met* — the class of debt that otherwise disappears, since a deferral living solely in a completed
+  stream's README has no reader at the moment its trigger fires.
+
+  **Reference**: `auth-primitives-batch1` (#322) "Notes for sibling-sweep / future cleanup"; surfaced
+  2026-08-14 by the retroactive `finalize-task` antagonist pass over that stream.
+
+- **[P3] `@fgv/ts-utils` should export a single-`AsyncDeferredResult` invoker; FOUR packages now carry a private copy.**
+  **Recount 2026-08-14 — the entry said two; there are four, so its own trigger fired twice over.**
+  Beyond the two named below, `@fgv/ts-extras` has `_capture<T>` in
+  `safer-fetch/saferFetch.ts:223-224` (same body, different name) and `@fgv/ts-prompt-assist`
+  inlines the flatten at `safeguards/safeguardEngine.ts:128` with a comment explaining it.
+  `_invokeDeferred` is still unexported (`mapResultsAsync.ts:235`) and absent from
+  `etc/ts-utils.api.md`.
+
+  **This also retires the entry's own "why not done inline" reasoning**, which argued the carry
+  was cheaper than widening one consumer's PR stack. That held for two copies inside one stack.
+  It does not hold for four independent packages, two of which have nothing to do with agent
+  memory — at that point the duplication is a repo-wide pattern and the export is the cheaper
+  end state.
+
+  Invoking one consumer-supplied `() => Promise<Result<T>>` and turning a synchronous throw or a rejection
+  into a `Failure` requires `captureAsyncResult` plus a flatten (`.onSuccess((inner) => inner)`), because
+  `captureAsyncResult` wraps the hook's own `Result` and yields `Result<Result<T>>`. `ts-utils` already has
+  exactly this as `_invokeDeferred` in `mapResultsAsync.ts`, but it is `@internal` and unexported, so
+  `@fgv/ts-agent-memory` (`inMemoryCosineIndex.ts`) and `@fgv/ts-agent-memory-sqlite-vec`
+  (`sqliteVecVectorIndex.ts`) each define an identical private `invokeHook`.
+
+  **Trigger — FIRED (twice). Re-triggered on:** the next time the async `Result` family is
+  touched, or simply do it — this is a ~20-line additive export on `ts-utils` plus four deletions.
+
+  **Scope sketch**: export the existing `_invokeDeferred` under a public name (`captureDeferredResult` reads
+  naturally alongside `captureResult` / `captureAsyncResult`, and `AsyncDeferredResult<T>` is already
+  exported), with tests + a change file, then delete both private copies. Purely additive on `ts-utils`.
+
+  **Why not done inline**: `ts-utils` is a foundational, non-active-development surface and was outside the
+  declared package scope of the PersonAIlity Stream A stack. Widening a four-PR stack a consumer is waiting
+  on to add a public export to the repo's most-depended-on library is the wrong trade; three duplicated
+  lines twice is the cheaper carry. Recorded rather than left as a silent copy-paste.
+
+  **Reference**: PersonAIlity Stream A (#611, #614); Copilot round 1 on #611 finding 1.
+
+- **[P3] `ai-assist` fence extraction mis-slices a fenced body that itself contains a triple backtick.**
+  `FENCED_BLOCK` in `libraries/ts-extras/src/packlets/ai-assist/jsonResponse.ts` is a single lazy-body regex (`([\s\S]*?)` between an opening fence and the first following ` ``` `). When a model emits a fenced JSON block whose *body* contains a literal triple backtick — most plausibly inside a string value, e.g. ` ```json\n{"snippet": "``` foo ```"}\n``` ` — the lazy body stops at the inner backticks and `extractJsonText` hands `JSON.parse` a truncated candidate. Long-standing and **not introduced by the `ai-assist-fenced-json-diagnostics` stream**: that stream only renumbered the regex's capture groups (opening fence became group 1, body group 2, so a body offset can be mapped back to the original text), verified behaviour-preserving over a 6804-input fuzz. The new `classifyJsonParseFailure` degrades safely here — it reports `'unknown'` rather than compounding the mis-slice with a confident wrong verdict.
+
+  **Reproduced 2026-08-14.** Input ` ```json\n{"snippet": "``` foo ```"}\n``` ` yields capture
+  group 2 = `{"snippet": "`, which reaches `findBalancedJsonSubstring`, classifies as
+  `'unclosed'`, and fails with: *"JSON structure opened but never closed (depth 1 at end of
+  input) — response may have been truncated (check IAiCompletionResponse.truncated / raise
+  maxTokens)"*.
+
+  **That message is a confidently wrong verdict**, which sharpens this entry considerably. The
+  original text claimed the failure is merely "loud (a parse failure), not silent" and credited
+  `classifyJsonParseFailure` with degrading safely to `'unknown'`. Both are too generous: the
+  consumer is told the response was truncated and to raise `maxTokens`, on a response the model
+  formed correctly and that was never truncated. Acting on that advice cannot fix it. Being
+  loudly wrong about the cause is worse than failing opaquely, and it is exactly the class of
+  misdiagnosis `classifyJsonParseFailure` exists to prevent.
+
+  **Trigger**: the next time fence extraction is touched, or the first consumer report of a
+  fenced response with embedded backticks failing to parse — which will most likely arrive
+  *described as a truncation problem*, because that is what the library told them.
+
+  **Scope sketch**: harden the fence scan — prefer counting the opening run's backtick length and matching a closing run of at least that length at a line start (the CommonMark rule), instead of the current first-` ``` `-wins lazy match. Keep `extractJsonText`'s messages unchanged; `locateJsonCandidate` is already the single source of truth for the strip-wrappers step, so the change lands in one place and both the extractor and the classifier follow.
+
+  **Not a P4**: it produces a wrong parse candidate, not just a cosmetic wart — a consumer sees a confusing `JSON.parse` failure on output the model actually formed correctly.
+
+  **Reference**: `ai-assist-fenced-json-diagnostics` stream; code-reviewer pass on that diff (2026-07-31), P3 finding 3.
+
+- **[P3] `ts-agent-memory` L2 `createMemoryTools` duplicates the store's codec wiring instead of delegating.**
+  `createMemoryTools({ codecs?, defaultCodec? })` (`libraries/ts-agent-memory/src/packlets/tools/memoryTools.ts`) accepts the per-kind identity codecs a second time, in addition to `FileTreeMemoryStore.create({ codecs })`. `memory_write` needs them because `IMemoryStore.put` (`fileTreeMemoryStore.ts:496-502`) validates `envelope.id === codec-derived idStem` and does not derive/stamp the id itself — so a caller building a new `IMemoryRecord` must compute the same `idStem` up front, which requires the same codec the store was constructed with. The testbed scenario passes the same `codecs` map to both constructors, illustrating the drift risk: a host that re-wires the store's codecs but forgets the mirrored `createMemoryTools` config gets a confusing "envelope id does not match codec-derived stem" failure at `put()` time. Scope isolation is NOT compromised (codec `scope` is derived deterministically from `kind`, not from agent input; a mismatch loudly rejects the write rather than writing cross-scope), so this is a DX/robustness smell, not a security gap.
+
+  **Trigger — ALREADY FIRED, unnoticed (2026-08-14).** The stated trigger was "when the temporal
+  write path lands". It landed: `TemporalVersionedPolicy` is in `packlets/types/writePolicy.ts`
+  and wired in `fileTreeMemoryStore.ts`, with `test/unit/store/temporalStore.test.ts` alongside.
+  Nobody acted. Re-triggered on: the next time `createMemoryTools` is extended, or the next
+  substantive change to the store's write path.
+
+  **Scope sketch — now cheaper than when written.** Add an additive method to `IMemoryStore` —
+  `resolveWriteAddress(kind, entityId): Result<IIdentityCodecResult>` delegating to the store's
+  already-configured `codecs`/`defaultCodec` — and have `memory_write` call it, dropping the
+  `codecs?`/`defaultCodec?` params from `ICreateMemoryToolsParams`.
+
+  When this was written that was a novel shape. It is not any more: `IMemoryStore.dedupScopeFor(kind)`
+  and `embedsKind(kind)` both shipped since, and both are exactly this pattern — a total,
+  synchronous, store-owned accessor existing so that two code paths cannot disagree about a
+  store-owned fact. `dedupScopeFor`'s own docstring makes the argument. So the proposal is now a
+  third sibling of two shipped accessors rather than a new idea, and it should be scoped as such.
+
+  **Reference**: `agent-memory-l2-tools` stream; code-reviewer pass on the L2 diff (2026-07-07).
+
+- **[P3] ai-assist model-alias layer does NOT cover capability-detection or the typed `*ModelNames` unions — both stay manual on a provider line rotation.**
+  The `@<provider>:<role>` alias layer (`ai-assist-model-aliases` stream) fixes model *selection/default* churn: a line rotation is one edit to a descriptor's `aliases` map plus a testbed run. It deliberately does **not** touch two adjacent axes, which still need a manual bump (design §3):
+
+  1. **The capability-detection `idPattern` rules** (`libraries/ts-extras/src/packlets/ai-assist/registry.ts`, the `DEFAULT_MODEL_CAPABILITY_CONFIG.perProvider` block). These classify the concrete ids a provider's `listModels` endpoint returns (never aliases). When a new line ships (e.g. `gemini-4.x`), the rules need a matching `idPattern` sibling — without it, new ids fall to the base capability set and are mis-classified (e.g. a thinking-capable model detected as non-thinking). Tier 2 added `/^gemini-3/ → ['chat','tools','vision','thinking']`; the next line needs the same hand-edit.
+  2. **The typed `*ModelNames` unions** (`model.ts` — `GeminiThinkingModelNames`, `GeminiFlashImageModelNames`, the parallel `OpenAiThinkingModelNames`, etc.) used by the layered-options `models?` filter arrays. They enumerate concrete ids for compile-time ergonomics and must track real ids on a deprecation. Tier 2 bumped the Gemini unions to the 3.x ids by hand.
+
+  **Trigger**: any future provider line rotation (Google/OpenAI/etc.), or when a `listModels` mis-classification or a stale `models?` filter id surfaces.
+
+  **Scope sketch**: per rotation, add/adjust the provider's `idPattern` rule(s) and bump the corresponding `*ModelNames` union(s) alongside the one-line `aliases` map edit. A follow-on could additively allow aliases inside the `models?` arrays (so the unions stop enumerating concrete ids), but that is a separate design — out of the alias stream's scope.
+
+  **Not a P2**: no shipped-behavior regression; the alias layer's value is precisely bounded and the doc (`LIBRARY_CAPABILITIES.md`, packlet README) states the boundary explicitly. This entry exists so the two manual axes are not forgotten on the next rotation.
+
+  **2026-09 rotation (executed this entry)**: added `/^gpt-6/`, `/^grok-4\.7/`, `/^grok-4\.6/`; bumped the OpenAI/Gemini/xAI/Anthropic thinking unions and the GPT Image / Grok Imagine unions; dropped `o3-deep-research` / `o4-mini-deep-research` (shut down 2026-07-23). It also showed there is a **third** manual axis this entry did not name: the per-model capability declarations (`structuredOutput`, `imageGeneration`, `responsesOnlyModelPrefixes`, `adaptiveThinkingModelPrefixes`). A successor can change what a declared mechanism does — see the P2 Anthropic structured-output entry, which held two aliases back. The id-by-id record, with sources, is in `.ai/tasks/completed/2026-09/ai-assist-model-catalog-2026-09/result.md`.
+
+  **Reference**: `ai-assist-model-aliases` design §3 + Tier 2 manual-axis bumps (`.ai/tasks/completed/2026-06/ai-assist-model-aliases/state.md`).
+
+- **[P3] ai-assist provider knobs narrower than the model now allows, and two listModels/registry loose ends.** *(Item 1, the thinking-`'none'` gate, was resolved in #692.)*
+  All documented 2026-09-24 on the pages cited in `.ai/tasks/completed/2026-09/ai-assist-model-catalog-2026-09/result.md`:
+  1. ~~**`'none'` effort has no per-model gate.**~~ **Resolved in #692.** The live testbed run (2026-09-25) confirmed 400s on `gpt-6-astra`, `grok-4.7` and `gemini-3.1-pro-preview`. Descriptors now declare `thinkingRequiredModelPrefixes`, and `IThinkingConfig.onUnsupported` (default `'degrade'`: `'none'` is sent as `'low'`; `'fail'`: refused before the wire) handles the generic `'none'` on them. Two gaps remain. Provider blocks are sent unchecked. Anthropic's always-on models (`claude-opus-5-5`, `claude-fable-5-1`) are not declared, because `'none'` there omits the `thinking` field, which Anthropic accepts.
+  2. **`gpt-image-2.5-*` qualities `xhigh` / `max`** are not expressible: `GptImageQuality` is `low | medium | high | auto`, so `@openai:image` cannot reach them (refused locally, not silently).
+  3. **xAI image edits are capped at 3 reference images** (`imageGenerationClient.ts`); `grok-imagine-image-2.0` accepts "up to five source images for editing" (xAI's `imagine-image-quality-nov-2` migration guide). Refused locally, not silently.
+  4. **`/^gemini-3/` over-matches.** It classifies `gemini-3.8-live`, `*-tts` and `*-transcribe` ids as chat + thinking in `listModels`. This predates the rotation (`gemini-3.1-flash-tts-preview` had it). Detection accumulates across rules, so a sibling rule cannot subtract it; the fix is a narrower pattern.
+  5. **Unconfirmed retirement claim.** A registry comment says `gpt-5.1` was "retired March 2026", yet `OpenAiThinkingModelNames` still lists it, and OpenAI's deprecations page (fetched 2026-09-24) records no `gpt-5.1` shutdown. One of the two is wrong.
+  6. **For the next rotation:** `gemini-3.8-pro` appears in code samples on Google's thinking page but on no model or deprecation page as of 2026-09-24. Check whether it is listed before moving `@google-gemini:pro` off `gemini-3.1-pro-preview`.
+  7. **The `'other'`-block override check does not know the endpoint.** The `'none'` gate stands aside when an applicable `'other'` block carries either OpenAI/xAI effort key (`reasoning_effort` or `reasoning`). Blocks are merged with a shallow `Object.assign`, so a key that *is* on the wire replaces the resolved effort, and key presence is the right test. But Chat Completions sends `reasoning_effort` and Responses sends `reasoning`, and the resolver runs before the endpoint is chosen. A block carrying only the other endpoint's key makes the gate stand aside while the generic `'none'` still reaches the wire. The result is a loud provider 400, and `onUnsupported: 'fail'` does not refuse it locally. The fix threads the chosen endpoint into `resolveThinkingConfig`.
+  8. **`gemini-2.5-pro` is gated but not in `GeminiThinkingModelNames`.** It is in `thinkingRequiredModelPrefixes` for callers who still reach it by `modelOverride`, but the union never listed it (neither did `release`). Google withdrew the 2026-10-16 shutdown and serves the 2.5 line to existing users only (as of 2026-09-24), so it is not a model new projects can pick. Decide at the next rotation: list it in the union, or drop it from the prefixes once Google shuts it down.
+
+  **Trigger**: a testbed run that 400s on item 1, or a consumer asking for the higher qualities / more references.
+
+  **Scope sketch**: item 1 wants a per-model accepted-effort declaration on the descriptor (sibling of `adaptiveThinkingModelPrefixes`) checked before the wire, failing or clamping by an explicit policy. Items 2–3 are additive widenings (a union member; a per-capability `maxReferenceImages`).
+
+  **Not a P2**: none is silent — each is either a loud provider error or a local refusal — and item 1 applies only to an explicit `'none'` request on those tiers.
+
+  **Reference**: `ai-assist-model-catalog-2026-09` stream.
+
+- **[P3] The capability resolvers in `ai-assist/registry.ts` return `| undefined` instead of `Result<T>`, and `undefined` is now three-ways ambiguous.**
+  **Two functions, not one** (the original entry named only the first, and its line reference was
+  stale): `resolveImageCapability` at `registry.ts:428-433` → `IAiImageModelCapability | undefined`,
+  and `resolveEmbeddingCapability` at `registry.ts:469-474` → `IAiEmbeddingModelCapability | undefined`.
+  Both delegate to the same private `resolveCapabilityForModel`, so the fix is one shared helper
+  plus two public wrappers.
+
+  **The case is stronger than "non-idiomatic" now.** When the alias layer landed, these gained a
+  third failure mode, so `undefined` collapses three distinct outcomes: no capability rule matched
+  the model; the provider declares no capabilities of that modality at all; or **`modelId` was an
+  unresolvable or cyclic `@alias`** — a real error, flattened into "not found". The docstrings at
+  `:418-419` and `:465-466` acknowledge the alias case explicitly, which means the code already
+  knows a distinction it has no way to return.
+
+  **Trigger**: next substantive change to the provider registry or capability resolution path.
+
+  **Scope sketch**: change both return types to `Result<T>`; fail with a message that
+  distinguishes the three cases (an unresolvable alias should not read as "model not found");
+  update call sites to chain. Note the original sketch pointed at call sites "primarily in
+  `apiClient.ts`" — **that file no longer exists**; the callers now live in
+  `imageGenerationClient.ts` and `embeddingClient.ts`.
+
+  **Not a P2**: callers currently handle `undefined` defensively, so behaviour is correct today.
+  The ambiguity is a latent diagnostic failure, not a live bug.
+
+  **Reference**: PR #329 review — pattern pre-existed the PR, absolved from that review.
+
+## P4 — Doc / minor consistency
+
+- **[P4] An object converter with no fields converts `null` to `{}`.** `@fgv/ts-utils`
+  `Converters.object({})` and `Converters.strictObject({})` both succeed on `null` with `{}`; an
+  object converter with any field refuses `null` ("Cannot convert field … from non-object null").
+  `JsonSchema.object({})` inherits it. Observed through `fgv.tracked@1`'s `start` / `resume`, where
+  schema and converter agree (both canonicalize `null` to `{}`), so nothing disagrees and nothing
+  unsafe is stored — but "strict empty object" does not mean "an object".
+
+  **Trigger**: the next change to the `ts-utils` object converters.
+
+  **Scope sketch**: refuse a non-object (`null`, array) before the field loop, as the non-empty case
+  already does in effect. Established surface: check consumers that rely on `null → {}` first.
+
+  **Not a P5**: there is no P5; it is a semantic quirk on an established surface, recorded so it is
+  not rediscovered.
+
+  **Reference**: `agent-tasks-tracked-commands` — `trackedCommandSchemas.test.ts` pins it as agreed.
+
+- **[P4] `mutableFsTree` `permission-denied for read-only file` test fails when the test container runs as root.**
+  `@fgv/ts-json-base` `mutableFsTree` suite — one test expects `chmod`-based read-only enforcement to block a write. When the test container runs as root (the default in the cloud-agent harness), `chmod` is advisory; the kernel lets root write read-only files regardless. Reproduces on the `release` baseline; **not a regression** from any recent stream. Surfaced (and explicitly dispositioned as unrelated) during the `capture-async-result-upgrade` full-repo `rush test` sweep (PR #433).
+
+  **Confirmed still failing, live, 2026-08-14.** Reproduced in this container (`id -u` → 0):
+  `npx heft test --test-path-pattern mutableFsTree` fails on
+  *`FsFileTreeAccessors › fileIsMutable › returns permission-denied for read-only file`*. Root
+  cause verified directly — `fs.accessSync(<0o444 file>, W_OK)` **succeeds** as root, so
+  `fsTree.ts:237` never throws and `:245` returns `succeedWithDetail(true, 'persistent')`. The
+  test at `mutableFsTree.test.ts:83-94` is unguarded: no `process.getuid` check, no `.skip`.
+
+  **Second symptom the entry missed, and the reason to raise this above pure cosmetics:**
+  `fsTree.ts:246` carries `/* c8 ignore next 3 - unreachable when running as root (CI), tested in
+  mutableFsTree.test.ts */`. That justification is **self-contradictory** — it excuses itself by
+  pointing at the very test that cannot pass under the condition it names. So the debt has
+  already leaked out of the test and into a coverage directive with a false rationale, which is
+  the kind of thing a later reader will trust. Fix both in the same change.
+
+  **Trigger**: opportunistic — next time the `mutableFsTree` test surface is open, or when CI logs become a meaningful nuisance.
+
+  **Scope sketch**: gate the assertion on `process.getuid?.() !== 0` (skip the read-only-enforcement check under root); or rewrite the assertion to use a `FileTree` adapter capability check rather than relying on `chmod` semantics. Single-test scope; behavior of the production code is fine.
+
+  **Not a P3**: no shipped-behavior impact and no functional regression; this is a sandbox-specific test-environment quirk.
+
+  **Reference**: PR #433 (`capture-async-result-upgrade`) full-repo `rush test` sweep; reproduced on `release` baseline.
+

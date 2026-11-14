@@ -53,7 +53,7 @@ describe('MockFileSystem class', () => {
 
   describe('constructor', () => {
     test('constructs from an array of configs', () => {
-      expect(() => new MockFileSystem(configs)).not.toThrowError();
+      expect(() => new MockFileSystem(configs)).not.toThrow();
     });
   });
 
@@ -79,14 +79,14 @@ describe('MockFileSystem class', () => {
       const mockFs = new MockFileSystem(configs);
       expect(() => {
         mockFs.readMockFileSync('./test/data/testData.json');
-      }).toThrowError(/mock file not found/i);
+      }).toThrow(/mock file not found/i);
     });
 
     test('throws for a file in the config that has not been written', () => {
       const mockFs = new MockFileSystem(configs);
       expect(() => {
         mockFs.readMockFileSync('path/to/writableFile.json');
-      }).toThrowError(/mock file not found/i);
+      }).toThrow(/mock file not found/i);
     });
 
     describe('with mockWriteOnly option set to true', () => {
@@ -107,7 +107,7 @@ describe('MockFileSystem class', () => {
         const mockFs = new MockFileSystem(configs, { mockWriteOnly: true });
         expect(() => {
           mockFs.readMockFileSync('test/data/notTestData.json');
-        }).toThrowError(/no such file or directory/i);
+        }).toThrow(/no such file or directory/i);
       });
     });
   });
@@ -117,7 +117,7 @@ describe('MockFileSystem class', () => {
       const mockFs = new MockFileSystem(configs);
       expect(() => {
         mockFs.readMockFileSync('path/to/writableFile.json');
-      }).toThrowError(/mock file not found/i);
+      }).toThrow(/mock file not found/i);
 
       expect(() => {
         mockFs.writeMockFileSync('path/to/writableFile.json', '["payload"]');
@@ -167,7 +167,7 @@ describe('MockFileSystem class', () => {
       const mockFs = new MockFileSystem(configs);
       expect(() => {
         mockFs.writeMockFileSync('path/to/payloadFile.json', '["payload"]');
-      }).toThrowError(/mock permission denied/i);
+      }).toThrow(/mock permission denied/i);
 
       expect(mockFs.readMockFileSync('path/to/payloadFile.json')).toEqual('{ "filename": "inlineData" }');
     });
@@ -176,7 +176,7 @@ describe('MockFileSystem class', () => {
       const mockFs = new MockFileSystem(configs);
       expect(() => {
         mockFs.writeMockFileSync('./test.json', '["payload"]');
-      }).toThrowError(/mock path not found/i);
+      }).toThrow(/mock path not found/i);
     });
 
     describe('with allowUnknownMockWrite', () => {
@@ -184,7 +184,7 @@ describe('MockFileSystem class', () => {
         const mockFs = new MockFileSystem(configs, { allowUnknownMockWrite: true });
         expect(() => {
           mockFs.writeMockFileSync('path/to/payloadFile.json', '["payload"]');
-        }).toThrowError(/mock permission denied/i);
+        }).toThrow(/mock permission denied/i);
 
         expect(mockFs.readMockFileSync('path/to/payloadFile.json')).toEqual('{ "filename": "inlineData" }');
       });
@@ -218,7 +218,7 @@ describe('MockFileSystem class', () => {
       // verify they're reset
       expect(() => {
         mockFs.readMockFileSync('path/to/writableFile.json');
-      }).toThrowError(/mock file not found/i);
+      }).toThrow(/mock file not found/i);
       expect(mockFs.readMockFileSync('path/to/writableBackedFile.json')).toMatchInlineSnapshot(`
         "{
           \\"filename\\": \\"testData.json\\",
@@ -282,10 +282,10 @@ describe('MockFileSystem class', () => {
       const mockFs = new MockFileSystem(configs);
       const spies = mockFs.startSpies();
 
-      expect(() => writeFileSync(10, '["payload"]')).toThrowError(/mock supports only string/i);
+      expect(() => writeFileSync(10, '["payload"]')).toThrow(/mock supports only string/i);
       expect(spies.write).toHaveBeenCalled();
 
-      expect(() => readFileSync(10)).toThrowError(/mock supports only string/i);
+      expect(() => readFileSync(10)).toThrow(/mock supports only string/i);
       expect(spies.read).toHaveBeenCalled();
 
       spies.restore();

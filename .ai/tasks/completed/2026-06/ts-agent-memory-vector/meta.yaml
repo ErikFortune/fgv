@@ -1,0 +1,68 @@
+id: ts-agent-memory-vector
+status: shipped
+packages: ['@fgv/ts-agent-memory']
+prs: [502]
+opened: 2026-06-26
+closed: 2026-06
+summary:
+  intended: >
+    Fast-follow to the `@fgv/ts-agent-memory` v1 substrate: make semantic recall
+    *operational* by filling the `IVectorIndex` seam B2 left open — a dependency-free
+    in-package cosine index, an embed-on-write hook on the store, and a
+    `SemanticRetriever` backed by something real. Reconstructed from `state.md` and
+    PR #502; no `brief.md` survives in this directory, so the intent statement is
+    inferred rather than quoted.
+  shipped: >
+    `InMemoryCosineIndex` (brute-force cosine over a `Map`, dimension established by the
+    first `add` and mismatches failing loudly, zero-magnitude vectors scoring 0 not NaN,
+    idempotent `remove`, `topK<=0`/empty short-circuits, `rebuild(source, embed)` that
+    rolls back to empty on any failure); additive `vectorIndex?` / `embed?` create params
+    on `FileTreeMemoryStore` wiring embed-on-write plus vector removal on delete and
+    cap-cull eviction, byte-identical when unwired; `SemanticRetriever` operational over
+    the seam with its `QueryEmbedder`/`IVectorIndex` boundary moved to `Float32Array`.
+    317 tests at 100% coverage after the review rounds; build (+ api-extractor), lint and
+    test green.
+  diverged: >
+    This stream left a single artifact (`state.md`), so there is no brief-vs-result
+    delta to compute — nothing has been manufactured here. What `state.md` and PR #502
+    themselves record: (1) a **verdict reversed mid-PR** — the locked embedding-failure
+    policy was "fail the `put` loudly, persist nothing", and PR #502's own description
+    still states it; the CodeRabbit loop drove an owner decision to the opposite
+    **best-effort derived-index** model, where a failed embed/add/remove is logged at
+    `warn` and the record operation still succeeds, and where a committed `put` or
+    `delete` never fails on derived-index cleanup (cap-cull eviction was made
+    best-effort in round 3 for the same reason). (2) Three deviations from the
+    design-lock/brief: the B2 seam's `ReadonlyArray<number>` corrected to `Float32Array`
+    per design §5.1; `rebuild` taking a minimal `IMemoryRecordSource` rather than the
+    concrete store, to avoid a `vector → store` packlet cycle; and vector removal gated
+    on `vectorIndex` AND `embed` together so the vector lifecycle is wholly on or off.
+    (3) One residual accepted with reasoning rather than fixed: embed+`add` must precede
+    the single `_persist` for `embeddingRef` to land in one durable write, so a persist
+    failure after a successful `add` can orphan a vector — near-unreachable on the
+    in-memory/git FileTree backends, skipped at hydration, and self-healing via `rebuild`.
+  sourceLine: 'Made semantic recall operational end-to-end:'
+keywords:
+  - IVectorIndex
+  - InMemoryCosineIndex
+  - SemanticRetriever
+  - embed-on-write
+  - best-effort derived index
+  - cosine similarity
+  - Float32Array boundary
+  - embeddingRef
+  - IMemoryRecordSource
+  - packlet cycle avoidance
+  - cap-cull eviction
+  - consumer-injected embedder
+  - CodeRabbit review loop
+ledgerEntry: ts-agent-memory
+relatedStreams:
+  - id: ts-agent-memory
+    relationship: >
+      parent cluster — this is its semantic-recall fast-follow. Branched off and PR'd
+      back into the `ts-agent-memory` integration branch (PR #501 promoting the v1
+      substrate to `release` was still open at stream start), so #501 is the parent's
+      promotion PR and is deliberately not listed in this stream's `prs`. The cluster's
+      ledger entry narrates this stream's output ("operational semantic recall") without
+      naming the stream in prose.
+sourceHash: 92ccc79df0c361b2

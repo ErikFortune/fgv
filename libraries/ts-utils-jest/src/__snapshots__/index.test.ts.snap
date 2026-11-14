@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`verify matchers accessibility toFailTestAndMatchSnapshot exists and works: toFailTestAndMatchSnapshot 1`] = `
 "expect(received).toBe(expected) // Object.is equality

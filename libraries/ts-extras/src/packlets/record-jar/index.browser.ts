@@ -22,11 +22,8 @@
 
 // Browser-safe RecordJar exports - excludes Node.js filesystem dependencies
 
-// Export all browser-safe parsing functionality
+// Export all browser-safe parsing functionality (includes readRecordJarFromTree)
 export * from './recordJarHelpers';
-
-// Export FileTree-based reading (web-compatible)
-export { readRecordJarFromTree } from './recordJarFileHelpers';
 
 // Exclude:
 // - readRecordJarFileSync (requires Node.js fs/path)

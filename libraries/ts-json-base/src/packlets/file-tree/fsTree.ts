@@ -20,23 +20,192 @@
  * SOFTWARE.
  */
 
-import { FileTreeItem, IFileTreeAccessors, IFileTreeInitParams } from './fileTreeAccessors';
+import {
+  FileTreeItem,
+  IAtomicFileTreeAccessors,
+  IAtomicWriteCapabilities,
+  IAtomicWriteFailure,
+  IAtomicWriteOptions,
+  IAtomicWriteReceipt,
+  IFileTreeInitParams,
+  IFilterSpec,
+  IMutableBinaryFileTreeAccessors,
+  SaveDetail
+} from './fileTreeAccessors';
 import path from 'path';
 import fs from 'fs';
-import { captureResult, Result, succeed } from '@fgv/ts-utils';
+import {
+  captureResult,
+  Converter,
+  Converters,
+  DetailedResult,
+  fail,
+  failWithDetail,
+  Result,
+  StringOneOf,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
 import { DirectoryItem } from './directoryItem';
 import { FileItem } from './fileItem';
+import { isPathMutable } from './filterSpec';
+import {
+  cleanupAtomicTemporaries,
+  commitFileAtomically,
+  defaultAtomicFsOperations,
+  qualifyAtomicWrites
+} from './fs-atomic';
 
 /**
- * Implementation of {@link FileTree.IFileTreeAccessors} that uses the
- * file system to access files and directories.
+ * `true` when `inner` is `outer` or lies beneath it. An `outer` that already ends
+ * in a separator — the filesystem root — is its own prefix.
+ */
+function _isWithin(outer: string, inner: string): boolean {
+  return inner === outer || inner.startsWith(outer.endsWith(path.sep) ? outer : `${outer}${path.sep}`);
+}
+
+/**
+ * The real path of `p`, symbolic links followed, without any policy applied.
+ */
+function _realPathOf(p: string): Result<string> {
+  return captureResult(() => fs.realpathSync.native(p));
+}
+
+/**
+ * `true` if anything — a file, a directory, or a symbolic link, dangling or not
+ * — exists at `p`.
+ */
+function _entryExists(p: string): boolean {
+  return captureResult(() => fs.lstatSync(p)).isSuccess();
+}
+
+/**
+ * Every {@link FileTree.FsAbsolutePathPolicy | FsAbsolutePathPolicy}, in order of
+ * increasing strictness.
  * @public
  */
-export class FsFileTreeAccessors<TCT extends string = string> implements IFileTreeAccessors<TCT> {
+export const allFsAbsolutePathPolicies = ['unconfined', 'confined', 'verified'] as const;
+
+/**
+ * How {@link FileTree.FsFileTreeAccessors | FsFileTreeAccessors} treats a path
+ * that resolves outside its `prefix`.
+ *
+ * @remarks
+ * - `'unconfined'` (the default): an absolute input is used as given, and a
+ *   relative input is resolved against the prefix; nothing checks that the
+ *   result lies under the prefix. Only the atomic-write methods confine.
+ * - `'confined'`: every operation lands under the prefix. A resolved path that
+ *   is not under it is mapped beneath it — see
+ *   {@link FileTree.FsFileTreeAccessors.resolveAbsolutePath | resolveAbsolutePath}.
+ * - `'verified'`: an operation whose resolved path is not under the prefix fails,
+ *   naming the path and the prefix, and touches nothing.
+ * @public
+ */
+export type FsAbsolutePathPolicy = StringOneOf<typeof allFsAbsolutePathPolicies>;
+
+const absolutePathPolicy: Converter<FsAbsolutePathPolicy> =
+  Converters.enumeratedValue<FsAbsolutePathPolicy>(allFsAbsolutePathPolicies);
+
+/**
+ * Initialization parameters for {@link FileTree.FsFileTreeAccessors | FsFileTreeAccessors}.
+ *
+ * @remarks
+ * Adds the filesystem-only confinement options to the shared
+ * {@link FileTree.IFileTreeInitParams | IFileTreeInitParams}. Both options need a
+ * `prefix` to confine to: creating accessors with `absolutePathPolicy` other than
+ * `'unconfined'`, or with `realPath: true`, and no prefix fails.
+ * @public
+ */
+export interface IFsFileTreeInitParams<TCT extends string = string> extends IFileTreeInitParams<TCT> {
   /**
-   * Optional path prefix to prepend to all paths.
+   * How a path that resolves outside `prefix` is treated, for every operation —
+   * reads, listings, stats and writes alike. Defaults to `'unconfined'`, which is
+   * the behaviour of accessors created without this option.
+   */
+  absolutePathPolicy?: FsAbsolutePathPolicy;
+
+  /**
+   * When `true`, every operation also checks the real path of what it touches —
+   * symbolic links followed — and refuses one that leads outside the real path
+   * of the prefix. Defaults to `true` under `'verified'` and `false` otherwise;
+   * requires `'confined'` or `'verified'`.
+   */
+  realPath?: boolean;
+}
+
+/**
+ * A root's atomic-write qualification, together with the failure code to report
+ * if it refuses.
+ *
+ * @remarks
+ * The code travels with the qualification rather than being inferred later from
+ * whichever check happened to run first: a refusal this accessor makes on policy
+ * grounds is `'not-writable'` (matching the in-memory store for the same
+ * conditions), while one the platform or filesystem forces is `'unsupported'`.
+ */
+interface IAccessorQualification {
+  readonly capabilities: IAtomicWriteCapabilities;
+  readonly reason: string;
+  readonly refusalCode: IAtomicWriteFailure['code'];
+}
+
+/**
+ * Implementation of {@link FileTree.IMutableBinaryFileTreeAccessors} that uses the
+ * file system to access and modify files and directories.
+ *
+ * @remarks
+ * The file system is byte-native, so this implementation supports the optional binary
+ * capability for both reads and writes.
+ *
+ * It also implements the optional atomic-write capability
+ * ({@link FileTree.IAtomicFileTreeAccessors}). Ordinary
+ * {@link FileTree.FsFileTreeAccessors.saveFileContents | saveFileContents} and
+ * {@link FileTree.FsFileTreeAccessors.saveFileBytes | saveFileBytes} are
+ * unchanged and still write in place; the atomic capability is a separate,
+ * opt-in path. Which guarantee — if any — a given root can honor depends on the
+ * platform and filesystem and is reported by
+ * {@link FileTree.FsFileTreeAccessors.getAtomicWriteCapabilities |
+ * getAtomicWriteCapabilities}; an unqualified root refuses a durable write
+ * rather than quietly performing a weaker one.
+ * @public
+ */
+export class FsFileTreeAccessors<TCT extends string = string>
+  implements IMutableBinaryFileTreeAccessors<TCT>, IAtomicFileTreeAccessors<TCT>
+{
+  /**
+   * Optional root of the tree.
+   *
+   * @remarks
+   * A relative path is always resolved against the prefix. What happens to a
+   * path that resolves outside it — an absolute path elsewhere, or a relative one
+   * that climbs out with `..` — depends on
+   * {@link FileTree.FsFileTreeAccessors.absolutePathPolicy | absolutePathPolicy}:
+   * under `'unconfined'` (the default) it is used as given and the prefix
+   * confines nothing except the atomic-write methods; under `'confined'` it is
+   * mapped beneath the prefix; under `'verified'` the operation fails.
    */
   public readonly prefix: string | undefined;
+
+  /**
+   * How a path that resolves outside {@link FileTree.FsFileTreeAccessors.prefix | prefix}
+   * is treated. See {@link FileTree.FsAbsolutePathPolicy | FsAbsolutePathPolicy}.
+   */
+  public readonly absolutePathPolicy: FsAbsolutePathPolicy;
+
+  /**
+   * Whether every operation also checks the real path — symbolic links
+   * followed — of what it touches against the real path of the prefix.
+   *
+   * @remarks
+   * Limits: hard links and bind mounts are invisible to it — a hard link inside
+   * the prefix to a file outside it has a real path inside, so a write through it
+   * reaches the outside file. Under `'verified'` with a prefix that is itself a
+   * symbolic link, an absolute input spelled through the prefix's *real* path is
+   * refused, because it does not lie under the prefix as given (safe, but
+   * surprising). A dangling symbolic link is refused for every operation, so it
+   * cannot be deleted through these accessors at all.
+   */
+  public readonly realPath: boolean;
 
   /**
    * Function to infer the content type of a file.
@@ -45,71 +214,274 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IFileTr
   protected readonly _inferContentType: (filePath: string) => Result<TCT | undefined>;
 
   /**
+   * The mutability configuration.
+   */
+  private readonly _mutable: boolean | IFilterSpec;
+
+  /**
+   * The resolved prefix that confinement judges against, fixed at construction;
+   * `undefined` when neither confinement option is in force.
+   */
+  private readonly _root: string | undefined;
+
+  /**
    * Construct a new instance of the {@link FileTree.FsFileTreeAccessors | FsFileTreeAccessors} class.
-   * @param params - Optional {@link FileTree.IFileTreeInitParams | initialization parameters}.
+   * @param params - Optional {@link FileTree.IFsFileTreeInitParams | initialization parameters}.
+   * @throws When `params` asks for confinement without a `prefix` to confine to,
+   * asks for `realPath` under `'unconfined'`, or names an unknown policy. Use
+   * {@link FileTree.FsFileTreeAccessors.create | create} to receive that as a `Result`.
    * @public
    */
-  public constructor(params?: IFileTreeInitParams<TCT>) {
+  public constructor(params?: IFsFileTreeInitParams<TCT>) {
     this.prefix = params?.prefix;
     this._inferContentType = params?.inferContentType ?? FileItem.defaultInferContentType;
+    /* c8 ignore next 1 - defensive default when params is undefined */
+    this._mutable = params?.mutable ?? false;
+    this.absolutePathPolicy = absolutePathPolicy
+      .convert(params?.absolutePathPolicy ?? 'unconfined')
+      .withErrorFormat((m) => `absolutePathPolicy: ${m}`)
+      .orThrow();
+    this.realPath = params?.realPath ?? this.absolutePathPolicy === 'verified';
+    if (this.realPath && this.absolutePathPolicy === 'unconfined') {
+      throw new Error(`realPath requires absolutePathPolicy 'confined' or 'verified', not 'unconfined'`);
+    }
+    if (this.absolutePathPolicy !== 'unconfined') {
+      if (!this.prefix) {
+        throw new Error(
+          `absolutePathPolicy '${this.absolutePathPolicy}' requires a prefix: with no prefix there is nothing to confine to`
+        );
+      }
+      this._root = path.resolve(this.prefix);
+    }
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.resolveAbsolutePath}
+   * Creates a new {@link FileTree.FsFileTreeAccessors | FsFileTreeAccessors}.
+   * @param params - Optional {@link FileTree.IFsFileTreeInitParams | initialization parameters}.
+   * @returns `Success` with the accessors, or `Failure` if `params` asks for
+   * confinement without a `prefix`, asks for `realPath` under `'unconfined'`, or
+   * names an unknown policy.
+   * @public
+   */
+  public static create<TCT extends string = string>(
+    params?: IFsFileTreeInitParams<TCT>
+  ): Result<FsFileTreeAccessors<TCT>> {
+    return captureResult(() => new FsFileTreeAccessors<TCT>(params));
+  }
+
+  /**
+   * Resolves paths to an absolute path.
+   *
+   * @remarks
+   * A relative first path is resolved against the prefix, and an absolute one
+   * is taken as given; `..` segments are collapsed either way. Then, by
+   * {@link FileTree.FsFileTreeAccessors.absolutePathPolicy | absolutePathPolicy}:
+   *
+   * - `'unconfined'` and `'verified'` return that path unchanged. Under
+   *   `'verified'` an operation on a path outside the prefix then fails.
+   * - `'confined'` maps a path that is not under the prefix beneath it. An
+   *   absolute input has the prefix prepended (`/x` becomes `<prefix>/x`). A
+   *   relative input that climbs out with `..` is resolved as though the prefix
+   *   were the filesystem root, where `..` cannot climb any higher (`../x` and
+   *   `a/../../x` both become `<prefix>/x`). A path already under the prefix is
+   *   never re-prefixed, which makes the mapping idempotent and means
+   *   `<prefix>/<prefix>/…` cannot be named by an absolute path — use the
+   *   relative form instead.
+   *
+   * "Under" means equal to the prefix or beginning with the prefix and a
+   * separator, so `/prefixx/a` is not under `/prefix`.
+   *
+   * A `..` in a name handed to a directory item — `createChildFile`,
+   * `createChildDirectory`, `deleteChild` — is joined onto the item's absolute
+   * path, so under `'confined'` it follows the absolute-path rule (prepend), not
+   * the relative-escape rule: `<prefix>/sub` + `../../x` resolves to the
+   * absolute path above the prefix, which then has the prefix prepended.
+   * Either way it stays under the prefix.
+   * @param paths - Paths to resolve.
+   * @returns The resolved absolute path.
    */
   public resolveAbsolutePath(...paths: string[]): string {
-    if (this.prefix && !path.isAbsolute(paths[0])) {
-      return path.resolve(this.prefix, ...paths);
+    const base = this._root ?? this.prefix;
+    const resolved =
+      base && !path.isAbsolute(paths[0]) ? path.resolve(base, ...paths) : path.resolve(...paths);
+    if (
+      this.absolutePathPolicy !== 'confined' ||
+      this._root === undefined ||
+      _isWithin(this._root, resolved)
+    ) {
+      return resolved;
     }
-    return path.resolve(...paths);
+    const rooted = path.isAbsolute(paths[0]) ? resolved : path.resolve(path.sep, ...paths);
+    return path.join(this._root, rooted.slice(path.parse(rooted).root.length));
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getExtension}
+   * {@inheritDoc FileTree.IFileTreeAccessors.resolveRealPath}
+   */
+  public resolveRealPath(itemPath: string): Result<string> {
+    return this._resolveConfined(itemPath).onSuccess((absolutePath) =>
+      _realPathOf(absolutePath).withErrorFormat((m) => `${absolutePath}: cannot resolve real path: ${m}`)
+    );
+  }
+
+  /**
+   * Resolves a path and applies this accessor's confinement to the result.
+   *
+   * @remarks
+   * Every plain read and write goes through here. With no confinement option in
+   * force it is exactly `resolveAbsolutePath`. Under `'verified'` a resolved
+   * path outside the prefix fails; under `'confined'` the resolution has already
+   * mapped it beneath. With `realPath` the real path is checked as well.
+   *
+   * The checks run before the operation, which then acts on the logical path, so
+   * a symbolic link created or retargeted between the two is not seen. The
+   * atomic-write methods, which commit through the real directory they checked,
+   * do not share that window.
+   * @returns `Success` with the resolved absolute path, or `Failure` naming the
+   * path and the prefix.
+   */
+  private _resolveConfined(...paths: string[]): Result<string> {
+    return captureResult(() => this.resolveAbsolutePath(...paths)).onSuccess((absolutePath) => {
+      if (this._root === undefined) {
+        return succeed(absolutePath);
+      }
+      if (!_isWithin(this._root, absolutePath)) {
+        return fail(`${absolutePath}: resolves outside the tree prefix '${this._root}'`);
+      }
+      return this.realPath ? this._confineRealPath(absolutePath, this._root) : succeed(absolutePath);
+    });
+  }
+
+  /**
+   * Checks that the real location of `absolutePath` lies under the real path of
+   * `root`.
+   *
+   * @remarks
+   * The real location is the real path of `absolutePath` itself — following a
+   * final symbolic link, since a read or write through it would — or, when it
+   * does not exist, of its nearest ancestor that does, since that is where a
+   * write would create it. An entry that exists but has no real path — a
+   * dangling symbolic link — is refused: a write through it would create its
+   * target, which cannot be checked before it exists. When nothing between
+   * `absolutePath` and `root` exists there is no link to follow, and the
+   * operation is left to report what is missing.
+   */
+  private _confineRealPath(absolutePath: string, root: string): Result<string> {
+    const realRoot = _realPathOf(root).orDefault(root);
+    for (let probe = absolutePath; ; probe = path.dirname(probe)) {
+      if (_entryExists(probe)) {
+        return _realPathOf(probe)
+          .withErrorFormat(
+            () =>
+              `${absolutePath}: '${probe}' is a symbolic link that cannot be resolved, so its target cannot be shown to lie inside the tree prefix '${realRoot}'`
+          )
+          .onSuccess((real) =>
+            _isWithin(realRoot, real)
+              ? succeed(absolutePath)
+              : fail(
+                  `${absolutePath}: resolves through a symbolic link to '${real}', outside the tree prefix '${realRoot}'`
+                )
+          );
+      }
+      if (probe === root) {
+        return succeed(absolutePath);
+      }
+    }
+  }
+
+  /**
+   * Gets the extension of a path.
+   * @param itemPath - Path to get the extension of.
+   * @returns The extension of the path.
    */
   public getExtension(itemPath: string): string {
     return path.extname(itemPath);
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getBaseName}
+   * Gets the base name of a path.
+   * @param itemPath - Path to get the base name of.
+   * @param suffix - Optional suffix to remove from the base name.
+   * @returns The base name of the path.
    */
   public getBaseName(itemPath: string, suffix?: string): string {
     return path.basename(itemPath, suffix);
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.joinPaths}
+   * Joins paths together.
+   * @param paths - Paths to join.
+   * @returns The joined paths.
    */
   public joinPaths(...paths: string[]): string {
     return path.join(...paths);
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getItem}
+   * Gets an item from the file tree.
+   * @param itemPath - Path of the item to get.
+   * @returns The item if it exists.
    */
   public getItem(itemPath: string): Result<FileTreeItem<TCT>> {
-    return captureResult(() => {
-      const stat = fs.statSync(this.resolveAbsolutePath(itemPath));
-      if (stat.isDirectory()) {
-        return DirectoryItem.create<TCT>(itemPath, this).orThrow();
-      } else if (stat.isFile()) {
-        return FileItem.create(itemPath, this).orThrow();
-      }
-      /* c8 ignore next 1 - defensive coding: filesystem items should be file or directory */
-      throw new Error(`${itemPath}: not a file or directory`);
-    });
+    return this._resolveConfined(itemPath).onSuccess((absolutePath) =>
+      captureResult(() => {
+        const stat = fs.statSync(absolutePath);
+        if (stat.isDirectory()) {
+          return DirectoryItem.create<TCT>(itemPath, this).orThrow();
+        } else if (stat.isFile()) {
+          return FileItem.create(itemPath, this).orThrow();
+        }
+        /* c8 ignore next 1 - defensive coding: filesystem items should be file or directory */
+        throw new Error(`${itemPath}: not a file or directory`);
+      })
+    );
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getFileContents}
+   * Gets the contents of a file in the file tree.
+   * @param filePath - Absolute path of the file.
+   * @returns The contents of the file.
    */
   public getFileContents(filePath: string): Result<string> {
-    return captureResult(() => fs.readFileSync(this.resolveAbsolutePath(filePath), 'utf8'));
+    return this._resolveConfined(filePath).onSuccess((absolutePath) =>
+      captureResult(() => fs.readFileSync(absolutePath, 'utf8'))
+    );
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getFileContentType}
+   * {@inheritDoc FileTree.IBinaryFileTreeAccessors.getFileBytes}
+   */
+  public getFileBytes(filePath: string): Result<Uint8Array> {
+    // `readFileSync` without an encoding returns a Buffer which, for small reads, is a
+    // view onto Node's shared allocation pool. Copy into a standalone Uint8Array so the
+    // returned bytes cannot be perturbed by unrelated reads and so callers get a plain
+    // Uint8Array rather than a Node-only Buffer.
+    return this._resolveConfined(filePath).onSuccess((absolutePath) =>
+      captureResult(() => new Uint8Array(fs.readFileSync(absolutePath)))
+    );
+  }
+
+  /**
+   * Reads a file's contents, decoding UTF-8 strictly.
+   *
+   * @remarks
+   * Always decidable here: the bytes are read from disk, so this store has
+   * custody of exactly what was written.
+   * @param filePath - Absolute path of the file.
+   * @returns `Success` with the decoded text; `Failure` if the bytes are not
+   * valid UTF-8.
+   */
+  public getFileTextStrict(filePath: string): Result<string> {
+    return this.getFileBytes(filePath).onSuccess((bytes) =>
+      captureResult(() => new TextDecoder('utf-8', { fatal: true }).decode(bytes))
+    );
+  }
+
+  /**
+   * Gets the content type of a file in the file tree.
+   * @param filePath - Absolute path of the file.
+   * @param provided - Optional supplied content type.
+   * @returns The content type of the file.
    */
   public getFileContentType(filePath: string, provided?: string): Result<TCT | undefined> {
     if (provided !== undefined) {
@@ -120,21 +492,344 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IFileTr
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getChildren}
+   * Gets the children of a directory in the file tree.
+   * @param dirPath - Path of the directory.
+   * @returns The children of the directory.
    */
   public getChildren(dirPath: string): Result<ReadonlyArray<FileTreeItem<TCT>>> {
-    return captureResult(() => {
-      const children: FileTreeItem<TCT>[] = [];
-      const files = fs.readdirSync(this.resolveAbsolutePath(dirPath), { withFileTypes: true });
-      files.forEach((file) => {
-        const fullPath = this.resolveAbsolutePath(dirPath, file.name);
-        if (file.isDirectory()) {
-          children.push(DirectoryItem.create<TCT>(fullPath, this).orThrow());
-        } else if (file.isFile()) {
-          children.push(FileItem.create<TCT>(fullPath, this).orThrow());
+    return this._resolveConfined(dirPath).onSuccess((absolutePath) =>
+      captureResult(() => {
+        const children: FileTreeItem<TCT>[] = [];
+        const files = fs.readdirSync(absolutePath, { withFileTypes: true });
+        files.forEach((file) => {
+          const fullPath = this.resolveAbsolutePath(absolutePath, file.name);
+          if (file.isDirectory()) {
+            children.push(DirectoryItem.create<TCT>(fullPath, this).orThrow());
+          } else if (file.isFile()) {
+            children.push(FileItem.create<TCT>(fullPath, this).orThrow());
+          }
+        });
+        return children;
+      })
+    );
+  }
+
+  /**
+   * Checks if a file at the given path can be saved.
+   * @param path - The path to check.
+   * @returns `DetailedSuccess` with {@link FileTree.SaveCapability} if the file can be saved,
+   * or `DetailedFailure` with {@link FileTree.SaveFailureReason} if it cannot.
+   */
+  public fileIsMutable(path: string): DetailedResult<boolean, SaveDetail> {
+    const confined = this._resolveConfined(path);
+    if (confined.isFailure()) {
+      return failWithDetail(confined.message, 'path-excluded');
+    }
+    const absolutePath = confined.value;
+
+    // Check if mutability is disabled
+    if (this._mutable === false) {
+      return failWithDetail(`${absolutePath}: mutability is disabled`, 'not-mutable');
+    }
+
+    // Check if path is excluded by filter
+    if (!isPathMutable(absolutePath, this._mutable)) {
+      return failWithDetail(`${absolutePath}: path is excluded by filter`, 'path-excluded');
+    }
+
+    // Check file system permissions
+    try {
+      // Check if file exists
+      if (fs.existsSync(absolutePath)) {
+        fs.accessSync(absolutePath, fs.constants.W_OK);
+      } else {
+        // Check if parent directory is writable
+        const parentDir = absolutePath.substring(0, absolutePath.lastIndexOf('/'));
+        if (parentDir && fs.existsSync(parentDir)) {
+          fs.accessSync(parentDir, fs.constants.W_OK);
         }
+      }
+      return succeedWithDetail(true, 'persistent');
+    } catch {
+      return failWithDetail(`${absolutePath}: permission denied`, 'permission-denied');
+    }
+  }
+
+  /**
+   * Saves the contents to a file at the given path.
+   * @param path - The path of the file to save.
+   * @param contents - The string contents to save.
+   * @returns `Success` if the file was saved, or `Failure` with an error message.
+   */
+  public saveFileContents(path: string, contents: string): Result<string> {
+    return this.fileIsMutable(path).asResult.onSuccess(() => {
+      const absolutePath = this.resolveAbsolutePath(path);
+      return captureResult(() => {
+        fs.writeFileSync(absolutePath, contents, 'utf8');
+        return contents;
       });
-      return children;
+    });
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableBinaryFileTreeAccessors.saveFileBytes}
+   */
+  public saveFileBytes(path: string, bytes: Uint8Array): Result<Uint8Array> {
+    return this.fileIsMutable(path).asResult.onSuccess(() => {
+      const absolutePath = this.resolveAbsolutePath(path);
+      return captureResult(() => {
+        fs.writeFileSync(absolutePath, bytes);
+        return bytes;
+      });
+    });
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeAccessors.getAtomicWriteCapabilities}
+   */
+  public getAtomicWriteCapabilities(directory: string): Result<IAtomicWriteCapabilities> {
+    // Confined like the two mutating methods. An inquiry that answered for a
+    // directory outside the root would contradict the write that then refused
+    // it, and two different answers to one question is worse than either.
+    return this._confineToRoot(this.resolveAbsolutePath(directory))
+      .onSuccess(() => this._qualifyDirectory(directory))
+      .onSuccess(({ capabilities, reason }) => succeed({ ...capabilities, reason }));
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeAccessors.writeFileAtomically}
+   */
+  public writeFileAtomically(
+    filePath: string,
+    contents: string,
+    options: IAtomicWriteOptions
+  ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure> {
+    const absolutePath = this.resolveAbsolutePath(filePath);
+    const directoryPath = path.dirname(absolutePath);
+
+    // `confined.value` is the containing directory's real path, the one the
+    // confinement check accepted; the commit goes through it below.
+    const confined = this._confineToRoot(absolutePath, directoryPath);
+    if (confined.isFailure()) {
+      return failWithDetail(confined.message, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    // The qualification is per containing directory, not per accessor: one root
+    // can span a qualified filesystem and an unqualified mount beneath it.
+    const qualification = this._qualifyDirectory(directoryPath);
+    if (qualification.isFailure()) {
+      return failWithDetail(qualification.message, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+    const { capabilities, reason, refusalCode } = qualification.value;
+
+    if (!capabilities.atomicReplace) {
+      return failWithDetail(`${absolutePath}: atomic writes are not available here: ${reason}`, {
+        code: refusalCode,
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    if (!capabilities.guarantees.includes(options.guarantee)) {
+      // No silent downgrade: a caller that asked for more durability than this
+      // root can be shown to provide gets a refusal, not a weaker write.
+      return failWithDetail(
+        `${absolutePath}: requested guarantee '${
+          options.guarantee
+        }' exceeds what this root can honor (${capabilities.guarantees.join(', ')}) — ${reason}`,
+        { code: 'unsupported', stage: 'validate', visibility: 'unchanged' }
+      );
+    }
+
+    // The destination's own writability, which the directory-level checks above
+    // cannot see: a filter may exclude this one file inside a writable, qualified
+    // directory.
+    const mutable = this.fileIsMutable(filePath);
+    if (mutable.isFailure()) {
+      return failWithDetail(mutable.message, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    // Commit through the directory confinement checked, not the logical path: a
+    // symbolic link retargeted between that check and the rename cannot redirect
+    // the write somewhere it was never checked.
+    return commitFileAtomically({
+      destinationPath: path.join(confined.value, path.basename(absolutePath)),
+      directoryPath: confined.value,
+      contents,
+      guarantee: options.guarantee,
+      ops: defaultAtomicFsOperations,
+      joinPaths: (...paths: string[]) => this.joinPaths(...paths)
+    });
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeAccessors.cleanupAtomicTemporaries}
+   */
+  public cleanupAtomicTemporaries(directory: string): Result<ReadonlyArray<string>> {
+    const absolutePath = this.resolveAbsolutePath(directory);
+    // Sweep the real directory the confinement check accepted, as the write commits through it.
+    return this._confineToRoot(absolutePath).onSuccess((realDirectory) =>
+      this.fileIsMutable(directory).asResult.onSuccess(() =>
+        cleanupAtomicTemporaries(defaultAtomicFsOperations, realDirectory, (...paths: string[]) =>
+          this.joinPaths(...paths)
+        )
+      )
+    );
+  }
+
+  /**
+   * Qualifies a directory for atomic writes, applying this accessor's mutability
+   * policy on top of the platform/filesystem qualification.
+   *
+   * @remarks
+   * Existence is checked first, so asking about a path that is not a directory
+   * fails rather than answering "not capable" — the same distinction the
+   * in-memory accessors draw.
+   */
+  private _qualifyDirectory(directory: string): Result<IAccessorQualification> {
+    const absolutePath = this.resolveAbsolutePath(directory);
+    // Qualify what the path names, not the path: a directory reached through a
+    // symbolic link is the link's target, and the qualification inspects the
+    // directory without following a final link. A path that does not resolve is
+    // qualified as given, so the "not found" diagnosis still comes from there.
+    const qualifiedPath = _realPathOf(absolutePath).orDefault(absolutePath);
+    return qualifyAtomicWrites(defaultAtomicFsOperations, qualifiedPath, process.platform).onSuccess(
+      (qualification): Result<IAccessorQualification> => {
+        // A refusal this accessor makes on POLICY grounds is `not-writable` —
+        // the same code the in-memory store reports for the same conditions.
+        // A refusal the platform or filesystem forces is `unsupported`. One
+        // contract answering the same question two ways is what breaks a
+        // caller's `switch`, so the distinction is carried rather than
+        // inferred later from whichever check happened to run first.
+        if (this._mutable === false) {
+          return succeed({
+            capabilities: { atomicReplace: false, guarantees: [] },
+            reason: `${absolutePath}: mutability is disabled`,
+            refusalCode: 'not-writable'
+          });
+        }
+        if (!isPathMutable(absolutePath, this._mutable)) {
+          return succeed({
+            capabilities: { atomicReplace: false, guarantees: [] },
+            reason: `${absolutePath}: path is excluded by filter`,
+            refusalCode: 'not-writable'
+          });
+        }
+        return succeed({ ...qualification, refusalCode: 'unsupported' });
+      }
+    );
+  }
+
+  /**
+   * Rejects a path that resolves outside this tree's root.
+   *
+   * @remarks
+   * Under the default `'unconfined'` policy `resolveAbsolutePath` ignores the
+   * prefix for an input that is already absolute, so confinement has to be
+   * checked rather than assumed. The atomic methods confine this way whatever
+   * the policy. A tree with
+   * no prefix has no root to be confined to, and the check is vacuous.
+   *
+   * Qualification inspects the real path of the containing directory, so
+   * confinement checks it too: the real path of `directoryPath` must lie under
+   * the real path of the root. A directory inside the tree that is a symbolic
+   * link to somewhere else in the tree is accepted; one that leads outside the
+   * tree is refused. A directory that does not exist is left to the
+   * qualification, which reports it as not found.
+   *
+   * @returns `Success` with the real path of `directoryPath` — or `directoryPath`
+   * itself when it has none to resolve (it does not exist) — or `Failure` if the
+   * path lies outside the root.
+   */
+  private _confineToRoot(absolutePath: string, directoryPath: string = absolutePath): Result<string> {
+    const realDirectory = _realPathOf(directoryPath);
+    if (this.prefix === undefined) {
+      return succeed(realDirectory.orDefault(directoryPath));
+    }
+    const root = this._root ?? path.resolve(this.prefix);
+    if (!_isWithin(root, absolutePath)) {
+      return fail(`${absolutePath}: resolves outside the tree root '${root}'`);
+    }
+    if (realDirectory.isFailure()) {
+      return succeed(directoryPath);
+    }
+    const realRoot = _realPathOf(root).orDefault(root);
+    if (!_isWithin(realRoot, realDirectory.value)) {
+      return fail(
+        `${directoryPath}: resolves through a symbolic link to '${realDirectory.value}', outside the tree root '${realRoot}'`
+      );
+    }
+    return succeed(realDirectory.value);
+  }
+
+  /**
+   * Deletes a file at the given path.
+   * @param path - The path of the file to delete.
+   * @returns `Success` with `true` if the file was deleted, or `Failure` with an error message.
+   */
+  public deleteFile(path: string): Result<boolean> {
+    return this.fileIsMutable(path).asResult.onSuccess(() => {
+      const absolutePath = this.resolveAbsolutePath(path);
+      return captureResult(() => {
+        const stat = fs.statSync(absolutePath);
+        if (!stat.isFile()) {
+          throw new Error(`${absolutePath}: not a file`);
+        }
+        fs.unlinkSync(absolutePath);
+        return true;
+      });
+    });
+  }
+
+  /**
+   * Creates a directory at the given path, including any missing parent directories.
+   * @param dirPath - The path of the directory to create.
+   * @returns `Success` with the absolute path if created, or `Failure` with an error message.
+   */
+  public createDirectory(dirPath: string): Result<string> {
+    // Check if mutability is disabled
+    if (this._mutable === false) {
+      return fail(`${this.resolveAbsolutePath(dirPath)}: mutability is disabled`);
+    }
+
+    return this._resolveConfined(dirPath).onSuccess((absolutePath) =>
+      captureResult(() => {
+        fs.mkdirSync(absolutePath, { recursive: true });
+        return absolutePath;
+      })
+    );
+  }
+
+  /**
+   * Deletes a directory at the given path.
+   * The directory must be empty or the operation will fail.
+   * @param dirPath - The path of the directory to delete.
+   * @returns `Success` with `true` if the directory was deleted, or `Failure` with an error message.
+   */
+  public deleteDirectory(dirPath: string): Result<boolean> {
+    return this.fileIsMutable(dirPath).asResult.onSuccess(() => {
+      const absolutePath = this.resolveAbsolutePath(dirPath);
+      return captureResult(() => {
+        const stat = fs.statSync(absolutePath);
+        if (!stat.isDirectory()) {
+          throw new Error(`${absolutePath}: not a directory`);
+        }
+        // fs.rmdirSync fails if directory is non-empty (desired behavior)
+        fs.rmdirSync(absolutePath);
+        return true;
+      });
     });
   }
 }

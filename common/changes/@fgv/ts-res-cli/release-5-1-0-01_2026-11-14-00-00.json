@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-cli",
+      "comment": "Fix: the `ts-res-compile` command runs on Linux and macOS; in 5.0.2 the script had Windows line endings, so its `#!/usr/bin/env node` line failed.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-res-cli",
+  "email": "noreply@anthropic.com"
+}

@@ -22,6 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import { FileApiTreeAccessors } from '../../packlets/file-tree';
+import { FileTree } from '@fgv/ts-json-base';
 import { FileTreeHelpers } from '../../packlets/helpers';
 import {
   createMockFile,
@@ -29,6 +30,40 @@ import {
   createMockDirectoryFileList,
   verifyFileAPI
 } from '../utils/testHelpers';
+import { Failure, Success } from '@fgv/ts-utils';
+
+// ---- Minimal mock fetch helpers for createFromHttp tests ----
+
+interface IHttpMockResponse {
+  ok: boolean;
+  status?: number;
+  jsonValue?: unknown;
+  textValue?: string;
+  throwOnJson?: boolean;
+}
+
+function makeMockHttpResponse(options: IHttpMockResponse): Response {
+  const { ok, status = ok ? 200 : 400, jsonValue, textValue, throwOnJson } = options;
+  return {
+    ok,
+    status,
+    json: throwOnJson
+      ? () => Promise.reject(new Error('JSON parse error'))
+      : () => Promise.resolve(jsonValue),
+    text: () => Promise.resolve(textValue ?? `HTTP ${status}`)
+  } as unknown as Response;
+}
+
+function makeMockHttpFetch(responses: IHttpMockResponse[]): typeof fetch {
+  let callIndex = 0;
+  return (url: string | URL | Request, __init?: RequestInit): Promise<Response> => {
+    const response = responses[callIndex++];
+    if (response === undefined) {
+      return Promise.reject(new Error(`Unexpected fetch call to ${url.toString()}`));
+    }
+    return Promise.resolve(makeMockHttpResponse(response));
+  };
+}
 
 describe('FileApiTreeAccessors', () => {
   describe('Static factory methods', () => {
@@ -274,7 +309,7 @@ describe('FileApiTreeAccessors', () => {
 
         const result = FileApiTreeAccessors.getOriginalFile(fileList, 'folder/file.txt');
         expect(result).toSucceedAndSatisfy((file) => {
-          expect((file as any).webkitRelativePath).toBe('folder/file.txt');
+          expect(file.webkitRelativePath).toBe('folder/file.txt');
         });
       });
 
@@ -836,6 +871,7 @@ describe('FileApiTreeAccessors', () => {
           resolve: jest.fn(),
           keys: jest.fn(),
           values: jest.fn().mockReturnValue({
+            // eslint-disable-next-line require-yield
             async *[Symbol.asyncIterator]() {
               throw new Error('Directory access denied');
             }
@@ -864,6 +900,7 @@ describe('FileApiTreeAccessors', () => {
           resolve: jest.fn(),
           keys: jest.fn(),
           values: jest.fn().mockReturnValue({
+            // eslint-disable-next-line require-yield
             async *[Symbol.asyncIterator]() {
               throw new Error('Subdirectory access denied');
             }
@@ -1103,12 +1140,7 @@ describe('FileApiTreeAccessors', () => {
         const dirHandle = createMockDirectoryHandle('dir', [{ name: 'file.txt', content: 'dir content' }]);
 
         // Test lines 315 and 385: inferContentType returning failure, triggering orDefault()
-        const failingInferContentType = jest.fn(() => ({
-          isSuccess: () => false,
-          isFailure: () => true,
-          message: 'Content type inference failed',
-          orDefault: () => undefined
-        })) as any;
+        const failingInferContentType = jest.fn(() => Failure.with<string>('Inference failed'));
 
         const fileHandleInitializers = [{ fileHandles: [fileHandle] }];
         const fileHandleResult = await FileApiTreeAccessors.create(fileHandleInitializers, {
@@ -1166,13 +1198,13 @@ describe('FileApiTreeAccessors', () => {
 
         const inferContentType = jest.fn((filePath: string, provided?: string) => {
           if (filePath.endsWith('.txt')) {
-            return { isSuccess: () => true, value: 'custom-text', orDefault: () => 'custom-text' };
+            return Success.with('custom-text');
           }
           if (filePath.endsWith('.json')) {
-            return { isSuccess: () => true, value: 'custom-json', orDefault: () => 'custom-json' };
+            return Success.with('custom-json');
           }
-          return { isSuccess: () => true, value: provided, orDefault: () => provided };
-        }) as any;
+          return Success.with(provided);
+        });
 
         const result = await FileApiTreeAccessors.fromFileList(fileList, { inferContentType });
         expect(result).toSucceedAndSatisfy((fileTree) => {
@@ -1193,13 +1225,9 @@ describe('FileApiTreeAccessors', () => {
           { name: 'unknown.xyz', content: 'unknown data', type: '' }
         ]);
 
-        const inferContentType = jest.fn((filePath: string, provided?: string) => {
-          return {
-            isSuccess: () => true,
-            value: `custom-${provided || 'unknown'}`,
-            orDefault: () => `custom-${provided || 'unknown'}`
-          };
-        }) as any;
+        const inferContentType = jest.fn((__filePath: string, provided?: string) => {
+          return Success.with(`custom-${provided || 'unknown'}`);
+        });
 
         const result = await FileApiTreeAccessors.fromFileList(fileList, { inferContentType });
         expect(result).toSucceed();
@@ -1217,10 +1245,10 @@ describe('FileApiTreeAccessors', () => {
 
         const inferContentType = jest.fn((filePath: string, provided?: string) => {
           if (filePath.includes('.tsx')) {
-            return { isSuccess: () => true, value: 'typescript-react', orDefault: () => 'typescript-react' };
+            return Success.with('typescript-react');
           }
-          return { isSuccess: () => true, value: provided, orDefault: () => provided };
-        }) as any;
+          return Success.with(provided);
+        });
 
         const result = await FileApiTreeAccessors.fromDirectoryUpload(fileList, { inferContentType });
         expect(result).toSucceed();
@@ -1240,12 +1268,8 @@ describe('FileApiTreeAccessors', () => {
         ]);
 
         const inferContentType = jest.fn((filePath: string, provided?: string) => {
-          return {
-            isSuccess: () => true,
-            value: `inferred-${provided}`,
-            orDefault: () => `inferred-${provided}`
-          };
-        }) as any;
+          return Success.with(`inferred-${provided}`);
+        });
 
         const initializers = [{ fileList: fileList1 }, { fileList: fileList2 }];
         const result = await FileApiTreeAccessors.create(initializers, { inferContentType });
@@ -1263,8 +1287,8 @@ describe('FileApiTreeAccessors', () => {
 
         const inferContentType = jest.fn((filePath: string, provided?: string) => {
           // Return undefined to indicate no content type could be inferred
-          return { isSuccess: () => true, value: undefined, orDefault: () => undefined };
-        }) as any;
+          return Success.with(undefined);
+        });
 
         const result = await FileApiTreeAccessors.fromFileList(fileList, { inferContentType });
         expect(result).toSucceed();
@@ -1292,8 +1316,8 @@ describe('FileApiTreeAccessors', () => {
         ]);
 
         const inferContentType = jest.fn((filePath: string, provided?: string) => {
-          return { isSuccess: () => true, value: 'helper-js', orDefault: () => 'helper-js' };
-        }) as any;
+          return Success.with('helper-js');
+        });
 
         const result = await FileTreeHelpers.fromFileList(fileList, { inferContentType });
         expect(result).toSucceed();
@@ -1306,13 +1330,48 @@ describe('FileApiTreeAccessors', () => {
         ]);
 
         const inferContentType = jest.fn((filePath: string, provided?: string) => {
-          return { isSuccess: () => true, value: 'bundled-js', orDefault: () => 'bundled-js' };
-        }) as any;
+          return Success.with('bundled-js');
+        });
 
         const result = await FileTreeHelpers.fromDirectoryUpload(fileList, { inferContentType });
         expect(result).toSucceed();
         expect(inferContentType).toHaveBeenCalledWith('/dist/bundle.js', 'application/javascript');
       });
+    });
+  });
+
+  describe('createFromHttp', () => {
+    test('succeeds and returns a FileTree when HTTP backend loads successfully', async () => {
+      const fetchImpl = makeMockHttpFetch([
+        {
+          ok: true,
+          jsonValue: { path: '/', children: [{ path: '/data.json', name: 'data.json', type: 'file' }] }
+        },
+        { ok: true, jsonValue: { path: '/data.json', contents: '{"items":{}}' } }
+      ]);
+
+      const result = await FileApiTreeAccessors.createFromHttp({
+        baseUrl: 'http://localhost:3000',
+        fetchImpl,
+        mutable: true
+      });
+
+      expect(result).toSucceedAndSatisfy((tree) => {
+        expect(tree).toBeInstanceOf(FileTree.FileTree);
+        expect(tree.getFile('/data.json')).toSucceed();
+        expect(FileTree.isPersistentAccessors(tree.hal)).toBe(true);
+      });
+    });
+
+    test('fails when the HTTP backend returns an error during initial load', async () => {
+      const fetchImpl = makeMockHttpFetch([{ ok: false, status: 503, textValue: 'Service Unavailable' }]);
+
+      const result = await FileApiTreeAccessors.createFromHttp({
+        baseUrl: 'http://localhost:3000',
+        fetchImpl
+      });
+
+      expect(result).toFailWith(/service unavailable/i);
     });
   });
 });

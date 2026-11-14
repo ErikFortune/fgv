@@ -1,0 +1,207 @@
+/*
+ * Copyright (c) 2026 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+import '@fgv/ts-utils-jest';
+import { Converters, Validators } from '@fgv/ts-utils';
+import { JsonSchema } from '../../..';
+import type { JsonObject, JsonValue } from '../../..';
+
+/**
+ * Compile-time helper: only accepts `true` when `T` and `U` are mutually assignable (the same
+ * type). A mismatch collapses the parameter type to `never`, so passing `true` fails to compile.
+ */
+type Exact<T, U> = [T] extends [U] ? ([U] extends [T] ? true : never) : never;
+function assertExact<T, U>(proof: Exact<T, U>): Exact<T, U> {
+  return proof;
+}
+
+describe('JsonSchema phantom types', () => {
+  test('Static<S> derives leaf types', () => {
+    assertExact<JsonSchema.Static<ReturnType<typeof JsonSchema.string>>, string>(true);
+    assertExact<JsonSchema.Static<ReturnType<typeof JsonSchema.number>>, number>(true);
+    assertExact<JsonSchema.Static<ReturnType<typeof JsonSchema.integer>>, number>(true);
+    assertExact<JsonSchema.Static<ReturnType<typeof JsonSchema.boolean>>, boolean>(true);
+    expect(true).toBe(true);
+  });
+
+  test('Static<S> derives enum unions', () => {
+    const schema = JsonSchema.enumOf(['run', 'stop'] as const);
+    assertExact<JsonSchema.Static<typeof schema>, 'run' | 'stop'>(true);
+    expect((schema as unknown as { enum: ReadonlyArray<string> }).enum).toEqual(['run', 'stop']);
+  });
+
+  test('Static<S> derives array element types', () => {
+    const schema = JsonSchema.array(JsonSchema.string());
+    assertExact<JsonSchema.Static<typeof schema>, string[]>(true);
+    expect(schema._type).toBe('array');
+  });
+
+  test('Static<S> derives the required/optional object split without assertions', () => {
+    const schema = JsonSchema.object({
+      query: JsonSchema.string(),
+      limit: JsonSchema.optional(JsonSchema.number())
+    });
+    assertExact<JsonSchema.Static<typeof schema>, { query: string; limit?: number }>(true);
+    expect(schema._type).toBe('object');
+  });
+
+  test('Static<S> of an open object keeps declared types and admits JSON values elsewhere', () => {
+    const properties = { query: JsonSchema.string(), limit: JsonSchema.optional(JsonSchema.number()) };
+    const schema = JsonSchema.object(properties, { additionalProperties: true });
+    type S = JsonSchema.Static<typeof schema>;
+    assertExact<S, JsonSchema.OpenObjectStatic<typeof properties>>(true);
+    assertExact<S, { query: string; limit?: number } & JsonObject>(true);
+    assertExact<S['query'], string>(true);
+    const value: S = { query: 'a', extra: { nested: [1, null] } };
+    const extra: JsonValue = value.extra;
+    expect(extra).toEqual({ nested: [1, null] });
+    // still assignable wherever the closed shape is expected
+    const closed: { query: string; limit?: number } = value;
+    expect(closed.query).toBe('a');
+    expect(schema._type).toBe('object');
+  });
+
+  test('Static<S> of a nullable open object includes null', () => {
+    const schema = JsonSchema.object(
+      { q: JsonSchema.string() },
+      { additionalProperties: true, nullable: true }
+    );
+    type S = JsonSchema.Static<typeof schema>;
+    const none: S = null;
+    const some: S = { q: 'a', other: true };
+    expect([none, some]).toHaveLength(2);
+    expect(schema.validate(null)).toSucceedWith(null);
+  });
+
+  test('Static<S> of an object with a non-literal additionalProperties stays closed-typed', () => {
+    const open: boolean = Math.random() < 2;
+    const schema = JsonSchema.object({ q: JsonSchema.string() }, { additionalProperties: open });
+    assertExact<JsonSchema.Static<typeof schema>, { q: string }>(true);
+    expect(schema._type).toBe('object');
+  });
+
+  test('Static<S> derives deeply nested shapes', () => {
+    const schema = JsonSchema.object({
+      action: JsonSchema.enumOf(['run', 'stop'] as const),
+      config: JsonSchema.object({
+        timeout: JsonSchema.optional(JsonSchema.integer()),
+        tags: JsonSchema.array(JsonSchema.string())
+      })
+    });
+    assertExact<
+      JsonSchema.Static<typeof schema>,
+      { action: 'run' | 'stop'; config: { timeout?: number; tags: string[] } }
+    >(true);
+    expect(schema._type).toBe('object');
+  });
+
+  describe('isSchemaValidator', () => {
+    test('accepts every factory-produced schema node', () => {
+      // One per SchemaNodeType, since the guard checks `_type` against that set.
+      const nodes: ReadonlyArray<unknown> = [
+        JsonSchema.string(),
+        JsonSchema.number(),
+        JsonSchema.integer(),
+        JsonSchema.boolean(),
+        JsonSchema.enumOf(['a', 'b']),
+        JsonSchema.optional(JsonSchema.string()),
+        JsonSchema.array(JsonSchema.string()),
+        JsonSchema.object({ x: JsonSchema.string() })
+      ];
+      for (const node of nodes) {
+        expect(JsonSchema.isSchemaValidator(node)).toBe(true);
+      }
+    });
+
+    test('accepts a schema parsed from raw JSON', () => {
+      const parsed = JsonSchema.fromJson({ type: 'object', properties: { x: { type: 'string' } } });
+      expect(parsed).toSucceedAndSatisfy((schema: JsonSchema.ISchemaValidator<JsonValue>) => {
+        expect(JsonSchema.isSchemaValidator(schema)).toBe(true);
+      });
+    });
+
+    test('rejects a plain Converter or Validator', () => {
+      // The whole point: `ISchemaValidator<T> extends Validator<T>`, so these are
+      // assignable wherever a schema is and the guard is what tells them apart.
+      expect(JsonSchema.isSchemaValidator(Converters.string)).toBe(false);
+      expect(JsonSchema.isSchemaValidator(Validators.string)).toBe(false);
+      expect(JsonSchema.isSchemaValidator(Converters.object({ x: Converters.string }))).toBe(false);
+    });
+
+    test('rejects a prototype-chain key masquerading as a node type', () => {
+      // The membership check is an indexed read compared to `true`, not `in` —
+      // `in` walks the prototype chain, so these would otherwise pass.
+      for (const stolen of ['constructor', 'toString', 'hasOwnProperty', 'valueOf']) {
+        expect(
+          JsonSchema.isSchemaValidator({
+            _type: stolen,
+            toJson: () => ({}),
+            validate: () => undefined
+          })
+        ).toBe(false);
+      }
+    });
+
+    test('rejects non-objects', () => {
+      for (const value of [undefined, null, 'object', 42, true, Symbol('s')]) {
+        expect(JsonSchema.isSchemaValidator(value)).toBe(false);
+      }
+    });
+
+    test('rejects a look-alike missing any one of the three checked members', () => {
+      const complete = {
+        _type: 'object',
+        toJson: () => ({}),
+        validate: () => undefined
+      };
+      expect(JsonSchema.isSchemaValidator(complete)).toBe(true);
+      expect(JsonSchema.isSchemaValidator({ ...complete, _type: 'not-a-node-type' })).toBe(false);
+      expect(JsonSchema.isSchemaValidator({ ...complete, _type: 7 })).toBe(false);
+      expect(JsonSchema.isSchemaValidator({ ...complete, toJson: 'nope' })).toBe(false);
+      expect(JsonSchema.isSchemaValidator({ ...complete, validate: 'nope' })).toBe(false);
+    });
+
+    test('narrows to ISchemaValidator<unknown>, not to a caller-chosen T', () => {
+      // Deliberate: `_type` is a node-KIND discriminant and carries no evidence
+      // about T, which lives only in the erased `__staticType` phantom. A guard
+      // claiming otherwise would be asserting rather than checking.
+      const value: unknown = JsonSchema.object({ x: JsonSchema.string() });
+      if (JsonSchema.isSchemaValidator(value)) {
+        assertExact<ReturnType<typeof value.toJson>, JsonObject>(true);
+        // @ts-expect-error - the narrowed T is `unknown`, so a typed read is not offered
+        const typed: { x: string } = value.__staticType;
+        expect(typed).toBeUndefined();
+      }
+      expect(JsonSchema.isSchemaValidator(value)).toBe(true);
+    });
+  });
+
+  test('factories reject non-schema arguments at compile time', () => {
+    // @ts-expect-error - a bare number is not a schema node
+    JsonSchema.object({ x: 5 });
+    // @ts-expect-error - optional requires a schema argument
+    JsonSchema.optional(5);
+    // @ts-expect-error - array requires a schema argument
+    JsonSchema.array(5);
+    expect(true).toBe(true);
+  });
+});

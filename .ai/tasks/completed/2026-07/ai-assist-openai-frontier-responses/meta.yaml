@@ -1,0 +1,76 @@
+id: ai-assist-openai-frontier-responses
+status: shipped
+packages: ['@fgv/ts-extras']
+prs: [522]
+closed: 2026-07
+summary:
+  intended: >
+    Make OpenAI Responses-API-only models invokable on the completion and
+    streaming-completion paths via a declarative `responsesOnlyModelPrefixes` marker on the
+    provider descriptor plus an `isResponsesOnlyModel` predicate reused at both dispatch
+    sites, make the Responses callee's `tools` optional (omitting the body field when
+    empty), then restore `frontier: '@openai:pro'` to the OpenAI `defaultModel` map. Ends
+    at a STOP-FLAG: build the live `gpt-5.5-pro` canary, do not run it.
+  shipped: >
+  diverged: >
+  # summary.shipped / diverged intentionally BLANK: only brief.md exists — no result.md,
+  # no README.md, no state.md. Inventing an account from brief-plus-source would present
+  # this sweep's inference as the stream's own record. See notes.
+  #
+  # STOP-FLAG RESOLVED 2026-08-15. The brief ended at a gate requiring a live gpt-5.5-pro
+  # canary run by the principal (no keys in CI). This sweep flagged it as neither closed
+  # nor cancelled — the worst of the three states — because nothing in the repo recorded
+  # the outcome. The owner has since confirmed the canary was run. Recorded as
+  # OWNER-ATTESTED rather than verified: this pass did not see the run, and the
+  # distinction is the point of the provenance discipline the rest of this record follows.
+  sourceLine: '# Brief — ai-assist: route OpenAI Responses-API-only models through the completion path (restore invokable frontier)'
+  # sourceLine is the opening line of brief.md (the commission), NOT a result/README opener.
+keywords:
+  - openai
+  - responses api
+  - chat completions routing
+  - frontier tier
+  - gpt-5.5-pro
+  - model alias
+  - responsesOnlyModelPrefixes
+  - declarative capability marker
+  - streaming dispatch
+  - testbed canary
+  - STOP-FLAG
+notes: >
+  RETROACTIVE finalize sweep, 2026-08-14. Directory holds only brief.md; status resolved
+  from external evidence:
+
+  (1) Merged commit 3a2234249 "feat(ai-assist): route OpenAI Responses-only models through
+  the completion path (restore frontier) (#522)", 2026-07-07, on origin/release.
+
+  (2) Every concrete ask is in current source: `responsesOnlyModelPrefixes?:
+  ReadonlyArray<string>` on `IAiProviderDescriptor` (`model.ts:1160`), the predicate
+  `isResponsesOnlyModel` (`model.ts:784-785`) exported from the packlet index (`index.ts:83`)
+  and reused — not duplicated — at both dispatch sites (`completionClient.ts:642`,
+  `streamingClient.ts:173`, each as `hasTools || isResponsesOnlyModel(descriptor,
+  config.model)`), `responsesOnlyModelPrefixes: ['gpt-5.5-pro']` on the OpenAI descriptor
+  (`registry.ts:219`), and `frontier: '@openai:pro'` restored (`registry.ts:201`). Tests:
+  `modelAlias.test.ts:231-239`, `apiClient.test.ts:1030,1122`.
+
+  (3) `docs/FUTURE.md:40-48` already carries a "SHIPPED — the
+  `ai-assist-openai-frontier-responses` stream" annotation naming these exact symbols, and
+  `docs/WORKSTREAMS.md:624` records it as a shipped fast-follow of the model-tiers stream.
+  This FUTURE.md entry is NOT stale in the direction the sweep was watching for.
+
+  Verdict: SHIPPED. Ran, landed as briefed, wrote no exit artifact.
+
+  One thing a reader will trip over and which is NOT a divergence of this stream: the
+  `@openai:pro` alias today points at `gpt-5.6-sol`, not `gpt-5.5-pro`
+  (`registry.ts:208`), and the comment at `registry.ts:198-200` explains the frontier tier
+  no longer needs Responses-only routing. That re-slot came later, from the model-rotation
+  stream (commit a57045d93, #568) — the routing machinery this stream built is still what
+  carries `gpt-5.5-pro` via `modelOverride`. Assessed by this sweep, not by the stream.
+
+  Unresolved and worth an owner's attention: the brief ends at a STOP-FLAG requiring the
+  principal to run a live `gpt-5.5-pro` frontier canary as the final gate. No artifact
+  records that it was run. The canary scenario exists
+  (`samples/testbed/src/scenarios/modelTiers/`), but its docstrings now describe the
+  post-rotation 5.6 world, so the original gate may have been overtaken by events rather
+  than closed.
+sourceHash: a9921e2200f3210c

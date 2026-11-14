@@ -1,0 +1,67 @@
+id: system-one-design-antagonist
+status: shipped
+packages: [] # verification pass; design.md and task artifacts only, no package touched
+prs: [715]
+openPrs: []
+opened: 2026-10-02
+closed: 2026-10-02
+ledgerEntry: system-one-decisions
+summary:
+  headline: '' # sibling phase; the cluster's capability line is on system-one-impl
+  intended: >
+    A verification pass over the Phase A design, not a redesign: re-check every derived claim and
+    every citation read from a moving ref against the version actually depended on, amending
+    design.md in place. Fold in two orchestrator findings (F1: E16's vLLM citation pointed at code in
+    no released version; F2: vLLM refuses rather than truncates, which answers OQ-7), state a decision
+    on whether 'unchecked' stays, answer why inputLimit gets a type while confidence gets prose,
+    re-verify the ts-agent-tasks citations against promoted release, and leave OQ-5, OQ-8 and OQ-10's
+    Olares items alone. Docs only; one PR into integration/system-one-decisions.
+  shipped: >
+    Every §2 citation now names the ref it was read at (sdist 0.1.0, SDK 0.6.0, HF commit shas,
+    vLLM v0.10.1 / v0.30.0, Ollama v0.35.0, openjev dcd20947, llama.cpp b11081), with a list of
+    citations checked and left alone. E16 and E27 were split so each link carries its own marker;
+    E21 and E25 were upgraded to verified, and E16c's PR #6 read from its commit. No row was
+    downgraded and no fact contradicts decisions 1-6. OQ-7 resolved: 'unchecked' stays, correct only
+    when every reachable backend refuses, so the driving consumer uses maxChars. confidence is omitted
+    from the boundary's answers (option 2 of four). The ts-agent-tasks citations were re-pointed to
+    release febf0b2b4. Gates: no src/ change by this stream, rush change --verify, verify-capability-docs
+    and generate-capability-feed --check all exit 0; no revert matrix (docs only).
+  diverged: >
+    The brief's own F1 was wrong twice: renderers/params.py exists in every vLLM release from v0.16.0
+    to v0.30.0, and v0.6.6 cannot run CLM's launch command, whose --runner flag first appears at
+    v0.10.1, so the usable range is 0.10.1-0.30.0 and the design cites those versions instead. The
+    pass found something the brief did not anticipate: E27a, that on Ollama v0.35.0 with base
+    qwen3:8b the encoder request probably fails outright (no pooling_type, so no --embedding), which
+    turns §7.1 item 6's "silent" pooling difference into a likely hard failure of a leg of the
+    user's chosen topology; it was added to OQ-12 as a precondition. E16's tokenizer half had a
+    hidden unverified link (tokenizer.json's truncation section, behind a blocked CDN). The brief
+    expected low yield on overstatement; three wordings were tightened. Egress differed from the
+    brief's table: the git protocol to github.com works, the HF LFS CDN does not. The PR diff showed
+    253 src/ files from the release merge the orchestrator made before handover, not this stream's.
+  sourceLine: >
+    **Shipped:** a verification pass over the Phase A System-1 design.
+keywords:
+  - antagonist pass
+  - citation pinning
+  - moving ref
+  - released tag over main
+  - derived chain split by link
+  - E16 truncation side
+  - E27a Ollama pooling_type
+  - llama-server --embedding
+  - vLLM --runner floor
+  - OQ-7 unchecked inputLimit
+  - confidence omitted
+  - egress via git protocol
+  - HF LFS CDN blocked
+relatedStreams:
+  - { id: system-one-decisions-design, relationship: 'the design this pass verified and amended in place' }
+  - {
+      id: system-one-triage,
+      relationship: 'Phase B; read this result first and framed E27a as user decision U1'
+    }
+  - {
+      id: system-one-impl,
+      relationship: 'Phase C; built the confidence-free answers and unchecked mode decided here'
+    }
+sourceHash: 35280ec2beb88a53

@@ -1,0 +1,15 @@
+id: ai-assist-alias-capability-guard
+status: shipped
+packages: ['@fgv/ts-extras']
+prs: []
+closed: 2026-07-31
+summary:
+  intended: >
+    Stop an unresolved `@alias` from silently matching a provider capability rule it does not belong to.
+  shipped: >
+    Both capability resolvers (`resolveImageCapability` / `resolveEmbeddingCapability`) resolve the alias before prefix-matching, so an alias no longer falls through to the catch-all `modelPrefix: ''` rule and returns a confidently wrong capability.
+  diverged: >
+
+  sourceLine: '### 1. The core fix — both capability resolvers are alias-guarded'
+keywords: ['model alias', 'capability resolution', 'catch-all prefix', 'silent wrong answer']
+sourceHash: 6707cef8ca93543f

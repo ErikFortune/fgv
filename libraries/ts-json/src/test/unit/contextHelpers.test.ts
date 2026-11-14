@@ -520,5 +520,33 @@ describe('ContextHelpers class', () => {
         });
       });
     });
+
+    describe('with null-prototype contexts', () => {
+      const baseExtend: TemplateVarsExtendFunction = (b, v) => defaultExtendVars(b, v);
+      const baseVars = { name: 'base' };
+
+      test('uses extendVars from a null-prototype added context', () => {
+        const add: IJsonContext = Object.assign(Object.create(null), { extendVars: testExtend });
+        expect(JsonContextHelper.mergeContext({ vars: baseVars, extendVars: baseExtend }, add)).toSucceedWith(
+          {
+            vars: baseVars,
+            refs: undefined,
+            extendVars: testExtend
+          }
+        );
+      });
+
+      test('uses extendVars from a null-prototype base context', () => {
+        const base: IJsonContext = Object.assign(Object.create(null), {
+          vars: baseVars,
+          extendVars: baseExtend
+        });
+        expect(JsonContextHelper.mergeContext(base, {})).toSucceedWith({
+          vars: baseVars,
+          refs: undefined,
+          extendVars: baseExtend
+        });
+      });
+    });
   });
 });

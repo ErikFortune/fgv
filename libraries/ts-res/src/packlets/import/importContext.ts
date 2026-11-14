@@ -64,20 +64,20 @@ export interface IValidatedImportContext {
  */
 export class ImportContext implements IValidatedImportContext {
   /**
-   * {@inheritdoc Import.IImportContext.baseId}
+   * {@inheritDoc Import.IImportContext.baseId}
    */
   public readonly baseId: ResourceId | undefined;
 
   /**
-   * {@inheritdoc Import.IImportContext.conditions}
+   * {@inheritDoc Import.IImportContext.conditions}
    */
   public readonly conditions: ReadonlyArray<IConditionDecl>;
 
   /**
    * Protected {@link Import.ImportContext | import context} for derived classes.
    * Public consumers use {@link Import.ImportContext.create | create} to create new instances.
-   * @param baseId - The base ID for the import context.
-   * @param conditions - Conditions to be applied to resources imported in this context.
+   * @param params - The {@link Import.IImportContext | import context} parameters including
+   * the base ID and conditions to be applied to resources imported in this context.
    */
   protected constructor({ baseId, conditions }: IImportContext) {
     this.baseId = Helpers.joinOptionalResourceIds(baseId).orThrow();
@@ -112,7 +112,7 @@ export class ImportContext implements IValidatedImportContext {
 
   /**
    * Appends names to the base ID of the import context.
-   * @param name - The base name to set.
+   * @param names - The name segments to append to the base ID.
    * @returns `Success` with a new {@link Import.ImportContext | import context} containing the new base ID
    * if successful, or `Failure` with an error message if the operation fails.
    */

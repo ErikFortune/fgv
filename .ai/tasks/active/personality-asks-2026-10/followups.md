@@ -1,0 +1,331 @@
+# Followups — PersonAIlity asks, 2026-10
+
+Orchestrator-owned. Drained 2026-10-02 from the 17 inbox files of the finalized `personality-intake`
+stream (`.ai/tasks/completed/2026-10/personality-intake/findings/inbox/`).
+
+**Drain deviation, deliberate:** the inbox files are **not deleted**. They sit inside a finalized
+stream's record, and that stream's README and `index.md` cite them. The inbox file is the long form;
+each entry below names its slug.
+
+**Read the inbox file before acting on any entry**, not the issue alone. On #648 the requester withdrew
+the issue body's diagnosis in a comment.
+
+## How to read an entry
+
+- **Req. priority** is the requester's label. It is an input, not our ranking.
+- **Verified** says what the orchestrator checked **at `release` @ `0574c39d`, by reading source**.
+  Anything not listed under it is unverified. Per the previous cycle's handoff (§ 4, trap 2), a
+  "verified" label earns *more* scrutiny from the stream that inherits it, not less: the stream's job
+  includes deciding whether the orchestrator was right.
+- **Route** is a candidate, not a commission. The user prioritises.
+
+Context the whole batch shares: PersonAIlity is adding **MCP client** support. Thirteen of the 17 lie
+on that path (8 `ts-extras-mcp`, 4 of the 5 `JsonSchema` asks, and the ai-assist signal ask).
+**None of the 17 asks for an MCP *server*.** That is the separate, already-proposed
+`agent-memory-mcp-server` stream, and nothing here changes its premise.
+
+---
+
+## Class A — defects in shipped surfaces
+
+### 1. ts-extras browser barrel omits symbols ts-web-extras calls at runtime — personaility#648
+- **Slug:** `2026-08-30-0732-web-extras-browser-fromBase64Strict`
+- **Req. priority:** none stated; "breaks a shipped journey"; re-verified at `-55`, `-56`, `-57`.
+- **Verified:** `fromBase64Strict` is missing from `crypto-utils/index.browser.ts`, with two call sites
+  (`browserCryptoProvider.ts:354`, `httpTreeAccessors.ts:471`). The existing parity test compares
+  **top-level** names only, so it cannot see a missing namespace member.
+- **Orchestrator error, refuted by the stream:** the orchestrator also claimed `Constants` was missing
+  from the browser barrel. It is not. `model.ts:24-25` exports the namespace, and the barrel re-exports
+  it through `export * from './model'`. The orchestrator's grep checked the barrel's own lines and
+  missed the re-export path. This is the handoff's § 4 failure again: reasoning about what a barrel
+  exports without following what implements it.
+- **Route:** **shipped** in #717 (`3515f456`), stream `ts-extras-browser-barrel-gaps`
+  (`.ai/tasks/completed/2026-10/ts-extras-browser-barrel-gaps/`).
+
+### 2. `JsonSchema.object` with `additionalProperties: true` silently drops undeclared keys — personaility#679
+- **Slug:** `2026-10-01-0043-json-schema-open-object-drops-keys`
+- **Req. priority:** P1 ("because the failure is silent").
+- **Verified:** `_buildObjectConverter` (`json-schema-builder/factories.ts:459-477`) calls
+  `Converters.object(fields, { strict: !additionalProperties })`, and `ObjectConverter._convert`
+  (`ts-utils/.../objectConverter.ts:225-241`) builds its result **from declared fields only**;
+  `strict: false` merely suppresses the unexpected-key error. So the factory's own option docstring
+  ("Set `true` to allow extra fields", `factories.ts:103`) is false in effect. **Every
+  `JsonSchema.object(…, { additionalProperties: true })` caller is affected, not only `fromJson`.**
+  `fromJson` maps an *absent* `additionalProperties` to `true` as well (`fromJson.ts:413`).
+- **Correction (2026-10-03):** the stripping was *deliberate*, as the code comments and a pinned test
+  say. The "docstring is false" framing above overstated it. The real defect was that the wire
+  (`toJson()` omits the keyword, so the object reads as open) and the converter (strips the keys)
+  disagreed.
+- **Route:** **shipped** in #720 (`e5a40969`), stream `json-schema-open-object`. Undeclared keys now
+  pass through as validated `JsonValue`; the wire is unchanged; an own `__proto__` key is dropped at
+  every depth (including in `Converters.jsonObject`). A schema-valued `additionalProperties`
+  ("record", entry 6) is still refused, and `_convertUndeclaredKeys` is its seam.
+
+### 3. `IProvenance.derivedFrom` docstring calls it a back-link — personaility#670
+- **Slug:** `2026-09-28-1501-agent-memory-derived-from-docstring`
+- **Req. priority:** none; "the docstring; nothing else".
+- **Verified (by intake, not re-checked):** `ts-agent-memory/src/packlets/types/envelope.ts:33-39`
+  still reads "Scope-qualified back-link to the source record".
+- **Route:** chore. Doc only, plus a change file (the change-file gate keys off files touched).
+- **Status:** **shipped** in #732 (`9d13829f`) into `integration/asks`, chore batch `chores-2026-10-asks`. The docstring does not say "queryable", because no retrieval axis indexes the field. Reaches `release` with the next asks promotion.
+
+---
+
+## Class B — `JsonSchema` vocabulary for real-world MCP schemas (`ts-json-base`)
+
+**Shared finding:** most of these are **builder** extensions, not just `fromJson` acceptance. The
+builder has no `any`, no record, no numeric `enumOf` (`enumOf<T extends string>`), no `pattern`, and
+no range constraints (the last is already in TECH_DEBT P3 "`JsonSchema.integer` cannot state a
+range"). `fromJson` can accept only what the builder can represent. Per CODING_STANDARDS
+§ "Extending core libraries", the builder is what grows.
+
+Every entry here **widens an accepted set**, so `install-run-rush.js test` repo-wide is the gate, not
+`rebuild`. `ts-extras-mcp` has fixtures pinning which schemas are skipped.
+
+### 4. `fromJson`: accept `anyOf`/`oneOf` `[T, null]` as nullable — personaility#680
+- **Status:** **shipped** in #723, promoted to `release` by #727 (`0e1028e3`); stream `json-schema-fromjson-widening`. Issue closed.
+- **Slug:** `2026-10-01-0043-json-schema-anyof-null-nullable`
+- **Req. priority:** P1 ("decides whether FastMCP servers in general are usable").
+- **Verified:** `anyOf` and `oneOf` are in `FORBIDDEN_KEYWORDS` (`fromJson.ts:34-44`); the nullable form
+  it would normalize to already exists. **Requester's scope line:** general unions stay out.
+- **Route:** the smallest of class B, and probably a pure `fromJson` normalization. Candidate for the
+  first slice.
+
+### 5. `fromJson`: resolve local `$ref`/`$defs` — personaility#681
+- **Status:** **shipped** in #723, promoted to `release` by #727 (`0e1028e3`); stream `json-schema-fromjson-widening`. Issue closed.
+- **Slug:** `2026-10-01-0043-json-schema-local-ref-defs`
+- **Req. priority:** P2.
+- **Verified:** `$ref` is forbidden; `docs/FUTURE.md` already names this our "highest-value" `fromJson`
+  addition. Constraint: bounded depth and cycles; remote refs stay rejected.
+- **Route:** class-B stream. The design question is inlining versus preserving `$defs` in `toJson()`,
+  since inlining a recursive model is unbounded.
+
+### 6. `fromJson`: numeric enums, `pattern`, record, `{}` (any) — personaility#683
+- **Status:** **partly shipped** in #723, promoted by #727 (`0e1028e3`): schema-valued `additionalProperties` as a record (`JsonSchema.record`). Numeric/boolean `enum`, enforced scalar `const` and `{}` **shipped** via #736 (`json-schema-shapes`), with per-wire adaptation. MCP tools are admitted against the target wire, so the default still skips a `{}` tool. `pattern` stays deferred: it is a ReDoS surface, and that is the user's decision. Issue left open until PersonAIlity adopts.
+- **Slug:** `2026-10-01-0043-json-schema-smaller-mcp-shapes`
+- **Req. priority:** P3; "fgv decides which of these to support".
+- **Verified:** none of the four is representable in the builder today (see the shared finding).
+- **Route:** class-B stream, by sub-shape. **Ours to decide.** Do not ask the requester which ones they
+  want; they have already said it is our call.
+
+### 7. Carry constraint keywords through `toJson()` — personaility#682
+- **Slug:** `2026-10-01-0043-json-schema-constraints-through-tojson`
+- **Req. priority:** P2.
+- **Verified:** `fromJson` *ignores* `title`/`default`/`examples`/`format` by design (header comment);
+  ranges cannot be expressed at all. **Two packages:** the builder must carry the keywords, and
+  ai-assist must know where each provider's strict mode refuses one and fold it into the description
+  instead.
+- **Route:** the largest of class B, and design-shaped, because the per-provider fold is the hard part.
+  It also closes TECH_DEBT P3 (`task_query`'s `limit` bound is prose). Run it **after** 4–6.
+- **Status:** **shipped** in #734 (`48feb860`) into `integration/asks`, stream `json-schema-constraints`.
+  - Validating keywords are enforced and emitted.
+  - Annotations are emitted.
+  - Each wire format has a capability table citing provider docs; unverified targets fold.
+  - Fold format: `Constraints: …` for validating keywords; annotations as their own sentences; `title` dropped.
+
+---
+
+## Class C — `ts-extras-mcp` client hardening (plus one ai-assist interface)
+
+**Shared design element:** a **failure-kind vocabulary** (entry 9) that entries 8, 13 and 10 all refer
+to. Design it once, before any of them ships.
+
+### C1 — cancellation and failure classification
+
+### 8. Per-call timeout and `AbortSignal` on `callMcpTool` — personaility#671
+- **Status:** **shipped** in #722, promoted to `release` by #727 (`0e1028e3`); stream `mcp-client-cancellation`. Issue closed.
+- **Slug:** `2026-10-01-0042-mcp-call-timeout-abort`
+- **Req. priority:** P1.
+- **Verified:** `callMcpTool(session, name, args)` (`operations.ts:159`) takes no options; every call
+  gets the SDK's fixed 60 s timeout.
+- **Route:** C1 slice. Map the call onto the SDK's `RequestOptions`.
+
+### 9. Failure kinds, and observing a session close — personaility#673
+- **Status:** **shipped** in #722, promoted to `release` by #727 (`0e1028e3`); stream `mcp-client-cancellation`. Issue closed.
+- **Slug:** `2026-10-01-0043-mcp-failure-kind-close-observation`
+- **Req. priority:** P1.
+- **Route:** C1 slice, **designed first**: the kind set (`tool-error` / `timeout` / `aborted` /
+  `not-connected` / `protocol` / `transport` / `unauthorized`, theirs and unverified), and whether it
+  rides on a `DetailedResult`. Reconnect policy stays theirs.
+
+### 10. Pass the turn's `AbortSignal` to `IAiClientTool.execute` — personaility#684 (`ts-extras` ai-assist)
+- **Status:** **shipped** in #722, promoted to `release` by #727 (`0e1028e3`); stream `mcp-client-cancellation`. Issue closed.
+- **Slug:** `2026-10-01-0043-ai-assist-client-tool-execute-signal`
+- **Req. priority:** P2.
+- **Verified:** `execute: (args) => Promise<Result<unknown>>` (`toolTypes.ts:185`); the single call site
+  is `clientToolContinuationBuilder.ts:953`. The optional second argument is additive for callers.
+  **In-repo implementers to sweep:** `ts-agent-tasks` `createTaskTools`, `ts-extras-mcp` `adaptMcpTools`,
+  `samples/`. Add a `rush rebuild` checkbox.
+- **Route:** C1, paired with 8. Without both, the signal stops at the adapter.
+
+### 11. OAuth `authProvider` passthrough and an `unauthorized` kind — personaility#677
+- **Slug:** `2026-10-01-0043-mcp-oauth-auth-provider`
+- **Req. priority:** P2. It depends on entry 9's kinds.
+- **Route:** after C1. An authorization surface: budget for a long review loop
+  (CODING_STANDARDS § "Authorization boundaries").
+- **Status:** **shipped** in #729 (`9013c2df`) into `integration/asks`; stream `mcp-round-2b` (`.ai/tasks/completed/2026-10/mcp-round-2b/`). Reaches `release` with the next asks promotion.
+
+### C2 — egress
+
+### 12. Guarded, non-buffering fetch for `createHttpTransport` — personaility#672
+- **Slug:** `2026-10-01-0042-mcp-http-fetch-address-guard`
+- **Req. priority:** P1 (blocks their non-admin server registration).
+- **Verified:** `createHttpTransport` forwards only `requestInit.headers` (`sdk.ts:150-153`).
+  `safer-fetch`'s public operations are `saferFetchJson` / `saferFetchBytes`, which buffer. **The
+  requester's own constraint is that the path must not buffer** (Streamable HTTP and SSE).
+- **Route:** **design-first**, because the right answer is a new safer-fetch sibling: a guarded,
+  `FetchLike`-shaped, streaming fetch that enforces the address guard per hop and strips credentials on
+  redirect. That is an extension of the primitive, not a raw-`fetch` passthrough; a passthrough would
+  push the SSRF policy back onto every consumer. It is a security boundary, so expect a substantive
+  review loop. Note also that `IAddressGuard` lives in `ts-extras` and `ts-extras-mcp` would take it as
+  a dependency; check the dependency posture.
+- **Status:** **shipped** in #729 (`9013c2df`) into `integration/asks`; stream `mcp-round-2b` (`.ai/tasks/completed/2026-10/mcp-round-2b/`). Reaches `release` with the next asks promotion.
+
+### C3 — fidelity and lifecycle
+
+### 13. Rich tool results: resource links, `structuredContent`, media — personaility#675
+- **Status:** **shipped** in #728 (`826ad119`) into `integration/asks`; stream `mcp-round-2a` (`.ai/tasks/completed/2026-10/mcp-round-2a/`). Reaches `release` with the next asks promotion.
+- **Slug:** `2026-10-01-0043-mcp-rich-tool-results`
+- **Req. priority:** P2. Minimum bar: a `resource_link` projects to a line carrying its URI.
+- **Verified:** already recorded in `docs/FUTURE.md` (multimodal passthrough).
+- **Route:** C3. Additive projection beside `content: string`.
+
+### 14. Descriptor `title` / `outputSchema`, and `tools/list_changed` — personaility#676
+- **Status:** **shipped** in #728 (`826ad119`) into `integration/asks`; stream `mcp-round-2a` (`.ai/tasks/completed/2026-10/mcp-round-2a/`). Reaches `release` with the next asks promotion.
+- **Slug:** `2026-10-01-0043-mcp-descriptor-title-list-changed`
+- **Req. priority:** P2.
+- **Route:** C3. Two parts: descriptor fields (trivial), and a change callback on the session.
+
+### 15. Terminate HTTP sessions on close — personaility#674
+- **Status:** **shipped** in #728 (`826ad119`) into `integration/asks`; stream `mcp-round-2a` (`.ai/tasks/completed/2026-10/mcp-round-2a/`). Reaches `release` with the next asks promotion.
+- **Slug:** `2026-10-01-0043-mcp-terminate-http-session`
+- **Req. priority:** P3. Best-effort, since a 405 is acceptable.
+- **Route:** C3, or a chore. Small.
+
+### 16. Public transport-injection seam — personaility#678
+- **Status:** **shipped** in #722, promoted to `release` by #727 (`0e1028e3`); stream `mcp-client-cancellation`. Issue closed. Delivered as `createCustomTransport`.
+- **Slug:** `2026-10-01-0043-mcp-transport-injection-seam`
+- **Req. priority:** P2.
+- **Verified:** already in `docs/FUTURE.md` ("Transport-injection testability seam").
+- **Route:** **candidate enabler, ahead of C1.** It would let our own tests drive 8, 9 and 13–15
+  in-process, as well as theirs. That ordering is an unverified judgment; the C-cluster design should
+  confirm or reject it.
+
+---
+
+## Class D — standalone
+
+### 17. Weighted pick on `PseudoRandomGenerator` — personaility#669
+- **Slug:** `2026-09-27-1631-ts-random-weighted-pick`
+- **Req. priority:** none.
+- **Verified (by intake):** no weighted pick exists. `ts-random` is an established surface, so the
+  addition must be additive.
+- **Route:** small stream. The edge rules are the substance: zero weights, all-zero, the last candidate
+  winning by elimination, and a pure `pickWeightedAt(unit, …)`. Their two call sites have already
+  drifted on exactly those rules, so the tests must pin each one.
+- **Status:** **shipped** in #732 (`9d13829f`) into `integration/asks`: `pickWeightedAt` and `PseudoRandomGenerator.pickWeighted`. Their walk reproduces the requester's avatar walk exactly for positive weights. Divergence to tell the requester: when every weight is zero, the primitive returns `undefined`, where their avatar sampler returns the first option.
+
+---
+
+## Deferred from streams
+
+### D1. Result-chain the safer-fetch hop walk — from `mcp-round-2b` (#729)
+
+- **Source:** the gate-time deep review of #729.
+- **What:** in `libraries/ts-extras/src/packlets/safer-fetch/saferFetch.ts`, `_walk` steps through six
+  per-hop checks (request guard, scheme recheck, address guard, loop detection, the connect,
+  the next hop) with an `isFailure` / `_propagate` after each, and `_execute` does the same for
+  three. Convert both to Result chains or recursion.
+- **Why deferred:** it rewrites the security-critical hop loop, which every buffered and guarded
+  request runs through. That deserves its own stream and its own review, not a ride on a review
+  round. #729 chained only `_resolveCallOptions`, leaving `_walk` and `_execute` as they were.
+- **Route:** small stream in `ts-extras` safer-fetch. The existing revert rows for the walk (the
+  `mcp-round-2b` revert matrix) are the regression check: each must still go red after the rewrite.
+- **Status:** **shipped** in #748, stream `safer-fetch-walk-chain` (recursion over hops). Every row is red again except R7, which `mcp-round-2b` had already recorded as not isolable. See `.ai/tasks/completed/2026-10/safer-fetch-walk-chain/result.md`.
+
+### D2. `IIdentityCodec.verifyRoundTrip` does not require scope equality — from `agent-memory-merge-scope` (#731)
+
+- **Source:** the stream's own sweep for fgv#725. See `.ai/tasks/completed/2026-10/agent-memory-merge-scope/result.md` § "Out-of-scope report 1".
+- **What:** the contract only requires `encode(decode(scope, stem)).idStem === stem`.
+  - A custom codec whose `decode` ignores scope would let the store load a record at a scope other than `encode(entityId).scope`.
+  - In that case `scopedAddressOf` (and so the #731 merge key) would name the codec's scope, not the file's.
+  - All four shipped codecs already check scope. Five in-repo test codecs would need updating, three of them because their `decode` ignores scope.
+- **Route:** small stream in `ts-agent-memory`. Tighten the TSDoc contract, and enforce it in `verifyLoadedIdentity`. Breaking only for custom codecs, which is allowed on this active surface.
+- **Status:** **shipped** in #733 (`0e4fbf59`). The check is enforced by the store in `verifyLoadedIdentity` for every codec. The `IIdentityCodec` interface is unchanged.
+
+### D4. `scopeEncoding` has no inverse — from `agent-memory-scope-invariant` (#733) — **shipped** via #747 (`agent-memory-scope-decoding`)
+
+- **What:** a vault written with a non-identity `scopeEncoding` cannot be reopened, because the open walk indexes raw directory segments. Since #733 the reopen fails loudly; before, it silently misfiled records.
+- **Route:** recorded in `docs/TECH_DEBT.md` (P3). The trigger is the first consumer that needs a non-identity encoding.
+- **Resolution:** user decision (a), 2026-10-19. `FileTreeMemoryStore.create` takes `scopeDecoding` beside `scopeEncoding` and refuses an encoding without it. The walk decodes each directory that holds records and requires it to round-trip; reads and writes require the encoded directory to decode back. The `TECH_DEBT.md` entry is retired.
+
+### D5. The store does not check the idStem half for flat kinds — from #733's review — **shipped** via #735
+
+- **What:** a codec that ignores scope and also skips the idStem check in `verifyRoundTrip` can load `shared/X.md` whose `entityId` encodes to `shared/Y`. `getById` finds that record, but `get(kind, entityId)` misses it.
+- **Possible fix:** a one-line store check inside the same chain, `!encoded.isVersioned && encoded.idStem !== file.baseName`, would make the whole address a store property.
+- **Route:** fold into the next `ts-agent-memory` stream. A misbehaving codec is a codec bug, and this half is already in the codec contract.
+
+### D6. The store does not check a versioned kind's version stem — from D5's review — **shipped** via #741
+
+- **What:** D5 made a flat kind's idStem a store property. A versioned kind's file stem is `encodeVersion(entityId, seq)`, and only the codec's `verifyRoundTrip` checks it, so a temporal codec that skips that check has the same `getById` / `get` asymmetry D5 closed for flat kinds.
+- **Possible fix:** have the store decode the version address and compare against `encodeVersion(entityId, seq)` for `ITemporalIdentityCodec` kinds.
+- **Route:** fold into the next `ts-agent-memory` stream. It is a codec bug for a codec that breaks its contract, and the shipped `TemporalIdentityCodec` already checks it.
+
+### D3. Default `memory_search` handle is the bare id — from `agent-memory-merge-scope` (#731) — **shipped** via #739 (`memory-search-scope`: every result item carries `id` + `scope`; shipped together with D7)
+
+- **Source:** the same `result.md`, § "Out-of-scope report 2".
+- **What:** without `handleFor`, `defaultProjectItem` (`tools/memoryTools.ts:~347`) uses `envelope.id` as the agent-visible handle.
+  - Search results carry no scope, so two same-id records in different scopes are indistinguishable to the model.
+  - No tool resolves a handle back to a record, so this is cosmetic today.
+  - One misuse path exists: a `memory_write` link target with `scope` omitted defaults to the writer's scope. A handle copied from another conversation would then point the edge at the wrong record.
+- **Route:** decide whether the default handle should be scope-qualified, for example via `edgeTargetKey`, or whether search items should carry scope. This is an agent-facing format decision, so ask the user before building it.
+
+### D7. A `handleFor` mnemonic cannot be linked from — from `memory-search-scope` (#739) — **shipped** via #739, together with D3
+
+- **What:** since D3, items carry `scope`, and the descriptions tell the model to copy the `handle` (as `id`) plus `scope` into a link target or `memory_context` seed. That works only when the handle is the id. With a host `handleFor` mnemonic, the handle is not a `MemoryId`, and no tool resolves a handle back, so a model cannot author a correct link or seed from a result at all.
+- **The D3 descriptions make this worse, not only pre-existing.** Before D3, nothing told the model to put a handle in `id`. Now the descriptions actively instruct it to, so under `handleFor` a compliant model writes a dangling edge. A mnemonic outside the portable filename set (such as the testbed's `@doc-1`) is rejected by the `MemoryId` converter, so the write fails. A portable-set mnemonic (such as `dark-mode-pref`) is accepted and persisted as an edge to a record that does not exist. The deep review of `memory-search-scope` raised this as a P2. It is held for a user decision, and the descriptions are unchanged pending that decision.
+- **Possible fix:** an always-present, tool-layer-owned `id` on each item (as `scope` is), or a lookup that resolves a handle.
+- **Route:** an agent-facing format decision, like D3, so it goes to the user. In-repo, `samples/testbed`'s `memoryToolsGate` wires `handleFor` beside `memory_write`, but its mocked write authors no links.
+- **Decision (user, 2026-10-18):** add the `id` field. **Shipped** on `memory-search-scope`. Every result item carries `id: MemoryId` (its `envelope.id`), owned by the tool layer exactly as `scope` is, so a `projectItem` hook can neither drop nor forge it. `handle` is now documented as the display key only. Every description says to copy `id` and `scope` from a result. End-to-end tests with a portable-set mnemonic prove that a copied `{ id, scope }` link and a copied `memory_context` seed both resolve to the right record.
+
+
+---
+
+## Decisions, 2026-10-18 (user, after the #731–#736 batch)
+
+Judged against `release` at `0f621ab1d` (#737). Each decision is briefed on its own branch, which is named in brackets.
+
+1. **`pattern`** [`json-schema-pattern`]: split by trust.
+   - Host-written schemas get a `pattern` option on the string factory. The host's regex is trusted, enforced, and emitted where the wire documents `pattern`.
+   - `fromJson` refuses `pattern` by default and accepts an injected `patternValidator: (source) => Result<(value) => boolean>`.
+   - An RE2-backed default ships separately, as its own package and a later stream, so only callers who want it take the native dependency.
+2. **D3** [`memory-search-scope`]: the agent sees each search item's scope.
+   - Amended at brief time: `memory_write` link targets are already structured as `{ id, scope? }`, so a single qualified handle *string* would land in `id` and break.
+   - The fix is that every result item carries `scope`, and the tool's description tells the model to copy both fields into a link target.
+   - The default handle stays the id; `handleFor` is unchanged.
+3. **Loud request failure** for a host-written client tool the wire cannot carry: confirmed. Add a pre-flight so it fails when the turn is created, not mid-stream [`ai-assist-wire-followups`].
+4. **Mismatched MCP wire table fails loudly**: confirmed.
+5. **Live testbed wire probe** to turn the #736 inferences into observations: approved [`testbed-wire-probe`].
+6. **Wire decisions:**
+   - Keep folding `format`. Stop folding `default`: drop it, because a folded default reads as if it were applied. `examples` stays folded. [`ai-assist-wire-followups`]
+   - An endpoint override stays conservative unless the host asserts `{ providerId, verified: true }` [`ai-assist-wire-followups`].
+   - Constraint options are validated rather than the schema: `JsonSchema.numberOptions` / `stringOptions` return `Result` of branded options, and constraint-bearing factories accept only those. Factories never throw; declarations use `.shouldNotFail(label)` [`json-schema-options`].
+7. **All-zero weights** stay `undefined`. Uniform weighting is the caller's `?? pick(...)`. PersonAIlity's first-option sampler is theirs to change; noted on personaility#669.
+
+**Order:** `json-schema-options` → `json-schema-pattern` → `ai-assist-wire-followups`. All three touch `json-schema-builder` / `schemaKeywords`. `memory-search-scope` and `testbed-wire-probe` are independent and can run in parallel. The probe should be re-run once `json-schema-pattern` lands.
+
+## Proposed order — for the user to prioritise
+
+| # | what | why here |
+|---|---|---|
+| 1 | entry 1 (#648) | **shipped**, #717 |
+| 2 | entry 2 (#679) | **shipped**, #720 |
+| 3 | C1: entries 16 → 9 → 8 + 10 | **shipped**, #722 → #727 |
+| 4 | class B: entries 4 → 5 → 6 | **shipped** (6 in part), #723 → #727 |
+| 5 | entry 12 (#672) | **shipped**, #729 |
+| 6 | C3: entries 13, 14, 15; then 11 | 13–15 **shipped**, #728; 11 **shipped**, #729 |
+| 7 | entry 7 (#682) | **shipped**, #734 |
+| — | entries 3, 17 | **shipped**, #732 |
+
+**Parallel-safe pairs:** the C cluster (`ts-extras-mcp` plus the one ai-assist file) is disjoint from
+class B (`ts-json-base`). Entry 2 and class B are **not** disjoint; run them in sequence.

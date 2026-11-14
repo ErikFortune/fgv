@@ -165,7 +165,7 @@ export class MultiValueJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Determines if a given property key is multi-value. Derived classes can override this
    * method to use a different format for multi-value properties.
-   * @param value - The `JsonValue` of the property to be considered.
+   * @param token - The property key token to be considered.
    * @param state - The {@link JsonEditorState | editor state} for the object being edited.
    * @returns `Success` with detail `'deferred'` and an
    * {@link EditorRules.IMultiValuePropertyParts | IMultiValuePropertyParts}

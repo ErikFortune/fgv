@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Utilities: `generateUuid()` with the `Uuid` brand and `isValidUuid`; `canonicalize()` on `Normalizer` for RFC 8785 canonical JSON; `OneOf` / `StringOneOf` types; typed record helpers `keysForRecord`, `valuesForRecord`, `entriesForRecord`, `recordFromEntries`; `ensureArray`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

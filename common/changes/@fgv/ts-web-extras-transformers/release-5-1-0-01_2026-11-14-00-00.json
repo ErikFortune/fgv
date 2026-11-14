@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras-transformers",
+      "comment": "Initial release: a Result boundary over `@huggingface/transformers` for running models locally in the browser — `loadPipeline`, `classify`, `classifyAll`, `embed` and `summarize`. The Node sibling is `@fgv/ts-extras-transformers`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras-transformers",
+  "email": "noreply@anthropic.com"
+}

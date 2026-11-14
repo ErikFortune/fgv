@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-ollama",
+      "comment": "`chatStructured`: grammar-constrained structured output validated against a JSON schema.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-ollama",
+  "email": "noreply@anthropic.com"
+}

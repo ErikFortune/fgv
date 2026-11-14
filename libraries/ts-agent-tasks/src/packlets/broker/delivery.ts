@@ -1,0 +1,1235 @@
+/*
+ * Copyright (c) 2026 Erik Fortune
+ * SPDX-License-Identifier: MIT
+ */
+
+import { Result } from '@fgv/ts-utils';
+import {
+  DeliveryId,
+  IAcknowledgementResult,
+  IBoundTaskDelivery,
+  IDisposeWithheldRequest,
+  ITaskIssuedReceiptSummary,
+  ITaskWithheldDisposal,
+  IInclusionEntry,
+  IPreparedTaskContext,
+  ISubscribeRequest,
+  ISubscriptionDrainRequest,
+  ITaskCommitRecord,
+  ITaskConsumerRecord,
+  ITaskContext,
+  ITaskContextBudget,
+  ITaskDeliveryPage,
+  ITaskDeliveryPolicy,
+  ITaskEnvelope,
+  ITaskInclusionReceipt,
+  ITaskPage,
+  ITaskPrepareOptions,
+  ITaskScope,
+  ITaskSubscription,
+  ITaskSummary,
+  ITaskUpdate,
+  IUnresolvedTaskReference,
+  Instant,
+  PageCursor,
+  SubscriptionId,
+  TaskId,
+  TaskPrepareCurrentState,
+  TaskResult,
+  TaskRevision,
+  UpdateCategory,
+  UpdateId,
+  baselineUpdateId,
+  defaultDeliveryCategories,
+  drainPrincipalsOf,
+  isTerminalTaskStatus,
+  maxTaskPageLimit,
+  taskContextLimits
+} from '../types';
+import { AccessContext, AccessSubject, subjectOf } from './access';
+import { ITaskRepositoryWriter } from '../storage';
+import { BrokerCore, canonicallySame } from './core';
+import { changedSinceAuthorized, ok, propagate, taskFailure } from './failures';
+import { projectEnvelope } from './projection';
+
+/**
+ * How many times a preparation or a subscription is recaptured when something it read changed
+ * before it held the writer. Past it the caller is told to retry.
+ * @internal
+ */
+export const maxDeliveryAttempts: number = 3;
+
+/**
+ * The broker's delivery defaults: what a new subscription gets for anything its request leaves out,
+ * and how long an issued receipt lives. Persisted policies are never reread from these.
+ * @public
+ */
+export interface ITaskDeliveryDefaults {
+  readonly policy?: Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>;
+  /** Issued-receipt lifetime in milliseconds. Default 24 hours. */
+  readonly receiptLifetimeMs?: number;
+  /**
+   * The most tasks a `current` subscription's baseline may hold. A selection matching more is
+   * refused with `backpressure`, never given a partial baseline that claims to be complete.
+   * Default 200.
+   */
+  readonly maxBaselineTasks?: number;
+}
+
+/** The resolved defaults. @internal */
+export interface IResolvedDeliveryDefaults {
+  readonly policy: Partial<Omit<ITaskDeliveryPolicy, 'schemaVersion'>>;
+  readonly receiptLifetimeMs: number;
+  readonly maxBaselineTasks: number;
+}
+
+/** The default issued-receipt lifetime: 24 hours (design § 9). @public */
+export const defaultReceiptLifetimeMs: number = 24 * 60 * 60 * 1000;
+
+/** The default baseline bound. @public */
+export const defaultMaxBaselineTasks: number = 200;
+
+/** The most owed updates one preparation reads. @internal */
+const maxPreparedUpdates: number = 1000;
+
+// ------------------------------------------------------------------------------------------
+// Subscribing
+// ------------------------------------------------------------------------------------------
+
+/** The category a baseline obligation is presented under: what is most urgent about the task now. */
+function _baselineCategory(envelope: ITaskEnvelope): UpdateCategory {
+  if (envelope.attention.length > 0) {
+    return 'attention';
+  }
+  return isTerminalTaskStatus(envelope.lifecycle.status) ? 'result' : 'lifecycle';
+}
+
+/** A selection's matched tasks, keyed by id with their revision, and the page they came from. */
+interface ICapture {
+  readonly revisions: ReadonlyMap<TaskId, TaskRevision>;
+  readonly summaries: ReadonlyArray<ITaskSummary>;
+}
+
+/**
+ * Reads every non-archived task a selection matches, up to the baseline bound. Unresolved
+ * references have no revision to deliver and are not part of a baseline.
+ */
+async function _captureSelection(
+  core: BrokerCore,
+  selection: ISubscribeRequest['selection'],
+  bound: number
+): Promise<TaskResult<ICapture>> {
+  const summaries: ITaskSummary[] = [];
+  let cursor: PageCursor | undefined = undefined;
+  do {
+    const page: TaskResult<ITaskPage> = await core.repository.query({
+      selection,
+      limit: maxTaskPageLimit,
+      ...(cursor !== undefined ? { cursor } : {})
+    });
+    if (page.isFailure()) {
+      return propagate(page);
+    }
+    summaries.push(...page.value.items);
+    if (summaries.length > bound) {
+      return taskFailure(
+        `subscribe: the selection matches more than ${bound} tasks, the baseline bound; choose a narrower ` +
+          `selection or start from-now`,
+        'backpressure',
+        'after-host-action'
+      );
+    }
+    cursor = page.value.nextCursor;
+  } while (cursor !== undefined);
+  return ok({
+    revisions: new Map(summaries.map((s) => [s.envelope.id, s.envelope.revision] as const)),
+    summaries
+  });
+}
+
+/**
+ * Creates a subscription (design § 9, *Subscription creation*): its baseline captured and
+ * authorized, then — in one writer section that re-proves nothing it relied on has moved — its record
+ * written and the subscription activated, so no commit can fall between the baseline and the first
+ * update it is owed.
+ * @internal
+ */
+export async function subscribe(
+  core: BrokerCore,
+  access: AccessContext,
+  request: unknown
+): Promise<TaskResult<ITaskSubscription>> {
+  const converted: Result<ISubscribeRequest> = core.converters.delivery.subscribeRequest.convert(request);
+  if (converted.isFailure()) {
+    return taskFailure(`subscribe: ${converted.message}`, 'invalid', 'after-host-action');
+  }
+  const req: ISubscribeRequest = converted.value;
+  // A binding's scopes bound everything it may name: a subscription over a scope it cannot select
+  // would reserve and retain updates this principal can never see or acknowledge.
+  const outside: ITaskScope | undefined = req.selection.scopes.find((scope) => !access.selects(scope));
+  if (outside !== undefined) {
+    return taskFailure(
+      `subscribe: scope ${outside.namespace}/${outside.key} is outside this binding's selectors`,
+      'invalid',
+      'after-host-action',
+      { operationId: req.operationId }
+    );
+  }
+  const defaults: IResolvedDeliveryDefaults = core.delivery;
+  // Every field comes from the converted request or from defaults `TaskBroker.create` converted, and
+  // the policy has no rule across fields, so the assembled policy needs no second conversion.
+  const policy: ITaskDeliveryPolicy = {
+    schemaVersion: 1,
+    durability:
+      req.policy?.durability ??
+      defaults.policy.durability ??
+      (core.repository.mode === 'session' ? 'session' : 'process-crash'),
+    history: req.policy?.history ?? defaults.policy.history ?? 'observed-state',
+    categories: req.policy?.categories ?? defaults.policy.categories ?? defaultDeliveryCategories,
+    coalesceProgress: req.policy?.coalesceProgress ?? defaults.policy.coalesceProgress ?? false
+  };
+  for (let attempt = 1; attempt <= maxDeliveryAttempts; attempt++) {
+    const outcome: TaskResult<ITaskSubscription | undefined> = await _subscribeOnce(
+      core,
+      access,
+      req,
+      policy
+    );
+    if (outcome.isFailure() || outcome.value !== undefined) {
+      return outcome.isFailure() ? propagate(outcome) : ok(outcome.value!);
+    }
+  }
+  return taskFailure(
+    `subscribe ${req.subscriptionId}: the selection kept changing while its baseline was captured; retry`,
+    'conflict',
+    'safe',
+    { operationId: req.operationId }
+  );
+}
+
+/** One capture-authorize-verify-commit attempt; `undefined` when something moved and it should retry. */
+async function _subscribeOnce(
+  core: BrokerCore,
+  access: AccessContext,
+  req: ISubscribeRequest,
+  policy: ITaskDeliveryPolicy
+): Promise<TaskResult<ITaskSubscription | undefined>> {
+  const epoch: TaskResult<string> = access.epoch();
+  if (epoch.isFailure()) {
+    return propagate(epoch);
+  }
+  if (!(await access.allows({ action: 'subscribe', role: 'subject', scopes: req.selection.scopes }))) {
+    return taskFailure(`subscribe: not permitted`, 'not-found-or-denied', 'after-host-action', {
+      operationId: req.operationId
+    });
+  }
+  const baseline: ITaskUpdate[] = [];
+  let captured: ICapture = { revisions: new Map(), summaries: [] };
+  if (req.start === 'current') {
+    const capture: TaskResult<ICapture> = await _captureSelection(
+      core,
+      req.selection,
+      core.delivery.maxBaselineTasks
+    );
+    if (capture.isFailure()) {
+      return propagate(capture);
+    }
+    captured = capture.value;
+    for (const summary of captured.summaries) {
+      if (await access.sees({ task: summary })) {
+        const envelope: ITaskEnvelope = summary.envelope;
+        baseline.push({
+          id: baselineUpdateId(envelope.id, envelope.revision),
+          taskId: envelope.id,
+          revision: envelope.revision,
+          category: _baselineCategory(envelope),
+          required: true,
+          snapshot: summary,
+          audience: [req.subscriptionId]
+        });
+      }
+    }
+  }
+  const clock: TaskResult<Instant> = core.now();
+  if (clock.isFailure()) {
+    return propagate(clock);
+  }
+  return core.gated(async (writer) => {
+    if (!access.epochIs(epoch.value)) {
+      return ok<ITaskSubscription | undefined>(undefined);
+    }
+    // Nothing matched may have moved or appeared since the capture: a commit in between would be in
+    // neither the baseline nor an audience.
+    if (req.start === 'current') {
+      const now: TaskResult<ICapture> = await _captureSelection(
+        core,
+        req.selection,
+        core.delivery.maxBaselineTasks
+      );
+      if (now.isFailure()) {
+        return propagate(now);
+      }
+      if (!canonicallySame(Array.from(now.value.revisions), Array.from(captured.revisions))) {
+        return ok<ITaskSubscription | undefined>(undefined);
+      }
+    }
+    const registered: TaskResult<ITaskConsumerRecord> = await writer.registerSubscription({
+      subscriptionId: req.subscriptionId,
+      operationId: req.operationId,
+      principalKey: access.principal,
+      specification: {
+        consumerId: req.consumerId,
+        selection: req.selection,
+        start: req.start,
+        policy,
+        // Default: the registering principal alone. The converted request is already canonical.
+        drainPrincipals: req.drainPrincipals ?? [access.principal],
+        ...(req.policyIdentity !== undefined ? { policyIdentity: req.policyIdentity } : {})
+      },
+      baseline,
+      createdAt: clock.value
+    });
+    if (registered.isFailure()) {
+      return propagate(registered);
+    }
+    return core.repository
+      .subscription(req.subscriptionId)
+      .onSuccess((descriptor) => ok<ITaskSubscription | undefined>(descriptor));
+  });
+}
+
+/**
+ * Replaces a subscription's drain principals and policy identity — a trusted host operation, made
+ * through the registering principal's binding (see `TaskBroker.setSubscriptionDrain`).
+ * @internal
+ */
+export async function setSubscriptionDrain(
+  core: BrokerCore,
+  access: AccessContext,
+  request: unknown
+): Promise<TaskResult<ITaskSubscription>> {
+  const converted: Result<ISubscriptionDrainRequest> = core.converters.delivery.drainRequest.convert(request);
+  if (converted.isFailure()) {
+    return taskFailure(`setSubscriptionDrain: ${converted.message}`, 'invalid', 'after-host-action');
+  }
+  const req: ISubscriptionDrainRequest = converted.value;
+  const denied = <T>(): TaskResult<T> =>
+    taskFailure<T>(
+      `setSubscriptionDrain ${req.subscriptionId}: not permitted`,
+      'not-found-or-denied',
+      'after-host-action'
+    );
+  return access
+    .epoch()
+    .thenOnSuccess((epoch) =>
+      core.repository
+        .subscription(req.subscriptionId)
+        .thenOnSuccess(async (found) =>
+          found !== undefined && (await _ownsDrain(access, found))
+            ? _writeDrain(core, access, req, epoch, denied)
+            : denied<ITaskSubscription>()
+        )
+    );
+}
+
+/**
+ * Whether `access` may re-delegate `found`'s drain: the registering principal, with selectors
+ * covering the selection, whose policy grants `subscribe` for it — what registering it required.
+ */
+async function _ownsDrain(access: AccessContext, found: ITaskSubscription): Promise<boolean> {
+  return (
+    found.principalKey === access.principal &&
+    found.selection.scopes.every((scope) => access.selects(scope)) &&
+    (await access.allows({ action: 'subscribe', role: 'subject', scopes: found.selection.scopes }))
+  );
+}
+
+/**
+ * The write `setSubscriptionDrain` authorized. The registrant and the selection never change, so
+ * the owner decision holds for the record the write is conditioned on; the policy is fenced by its
+ * epoch, checked after the section's last await.
+ */
+function _writeDrain(
+  core: BrokerCore,
+  access: AccessContext,
+  req: ISubscriptionDrainRequest,
+  epoch: string,
+  denied: <T>() => TaskResult<T>
+): Promise<TaskResult<ITaskSubscription>> {
+  return core.gated(async (writer) =>
+    (await writer.readSubscription(req.subscriptionId))
+      .onSuccess((record) => (record !== undefined ? ok(record) : denied<ITaskConsumerRecord>()))
+      .onSuccess((record) =>
+        access.epochIs(epoch)
+          ? ok(record)
+          : changedSinceAuthorized<ITaskConsumerRecord>(
+              `setSubscriptionDrain ${req.subscriptionId}: the policy`
+            )
+      )
+      .thenOnSuccess((record) =>
+        writer.setSubscriptionDrain({
+          subscriptionId: req.subscriptionId,
+          expectedRecordRevision: record.recordRevision,
+          drainPrincipals: req.drainPrincipals,
+          ...(req.policyIdentity !== undefined ? { policyIdentity: req.policyIdentity } : {})
+        })
+      )
+      .onSuccess(() =>
+        core.repository
+          .subscription(req.subscriptionId)
+          .onSuccess((descriptor) =>
+            descriptor !== undefined
+              ? ok(descriptor)
+              : taskFailure<ITaskSubscription>(
+                  `setSubscriptionDrain ${req.subscriptionId}: the change was written but the ` +
+                    `subscription did not read back; re-read it`,
+                  'storage-unavailable',
+                  'reconcile-first'
+                )
+          )
+      )
+  );
+}
+
+// ------------------------------------------------------------------------------------------
+// The bound delivery
+// ------------------------------------------------------------------------------------------
+
+/**
+ * One subscription's delivery bound to one principal (design § 9, `IBoundTaskDelivery`).
+ *
+ * @remarks
+ * Disclosure is decided now, by the principal's current authority: an owed update it may not see is
+ * withheld and stays owed. What is owed is decided by the stored audiences, never by re-applying the
+ * subscription's selection to the task as it is today.
+ * @internal
+ */
+export class BoundTaskDelivery implements IBoundTaskDelivery {
+  public readonly subscriptionId: SubscriptionId;
+  private readonly _core: BrokerCore;
+  private readonly _access: AccessContext;
+
+  public constructor(core: BrokerCore, access: AccessContext, subscriptionId: SubscriptionId) {
+    this._core = core;
+    this._access = access;
+    this.subscriptionId = subscriptionId;
+  }
+
+  /** Whether this binding's principal is one of `drainPrincipals`. */
+  private _drains(drainPrincipals: ReadonlyArray<string>): boolean {
+    return drainPrincipals.includes(this._access.principal);
+  }
+
+  /**
+   * Whether this binding may end withheld obligations: a drain principal whose policy carries the
+   * identity the subscription recorded. A subscription that recorded none refuses every binding.
+   */
+  private _withheldAuthority(
+    drainPrincipals: ReadonlyArray<string>,
+    policyIdentity: string | undefined
+  ): boolean {
+    return (
+      this._drains(drainPrincipals) &&
+      policyIdentity !== undefined &&
+      policyIdentity === this._access.policyIdentity
+    );
+  }
+
+  /** The answer for a binding without the drain authority an operation needs: as for a missing one. */
+  private _denied<T>(operation: string): TaskResult<T> {
+    return taskFailure<T>(
+      `${operation} ${this.subscriptionId}: not permitted`,
+      'not-found-or-denied',
+      'after-host-action'
+    );
+  }
+
+  /** Whether this binding's principal is still a drain principal, as the committed descriptor stands. */
+  private _stillDrains(operation: string): TaskResult<true> {
+    return this._core.repository
+      .subscription(this.subscriptionId)
+      .onSuccess((found) =>
+        found !== undefined && this._drains(found.drainPrincipals)
+          ? ok<true>(true)
+          : this._denied<true>(operation)
+      );
+  }
+
+  /** {@inheritDoc IBoundTaskDelivery.pending} */
+  public async pending(request?: {
+    readonly limit?: number;
+    readonly cursor?: PageCursor;
+  }): Promise<TaskResult<ITaskDeliveryPage>> {
+    return this._stillDrains('pending').thenOnSuccess(() => this._pendingPage(request));
+  }
+
+  /** One page of `pending`, for a binding that was a drain principal when it began. */
+  private async _pendingPage(request?: {
+    readonly limit?: number;
+    readonly cursor?: PageCursor;
+  }): Promise<TaskResult<ITaskDeliveryPage>> {
+    const page = await this._core.repository.listOwed({
+      subscription: this.subscriptionId,
+      ...(request?.limit !== undefined ? { limit: request.limit } : {}),
+      ...(request?.cursor !== undefined ? { cursor: request.cursor } : {})
+    });
+    if (page.isFailure()) {
+      return propagate(page);
+    }
+    const epoch: TaskResult<string> = this._access.epoch();
+    if (epoch.isFailure()) {
+      return propagate(epoch);
+    }
+    const disclosed: TaskResult<IDisclosure> = await this._disclose(page.value.updates);
+    if (disclosed.isFailure()) {
+      return propagate(disclosed);
+    }
+    // Every answer above was decided on a task's committed record; one that moved since, or a policy
+    // that moved, makes the page stale rather than an answer from two states.
+    const held: TaskResult<boolean> = await recordsHold(this._core, disclosed.value.fence);
+    if (held.isFailure()) {
+      return propagate(held);
+    }
+    if (!held.value || !this._access.epochIs(epoch.value)) {
+      return changedSinceAuthorized(`pending ${this.subscriptionId}: a task or the policy`);
+    }
+    // The drain principals may have changed while the page was decided.
+    return this._stillDrains('pending').onSuccess(() =>
+      ok<ITaskDeliveryPage>({
+        updates: disclosed.value.updates,
+        withheld: disclosed.value.withheld,
+        ...(page.value.nextCursor !== undefined ? { nextCursor: page.value.nextCursor } : {})
+      })
+    );
+  }
+
+  /** {@inheritDoc IBoundTaskDelivery.disposeWithheld} */
+  public async disposeWithheld(request: unknown): Promise<TaskResult<ITaskWithheldDisposal>> {
+    const converted: Result<IDisposeWithheldRequest> =
+      this._core.converters.delivery.disposeWithheldRequest.convert(request);
+    if (converted.isFailure()) {
+      return taskFailure(`disposeWithheld: ${converted.message}`, 'invalid', 'after-host-action');
+    }
+    for (let attempt = 1; attempt <= maxDeliveryAttempts; attempt++) {
+      const outcome: TaskResult<ITaskWithheldDisposal | undefined> = await this._disposeWithheldOnce(
+        converted.value
+      );
+      if (outcome.isFailure() || outcome.value !== undefined) {
+        return outcome.isFailure() ? propagate(outcome) : ok(outcome.value!);
+      }
+    }
+    return taskFailure(
+      `disposeWithheld ${this.subscriptionId}: what it is owed kept changing while it was decided; retry`,
+      'conflict',
+      'safe'
+    );
+  }
+
+  /** One capture-decide-verify-commit attempt; `undefined` when something moved and it should retry. */
+  private async _disposeWithheldOnce(
+    request: IDisposeWithheldRequest
+  ): Promise<TaskResult<ITaskWithheldDisposal | undefined>> {
+    const core: BrokerCore = this._core;
+    const limit: number = request.limit ?? maxTaskPageLimit;
+    const epoch: TaskResult<string> = this._access.epoch();
+    if (epoch.isFailure()) {
+      return propagate(epoch);
+    }
+    const subscription: TaskResult<ITaskSubscription | undefined> = core.repository.subscription(
+      this.subscriptionId
+    );
+    if (subscription.isFailure()) {
+      return propagate(subscription);
+    }
+    // "Withheld" is judged under this binding, so only a binding that could have discharged these
+    // obligations may end them unseen: a drain principal, whose policy is the one the subscription
+    // recorded as the consumer's own, with selectors covering the selection, and whose policy grants
+    // both `acknowledge` and `dispose-obligation` for the selection — otherwise a narrower binding,
+    // on any axis, would withhold and so end more. Both are asked for the selection as a whole, never
+    // per task, since these are tasks it may not see.
+    // Bound to a retained subscription; records are never removed.
+    const found: ITaskSubscription = subscription.value!;
+    const scopes: ReadonlyArray<ITaskScope> = found.selection.scopes;
+    if (
+      !this._withheldAuthority(found.drainPrincipals, found.policyIdentity) ||
+      !scopes.every((scope) => this._access.selects(scope)) ||
+      !(await this._access.allows({ action: 'acknowledge', role: 'subject', scopes })) ||
+      !(await this._access.allows({ action: 'dispose-obligation', role: 'subject', scopes }))
+    ) {
+      return taskFailure(
+        `disposeWithheld ${this.subscriptionId}: not permitted`,
+        'not-found-or-denied',
+        'after-host-action'
+      );
+    }
+    // Every owed update this principal is withheld, decided on each task's committed record.
+    const withheld: UpdateId[] = [];
+    const fence: Map<TaskId, number> = new Map();
+    const decided: Map<TaskId, IDisclosureDecision> = new Map();
+    let more: boolean = false;
+    let cursor: PageCursor | undefined = undefined;
+    do {
+      const page = await core.repository.listOwed({
+        subscription: this.subscriptionId,
+        limit: maxTaskPageLimit,
+        ...(cursor !== undefined ? { cursor } : {})
+      });
+      if (page.isFailure()) {
+        return propagate(page);
+      }
+      for (const update of page.value.updates) {
+        const decision: TaskResult<IDisclosureDecision> = await this._decide(update.taskId, decided);
+        if (decision.isFailure()) {
+          return propagate(decision);
+        }
+        fence.set(update.taskId, decision.value.recordRevision);
+        if (!decision.value.visible) {
+          if (withheld.length < limit) {
+            withheld.push(update.id);
+          } else {
+            more = true;
+          }
+        }
+      }
+      cursor = more ? undefined : page.value.nextCursor;
+    } while (cursor !== undefined);
+    const clock: TaskResult<Instant> = core.now();
+    if (clock.isFailure()) {
+      return propagate(clock);
+    }
+    return core.gated(async (writer) => {
+      const record: TaskResult<ITaskConsumerRecord | undefined> = await writer.readSubscription(
+        this.subscriptionId
+      );
+      if (record.isFailure()) {
+        return propagate<ITaskWithheldDisposal | undefined>(record);
+      }
+      // Bound to a retained subscription; records are never removed.
+      const live: ITaskConsumerRecord = record.value!;
+      // The drain authority decided above may have been replaced since.
+      if (!this._withheldAuthority(drainPrincipalsOf(live), live.policyIdentity)) {
+        return this._denied<ITaskWithheldDisposal | undefined>('disposeWithheld');
+      }
+      // Each id was decided withheld on its task's committed record: one that moved may now be visible.
+      const held: TaskResult<boolean> = await fenceHolds(writer, fence);
+      if (held.isFailure() || !held.value) {
+        return held.isFailure()
+          ? propagate<ITaskWithheldDisposal | undefined>(held)
+          : ok<ITaskWithheldDisposal | undefined>(undefined);
+      }
+      // An id an unexpired issued receipt names is not this call's to end: it is reported instead.
+      const pinnedIds: ReadonlySet<string> = new Set(
+        live.issued
+          .filter((manifest) => !manifest.acknowledged && manifest.expiresAt > clock.value)
+          .flatMap((manifest) => manifest.receipt.included.flatMap((entry) => entry.updateIds))
+      );
+      const ending: UpdateId[] = withheld.filter((id) => !pinnedIds.has(id)).sort();
+      const pinned: number = withheld.length - ending.length;
+      // After the section's last await, immediately before the durable write.
+      if (!this._access.epochIs(epoch.value)) {
+        return ok<ITaskWithheldDisposal | undefined>(undefined);
+      }
+      if (ending.length === 0) {
+        return ok<ITaskWithheldDisposal | undefined>({
+          subscriptionId: this.subscriptionId,
+          disposed: 0,
+          pinned,
+          more
+        });
+      }
+      const disposed = await writer.disposeObligations({
+        subscriptionId: this.subscriptionId,
+        expectedRecordRevision: live.recordRevision,
+        updateIds: ending,
+        reason: request.reason,
+        at: clock.value
+      });
+      return disposed.onSuccess((d) =>
+        ok<ITaskWithheldDisposal | undefined>({
+          subscriptionId: this.subscriptionId,
+          disposed: d.newlyDisposed.length,
+          pinned,
+          more
+        })
+      );
+    });
+  }
+
+  /**
+   * Prepares a bounded context and issues its receipt.
+   *
+   * @remarks
+   * 1. Capture the owed updates and the selection's current tasks, authorize and project them, mint a
+   *    delivery id, and render — purely.
+   * 2. In one writer section: if the policy epoch, the subscription's record, or any current task the
+   *    capture authorized moved since the capture, discard the render and capture again; otherwise
+   *    issue the receipt's exact manifest.
+   *    Storage refuses a manifest naming an update the subscription is no longer owed.
+   * 3. Return the context only once the manifest is committed. A failure returns nothing
+   *    acknowledgeable.
+   */
+  public async prepare(
+    budget?: ITaskContextBudget,
+    options?: ITaskPrepareOptions
+  ): Promise<TaskResult<IPreparedTaskContext>> {
+    const currentState: TaskPrepareCurrentState = options?.currentState ?? 'include';
+    if (currentState !== 'include' && currentState !== 'owed-only') {
+      return taskFailure(
+        `prepare ${this.subscriptionId}: currentState must be 'include' or 'owed-only'`,
+        'invalid',
+        'after-host-action'
+      );
+    }
+    for (let attempt = 1; attempt <= maxDeliveryAttempts; attempt++) {
+      const outcome: TaskResult<IPreparedTaskContext | undefined> = await this._prepareOnce(
+        budget,
+        currentState
+      );
+      if (outcome.isFailure() || outcome.value !== undefined) {
+        return outcome.isFailure() ? propagate(outcome) : ok(outcome.value!);
+      }
+    }
+    return taskFailure(
+      `prepare ${this.subscriptionId}: the subscription kept changing while its context was prepared; retry`,
+      'conflict',
+      'safe'
+    );
+  }
+
+  /**
+   * Acknowledges exactly what an issued receipt included.
+   *
+   * @remarks
+   * The receipt is converted strictly, then compared in full canonical form with the unexpired
+   * manifest this subscription issued under its delivery id — a fabricated, modified, shortened,
+   * enlarged, foreign or snapshot-only receipt matches none. Every entry's task is re-authorized for
+   * this principal before the writer is taken; inside it, the policy epoch and the record revision of
+   * every task so authorized are rechecked, and a task that moved sends the whole acknowledgement
+   * round again. Only then does storage add exactly the manifest's update ids to the exact history.
+   */
+  public async acknowledge(receipt: unknown): Promise<TaskResult<IAcknowledgementResult>> {
+    const converted: Result<ITaskInclusionReceipt> = this._core.converters.context.receipt.convert(receipt);
+    if (converted.isFailure() || converted.value.deliveryId === undefined) {
+      return _invalidReceipt(this.subscriptionId);
+    }
+    for (let attempt = 1; attempt <= maxDeliveryAttempts; attempt++) {
+      const outcome: TaskResult<IAcknowledgementResult | undefined> = await this._acknowledgeOnce(
+        converted.value,
+        converted.value.deliveryId
+      );
+      if (outcome.isFailure() || outcome.value !== undefined) {
+        return outcome.isFailure() ? propagate(outcome) : ok(outcome.value!);
+      }
+    }
+    return taskFailure(
+      `acknowledge ${this.subscriptionId}: the receipt's tasks kept changing while it was authorized; retry`,
+      'conflict',
+      'safe'
+    );
+  }
+
+  /** One authorize-then-commit attempt; `undefined` when a task it authorized moved and it should retry. */
+  private async _acknowledgeOnce(
+    presented: ITaskInclusionReceipt,
+    deliveryId: DeliveryId
+  ): Promise<TaskResult<IAcknowledgementResult | undefined>> {
+    // First: is this exactly a receipt this subscription issued and still holds? A fabricated,
+    // modified, shortened, enlarged, foreign or snapshot-only receipt is refused here, before any
+    // task it names is looked at — it gets one answer, whatever it names.
+    const matched: TaskResult<true> = await this._core.gated(async (writer) =>
+      (await this._issuedMatch(writer, deliveryId, presented)).onSuccess(() => ok<true>(true))
+    );
+    if (matched.isFailure()) {
+      return propagate(matched);
+    }
+    const epoch: TaskResult<string> = this._access.epoch();
+    if (epoch.isFailure()) {
+      return propagate(epoch);
+    }
+    // Each entry's task is authorized from its committed record, and the record revision that
+    // decided it is fenced: the section that commits re-reads every one.
+    const fence: Map<TaskId, number> = new Map();
+    for (const entry of presented.included) {
+      const authorized: number | undefined = await this._mayAcknowledge(entry);
+      if (authorized === undefined) {
+        return taskFailure(
+          `acknowledge ${this.subscriptionId}: the receipt includes a task this principal may not acknowledge`,
+          'not-found-or-denied',
+          'after-host-action'
+        );
+      }
+      fence.set(entry.taskId, authorized);
+    }
+    return this._core.gated(async (writer) => {
+      // Re-proved in the section that commits: the manifest may have been abandoned or expired, the
+      // policy may have moved, and a task may have been reassigned, since the checks above.
+      const record: TaskResult<ITaskConsumerRecord> = await this._issuedMatch(writer, deliveryId, presented);
+      if (record.isFailure()) {
+        return propagate<IAcknowledgementResult | undefined>(record);
+      }
+      if (!this._access.epochIs(epoch.value)) {
+        return taskFailure<IAcknowledgementResult | undefined>(
+          `acknowledge ${this.subscriptionId}: the authorization policy changed; re-present the receipt`,
+          'conflict',
+          'safe'
+        );
+      }
+      const held: TaskResult<boolean> = await fenceHolds(writer, fence);
+      if (held.isFailure() || !held.value) {
+        return held.isFailure()
+          ? propagate<IAcknowledgementResult | undefined>(held)
+          : ok<IAcknowledgementResult | undefined>(undefined);
+      }
+      // The instant the acknowledgement commits, read here rather than before the authorization
+      // above: a receipt that expired while its tasks were being authorized is expired.
+      const clock: TaskResult<Instant> = this._core.now();
+      if (clock.isFailure()) {
+        return propagate<IAcknowledgementResult | undefined>(clock);
+      }
+      const committed = await writer.acknowledgeReceipt({
+        subscriptionId: this.subscriptionId,
+        expectedRecordRevision: record.value.recordRevision,
+        deliveryId,
+        at: clock.value
+      });
+      return committed.onSuccess((c) =>
+        ok<IAcknowledgementResult | undefined>({
+          subscriptionId: c.subscriptionId,
+          deliveryId: c.deliveryId,
+          newlyAcknowledged: c.newlyAcknowledged,
+          alreadyAcknowledged: c.alreadyAcknowledged
+        })
+      );
+    });
+  }
+
+  /**
+   * The subscription's record, when it holds a manifest under `deliveryId` whose receipt is, in full
+   * canonical form, the one presented. Anything else is the one invalid-receipt answer.
+   */
+  private async _issuedMatch(
+    writer: ITaskRepositoryWriter,
+    deliveryId: DeliveryId,
+    presented: ITaskInclusionReceipt
+  ): Promise<TaskResult<ITaskConsumerRecord>> {
+    const record: TaskResult<ITaskConsumerRecord | undefined> = await writer.readSubscription(
+      this.subscriptionId
+    );
+    if (record.isFailure()) {
+      return propagate(record);
+    }
+    // Bound to a retained subscription, active or closed; records are never removed.
+    const live: ITaskConsumerRecord = record.value!;
+    if (!this._drains(drainPrincipalsOf(live))) {
+      return this._denied('acknowledge');
+    }
+    const manifest = live.issued.find((m) => m.deliveryId === deliveryId);
+    return manifest !== undefined && canonicallySame(manifest.receipt, presented)
+      ? ok(live)
+      : _invalidReceipt(this.subscriptionId);
+  }
+
+  /** {@inheritDoc IBoundTaskDelivery.abandon} */
+  public async abandon(deliveryId: DeliveryId): Promise<TaskResult<DeliveryId>> {
+    const id = this._core.converters.ids.deliveryId.convert(deliveryId);
+    if (id.isFailure()) {
+      return _invalidReceipt(this.subscriptionId);
+    }
+    return this._core.gated(async (writer) => {
+      const record = await writer.readSubscription(this.subscriptionId);
+      if (record.isFailure()) {
+        return propagate<DeliveryId>(record);
+      }
+      if (record.value !== undefined && !this._drains(drainPrincipalsOf(record.value))) {
+        return this._denied<DeliveryId>('abandon');
+      }
+      if (record.value === undefined || !record.value.issued.some((m) => m.deliveryId === id.value)) {
+        return _invalidReceipt(this.subscriptionId);
+      }
+      const abandoned = await writer.abandonReceipt({
+        subscriptionId: this.subscriptionId,
+        expectedRecordRevision: record.value.recordRevision,
+        deliveryId: id.value
+      });
+      return abandoned.onSuccess(() => ok(id.value));
+    });
+  }
+
+  /** {@inheritDoc IBoundTaskDelivery.issued} */
+  public async issued(): Promise<TaskResult<ReadonlyArray<ITaskIssuedReceiptSummary>>> {
+    return this._core.gated(async (writer) =>
+      (await writer.readSubscription(this.subscriptionId)).onSuccess((record) =>
+        record === undefined
+          ? taskFailure<ReadonlyArray<ITaskIssuedReceiptSummary>>(
+              `issued ${this.subscriptionId}: no retained subscription`,
+              'not-found-or-denied',
+              'after-host-action'
+            )
+          : !this._drains(drainPrincipalsOf(record))
+          ? this._denied<ReadonlyArray<ITaskIssuedReceiptSummary>>('issued')
+          : ok<ReadonlyArray<ITaskIssuedReceiptSummary>>(
+              record.issued
+                .filter((manifest) => !manifest.acknowledged)
+                .map((manifest) => ({
+                  deliveryId: manifest.deliveryId,
+                  issuedAt: manifest.issuedAt,
+                  expiresAt: manifest.expiresAt
+                }))
+                // Canonical UTC instants order as text; a tie keeps the record's order.
+                .sort((a, b) => a.issuedAt.localeCompare(b.issuedAt))
+            )
+      )
+    );
+  }
+
+  /** One capture-render-issue attempt; `undefined` when something moved and it should retry. */
+  private async _prepareOnce(
+    budget: ITaskContextBudget | undefined,
+    currentState: TaskPrepareCurrentState
+  ): Promise<TaskResult<IPreparedTaskContext | undefined>> {
+    const core: BrokerCore = this._core;
+    const epoch: TaskResult<string> = this._access.epoch();
+    if (epoch.isFailure()) {
+      return propagate(epoch);
+    }
+    const subscription: TaskResult<ITaskSubscription | undefined> = core.repository.subscription(
+      this.subscriptionId
+    );
+    if (subscription.isFailure()) {
+      return propagate(subscription);
+    }
+    // Bound to a retained subscription, active or closed; records are never removed.
+    const captured: ITaskSubscription = subscription.value!;
+    // Decided on the captured record; the section that issues re-proves its revision unchanged, so a
+    // drain principal removed in between makes this capture stale and the next one refuses.
+    if (!this._drains(captured.drainPrincipals)) {
+      return this._denied('prepare');
+    }
+    const input = await this._captureInput(captured, currentState);
+    if (input.isFailure()) {
+      return propagate(input);
+    }
+    const deliveryId: TaskResult<DeliveryId> = core.mintDeliveryId();
+    if (deliveryId.isFailure()) {
+      return propagate(deliveryId);
+    }
+    const clock: TaskResult<Instant> = core.now();
+    if (clock.isFailure()) {
+      return propagate(clock);
+    }
+    const { fence, disclosure, ...renderInput } = input.value;
+    const rendered: TaskResult<ITaskContext> = core.renderer.render(
+      { ...renderInput, deliveryId: deliveryId.value },
+      budget
+    );
+    if (rendered.isFailure()) {
+      return propagate(rendered);
+    }
+    const expiresAt: Result<Instant> = core.later(clock.value, core.delivery.receiptLifetimeMs);
+    if (expiresAt.isFailure()) {
+      return taskFailure(`prepare: ${expiresAt.message}`, 'storage-unavailable', 'safe');
+    }
+    return core.gated(async (writer) => {
+      const now: TaskResult<ITaskSubscription | undefined> = core.repository.subscription(
+        this.subscriptionId
+      );
+      if (
+        !this._access.epochIs(epoch.value) ||
+        now.isFailure() ||
+        now.value!.recordRevision !== captured.recordRevision
+      ) {
+        return ok<IPreparedTaskContext | undefined>(undefined);
+      }
+      // A current task the capture authorized and disclosed may have been reassigned since.
+      const held: TaskResult<boolean> = await fenceHolds(writer, fence, 'task');
+      if (held.isFailure() || !held.value) {
+        return held.isFailure()
+          ? propagate<IPreparedTaskContext | undefined>(held)
+          : ok<IPreparedTaskContext | undefined>(undefined);
+      }
+      const disclosed: TaskResult<boolean> = await fenceHolds(writer, disclosure);
+      if (disclosed.isFailure() || !disclosed.value) {
+        return disclosed.isFailure()
+          ? propagate<IPreparedTaskContext | undefined>(disclosed)
+          : ok<IPreparedTaskContext | undefined>(undefined);
+      }
+      const issued = await writer.issueReceipt({
+        subscriptionId: this.subscriptionId,
+        expectedRecordRevision: captured.recordRevision,
+        receipt: rendered.value.receipt,
+        issuedAt: clock.value,
+        expiresAt: expiresAt.value
+      });
+      if (issued.isFailure()) {
+        // Every owed id the render included was re-proved by the subscription's unchanged record
+        // revision above; storage still refuses (`invalid-receipt`, safe to retry) an id it no longer
+        // owes, which only a storage-level commit dropping an unacknowledged update can cause.
+        return propagate<IPreparedTaskContext | undefined>(issued);
+      }
+      return ok<IPreparedTaskContext | undefined>({
+        context: rendered.value,
+        deliveryId: deliveryId.value,
+        expiresAt: expiresAt.value
+      });
+    });
+  }
+
+  /** The renderer's input: owed updates and the selection's current tasks, authorized and projected. */
+  private async _captureInput(
+    subscription: ITaskSubscription,
+    currentState: TaskPrepareCurrentState
+  ): Promise<
+    TaskResult<{
+      readonly tasks: ReadonlyArray<ITaskSummary>;
+      readonly unresolved: ReadonlyArray<IUnresolvedTaskReference>;
+      readonly updates: ReadonlyArray<ITaskUpdate>;
+      readonly completeness: 'complete' | 'partial';
+      readonly fence: ReadonlyMap<TaskId, number>;
+      readonly disclosure: ReadonlyMap<TaskId, number>;
+    }>
+  > {
+    const core: BrokerCore = this._core;
+    const fence: Map<TaskId, number> = new Map();
+    const disclosure: Map<TaskId, number> = new Map();
+    const owed: ITaskUpdate[] = [];
+    let cursor: PageCursor | undefined = undefined;
+    let partial: boolean = false;
+    do {
+      const page = await core.repository.listOwed({
+        subscription: this.subscriptionId,
+        limit: maxTaskPageLimit,
+        ...(cursor !== undefined ? { cursor } : {})
+      });
+      if (page.isFailure()) {
+        return propagate(page);
+      }
+      owed.push(...page.value.updates);
+      cursor = page.value.nextCursor;
+      if (cursor !== undefined && owed.length >= maxPreparedUpdates) {
+        partial = true;
+        cursor = undefined;
+      }
+    } while (cursor !== undefined);
+    const disclosed = await this._disclose(owed);
+    if (disclosed.isFailure()) {
+      return propagate(disclosed);
+    }
+    // Disclosure was decided on each owed task's committed record: the section that issues re-reads
+    // every one, so a task moved out of view, reassigned or re-scoped meanwhile is never disclosed.
+    for (const [taskId, recordRevision] of disclosed.value.fence) {
+      disclosure.set(taskId, recordRevision);
+    }
+    // A closed subscription is drained, not followed: it is presented what it is still owed, and no
+    // current state of a selection it has left. An owed-only preparation presents no current state
+    // either: each owed revision renders from its own snapshot.
+    const current: TaskResult<ITaskPage> =
+      subscription.state === 'closed' || currentState === 'owed-only'
+        ? ok<ITaskPage>({
+            items: [],
+            unresolved: [],
+            generation: 0,
+            completeness: 'complete',
+            freshness: 'native-current',
+            issues: []
+          })
+        : await core.repository.query({
+            selection: subscription.selection,
+            limit: maxTaskPageLimit
+          });
+    if (current.isFailure()) {
+      return propagate(current);
+    }
+    // An owed update newer than a captured current state means a commit fell between the two reads:
+    // the current summary is dropped rather than presented as older than what it follows.
+    const newest: Map<TaskId, number> = new Map();
+    for (const update of disclosed.value.updates) {
+      newest.set(update.taskId, Math.max(newest.get(update.taskId) ?? 0, update.revision));
+    }
+    const tasks: ITaskSummary[] = [];
+    for (const summary of current.value.items) {
+      if ((newest.get(summary.envelope.id) ?? 0) > summary.envelope.revision) {
+        continue;
+      }
+      if (await this._access.sees({ task: summary })) {
+        const projected = projectEnvelope(this._access.projector, core.converters.broker, summary.envelope);
+        if (projected.isFailure()) {
+          return propagate(projected);
+        }
+        tasks.push({ envelope: projected.value });
+        fence.set(summary.envelope.id, summary.envelope.revision);
+      }
+    }
+    const unresolved: IUnresolvedTaskReference[] = [];
+    for (const reference of current.value.unresolved) {
+      if (await this._access.sees({ reference })) {
+        unresolved.push(reference);
+        fence.set(reference.id, reference.revision);
+      }
+    }
+    const complete: boolean =
+      !partial &&
+      disclosed.value.withheld === 0 &&
+      current.value.nextCursor === undefined &&
+      current.value.completeness === 'complete';
+    return ok({
+      tasks,
+      unresolved,
+      updates: disclosed.value.updates.slice(0, taskContextLimits.maxInputEntries),
+      completeness: complete ? 'complete' : 'partial',
+      fence,
+      disclosure
+    });
+  }
+
+  /**
+   * Authorizes and projects owed updates for this principal. Each payload is the frozen state of its
+   * revision; its audience is reduced to this subscription, so no other subscription is disclosed.
+   *
+   * @remarks
+   * **Disclosure is decided now**: an update is disclosed only when this principal may see **and**
+   * acknowledge its task as the task's committed record stands — the same question
+   * {@link BoundTaskDelivery.acknowledge} asks — never on the frozen snapshot, which may describe
+   * scopes or a responsibility the task no longer has. One the principal may not is withheld, stays
+   * owed, and is described by nothing but the count. The record revision that decided each task is
+   * returned as a fence for the caller to re-check.
+   */
+  private async _disclose(updates: ReadonlyArray<ITaskUpdate>): Promise<TaskResult<IDisclosure>> {
+    const disclosed: ITaskUpdate[] = [];
+    const fence: Map<TaskId, number> = new Map();
+    const decided: Map<TaskId, IDisclosureDecision> = new Map();
+    let withheld: number = 0;
+    for (const update of updates) {
+      const decision: TaskResult<IDisclosureDecision> = await this._decide(update.taskId, decided);
+      if (decision.isFailure()) {
+        return propagate(decision);
+      }
+      fence.set(update.taskId, decision.value.recordRevision);
+      if (!decision.value.visible) {
+        withheld++;
+        continue;
+      }
+      const projected = projectEnvelope(
+        this._access.projector,
+        this._core.converters.broker,
+        update.snapshot.envelope
+      );
+      if (projected.isFailure()) {
+        return propagate(projected);
+      }
+      disclosed.push({ ...update, snapshot: { envelope: projected.value }, audience: [this.subscriptionId] });
+    }
+    return ok({ updates: disclosed, withheld, fence });
+  }
+
+  /**
+   * Whether this principal may see and acknowledge a task as its committed record stands now, and the
+   * record revision that decided it — once per task per call.
+   */
+  private async _decide(
+    taskId: TaskId,
+    decided: Map<TaskId, IDisclosureDecision>
+  ): Promise<TaskResult<IDisclosureDecision>> {
+    const known: IDisclosureDecision | undefined = decided.get(taskId);
+    if (known !== undefined) {
+      return ok(known);
+    }
+    const record = await this._core.repository.readCommit(taskId);
+    if (record.isFailure()) {
+      return propagate(record);
+    }
+    // An owed update names a task whose record is retained for the repository's life.
+    const current: ITaskCommitRecord = record.value!;
+    const subject: AccessSubject = subjectOf(current);
+    const decision: IDisclosureDecision = {
+      visible: (await this._access.sees(subject)) && (await this._access.may('acknowledge', subject)),
+      recordRevision: current.recordRevision
+    };
+    decided.set(taskId, decision);
+    return ok(decision);
+  }
+
+  /** The record revision that authorized acknowledging an entry's task, or `undefined` when denied. */
+  private async _mayAcknowledge(entry: IInclusionEntry): Promise<number | undefined> {
+    const record = await this._core.repository.readCommit(entry.taskId);
+    if (record.isFailure() || record.value === undefined) {
+      return undefined;
+    }
+    const subject: AccessSubject = subjectOf(record.value);
+    return (await this._access.sees(subject)) && (await this._access.may('acknowledge', subject))
+      ? record.value.recordRevision
+      : undefined;
+  }
+}
+
+/** What one disclosure decided: the updates shown, how many were withheld, and the records it read. */
+interface IDisclosure {
+  readonly updates: ITaskUpdate[];
+  readonly withheld: number;
+  readonly fence: ReadonlyMap<TaskId, number>;
+}
+
+/** Whether a principal may see and acknowledge a task now, and the record revision that said so. */
+interface IDisclosureDecision {
+  readonly visible: boolean;
+  readonly recordRevision: number;
+}
+
+/**
+ * Whether every fenced task's committed record, re-read outside the writer, is still at the record
+ * revision that was authorized — for a read that takes no writer section.
+ * @internal
+ */
+export async function recordsHold(
+  core: BrokerCore,
+  fence: ReadonlyMap<TaskId, number>
+): Promise<TaskResult<boolean>> {
+  for (const [taskId, expected] of fence) {
+    const record = await core.repository.readCommit(taskId);
+    if (record.isFailure()) {
+      return propagate(record);
+    }
+    if (record.value!.recordRevision !== expected) {
+      return ok(false);
+    }
+  }
+  return ok(true);
+}
+
+/**
+ * Whether every fenced task's committed record, re-read through the writer, is still at the revision
+ * that was authorized — its record revision, or with `'task'`, its task revision.
+ * @internal
+ */
+export async function fenceHolds(
+  writer: ITaskRepositoryWriter,
+  fence: ReadonlyMap<TaskId, number>,
+  revision: 'record' | 'task' = 'record'
+): Promise<TaskResult<boolean>> {
+  for (const [taskId, expected] of fence) {
+    const record = await writer.readCommit(taskId);
+    if (record.isFailure()) {
+      return propagate(record);
+    }
+    // A task record is never deleted: an id authorized earlier is still readable.
+    const current: ITaskCommitRecord = record.value!;
+    const actual: number =
+      revision === 'record'
+        ? current.recordRevision
+        : current.recordType === 'resolved'
+        ? current.task.envelope.revision
+        : current.reference.revision;
+    if (actual !== expected) {
+      return ok(false);
+    }
+  }
+  return ok(true);
+}
+
+/** The one answer every unacceptable receipt gets: nothing about why distinguishes one from another. */
+function _invalidReceipt<T>(subscriptionId: SubscriptionId): TaskResult<T> {
+  return taskFailure<T>(
+    `acknowledge ${subscriptionId}: not a receipt this delivery issued and still holds`,
+    'invalid-receipt',
+    'after-host-action'
+  );
+}

@@ -458,7 +458,7 @@ export function toConditionSetToken(token: string): Result<ConditionSetToken> {
 
 /**
  * Converts a string to a {@link ConditionSetHash} if it is a valid condition set hash.
- * @param key - the string to convert
+ * @param hash - the string to convert
  * @returns `Success` with the converted {@link ConditionSetHash} if successful, or `Failure` with an
  * error message if not.
  * @public
@@ -471,9 +471,9 @@ export function toConditionSetHash(hash: string): Result<ConditionSetHash> {
 }
 
 /**
- * Converts a number to a {@link DecisionIndex} if it is a valid decision index.
- * @param index - the number to convert
- * @returns `Success` with the converted {@link DecisionIndex} if successful, or `Failure` with an
+ * Converts a string to a {@link DecisionKey} if it is a valid decision key.
+ * @param key - the string to convert
+ * @returns `Success` with the converted {@link DecisionKey} if successful, or `Failure` with an
  * error message if not.
  * @public
  */

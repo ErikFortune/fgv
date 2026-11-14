@@ -3,31 +3,96 @@ on:
   push:
     branches: ['main']
   pull_request:
-    branches: ['main', 'erik/release']
+    # 'integration/**' covers multi-version stream branches that collect several PRs and land as
+    # one. 'release/**' is the release trains, 'publish/**' the publish children PR'd back into
+    # them. 'release' stays until the drain into 'main' is done; it is removed in the docs-sweep
+    # phase of .ai/notes/orchestrator/branch-migration-checklist.md.
+    branches: ['main', 'release', 'release/**', 'publish/**', 'prerelease', 'integration/**']
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
-      - name: Git config user
-        uses: snow-actions/git-config-user@v1.0.0
-        with:
-          name: ErikFortune
-          email: ErikFortune@outlook.com
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 20
-      - name: Verify Change Logs
+          persist-credentials: false
+      # Every third-party action is pinned to a full commit SHA (a tag can be moved). Dependabot's
+      # github-actions ecosystem keeps the pins and their version comments current; this keeps the
+      # rule from eroding on the next workflow edit. Local ./ reusable workflows are exempt.
+      - name: Verify actions are pinned to a commit SHA
         run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            TARGET_BRANCH="${{ github.base_ref }}"
+          FILES=$(find .github/workflows .github/actions -type f \( -name '*.yml' -o -name '*.yaml' \) 2>/dev/null \
+            | grep -E '^\.github/(workflows/[^/]+|actions/.+/action)\.ya?ml$' || true)
+          # shellcheck disable=SC2086 # FILES is a newline-separated list of paths without spaces
+          UNPINNED=$(grep -nE '^[[:space:]]*(-[[:space:]]+)?uses:' /dev/null $FILES \
+            | grep -vE "^[^:]+:[0-9]+:[[:space:]]*(-[[:space:]]+)?uses:[[:space:]]*['\"]?\./" \
+            | grep -vE "^[^:]+:[0-9]+:[[:space:]]*(-[[:space:]]+)?uses:[[:space:]]*['\"]?[^@[:space:]'\"]+@[0-9a-f]{40}['\"]?([[:space:]]|$)" || true)
+          if [ -n "$UNPINNED" ]; then
+            echo "::error title=Unpinned action::every uses: must name a 40-character commit SHA"
+            echo "$UNPINNED"
+            exit 1
+          fi
+          echo "All uses: references in $(echo "$FILES" | wc -l) files are pinned to a commit SHA."
+      - name: Git config user
+        run: |
+          git config user.name "ErikFortune"
+          git config user.email "ErikFortune@outlook.com"
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24.15.0
+      - name: Verify Change Logs
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ "$EVENT_NAME" == "pull_request" ]; then
+            TARGET_BRANCH="$BASE_REF"
           else
             TARGET_BRANCH="main"
           fi
-          node common/scripts/install-run-rush.js change --verify --target-branch origin/$TARGET_BRANCH
+          node common/scripts/install-run-rush.js change --verify --target-branch "origin/$TARGET_BRANCH"
       - name: Rush Install
         run: node common/scripts/install-run-rush.js install
       - name: Rush rebuild
         run: node common/scripts/install-run-rush.js rebuild --verbose
+      - name: Rush test
+        run: node common/scripts/install-run-rush.js test --verbose
+      # Runs after rebuild because it loads built artifacts. Neither the build nor the test step
+      # can see this class of defect: TypeScript resolves types either way, and Jest runs in CJS so
+      # it never enters the `import` condition. See the script header.
+      # The capabilities index is @-included into every session, so its size is paid on every
+      # task whether or not a library is involved. It reached 43k tokens — 67% of the whole
+      # instruction budget — under a convention that said "keep it short". This is the gate that
+      # replaced the convention; it also refuses to let a reflex ("never roll your own PBKDF2")
+      # be lost in a bulk move, which review would not catch.
+      - name: Verify capability docs
+        run: node common/scripts/verify-capability-docs.mjs --verbose
+
+      # The recent-additions feed is DERIVED from each completed stream's summary.sourceLine, so
+      # there is one copy of that sentence rather than two to keep in step. This is what stops the
+      # derived form drifting from its source — a hand-maintained changelog is exactly the kind of
+      # stream-close discipline this repo has watched lapse.
+      - name: Verify the capability feed is not stale
+        run: node common/scripts/generate-capability-feed.mjs --check --verbose
+
+      - name: Verify ESM entry points are loadable
+        run: node common/scripts/verify-esm-entrypoints.mjs --verbose
+      # The sibling check, one row down the consumer table. The step above asks whether Node can
+      # load the entry; this one asks whether a browser bundler can compile it. Nothing else in CI
+      # reads that row, and routing browser bundlers at the ESM emit makes it load-bearing.
+      - name: Install bundler-check autoinstaller
+        run: node common/scripts/install-run-rush.js install-autoinstaller --name rush-bundler-check
+      - name: Verify browser entry points bundle
+        run: node common/scripts/verify-bundler-resolution.mjs --verbose --measure
+      # Both steps above check the working tree. This one checks the tarball npm would actually
+      # publish — the only one of the three that can see a package whose build output never enters
+      # the pack (the @fgv 5.1.0-27 shape). Per-PR placement is affordable because the whole repo
+      # costs ~5 s. The hard gate is in the publish workflows; this is the fast feedback.
+      - name: Install pack-check autoinstaller
+        run: node common/scripts/install-run-rush.js install-autoinstaller --name rush-pack-check
+      - name: Verify exports resolve inside the published tarball
+        run: node common/scripts/verify-tarball-exports.mjs --verbose --timing

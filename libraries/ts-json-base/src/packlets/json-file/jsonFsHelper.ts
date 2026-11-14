@@ -123,7 +123,7 @@ export class JsonFsHelper {
 
   /**
    * Construct a new {@link JsonFile.JsonFsHelper | JsonFsHelper}.
-   * @param json - Optional {@link JsonFile.IJsonLike | IJsonLike} used to process strings
+   * @param init - Optional {@link JsonFile.JsonFsHelperInitOptions | init options} to construct
    * and JSON values.
    */
   public constructor(init?: JsonFsHelperInitOptions) {

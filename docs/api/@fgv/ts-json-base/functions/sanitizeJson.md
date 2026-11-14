@@ -1,0 +1,26 @@
+[**@fgv Monorepo API Documentation**](../../../README.md)
+
+***
+
+[@fgv Monorepo API Documentation](../../../README.md) / [@fgv/ts-json-base](../README.md) / sanitizeJson
+
+# Function: sanitizeJson()
+
+> **sanitizeJson**(`from`): [`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<[`JsonValue`](../type-aliases/JsonValue.md)\>
+
+"Sanitizes" an `unknown` by stringifying and then parsing it.  Guarantees a
+valid [JsonValue](../type-aliases/JsonValue.md) but is not idempotent and gives no guarantees
+about fidelity. Fails if the supplied value cannot be stringified as Json.
+
+## Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `from` | `unknown` | The `unknown` to be sanitized. |
+
+## Returns
+
+[`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<[`JsonValue`](../type-aliases/JsonValue.md)\>
+
+`Success` with a [JsonValue](../type-aliases/JsonValue.md) if conversion succeeds,
+`Failure` with details if an error occurs.

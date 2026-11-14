@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-http-storage",
+      "comment": "Initial release: the server side of the HTTP `FileTree` backend whose client is `@fgv/ts-web-extras`' `HttpTreeAccessors`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-http-storage",
+  "email": "noreply@anthropic.com"
+}

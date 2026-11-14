@@ -20,7 +20,17 @@
  * SOFTWARE.
  */
 
-import { Brand, Failure, Result, fail, succeed } from '../base';
+import {
+  Brand,
+  Failure,
+  Result,
+  _errorMessage,
+  _isStackExhaustion,
+  _resultBoundary,
+  fail,
+  formatValueForMessage,
+  succeed
+} from '../base';
 import { ConstraintTrait, ValidatorTraits } from './traits';
 import {
   Constraint,
@@ -29,6 +39,12 @@ import {
   ValidatorFunc,
   ValidatorOptions
 } from './validator';
+
+/**
+ * The shared boundary state, held locally: reading it through the package's re-export chain costs
+ * a getter call per access on the hot path.
+ */
+const boundary: { depth: number } = _resultBoundary;
 
 /**
  * Options used to initialize a {@link Validation.Base.GenericValidator | GenericValidator}.
@@ -47,7 +63,7 @@ export interface GenericValidatorConstructorParams<T, TC> {
  */
 export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   /**
-   * {@inheritdoc Validation.Validator.traits}
+   * {@inheritDoc Validation.Validator.traits}
    */
   public readonly traits: ValidatorTraits;
 
@@ -62,6 +78,17 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
 
   /**
    * Constructs a new {@link Validation.Base.GenericValidator | GenericValidator<T>}.
+   * @remarks
+   * The validator is a `Result` boundary, so it never throws: if the supplied validator function
+   * throws (a bug in a custom callback, or a getter or Proxy trap on the value being validated),
+   * validation fails with `validator threw: <message>` instead, and `guard` returns `false`. Stack
+   * exhaustion inside nested validators unwinds to the outermost one and fails once there; a
+   * `captureResult` (or any `try`) the caller places between two nested validators catches it there
+   * instead.
+   *
+   * The conversion to a `Failure` masks the error wherever a failure is expected: `guard`, `or` and
+   * `oneOf` (which try the alternative), and `orDefault` all treat a buggy callback like invalid
+   * input. `orThrow` re-raises the message, but not the original error's class or stack.
    * @param params - The {@link Validation.Base.GenericValidatorConstructorParams | constructor params}
    * used to configure validation.
    */
@@ -69,27 +96,44 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
     if (!params.validator) {
       throw new Error('No validator function supplied');
     }
-    this._validator = params.validator;
+    const validator = params.validator;
+    this._validator = (from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> => {
+      // written out rather than shared so the hot path allocates nothing; see _resultBoundary
+      const nested = boundary.depth > 0;
+      let result: boolean | Failure<T>;
+      boundary.depth++;
+      try {
+        result = validator(from, context, self);
+      } catch (err) {
+        if (nested && _isStackExhaustion(err)) {
+          throw err;
+        }
+        result = fail<T>(`validator threw: ${_errorMessage(err)}`);
+      } finally {
+        boundary.depth--;
+      }
+      return result;
+    };
     this._options = params.options ?? {};
     this.traits = new ValidatorTraits(params.traits);
   }
 
   /**
-   * {@inheritdoc Validation.Validator.isOptional}
+   * {@inheritDoc Validation.Validator.isOptional}
    */
   public get isOptional(): boolean {
     return this.traits.isOptional;
   }
 
   /**
-   * {@inheritdoc Validation.Validator.brand}
+   * {@inheritDoc Validation.Validator.brand}
    */
   public get brand(): string | undefined {
     return this.traits.brand;
   }
 
   /**
-   * {@inheritdoc Validation.Validator.validate}
+   * {@inheritDoc Validation.Validator.validate}
    */
   public validate(from: unknown, context?: TC): Result<T> {
     const result = this._validator(from, this._context(context), this);
@@ -100,7 +144,7 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   }
 
   /**
-   * {@inheritdoc Validation.Validator.convert}
+   * {@inheritDoc Validation.Validator.convert}
    */
   public convert(from: unknown, context?: TC): Result<T> {
     const result = this._validator(from, this._context(context), this);
@@ -111,21 +155,21 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   }
 
   /**
-   * {@inheritdoc Validation.Validator.validateOptional}
+   * {@inheritDoc Validation.Validator.validateOptional}
    */
   public validateOptional(from: unknown, context?: TC): Result<T | undefined> {
     return from === undefined ? succeed(undefined) : this.validate(from, context);
   }
 
   /**
-   * {@inheritdoc Validation.Validator.guard}
+   * {@inheritDoc Validation.Validator.guard}
    */
   public guard(from: unknown, context?: TC): from is T {
     return this._validator(from, this._context(context), this) === true;
   }
 
   /**
-   * {@inheritdoc Validation.Validator.optional}
+   * {@inheritDoc Validation.Validator.optional}
    */
   public optional(): Validator<T | undefined, TC> {
     return new GenericValidator({
@@ -137,7 +181,7 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   }
 
   /**
-   * {@inheritdoc Validation.Validator.withConstraint}
+   * {@inheritDoc Validation.Validator.withConstraint}
    */
   public withConstraint(constraint: Constraint<T>, trait?: ConstraintTrait): Validator<T, TC> {
     trait = trait ?? { type: 'function' };
@@ -149,7 +193,7 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
           if (typeof constraintResult === 'boolean') {
             return constraintResult
               ? true
-              : fail(`Invalid value "${JSON.stringify(from)}":  does not meet constraint.`);
+              : fail(`Invalid value "${formatValueForMessage(from)}":  does not meet constraint.`);
           }
           return constraintResult;
         }
@@ -160,7 +204,7 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   }
 
   /**
-   * {@inheritdoc Validation.Validator.brand}
+   * {@inheritDoc Validation.Validator.brand}
    */
   public withBrand<B extends string>(brand: B): Validator<Brand<T, B>, TC> {
     if (this.brand) {
@@ -176,7 +220,7 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   }
 
   /**
-   * {@inheritdoc Validation.Validator.withFormattedError}
+   * {@inheritDoc Validation.Validator.withFormattedError}
    */
   public withFormattedError(formatter: ValidationErrorFormatter<TC>): Validator<T, TC> {
     return new GenericValidator<T, TC>({
@@ -188,6 +232,21 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
         /* c8 ignore next - defense in depth */
         const message = result === false ? undefined : result.message;
         return fail(formatter(from, message, this._context(context)));
+      }
+    });
+  }
+
+  /**
+   * {@inheritDoc Validation.Validator.or}
+   */
+  public or(other: Validator<T, TC>): Validator<T, TC> {
+    return new GenericValidator<T, TC>({
+      validator: (from: unknown, context?: TC, __self?: Validator<T, TC>): boolean | Failure<T> => {
+        if (this._validator(from, this._context(context), this) === true) {
+          return true;
+        }
+        const otherResult = other.validate(from, this._context(context));
+        return otherResult.isSuccess() ? true : otherResult;
       }
     });
   }

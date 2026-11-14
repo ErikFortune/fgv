@@ -1,0 +1,18 @@
+id: packaging-prepublish-fixes
+status: abandoned
+packages: []
+prs: []
+closed: 2026-08-16
+summary:
+  intended: >
+  shipped: >
+    Nothing. This was never a stream — it is an orphaned findings inbox holding a single
+    finding raised incidentally while measuring tarball contents during
+    publish-tarball-gate.
+  diverged: >
+  sourceLine: ''
+keywords: ['orphaned findings inbox', 'license file', 'prepublish', 'not a stream']
+sourceHash: 9ed3091ea8ccf215
+artifactLoss: >
+  No brief and no result.md ever existed. The only content is findings/inbox/, whose one
+  finding is dispositioned in README.md.

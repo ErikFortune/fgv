@@ -1,0 +1,9 @@
+[Home](../README.md) > [IReducedCandidate](./IReducedCandidate.md) > conditions
+
+## IReducedCandidate.conditions property
+
+**Signature:**
+
+```typescript
+readonly conditions: ConditionSetDecl;
+```

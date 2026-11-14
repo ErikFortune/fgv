@@ -1,0 +1,8 @@
+{
+  "name": "rush-pack-check",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "npm-packlist": "~10.0.4"
+  }
+}

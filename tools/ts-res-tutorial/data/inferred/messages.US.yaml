@@ -1,0 +1,15 @@
+# Tokenless territory qualifier in the filename.
+#
+# File path:   data/inferred/messages.US.yaml
+# Resource id: inferred.messages.text
+# Conditions:  currentTerritory=US
+#
+# "US" is a valid ISO 3166-1 alpha-2 territory code but NOT a valid BCP47
+# language tag (language subtags are lowercase), so tokenless inference
+# disambiguates to the currentTerritory qualifier.
+candidates:
+  - id: text
+    resourceTypeName: json
+    json:
+      hello: Howdy
+      source: 'TERRITORY: US (inferred from filename)'

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-mcp",
+      "comment": "Initial release: a Result boundary over `@modelcontextprotocol/sdk` that connects to MCP servers and adapts their tools into `@fgv/ts-extras` ai-assist client tools for `executeClientToolTurn`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "noreply@anthropic.com"
+}

@@ -1,0 +1,16 @@
+id: ai-assist-fenced-json-diagnostics
+status: shipped
+packages: ['@fgv/ts-extras']
+prs: [579]
+closed: 2026-07-31
+summary:
+  intended: >
+    Tell a caller WHY a JSON-shaped LLM response failed to parse, not merely that it did.
+  shipped: >
+    `classifyJsonParseFailure(text)` → typed `JsonParseFailureReason`: a structural classifier naming four property-name-position faults with token + offset, conservative `unknown` for everything else, total on non-string input.
+  diverged: >
+
+  sourceLine: '**Status:** complete. P3 / opportunistic; no consumer was blocked.'
+keywords:
+  ['json parse diagnostics', 'structural classifier', 'engine-message independence', 'llm output repair']
+sourceHash: f00d662b90ba5b7d

@@ -1,0 +1,299 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/**
+ * Converters for AI assist settings types.
+ * @packageDocumentation
+ */
+
+import { type Converter, Converters, type Validator, Validators } from '@fgv/ts-utils';
+import { type JsonSchema, Converters as JsonConverters } from '@fgv/ts-json-base';
+
+import type { AiCacheReportingLevel, IAiCompletionUsage } from './usageTypes';
+import { type GeminiThinkingLevel, allGeminiThinkingLevels } from './geminiThinking';
+
+import {
+  type AiProviderId,
+  type AiServerToolConfig,
+  type AiServerToolType,
+  type IAiAssistProviderConfig,
+  type IAiAssistSettings,
+  type IAiClientToolConfig,
+  type IAiToolAnnotations,
+  type IAiToolEnablement,
+  type IAiWebSearchToolConfig,
+  type McpTaskSupport,
+  MCP_TASK_SUPPORT_VALUES,
+  type ModelSpec,
+  type ModelSpecKey,
+  allModelSpecKeys
+} from './model';
+import { allProviderIds } from './registry';
+
+// ============================================================================
+// Provider ID
+// ============================================================================
+
+/**
+ * Converter for {@link AiProviderId}.
+ * @public
+ */
+export const aiProviderId: Converter<AiProviderId> = Converters.enumeratedValue<AiProviderId>(allProviderIds);
+
+// ============================================================================
+// Gemini thinking level
+// ============================================================================
+
+/**
+ * Converter for {@link AiAssist.GeminiThinkingLevel}.
+ * @public
+ */
+export const geminiThinkingLevel: Converter<GeminiThinkingLevel> =
+  Converters.enumeratedValue<GeminiThinkingLevel>(allGeminiThinkingLevels);
+
+// ============================================================================
+// Server-Side Tool Converters
+// ============================================================================
+
+/**
+ * All known server-side tool type values.
+ * @internal
+ */
+const allServerToolTypes: ReadonlyArray<AiServerToolType> = ['web_search'];
+
+/**
+ * Converter for {@link AiServerToolType}.
+ * @public
+ */
+export const aiServerToolType: Converter<AiServerToolType> =
+  Converters.enumeratedValue<AiServerToolType>(allServerToolTypes);
+
+/**
+ * Converter for {@link IAiWebSearchToolConfig}.
+ * @public
+ */
+export const aiWebSearchToolConfig: Converter<IAiWebSearchToolConfig> =
+  Converters.strictObject<IAiWebSearchToolConfig>({
+    type: Converters.enumeratedValue<'web_search'>(['web_search']),
+    allowedDomains: Converters.arrayOf(Converters.string).optional(),
+    blockedDomains: Converters.arrayOf(Converters.string).optional(),
+    maxUses: Converters.number.optional(),
+    enableImageUnderstanding: Converters.boolean.optional()
+  });
+
+/**
+ * Converter for {@link AiServerToolConfig} (discriminated union on `type`).
+ * @public
+ */
+export const aiServerToolConfig: Converter<AiServerToolConfig> =
+  Converters.discriminatedObject<AiServerToolConfig>('type', {
+    web_search: aiWebSearchToolConfig
+  });
+
+// ============================================================================
+// Client-Defined Tool Converters
+// ============================================================================
+
+/**
+ * Validator for the `parametersSchema` field of a client tool config.
+ * Checks that the value is a non-null object exposing both `validate` and `toJson`
+ * as callable functions — the runtime presence check for {@link JsonSchema.ISchemaValidator}.
+ * Does not inspect the inner JSON Schema structure.
+ * @internal
+ */
+const parametersSchemaValidator: Validator<JsonSchema.ISchemaValidator<unknown>> = Validators.isA<
+  JsonSchema.ISchemaValidator<unknown>
+>(
+  'ISchemaValidator (must expose .validate() and .toJson())',
+  (v): v is JsonSchema.ISchemaValidator<unknown> =>
+    v !== null &&
+    v !== undefined &&
+    typeof v === 'object' &&
+    typeof (v as Record<string, unknown>).validate === 'function' &&
+    typeof (v as Record<string, unknown>).toJson === 'function'
+);
+
+/**
+ * Converter for {@link AiAssist.IAiToolAnnotations} — the five optional host-advisory hints.
+ * @public
+ */
+export const aiToolAnnotations: Converter<IAiToolAnnotations> = Converters.strictObject<IAiToolAnnotations>({
+  title: Converters.string.optional(),
+  readOnlyHint: Converters.boolean.optional(),
+  destructiveHint: Converters.boolean.optional(),
+  idempotentHint: Converters.boolean.optional(),
+  openWorldHint: Converters.boolean.optional()
+});
+
+/**
+ * Converter for `McpTaskSupport` — accepts exactly one of
+ * `MCP_TASK_SUPPORT_VALUES` and refuses anything else.
+ *
+ * @remarks
+ * Converts a **present** value only. An absent `taskSupport` means `'forbidden'` per the MCP spec,
+ * but whether to apply that default is the caller's decision, so `undefined` fails here like any
+ * other value outside the vocabulary.
+ * @public
+ */
+export const mcpTaskSupport: Converter<McpTaskSupport> =
+  Converters.enumeratedValue<McpTaskSupport>(MCP_TASK_SUPPORT_VALUES);
+
+/**
+ * Converter for {@link AiAssist.IAiClientToolConfig}. Validates the wrapper shape: `type`,
+ * `name`, `description`, the presence of a usable `parametersSchema`, and optional
+ * host-advisory `annotations`.
+ * Does not inspect the inner JSON Schema structure — `JsonSchema.object(...)` already
+ * guarantees the schema is valid.
+ * @public
+ */
+export const aiClientToolConfig: Converter<IAiClientToolConfig> = Converters.object<IAiClientToolConfig>({
+  type: Converters.enumeratedValue<'client_tool'>(['client_tool']),
+  name: Converters.string.withConstraint((s) => s.length > 0, {
+    description: 'name must be a non-empty string'
+  }),
+  description: Converters.string,
+  parametersSchema: parametersSchemaValidator,
+  annotations: aiToolAnnotations.optional()
+});
+
+/**
+ * Converter for {@link IAiToolEnablement}.
+ * @public
+ */
+export const aiToolEnablement: Converter<IAiToolEnablement> = Converters.strictObject<IAiToolEnablement>({
+  type: aiServerToolType,
+  enabled: Converters.boolean,
+  config: aiServerToolConfig.optional()
+});
+
+// ============================================================================
+// Model Specification
+// ============================================================================
+
+/**
+ * Converter for {@link ModelSpecKey}.
+ * @public
+ */
+export const modelSpecKey: Converter<ModelSpecKey> =
+  Converters.enumeratedValue<ModelSpecKey>(allModelSpecKeys);
+
+/**
+ * Recursive converter for {@link ModelSpec}.
+ * Accepts a string or an object whose values are themselves ModelSpec values,
+ * with keys constrained to known {@link ModelSpecKey} values.
+ * Uses the `self` parameter from `Converters.generic` for recursion.
+ * @public
+ */
+export const modelSpec: Converter<ModelSpec> = Converters.generic<ModelSpec>(
+  (from: unknown, self: Converter<ModelSpec>) => {
+    return Converters.oneOf<ModelSpec>([
+      Converters.string,
+      Converters.recordOf(self, { keyConverter: modelSpecKey })
+    ])
+      .withFormattedError(
+        () => 'expected model spec (string or object with keys: base, advanced, frontier, image, embedding)'
+      )
+      .convert(from);
+  }
+);
+
+// ============================================================================
+// Provider Config & Settings
+// ============================================================================
+
+/**
+ * Converter for {@link IAiAssistProviderConfig}.
+ * @public
+ */
+export const aiAssistProviderConfig: Converter<IAiAssistProviderConfig> =
+  Converters.strictObject<IAiAssistProviderConfig>({
+    provider: aiProviderId,
+    secretName: Converters.string.optional(),
+    model: modelSpec.optional(),
+    tools: Converters.arrayOf(aiToolEnablement).optional(),
+    endpoint: Converters.string.optional()
+  });
+
+/**
+ * Converter for {@link IAiAssistSettings}.
+ * @public
+ */
+export const aiAssistSettings: Converter<IAiAssistSettings> = Converters.strictObject<IAiAssistSettings>({
+  providers: Converters.arrayOf(aiAssistProviderConfig),
+  defaultProvider: aiProviderId.optional(),
+  proxyUrl: Converters.string.optional(),
+  proxyAllProviders: Converters.boolean.optional()
+});
+
+/**
+ * Converter for {@link AiAssist.AiCacheReportingLevel}.
+ *
+ * @remarks
+ * Internal because it is not exported from the packlet barrel, so nothing
+ * outside this package can reach it — a `@public` tag would have claimed a
+ * reachability that does not exist. Its only consumer is
+ * {@link aiCompletionUsage} below. Promoting it later is additive and free;
+ * exporting it now to match the tag would add surface nobody has asked for,
+ * and un-exporting is the one direction that breaks callers.
+ * @internal
+ */
+export const aiCacheReportingLevel: Converter<AiCacheReportingLevel> =
+  Converters.enumeratedValue<AiCacheReportingLevel>(['reads', 'reads-and-writes']);
+
+/**
+ * Converter for {@link AiAssist.IAiCompletionUsage}.
+ *
+ * @remarks
+ * For the **proxy** path, where the usage block arrives already normalized rather
+ * than in a provider wire shape — the proxy ran `callProviderCompletion` and is
+ * relaying its `IAiCompletionUsage`. The per-provider helpers in
+ * `usageNormalization` translate wire shapes and are the wrong tool here; this
+ * validates the normalized shape itself.
+ *
+ * `reports` is required, matching the interface: a usage block that cannot say
+ * which of reads/writes it is able to report is not a usage block this package
+ * will hand on. A proxy relaying a malformed one gets the whole field dropped
+ * rather than a partially-trusted object.
+ *
+ * **Not `strictObject`, deliberately.** This validates a payload from a network
+ * peer that may be running a *newer* build of this library. Under strict rules one
+ * unrecognized field — a future token count, an echoed setting — would fail the
+ * conversion and drop the entire usage block, and `.orDefault()` would render that
+ * indistinguishable from "the provider reported nothing". Tolerating unknown fields
+ * is the same forward-compatibility posture the rest of the proxy path takes toward
+ * a peer of a different version. Required fields stay required; only openness to
+ * extra ones changes.
+ *
+ * Internal for the same reason as {@link aiCacheReportingLevel}: it is not in
+ * the packlet barrel, and its only consumer is `callProxiedCompletion`'s
+ * read-back. A proxy implementor validating the usage block they relay is the
+ * plausible external consumer, and exporting it for them is additive whenever
+ * one actually turns up.
+ * @internal
+ */
+export const aiCompletionUsage: Converter<IAiCompletionUsage> = Converters.object<IAiCompletionUsage>({
+  reports: aiCacheReportingLevel,
+  uncachedInputTokens: Converters.number.optional(),
+  cachedInputTokens: Converters.number.optional(),
+  cacheWriteTokens: Converters.number.optional(),
+  outputTokens: Converters.number.optional(),
+  totalInputTokens: Converters.number.optional(),
+  raw: JsonConverters.jsonObject.optional()
+});

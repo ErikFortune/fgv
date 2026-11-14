@@ -1,0 +1,12 @@
+{
+  "testMatch": ["<rootDir>/src/test/**/*.test.ts", "<rootDir>/test/**/*.test.ts"],
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "extensionsToTreatAsEsm": [],
+  "moduleNameMapper": {
+    "^clipboardy$": "<rootDir>/test/mocks/clipboardy.js"
+  },
+  "transform": {
+    "^.+\\.ts$": ["ts-jest", { "tsconfig": "tsconfig.test.json" }]
+  }
+}

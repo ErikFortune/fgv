@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory-sqlite-vec",
+      "comment": "`SqliteVecVectorIndex` (one vector per record) and `SqliteVecFragmentIndex` (many per record) implement `IVectorIndex` and `IFragmentVectorIndex`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory-sqlite-vec",
+  "email": "noreply@anthropic.com"
+}

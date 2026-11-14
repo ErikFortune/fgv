@@ -1,0 +1,126 @@
+id: agent-tasks-m1-stop
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [708]
+openPrs: []
+opened: 2026-10-01
+closed: 2026-10-01
+summary:
+  headline: '' # measurement and qualification evidence, not a capability; see the plan's § 8 Release evidence
+  intended: >
+    A measurement stream, not a feature stream. It extends `perf/residentMemory.js` with M1's two
+    remaining cohorts.
+    The stop-state cohort asks what a persisted cascade stop costs, resident and on disk, and at
+    what subtree breadth and on which dimension a stop becomes limited. It was also to reproduce or
+    refute the orchestrator's arithmetic that `record-bytes` could bind a wide external stop.
+    The production-profile cohort qualifies the default profile at its empirically earliest
+    limiting dimension, across the plan's limiting fixtures, and reports absolute memory and
+    receipt prepare/acknowledge costs.
+    Predictions were to be frozen in `MANIFEST` before the first run, with misses reported as
+    misses and never re-thresholded. The stream was to make a profile recommendation, not a profile
+    change.
+  shipped: >
+    `perf/stopCohort.js` and `perf/profileCohort.js`, built over `perf/m1Support.js` and dispatched
+    from `perf/residentMemory.js`. The frozen cohorts are untouched. Predictions were frozen in
+    `f09c24a2`, before any cohort code existed. Raw JSON for every recorded run sits beside
+    result.md.
+
+    Verdicts: six of eighteen frozen predictions missed. None was re-thresholded, and each is
+    diagnosed.
+
+    Stop cohort:
+      - Breadth is capped at 1,000 targets by `defaultMaxStopTargets`; 1,001 is refused `invalid`.
+      - Repetition on one root: the 25th cycle is refused on `record-bytes` at 1,000 targets, and
+        the 62nd on `operations` at 200 targets under the default profile.
+      - Root disk is 132.5 / 154.4 / 154.8 B per target (accepted / satisfied / released).
+      - The stop book keeps ~0.9–1.0 KB per target resident after release, until the targets are
+        archived.
+
+    Production-profile cohort (default profile): result.md reports the earliest limiting dimension
+    as `logical-bytes` in every mix that keeps tasks live. At refusal, written / reserved logical
+    bytes are 5.1 / 531.6 MB (plain), 12.8 / 523.7 (owed), 12.9 / 523.8 (fanout) and 0.8 / 535.1
+    (unresolved), but 93.7 / 442.6 for the inventory. The ordinal refused (not the count admitted):
+      - plain: 533rd (532 admitted)
+      - owed: 530th (529 admitted)
+      - fanout: 520th (519 admitted)
+      - unresolved: 364th
+      - inventory: 443rd live
+      - archive churn: item 10,000, on `retained-tasks`
+      - history: round 8, on `acknowledgement-ids`
+
+    Largest working sets: 274 MiB maxRSS at open with ~7 MB task records, and 194 MiB for a
+    consumer-record rewrite at the 50,000-id cap.
+
+    Recommendation: keep the default profile, and provision ~140 MiB, or ~300 MiB near the record
+    or consumer ceilings, plus at least 512 MiB of disk. The 1,000-task decision was surfaced, not
+    made. `src/` and `capacityProfile.ts` are unchanged; the change file is `type: none`.
+  diverged: >
+    The brief's premise was refuted from source before anything was predicted:
+      - A single stop cannot exceed 1,000 targets (`defaultMaxStopTargets`).
+      - A root is an 8 MiB task record, not bounded by `record-bytes`' 32 MiB.
+      - A target carries no 4 KiB source identity.
+    So the brief's "10,000 targets under one root" arm could not exist, and ran as 10 roots of
+    1,000. `record-bytes` was found to bound stop repetition, not breadth; under the default
+    profile, `operations` binds repetition first.
+
+    Six predictions missed. Three were routed as new P2s about what a host must provision:
+      - the receipt preparation peak
+      - the consumer-record rewrite peak
+      - open near the 8 MiB task-record ceiling, where the cold-history bound does not hold
+
+    The harness was corrected for a defect found during diagnosis: an after-close residual inflated
+    by the measuring child's own suspended frame. It was corrected in `4e34f21f`, and no predicted
+    figure was affected.
+
+    Further departures from the brief:
+      - The plan table's history-growth and cache-saturation cohorts were not built, because they
+        were in neither the frozen harness nor the brief.
+      - The stop and production runs ran concurrently, so latencies are contended.
+      - The change file is `type: none`, not `minor`, the exception the brief allowed when nothing
+        shipped changes.
+      - Layer 2 is recorded only as "requested on #708 by comment"; no Copilot round outcome is in
+        result.md.
+  # sourceLine is verbatim and therefore keeps result.md's own looseness: "written data is 1–2% of it"
+  # holds for plain and fanout, not for owed (~2.4%), unresolved (~0.15%), inventory (93.7 MB written vs
+  # 442.6 MB reserved) or evidence. The exact figures are in `shipped` above and in result.md § Cohort 2.
+  sourceLine: '**Shipped:** M1''s last two cohorts ran. The default profile fills `logical-bytes` first in every mix that keeps tasks live — written data is 1–2% of it, reservations the rest. Retained tasks fill first only under archive churn, and acknowledgement ids only once history accumulates. A cascade stop''s breadth is capped at 1,000 targets, not by any capacity dimension; the root''s 8 MiB record caps how often it can be stopped. Six of eighteen frozen predictions missed, and none of them was re-thresholded.'
+keywords:
+  - resident memory
+  - measurement harness
+  - frozen prediction manifest
+  - capacity profile qualification
+  - earliest limiting dimension
+  - logical-bytes reservations
+  - retained-tasks
+  - acknowledgement-ids
+  - cascade stop cost
+  - stop repetition
+  - defaultMaxStopTargets
+  - record-bytes
+  - stop book residue
+  - receipt preparation working set
+  - consumer record rewrite transient
+  - open rebuild peak
+  - maxRSS provisioning
+  - fixture validity gate
+  - full-summary control
+  - buffering control
+relatedStreams:
+  - id: agent-tasks-t8b
+    relationship: >
+      Built the default capacity profile this stream qualifies, and supplied the anchor datum: the
+      537th registration is refused on `logical-bytes`. M1 found 533 with the plain fixture's
+      4,000-character descriptions. T8b also ran the earlier M1 cohorts on T8's implementation.
+  - id: agent-tasks-t4
+    relationship: >
+      Created M1's harness, `perf/residentMemory.js` (#687), for the plan's early run at T4. This
+      stream extended that harness without editing its frozen cohorts.
+  - id: agent-tasks-t9
+    relationship: >
+      Shipped the persisted cascade stop whose cost the stop cohort measures. This stream resolved
+      T9's hand-off (3), "M1's stop-state cohort is not run by T9".
+  - id: agent-tasks-i2
+    relationship: >
+      Ran in parallel; this stream owned `perf/`. I2 was merged in before close, and a
+      representative subset was re-checked on the merged build (`m1-verify-merged-cf112be3.json`).
+sourceHash: c77bbe0d1f4de34d

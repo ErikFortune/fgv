@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Failure, fail } from '../base';
+import { Failure, fail, formatValueForMessage } from '../base';
 import { ValidatorBase, ValidatorBaseConstructorParams } from './validatorBase';
 
 import { TypeGuardWithContext } from './common';
@@ -78,6 +78,6 @@ export class TypeGuardValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
     if (this._guard(from, context)) {
       return true;
     }
-    return fail(`invalid ${this.description} (${JSON.stringify(from)})`);
+    return fail(`invalid ${this.description} (${formatValueForMessage(from)})`);
   }
 }

@@ -1,0 +1,43 @@
+id: testbed-model-probes
+status: shipped
+packages: ['@fgv/testbed']
+prs: [768]
+openPrs: []
+opened: 2026-11-09
+closed: 2026-11-09
+summary:
+  intended: >
+    Before the user's live testbed run, give the model-tier canaries live probes for the behaviours
+    #765 and #767 inferred from provider docs: Anthropic thinking effort none/low and the
+    onUnsupported 'fail' refusal, Anthropic and OpenAI temperature acceptance and local refusal, and
+    a completion at each recorded resolveMaxOutputTokens limit; correct a stale thinking-budget
+    comment. Refused-before-wire rows must prove no network call; the keyless path stays STOP-FLAG.
+  shipped: >
+    Anthropic now gets thinking none/low, none+fail and raw thinking-disabled rows on every tier and
+    extra model; Anthropic and OpenAI get temperature probes with stated expectations; Anthropic,
+    OpenAI and Gemini get max-output rows. Three new expected outcomes (refused-locally,
+    expected-reject, no-recorded-limit) feed the verdict without failing it. The live seam is one
+    call over a pure, tested buildCanaryCompletionParams, and a stubbed-fetch suite runs the real
+    library and the real scenarios to show refused rows send nothing. No ts-extras defect found.
+  diverged: >
+    The raw thinking-disabled row went on every thinking-required Anthropic target (sonnet-5-5,
+    opus-5-5 twice, fable-5-1), not only sonnet-5-5. Thinking, strict-none and max-output probes now
+    cover extra models for every provider, so Gemini's flash-lite gained rows the brief did not name.
+    The existing strict-none rows moved from PASS to the new REFUSED-LOCALLY / EXPECTED-REJECT tags.
+  sourceLine: '**Shipped:** the model-tier canaries now probe live the thinking-off, temperature and max-output behaviours that #765 and #767 inferred from provider docs. Every new row states its expected outcome, and the rows expected to be refused locally are shown to send nothing.'
+  headline: '' # opted out: a sample, not a capability
+keywords:
+  - live canary
+  - thinking disabled
+  - thinking-required refusal
+  - temperature refusal
+  - sampling parameters
+  - max output tokens
+  - refused before wire
+  - expected provider rejection
+  - stubbed fetch dry run
+  - keyless STOP-FLAG
+relatedStreams:
+  - { id: model-alias-refresh, relationship: 'probes the thinking-off and temperature rules it added' }
+  - { id: model-max-output-tokens, relationship: 'probes the resolveMaxOutputTokens limits it recorded' }
+sourceHash: sha256:1828aae521e414cc # over brief.md + state.md + result.md

@@ -1,5 +1,6 @@
 {
+  "name": "fgv",
   "dependencies": {
-    "@microsoft/rush": "^5.177.2"
+    "@microsoft/rush": "^5.182.1"
   }
 }

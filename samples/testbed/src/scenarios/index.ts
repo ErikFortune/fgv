@@ -1,0 +1,78 @@
+/**
+ * Manual scenario registry. To add a scenario:
+ *   1. Create `samples/testbed/src/scenarios/<id>.tsx` (or `.ts` for CLI-only).
+ *   2. Import it here and append to the `scenarios` array below.
+ *
+ * The registry is a `readonly` array — explicit beats clever (per the brief: "dependencies
+ * already mandate changes for most consumers, so one more registration is not a barrier").
+ *
+ * @packageDocumentation
+ */
+
+import type { IScenario } from '../shell';
+import { agentTasksScenario } from './agentTasks';
+import { anthropicClientToolsFableScenario, anthropicClientToolsScenario } from './anthropicClientTools';
+import { crossProviderEmbeddingSearchScenario } from './crossProviderEmbeddingSearch';
+import { gateDenyClientToolsScenario } from './gateDenyClientTools';
+import { geminiClientToolsScenario } from './geminiClientTools';
+import { imageGenerationScenario } from './imageGeneration';
+import { localClassifierSafetyScenario } from './localClassifierSafety';
+import { localEmbeddingSearchScenario } from './localEmbeddingSearch';
+import { localSummarizationScenario } from './localSummarization';
+import { mcpProbeScenario } from './mcpProbe';
+import { xaiCacheProbeScenario } from './xaiCacheProbe';
+import { sqliteVecMemoryPersistenceScenario } from './sqliteVecMemoryPersistence';
+import { sqliteVecFragmentPersistenceScenario } from './sqliteVecFragmentPersistence';
+import { memoryToolsGateScenario } from './memoryToolsGate';
+import {
+  anthropicModelTiersScenario,
+  geminiModelTiersScenario,
+  openaiModelTiersScenario,
+  xaiModelTiersScenario
+} from './modelTiers';
+import {
+  anthropicStructuredOutputScenario,
+  geminiStructuredOutputScenario,
+  openaiStructuredOutputScenario,
+  xaiStructuredOutputScenario
+} from './structuredOutput';
+import { openaiClientToolsScenario } from './openaiClientTools';
+import { saferFetchGuardScenario } from './saferFetchGuard';
+import { streamingChatScenario } from './streamingChat';
+import { wireProbeScenario } from './wireProbe';
+import { xaiClientToolsScenario } from './xaiClientTools';
+
+/**
+ * All scenarios surfaced by the testbed shell (web sidebar + CLI list).
+ * @public
+ */
+export const scenarios: readonly IScenario[] = [
+  anthropicClientToolsScenario,
+  anthropicClientToolsFableScenario,
+  openaiClientToolsScenario,
+  geminiClientToolsScenario,
+  xaiClientToolsScenario,
+  gateDenyClientToolsScenario,
+  imageGenerationScenario,
+  streamingChatScenario,
+  saferFetchGuardScenario,
+  localClassifierSafetyScenario,
+  localEmbeddingSearchScenario,
+  localSummarizationScenario,
+  mcpProbeScenario,
+  memoryToolsGateScenario,
+  crossProviderEmbeddingSearchScenario,
+  sqliteVecMemoryPersistenceScenario,
+  sqliteVecFragmentPersistenceScenario,
+  openaiModelTiersScenario,
+  anthropicModelTiersScenario,
+  geminiModelTiersScenario,
+  xaiModelTiersScenario,
+  openaiStructuredOutputScenario,
+  anthropicStructuredOutputScenario,
+  geminiStructuredOutputScenario,
+  xaiStructuredOutputScenario,
+  xaiCacheProbeScenario,
+  wireProbeScenario,
+  agentTasksScenario
+];

@@ -1,0 +1,33 @@
+{
+  "name": "@fgv/repo-template",
+  "version": "5.1.0-6",
+  "description": "CLI tool for creating and maintaining fgv-derived Rush monorepos",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "bin": {
+    "repo-template": "bin/repo-template.js"
+  },
+  "scripts": {
+    "build": "heft build --clean",
+    "test": "heft test --clean",
+    "coverage": "heft test --clean --coverage",
+    "clean": "heft clean",
+    "lint": "eslint src --ext .ts",
+    "fixlint": "eslint src --ext .ts --fix"
+  },
+  "dependencies": {
+    "commander": "^11.1.0",
+    "jsonc-parser": "~3.3.1"
+  },
+  "devDependencies": {
+    "@rushstack/heft": "1.3.0",
+    "@rushstack/heft-node-rig": "2.11.50",
+    "@types/node": "^22.20.5",
+    "typescript": "5.9.3",
+    "@rushstack/eslint-config": "4.7.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
+  }
+}

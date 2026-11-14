@@ -1,0 +1,46 @@
+id: final-model-fixes
+status: shipped
+packages: ['@fgv/ts-extras', '@fgv/testbed']
+prs: [769]
+openPrs: []
+opened: 2026-11-09
+closed: 2026-11-09
+summary:
+  intended: >
+    Act on the first live run of the #768 canaries: send thinking {type:'between_tools'} for a
+    generic 'none' on claude-sonnet-5-5 as a per-model data declaration (and on the client-tool
+    flag path), dropping it from thinkingRequiredModelPrefixes; list gemini-3.5-flash-lite and
+    gemini-3.8-flash as thinking-required as an interim until thinkingLevel; add a report-only
+    probe of temperature 1 on gpt-6.1-sol and gpt-6-astra through a sanctioned bypass, without
+    touching the registry; update the canaries and run sheet to the new truth.
+  shipped: >
+    New anthropicThinkingOffTypes / AnthropicThinkingOffType / IAnthropicThinkingOffRule /
+    resolveAnthropicThinkingOffType; sonnet-5-5 sends between_tools with no effort on all three
+    Anthropic paths; the two Gemini Flash models degrade or refuse 'none'. The canaries name the off
+    value, keep a raw 'disabled' row on sonnet, add per-model raw-none rules (flash-lite matches
+    /invalid argument/i; 3.8-flash has no raw row), and add [OBSERVED] temp=1 raw rows using an
+    'other' block. FUTURE.md records thinkingLevel and the held Gemini 4 rotation.
+  diverged: >
+    The new symbols went into a new ai-assist/anthropicThinkingOff.ts (with the matcher exported
+    module-level from model.ts) because model.ts crossed the 2000-line max-lines limit. The brief
+    named no new outcome type; the report-only row needed one, so the canary gained an 'observed'
+    expectation and [OBSERVED] tag.
+  sourceLine: "**Shipped:** on `claude-sonnet-5-5` a generic effort `'none'` now turns thinking off with `thinking: {type: 'between_tools'}`, declared as per-model data; `gemini-3.5-flash-lite` and `gemini-3.8-flash` degrade `'none'` to `'low'` (interim, until `thinkingLevel` is sent); and the canaries probe all of it, plus a report-only `temperature: 1` row on `gpt-6.1-sol` and `gpt-6-astra`."
+  headline: >
+    ai-assist turns thinking off on Claude Sonnet 5.5 with its own between_tools value, declared per
+    model, and stops claiming thinking-off on Gemini 3.x Flash models a budget of 0 cannot turn off.
+keywords:
+  - between_tools
+  - thinking off
+  - per-model off value
+  - anthropicThinkingOffTypes
+  - thinkingRequiredModelPrefixes
+  - thinkingBudget 0
+  - thinkingLevel interim
+  - live canary follow-up
+  - report-only probe
+  - temperature default
+relatedStreams:
+  - { id: testbed-model-probes, relationship: 'acts on its first live run and updates its probes' }
+  - { id: model-alias-refresh, relationship: 'revises its thinking-required listing for sonnet-5-5' }
+sourceHash: sha256:30ca936178d8545c # over brief.md + state.md + result.md

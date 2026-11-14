@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-http-storage",
+      "comment": "Wire converters for every request and response, and an opt-in `base64` content encoding for byte-faithful file contents.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-http-storage",
+  "email": "noreply@anthropic.com"
+}

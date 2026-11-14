@@ -18,15 +18,20 @@ lib/test/
 lib/**/*.test.*
 lib-commonjs/test/
 lib-commonjs/**/*.test.*
+dist/test/
+dist/**/*.test.*
 
 # Development files
 *.log
 .eslintrc*
 jest.config.*
 tsconfig.json
-*.js.map
-*.d.ts.map
-config/
+# Root-anchored: excludes the top-level build-config dir (api-extractor.json, rig.json, etc.)
+# WITHOUT matching the `config` PACKLET's built output (lib/packlets/config, dist/.../config).
+# An un-anchored `config/` matches a `config` dir at ANY depth; pnpm 11's native packer applies
+# that strictly (npm's older packer did not), which silently dropped the config packlet from the
+# tarball. Keep this anchored.
+/config/
 
 # Source files (if publishing only built output)
 # Uncomment if you only want to publish dist/lib
@@ -52,5 +57,6 @@ EXAMPLE_*.md
 docs/
 *.md
 !README.md
+!CAPABILITIES.md
 !LICENSE.md
 !CHANGELOG.md

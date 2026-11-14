@@ -294,7 +294,7 @@ export class LanguageTag {
    * Creates a new {@link Bcp47.LanguageTag | language tag} from a supplied
    * {@link Bcp47.Subtags | subtags} using optional configuration,
    * if supplied.
-   * @param tag - The {@link Bcp47.Subtags | subtags} from which the
+   * @param subtags - The {@link Bcp47.Subtags | subtags} from which the
    * {@link Bcp47.LanguageTag | language tag} is te be constructed.
    * @param options - (optional) set of {@link Bcp47.ILanguageTagInitOptions | init options}
    * to guide the validation and normalization of this tag.

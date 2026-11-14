@@ -24,7 +24,8 @@ import * as Converters from './packlets/converters';
 import * as FileTree from './packlets/file-tree';
 import * as JsonCompatible from './packlets/json-compatible';
 import * as JsonFile from './packlets/json-file';
+import * as JsonSchema from './packlets/json-schema-builder';
 import * as Validators from './packlets/validators';
 
 export * from './packlets/json';
-export { Converters, FileTree, JsonCompatible, JsonFile, Validators };
+export { Converters, FileTree, JsonCompatible, JsonFile, JsonSchema, Validators };

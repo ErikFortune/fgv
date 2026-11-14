@@ -1,0 +1,18 @@
+id: heft-rig-coverage-gate
+status: shipped
+packages: ['(CI / heft rig)']
+prs: [518]
+closed: 2026-07-07
+summary:
+  intended: >
+    Make the coverage gate actually enforced in CI rather than nominally required.
+  shipped: >
+    CI runs `rush test`, so the coverage gate is enforced (#518).
+  diverged: >
+  sourceLine: ''
+keywords: ['coverage gate', 'ci enforcement', 'heft rig']
+sourceHash: e8aedab2f4d2ad5c
+artifactLoss: >
+  No result.md was ever written. Surviving artifacts: `brief.md` and `findings.md`. The summary
+  above is reconstructed from git history; diverged and sourceLine are blank because
+  the evidence to fill them does not exist.

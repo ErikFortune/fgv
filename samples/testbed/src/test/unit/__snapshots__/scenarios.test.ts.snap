@@ -1,0 +1,34 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`@fgv/testbed scenario registry registry exposes the expected scenario ids (snapshot) 1`] = `
+Array [
+  "anthropic-client-tools",
+  "anthropic-client-tools-fable",
+  "openai-client-tools",
+  "gemini-client-tools",
+  "xai-client-tools",
+  "gate-deny-client-tools",
+  "image-generation",
+  "streaming-chat",
+  "safer-fetch-guard",
+  "local-classifier-safety",
+  "local-embedding-search",
+  "local-summarization",
+  "mcp-probe",
+  "memory-tools-gate",
+  "cross-provider-embedding-search",
+  "sqlite-vec-memory-persistence",
+  "sqlite-vec-fragment-persistence",
+  "openai-model-tiers",
+  "anthropic-model-tiers",
+  "google-gemini-model-tiers",
+  "xai-grok-model-tiers",
+  "openai-structured-output",
+  "anthropic-structured-output",
+  "google-gemini-structured-output",
+  "xai-grok-structured-output",
+  "xai-cache-probe",
+  "wire-probe",
+  "agent-tasks",
+]
+`;

@@ -1,0 +1,48 @@
+[**@fgv Monorepo API Documentation**](../../../../../README.md)
+
+***
+
+[@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-extras](../../../README.md) / [AiAssist](../README.md) / IClientToolLoopParams
+
+# Interface: IClientToolLoopParams
+
+Parameters for `runClientToolLoop`: one client-tool turn's parameters, which ride
+every round unchanged, plus the loop's own bounds.
+
+## Remarks
+
+`continuationMessages` is the loop's to manage, so it is not a parameter. `signal` is the
+caller's; each round is handed a signal of the loop's own that aborts when the caller's does or
+when the deadline expires. `clock` times rounds here and calls inside each turn. `model` is
+passed through as given: the loop does no model resolution.
+
+## Extends
+
+- `Omit`\<[`IExecuteClientToolTurnParams`](IExecuteClientToolTurnParams.md), `"continuationMessages"`\>
+
+## Properties
+
+| Property | Modifier | Type | Description |
+| ------ | ------ | ------ | ------ |
+| <a id="property-apikey"></a> `apiKey` | `readonly` | `string` | API key for authentication. |
+| <a id="property-cache"></a> `cache?` | `readonly` | [`IAiCacheRequest`](IAiCacheRequest.md) | Prompt-caching plan for this request. Omitted, nothing cache-related is sent — the request body is byte-identical to a build predating this feature. See [AiAssist.IAiCacheRequest](IAiCacheRequest.md). **Remarks** `executeClientToolTurn` represents a single round of a multi-round tool loop; a caller driving several rounds passes this on **each** call, and it is validated against — and applied to — that round's own `system` each time, never cached across rounds. Gated per provider exactly as `IProviderCompletionParams.cache` is on the non-streaming path. |
+| <a id="property-clienttools"></a> `clientTools` | `readonly` | readonly [`IAiClientTool`](IAiClientTool.md)\<`unknown`\>[] | Client-defined tools available for the model to call. |
+| <a id="property-clock"></a> `clock?` | `readonly` | () => `number` | Monotonic clock in milliseconds that each call's `IAiClientToolCallSummary.durationMs` is measured with. Defaults to `performance.now`; inject one to make timing deterministic in tests. |
+| <a id="property-deadlinems"></a> `deadlineMs?` | `readonly` | `number` | Bound on the whole loop, in milliseconds. Absent means none. Same range rules as `raceStopConditions`. |
+| <a id="property-descriptor"></a> `descriptor` | `readonly` | [`IAiProviderDescriptor`](IAiProviderDescriptor.md) | The provider descriptor for routing (Anthropic / OpenAI / Gemini). |
+| <a id="property-endpoint"></a> `endpoint?` | `readonly` | `string` | Optional override of the descriptor's default base URL. Same semantics as the non-streaming completion path and `callProviderCompletionStream`: a well-formed `http`/`https` URL is substituted for `descriptor.baseUrl` when composing the per-format request, with the per-format suffix appended unchanged. Validated at the dispatcher; auth shape is unaffected. Use this to point a client-tool turn at a local / LAN OpenAI-compatible server (Ollama, LM Studio, llama.cpp). Schemas sent to an overridden endpoint — client-tool parameters and structured-output schemas — are adapted with the conservative keyword table (`JsonSchema.unverifiedWireSchemaKeywords`), since the provider's documentation describes its own endpoint, unless `verifiedEndpoint` asserts this one is the provider itself. |
+| <a id="property-logger"></a> `logger?` | `readonly` | [`ILogger`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | Optional logger for diagnostics. |
+| <a id="property-maxrounds"></a> `maxRounds` | `readonly` | `number` | At most this many provider rounds. Required; a positive integer. |
+| <a id="property-maxtokens"></a> `maxTokens?` | `readonly` | `number` | Optional cap on generated output tokens, mapped to each provider's native field: Anthropic `max_tokens`, OpenAI/xAI Responses `max_output_tokens` (client-tool turns always route OpenAI through the Responses API), Gemini `generationConfig.maxOutputTokens`. When unset, every provider except Anthropic omits the field and applies its own default; Anthropic's Messages API requires the field, so it falls back to `DEFAULT_ANTHROPIC_MAX_TOKENS`. |
+| <a id="property-messages"></a> `messages` | `readonly` | readonly [`IChatMessage`](IChatMessage.md)[] | The ordered conversation turns. Must be non-empty; the last entry is the current `user` turn and the preceding entries are history. |
+| <a id="property-model"></a> `model?` | `readonly` | `string` | Resolved model string (pre-resolved by the caller). When omitted, uses the descriptor's default model. |
+| <a id="property-observer"></a> `observer?` | `readonly` | [`IClientToolLoopObserver`](IClientToolLoopObserver.md) | Read-only hooks into the running loop. |
+| <a id="property-onbeforetoolexecute"></a> `onBeforeToolExecute?` | `readonly` | (`tool`, `args`) => `Promise`\<[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IToolExecutionDecision`](../type-aliases/IToolExecutionDecision.md)\>\> | Optional host gate invoked for each client-tool call **after** the model's raw args have been validated against the tool's `parametersSchema` and **before** `tool.execute(...)` runs. The full `tool` (including `tool.config.annotations`) and the validated `args` are passed so gate logic can key off a tool's behavior annotations (e.g. deny a `destructiveHint` call pending confirmation). Returning `{ action: 'proceed' }` (or omitting the callback) runs `execute` normally. Returning `{ action: 'deny', reason }` skips `execute` and synthesizes a denial tool-result carrying `reason` into the continuation (the model sees the denial and can react); **the turn continues**. A callback that returns `Result.fail` or rejects is a hard error that **terminates the turn** (fails `nextTurn` + emits an inline `error` event) — distinct from a `tool.execute` failure, which continues the turn with an `isError` result. A deny must therefore be explicit. |
+| <a id="property-resolvedthinking"></a> `resolvedThinking?` | `readonly` | [`IResolvedThinkingConfig`](IResolvedThinkingConfig.md) | Optional resolved thinking config (pre-resolved by the caller). Sent as built, except that a thinking-off value aimed at a model in `thinkingRequiredModelPrefixes` — `anthropicThinkingDisabled` with no `anthropicEffort`, an OpenAI-format `openAiEffort` / `xaiEffort` of `'none'`, or a Gemini `geminiThinkingBudget` of `0` — is refused before the wire, since the provider rejects it. On Gemini, a `geminiThinkingLevel` the model does not accept (one its level declaration does not list, or any level on a model in `geminiThinkingLevelRejectedModelPrefixes`), and a level and a budget together, are refused too. |
+| <a id="property-schedule"></a> `schedule?` | `readonly` | [`ScheduleTimer`](../../AsyncControl/type-aliases/ScheduleTimer.md) | Timer the deadline is armed through. Defaults to `setTimeout` / `clearTimeout`. |
+| <a id="property-signal"></a> `signal?` | `readonly` | `AbortSignal` | Optional abort signal. |
+| <a id="property-system"></a> `system?` | `readonly` | `string` | System instructions (schema docs, format rules, general guidance). |
+| <a id="property-temperature"></a> `temperature?` | `readonly` | `number` | Sampling temperature. Sent to the provider only when explicitly provided; omitted otherwise so the provider's own default applies. Many current-gen models reject a non-default value; a model on `IAiProviderDescriptor.samplingParamsRejectedModelPrefixes` still accepts the descriptor's `samplingParamsAcceptedTemperature`, with or without thinking, and is refused any other value before the wire; a model on `IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes` applies the same rule unless the request turns thinking off (effort `'none'`), when any value is sent. Beside a `resolvedThinking` effort, a temperature the provider's thinking mode rejects is refused before the wire too, as on the completion and streaming paths, rather than dropped. |
+| <a id="property-toolconflictpolicy"></a> `toolConflictPolicy?` | `readonly` | [`AiToolConflictPolicy`](../type-aliases/AiToolConflictPolicy.md) | What to do when this provider declares one of the requested server tools mutually exclusive with client tools (see [AiAssist.IAiProviderDescriptor.serverToolsExclusiveWithClientTools](IAiProviderDescriptor.md#property-servertoolsexclusivewithclienttools)). Defaults to `'drop-server-tools'` — the client tools this host registered for the turn are kept and the server tool is dropped. **Remarks** Whatever the policy, the turn result's `toolConflicts` says what actually happened, so a degraded turn is never a silent one. Pass `'fail'` for the pre-policy behavior: a `Result.fail` up front, before any wire call. |
+| <a id="property-tools"></a> `tools?` | `readonly` | readonly [`IAiWebSearchToolConfig`](IAiWebSearchToolConfig.md)[] | Server-side tools to include. |
+| <a id="property-verifiedendpoint"></a> `verifiedEndpoint?` | `readonly` | [`IAiVerifiedEndpoint`](IAiVerifiedEndpoint.md) | The host's assertion that `endpoint` reaches the descriptor's own provider, so this request's schemas are adapted with that provider's keyword table instead of the conservative one. Ignored without `endpoint`, and honoured only as `IAiVerifiedEndpoint` describes. |

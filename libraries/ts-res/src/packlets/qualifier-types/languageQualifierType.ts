@@ -64,15 +64,14 @@ export class LanguageQualifierType extends QualifierType<
   JsonCompatibleType<Config.ILanguageQualifierTypeConfig>
 > {
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
+   * {@inheritDoc QualifierTypes.IQualifierType.systemTypeName}
    */
   public readonly systemTypeName: QualifierTypeName = Convert.qualifierTypeName.convert('language').orThrow();
 
   /**
    * Creates a new instance of a {@link QualifierTypes.LanguageQualifierType | language qualifier type}.
-   * @param name - Optional name for the qualifier type. Defaults to 'language'.
-   * @param allowContextList - Optional flag indicating whether the context can be a
-   * list of values. Defaults to `true`.
+   * @param params - The {@link QualifierTypes.ILanguageQualifierTypeCreateParams | create parameters}
+   * for this qualifier type.
    * @public
    */
   protected constructor({ name, allowContextList, index }: ILanguageQualifierTypeCreateParams) {
@@ -119,7 +118,7 @@ export class LanguageQualifierType extends QualifierType<
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.isValidConditionValue}
+   * {@inheritDoc QualifierTypes.IQualifierType.isValidConditionValue}
    */
   public isValidConditionValue(value: string): value is QualifierConditionValue {
     return Bcp47.tag(value)
@@ -139,7 +138,7 @@ export class LanguageQualifierType extends QualifierType<
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
+   * {@inheritDoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
   public getConfigurationJson(): Result<JsonCompatibleType<Config.ISystemLanguageQualifierTypeConfig>> {
     return succeed({
@@ -152,7 +151,7 @@ export class LanguageQualifierType extends QualifierType<
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
+   * {@inheritDoc QualifierTypes.IQualifierType.validateConfigurationJson}
    */
   public validateConfigurationJson(
     from: unknown

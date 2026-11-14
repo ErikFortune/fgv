@@ -24,12 +24,13 @@ import {
   captureResult,
   DetailedResult,
   failWithDetail,
+  MessageAggregator,
   Result,
   succeed,
   succeedWithDetail,
-  MessageAggregator
+  Converter
 } from '@fgv/ts-utils';
-import { Converters as JsonConverters } from '@fgv/ts-json-base';
+import { Converters as JsonConverters, FileTree, JsonValue } from '@fgv/ts-json-base';
 import { ResourceManagerBuilder } from '../../resources';
 import { IImportable, IImportableJson, Importable } from '../importable';
 import { IImporter, ImporterResultDetail } from './importer';
@@ -42,6 +43,8 @@ import { FsItem, FsItemResultDetail } from '../fsItem';
  */
 export interface IFsItemImporterCreateParams {
   qualifiers: IReadOnlyQualifierCollector;
+  fileContentConverter?: Converter<JsonValue>;
+  fileContentExtensions?: ReadonlyArray<string>;
 }
 
 /**
@@ -55,6 +58,16 @@ export class FsItemImporter implements IImporter {
   public readonly qualifiers: IReadOnlyQualifierCollector;
 
   /**
+   * Optional converter used to parse raw file contents before they are exposed as JSON importables.
+   */
+  public readonly fileContentConverter?: Converter<JsonValue>;
+
+  /**
+   * Optional list of file extensions which should be parsed using the file content converter.
+   */
+  public readonly fileContentExtensions?: ReadonlyArray<string>;
+
+  /**
    * The types of {@link Import.IImportable | importables} that this importer can handle.
    */
   public readonly types: ReadonlyArray<string> = ['fsItem'];
@@ -65,6 +78,8 @@ export class FsItemImporter implements IImporter {
    */
   protected constructor(params: IFsItemImporterCreateParams) {
     this.qualifiers = params.qualifiers;
+    this.fileContentConverter = params.fileContentConverter;
+    this.fileContentExtensions = params.fileContentExtensions;
   }
 
   /**
@@ -77,7 +92,7 @@ export class FsItemImporter implements IImporter {
   }
 
   /**
-   * {@inheritdoc Import.Importers.IImporter.import}
+   * {@inheritDoc Import.Importers.IImporter.import}
    */
   public import(
     item: IImportable,
@@ -119,22 +134,42 @@ export class FsItemImporter implements IImporter {
         })
         .withDetail('failed', 'processed');
     } else if (fsItem.item.type === 'file') {
-      if (fsItem.item.extension === '.json') {
-        return fsItem.item
-          .getContents(JsonConverters.jsonValue)
-          .onSuccess((json) => {
-            const jsonItem: IImportableJson = {
-              type: 'json',
-              json,
-              context
-            };
-            return succeed([jsonItem]);
-          })
-          .withDetail('failed', 'processed');
+      if (!this._isSupportedFileExtension(fsItem.item.extension)) {
+        return succeedWithDetail([], 'skipped');
       }
+
+      return this._getJsonContents(fsItem.item)
+        .onSuccess((json) => {
+          const jsonItem: IImportableJson = {
+            type: 'json',
+            json,
+            context
+          };
+          return succeed([jsonItem]);
+        })
+        .withDetail('failed', 'processed');
     }
     /* c8 ignore next 2 - defensive coding: fallback case for unsupported file types */
     return succeedWithDetail([], 'skipped');
+  }
+
+  private _isSupportedFileExtension(extension: string): boolean {
+    return extension === '.json' || this._canConvertFileExtension(extension);
+  }
+
+  private _getJsonContents(file: FileTree.IFileTreeFileItem): Result<JsonValue> {
+    const converter = this.fileContentConverter;
+    if (converter !== undefined) {
+      return file.getRawContents().onSuccess((contents) => converter.convert(contents));
+    }
+
+    return file.getContents(JsonConverters.jsonValue);
+  }
+
+  private _canConvertFileExtension(extension: string): boolean {
+    return (
+      this.fileContentConverter !== undefined && this.fileContentExtensions?.includes(extension) === true
+    );
   }
 
   /**

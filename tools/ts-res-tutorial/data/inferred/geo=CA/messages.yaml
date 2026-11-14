@@ -1,0 +1,17 @@
+# Token-explicit territory qualifier in a parent folder.
+#
+# File path:   data/inferred/geo=CA/messages.yaml
+# Resource id: inferred.messages.text
+# Conditions:  currentTerritory=CA
+#
+# The folder name "geo=CA" uses the explicit "token=value" form. The
+# token "geo" was declared on the currentTerritory qualifier in
+# system.yaml - token lookups first try qualifier name, then qualifier
+# token, so this folder maps to currentTerritory=CA regardless of
+# whether tokenIsOptional is set.
+candidates:
+  - id: text
+    resourceTypeName: json
+    json:
+      hello: Hello there, eh
+      source: 'TERRITORY: CA (inferred from "geo=CA" folder)'

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-bcp47",
+      "comment": "Fix: validation failures render the offending value safely, so a cyclic input fails instead of throwing.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-bcp47",
+  "email": "noreply@anthropic.com"
+}

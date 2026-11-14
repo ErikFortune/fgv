@@ -1,0 +1,225 @@
+# FGV Library Capabilities — index
+
+**Before writing utility-shaped code, look here.** If a capability is listed, use the existing
+library rather than reimplementing it. This file is the **index**; the detail lives in each
+package's `CAPABILITIES.md`, linked below.
+
+**Repository:** https://github.com/ErikFortune/fgv (release branch)
+
+## How to use this
+
+1. Scan the shortcuts below for your question, or the package table for the area.
+2. Follow the link to that package's `CAPABILITIES.md` for the full surface, the edge cases, and
+   the things not to hand-roll.
+3. If you cannot find what you need, **ask before adding a dependency or rolling your own** — the
+   answer is often "we can extend the primitive", which is cheaper than a workaround.
+
+**Why this file is small.** It is `@`-included into every session, so its size is paid whether or
+not the task touches a library. It stays an index on purpose, and a CI gate
+(`common/scripts/verify-capability-docs.mjs`) enforces that — including that every reflex below
+survives. If an entry cannot be said in one line, it is reference material and belongs in a package
+file.
+
+**Authority.** Each `CAPABILITIES.md` is authoritative for its package. A package `README.md` is
+getting-started material. This index routes; it does not duplicate.
+
+---
+
+## Packages
+
+| package | what it is |
+|---|---|
+| [`ts-utils`](libraries/ts-utils/CAPABILITIES.md) | `Result<T>`, converters, validators, collections, hashing, logging. The async `Result` family and `AsyncDetailedResult`. **Start here.** |
+| [`ts-utils-jest`](libraries/ts-utils-jest/CAPABILITIES.md) | Result-aware Jest matchers — `toSucceed`, `toFailWith`, `toSucceedAndSatisfy` |
+| [`ts-json-base`](libraries/ts-json-base/CAPABILITIES.md) | JSON types, converters, `FileTree`, and `JsonSchema` (typed schema = validator = wire, incl. `isSchemaValidator`) |
+| [`ts-json`](libraries/ts-json/CAPABILITIES.md) | JSON templating, conditional properties, deep merge, structural diff |
+| [`ts-bcp47`](libraries/ts-bcp47/CAPABILITIES.md) | BCP-47 language tags, similarity scoring, IANA + UN M.49 registries |
+| [`ts-res`](libraries/ts-res/CAPABILITIES.md) | Multidimensional conditional resources — i18n, theming, A/B, environment overrides |
+| [`ts-res-ui-components`](libraries/ts-res-ui-components/CAPABILITIES.md) | React UI for browsing/editing ts-res resources |
+| [`ts-random`](libraries/ts-random/CAPABILITIES.md) | Seeded, reproducible PRNG (`SeededRandomSource`, `PseudoRandomGenerator`) + word/char corpora. **mulberry32 — never for tokens, salts or keys** |
+| [`ts-extras`](libraries/ts-extras/CAPABILITIES.md) | Crypto, `safer-fetch`, `ai-assist` (LLM clients, structured output incl. `adaptOptionalToNullable`), `async-control`, CSV, zip, mustache |
+| [`ts-web-extras`](libraries/ts-web-extras/CAPABILITIES.md) | Browser siblings — crypto, File System Access `FileTree`, browser `safer-fetch` |
+| [`ts-extras-re2`](libraries/ts-extras-re2/CAPABILITIES.md) | RE2 (re2js) `patternValidator` for untrusted JSON Schema `pattern` — linear time, ECMA meaning or refusal |
+| [`ts-extras-argon2`](libraries/ts-extras-argon2/CAPABILITIES.md) · [`ts-web-extras-argon2`](libraries/ts-web-extras-argon2/CAPABILITIES.md) | Argon2id providers (Node native / browser WASM) |
+| [`ts-extras-webauthn`](libraries/ts-extras-webauthn/CAPABILITIES.md) · [`ts-web-extras-webauthn`](libraries/ts-web-extras-webauthn/CAPABILITIES.md) | WebAuthn Result boundary over `@simplewebauthn/*` |
+| [`ts-extras-transformers`](libraries/ts-extras-transformers/CAPABILITIES.md) · [`ts-web-extras-transformers`](libraries/ts-web-extras-transformers/CAPABILITIES.md) | Local HuggingFace models — classify, embed, summarize |
+| [`ts-extras-mcp`](libraries/ts-extras-mcp/CAPABILITIES.md) | MCP server tools → ai-assist client tools |
+| [`ts-extras-ollama`](libraries/ts-extras-ollama/CAPABILITIES.md) | Ollama *native* API — model management, grammar-constrained output |
+| [`ts-extras-system-one`](libraries/ts-extras-system-one/CAPABILITIES.md) | System-1 decision servers (CLM, openjev, Jev) — mandatory input bound, validated answers, no `confidence` |
+| [`ts-agent-tasks`](libraries/ts-agent-tasks/CAPABILITIES.md) | Agent task recording and mediation — envelope, lifecycle/observation/command/recovery unions, kind+command registry, finite capacity model, snapshot-only context renderer with pure inclusion receipts, FileTree task repository with one-record atomic commit, resident-index queries/paging/due/owed, principal-bound broker (authorized projected views, lists, hierarchy, reassignment), external sources (ordered reconciliation, reserved command dispatch, held uncertain outcomes), subscriptions with issued receipts and exact-ID acknowledgement, retention (disposition, subscription closure, command abandonment, evidence-checked pruning and archive), cascade stop (persisted intent over the whole subtree, frozen admission, honest partial results), model tools with bounded output — read-only by default, create/update/reassign, typed commands and cascade-stop requests opt-in; checked prompt composition (receipt acknowledgeable only against the exact body sent). **Records work; runs no agent loop** |
+| [`ts-agent-memory`](libraries/ts-agent-memory/CAPABILITIES.md) | Agent memory/knowledge vault — records, dedup (`dedupScopeFor`), edges, retrieval, `IVectorIndex` / `IFragmentVectorIndex`, `embedsKind` |
+| [`ts-agent-memory-sqlite-vec`](libraries/ts-agent-memory-sqlite-vec/CAPABILITIES.md) | Durable vector + fragment indexes (SQLite `vec0`) |
+| [`ts-prompt-assist`](libraries/ts-prompt-assist/CAPABILITIES.md) | Conditional prompt authoring, resolution, composition, observation |
+| [`ts-app-shell`](libraries/ts-app-shell/CAPABILITIES.md) | React app-shell primitives — bars, layout, theme, messages/toasts |
+| [`ts-http-storage`](libraries/ts-http-storage/CAPABILITIES.md) | Server side of the HTTP `FileTree` backend |
+
+---
+
+## Decision shortcuts
+
+*One line each. The symbols are the anchors — search a package file for the symbol to get the
+detail. `· pkg` names the owning package.*
+
+- **Error handling / fallible function?** → `Result<T>` · `ts-utils`
+- **Validating untyped JSON / config input?** → `Converters.object` · `ts-utils`
+- **Validating an existing class instance?** → `Validators` · `ts-utils`
+- **Putting an arbitrary value into a failure message?** → `formatValueForMessage`; never `JSON.stringify`, which throws on a cycle · `ts-utils`
+- **Map/collection with validation?** → `ResultMap` · `ts-utils`
+- **Constrain a string to one line — no breaks or control chars — where it will be framed?** → `singleLine`; a shape, NOT safety; closed domain → `enumeratedValue` · `ts-utils`
+- **Need a bounded most-recent-N ring of records with monotonic `seq` cursor paging…?** → `RetainingRingBuffer` · `ts-utils`
+- **Aggregating multiple errors?** → `mapResults` `MessageAggregator` · `ts-utils`
+- **N independent async `Result`-returning operations, with a concurrency bound?** → `mapResults` `mapResultsAsync` · `ts-utils`
+- **Async operation that is *serial by contract*, not a fan-out?** → `MessageAggregator` `populateObjectAsync` `firstSuccessAsync` · `ts-utils`
+- **Reading files?** → `FileTree` · `ts-json-base`
+- **Need a file read that fails loudly on malformed UTF-8 instead of silently…?** → `FileTree` `isStrictTextAccessors` `getFileTextStrict` · `ts-json-base`
+- **Copying a file or a whole directory tree between `FileTree`s?** → `FileTree` `copyItemInto` `copyContentsInto` · `ts-json-base`
+- **Loading/saving JSON files?** → `JsonFsHelper` · `ts-json-base`
+- **JSON templating or conditional inclusion?** → `JsonConverter` · `ts-json`
+- **Deep-merging JSON?** → `JsonEditor.mergeObjectInPlace` · `ts-json`
+- **Diffing JSON?** → `detailedDiff` `threeWayDiff` · `ts-json`
+- **Branded ID type?** → `Brand<T>` · `ts-utils`
+- **Generating a UUID?** → `ICryptoProvider` `generateUuid` · `ts-utils`
+- **Need a weighted random choice, or the same choice from a hash?** → `pickWeighted` `pickWeightedAt` · `ts-random`
+- **Hashing / canonical hash of an object?** → `Crc32Normalizer` `Md5Normalizer` · `ts-utils`
+- **Symmetric encryption / decryption (AES-GCM)?** → `KeyStore` · `ts-extras`
+- **Need AES-256-GCM encrypt/decrypt with a key you already hold?** → `ICryptoProvider` `KeyStore` · `ts-extras`
+- **Password-protected vault for keys / API keys / keypairs?** → `KeyStore` `addSecretFromPassword` `verifySecretFromPassword` · `ts-extras`
+- **Need a private-key storage backend so `KeyStore.addKeyPair` works?** → `FileTree` `KeyStore` `EncryptedFilePrivateKeyStorage` `IdbPrivateKeyStorage` · `ts-extras`
+- **PBKDF2 key derivation, ECIES wrap/unwrap, asymmetric keypairs?** → `ICryptoProvider` · `ts-extras`
+- **Need to hash / verify a password (PBKDF2)?** → `KeyStore` `addSecretFromPassword` `verifySecretFromPassword` · `ts-extras`
+- **Need to hash / verify a password with Argon2id?** → `KeyStore` `addSecretFromPassword` `verifySecretFromPassword` `addSecretFromPasswordArgon2id` · `ts-extras`
+- **Need an Argon2id provider (Node)?** → `NodeArgon2Provider` · `ts-extras-argon2`
+- **Need an Argon2id provider (browser / WASM)?** → `BrowserArgon2Provider` · `ts-web-extras-argon2`
+- **Need stable canonical JSON (RFC 8785)?** → `Crc32Normalizer` `canonicalize` · `ts-utils`
+- **Decoding base64 that arrived from somewhere you don't control?** → `fromBase64Strict` · `ts-extras`
+- **Need to encode/decode a public key as multibase SPKI?** → `ICryptoProvider` `exportPublicKeyAsMultibaseSpki` · `ts-extras`
+- **Need hybrid public-key encryption?** → `HpkeProvider` · `ts-extras`
+- **Need standalone HKDF-SHA256 key derivation?** → `HpkeProvider` · `ts-extras`
+- **Need X25519 key agreement?** → `ICryptoProvider` · `ts-extras`
+- **Need to sign data or verify a signature?** → `ICryptoProvider` · `ts-extras`
+- **Need HMAC-SHA256 authentication / MAC verification?** → `ICryptoProvider` `generateHmacKey` `importHmacKey` `hmacSha256` `timingSafeEqual` · `ts-extras`
+- **Need constant-time byte comparison?** → `ICryptoProvider` `timingSafeEqual` · `ts-extras`
+- **Parsing a JSON-shaped string (with optional inner validation)?** → `Converters.stringifiedJson` · `ts-json-base`
+- **Need typed JSON Schema for LLM tool authoring?** → `JsonSchema` `fromJson` · `ts-json-base`
+- **Need an absent-able field in a schema you send to OpenAI?** → `JsonSchema` `nullable` · `ts-json-base`
+- **Accepting untrusted JSON Schema `pattern`?** → `re2PatternValidator` · `ts-extras-re2`
+- **Asking an LLM for JSON and getting a validated `T`?** → `generateJsonCompletion` `JsonSchema` · `ts-extras`
+- **Need the provider to constrain its output, not just be asked to?** → `structuredOutput` · `ts-extras`
+- **Running a tool-use conversation with harness-side client tools?** → `executeClientToolTurn` `JsonSchema` · `ts-extras`
+- **Multi-round client-tool loop with a round cap, deadline and abort — or any async work bounded that way?** → `runClientToolLoop` `raceStopConditions` · `ts-extras`
+- **Stopping, or briefly holding still, every write a host makes (restore, snapshot, shutdown)?** → `WriteGate` `guard` `pause` · `ts-extras`
+- **Making an MCP server's tools callable from an ai-assist tool-use conversation?** → `executeClientToolTurn` `JsonSchema` `fromJson` `adaptMcpTools` · `ts-extras-mcp`
+- **Diagnosing an OpenAI/xAI Responses stream that completes empty?** → `executeClientToolTurn` · `ts-extras`
+- **Reading prompt-cache token counts off a completion (reads/writes, normalized)?** → `IAiCompletionUsage` `AiCacheReportingLevel` · `ts-extras`
+- **Placing an explicit prompt-cache breakpoint on an Anthropic/OpenAI request?** → `IAiCacheRequest` `validateAiCacheRequest` · `ts-extras`
+- **Prefix-sharing requests missing xAI's cache because they land on different servers?** → `IAiCacheRequest` `supportsPromptCacheRouting` · `ts-extras`
+- **Deriving a cache-breakpoint plan from a resolved prompt's composition?** → `toCacheRequest` · `ts-prompt-assist`
+- **Alerting on provider-API evolution affecting `@fgv/ts-extras/ai-assist`?** → `ILogger` `IStreamApiConfig` · `ts-extras`
+- **Stripping LLM Markdown fences from raw text?** → `extractJsonText` `fencedStringifiedJson` · `ts-extras`
+- **Diagnosing *why* an LLM's JSON response failed to parse?** → `classifyJsonParseFailure` · `ts-extras`
+- **Generating images from an LLM provider?** → `size` `quality` · `ts-extras`
+- **Declaring image generation capability on a provider?** → `IAiProviderDescriptor` `format` · `ts-extras`
+- **Looking up a model's image/embedding capability by id?** → `resolveImageCapability` · `ts-extras`
+- **Which `maxTokens` will a model accept?** → `resolveMaxOutputTokens` · `ts-extras`
+- **Enabling extended thinking / reasoning on LLM completions?** → `callProviderCompletion` `callProviderCompletionStream` · `ts-extras`
+- **Managing a local Ollama sidecar** → `callProviderEmbedding` `JsonSchema` · `ts-extras-ollama`
+- **Running a HuggingFace model locally with a Result boundary?** → `loadPipeline` `classify` · `ts-extras-transformers`
+- **Summarizing text locally vs. in the cloud?** → `summarize` · `ts-extras-transformers`
+- **Need a text embedding (`text → vector`)?** → `callProviderEmbedding` · `ts-extras-transformers`
+- **Embedding text via a cloud or self-hosted provider?** → `callProviderEmbedding` · `ts-extras`
+- **Calling a self-hosted Ollama or OpenAI-compatible model?** → `executeClientToolTurn` · `ts-extras`
+- **Asking a System-1 model (CLM, Jev) a typed yes/no, choice or score question?** → `askSystemOne` `noul` `choice` `score`; never truncate the state yourself · `ts-extras-system-one`
+- **Recording agent work (lifecycle, observations, commands), no runner?** → `ITaskEnvelope` `TaskLifecycle` `TaskKindRegistry` `TaskConverters` · `ts-agent-tasks`
+- **Rendering task snapshots into bounded prompt context, with an inclusion receipt?** → `TaskContextRenderer` `ITaskInclusionReceipt` · `ts-agent-tasks`
+- **Persisting agent task state + owed updates so a process crash loses neither?** → `FileTreeTaskRepository` `FileTree` · `ts-agent-tasks`
+- **Selecting agent tasks by scope, due time or owed update without reading records?** → `FileTreeTaskRepository` `runTaskRepositoryConformance` · `ts-agent-tasks`
+- **Opening a task repository at a host root, durable only if the root qualifies?** → `openOrInitializeTaskRepository` `probeTaskRepositoryRoot` · `ts-agent-tasks`
+- **Giving a principal (tool, actor) authorized, projected access to agent tasks?** → `TaskBroker` `ITaskAuthorization` `defaultTaskProjector` · `ts-agent-tasks`
+- **Draining a task subscription, acknowledging after your work commits?** → `TaskDeliveryPump` `IBoundTaskDelivery` · `ts-agent-tasks`
+- **Crash-durable retry, no scheduler?** → `DeferredObligations` `trustedKindAuthority` · `ts-agent-tasks`
+- **Tracking work an external executor runs — reconciled, never set optimistically?** → `ExternalTaskSource` `ITaskSource` `TaskBroker` · `ts-agent-tasks`
+- **Telling a consumer what changed in its tasks, acknowledging only what it was shown?** → `TaskBroker` `IBoundTaskDelivery` `ITaskCheckpointStore` · `ts-agent-tasks`
+- **Pausing or cancelling an agent task subtree, with an honest partial result?** → `requestStop` `reconcileStop` `releaseStop` `ISourceCapabilities` · `ts-agent-tasks`
+- **Ending an unacknowledged task obligation, or freeing a full task repository?** → `TaskBroker` `dispose` `closeSubscription` `cleanup` · `ts-agent-tasks`
+- **Giving a model read-only, bounded tools over the agent tasks a principal may see?** → `createTaskTools` `IBoundTaskView` · `ts-agent-tasks`
+- **Letting a model create, update or reassign agent tasks, authorized per call?** → `createTaskTools` `ITaskMutationToolOptions` · `ts-agent-tasks`
+- **Letting a model request a stop on a tree of agent tasks, but never release it?** → `createTaskTools` `ITaskStopToolOptions` · `ts-agent-tasks`
+- **Putting agent task context in a cacheable prompt, acknowledging only what was sent?** → `checkTaskPrompt` `prepareTaskPrompt` `taskPromptRecord` · `ts-agent-tasks`
+- **Storing agent memory / a knowledge vault?** → `FileTree` `FileTreeMemoryStore` · `ts-agent-memory`
+- **Semantic recall over that vault** → `InMemoryCosineIndex` `SqliteVecVectorIndex` `SqliteVecFragmentIndex` `FragmentSemanticRetriever` · `ts-agent-memory`
+- **Vector/fragment embeddings must survive a process restart?** → `SqliteVecVectorIndex` `SqliteVecFragmentIndex` · `ts-agent-memory-sqlite-vec`
+- **Need to know whether a store's derived state is consistent with its records** → `IVectorIndex` · `ts-agent-memory`
+- **A memory read-modify-write that must not lose a concurrent update?** → `FileTreeMemoryStore` `MemoryWriteResult` · `ts-agent-memory`
+- **Need to measure a `FileTreeMemoryStore`'s resident-memory / open-cost behavior?** → `FileTree` `FileTreeMemoryStore` · `ts-agent-memory`
+- **Reading an envelope's embedding reference, or checking whether it has one?** → `embeddingRefOf` · `ts-agent-memory`
+- **Listing records from a store?** → `addressGuard` `allowAnyAddress` `scanEveryRecord` `listEntries` · `ts-agent-memory`
+- **Building a retriever directly?** → `FileTree` `FileTreeMemoryStore` `listEntries` · `ts-agent-memory`
+- **Fetching a URL you do not fully control (server-side)?** → `saferFetchJson` `saferFetchBytes` `addressGuard` `blockPrivateNetworks` `allowContentTypes`; never echo `FetchFailureReason` to an untrusted caller · `ts-extras`
+- **Streaming a response through the SSRF guard, or handing a guarded `fetch` to a library (MCP, SSE)?** → `createGuardedFetch` `blockPrivateNetworks` `GuardedFetchError` · `ts-extras`
+- **Fetching a URL from a browser?** → `addressGuard` `allowAnyAddress` · `ts-web-extras`
+- **Parsing / comparing language tags?** → `Bcp47.tag` `Bcp47.similarity` · `ts-bcp47`
+- **Context-conditional resources?** → `ResourceManager` · `ts-res`
+- **Authoring, versioning, or resolving LLM prompts that need to vary on context or…?** → `PromptLibrary` · `ts-prompt-assist`
+- **Binding a prompt slot to the body of another prompt?** → `PromptLibrary` · `ts-prompt-assist`
+- **Composing one prompt from several resolved prompts?** → `PromptLibrary` `HorizontalComposer` · `ts-prompt-assist`
+- **Observing every prompt resolution as it flows?** → `RetainingRingBuffer` `PromptLibrary` `PromptObservationStore` `resolveJsonOutput` · `ts-prompt-assist`
+- **Validating a JSON-shaped LLM response against a typed `Converter<T>` + validator…?** → `fencedStringifiedJson` `PromptLibrary` `resolveJsonOutput` · `ts-prompt-assist`
+- **Enforcing safety policies on a resolved prompt?** → `PromptLibrary` · `ts-prompt-assist`
+- **Mustache rendering for LLM prompts?** → `MustacheTemplate` · `ts-extras`
+- **What is a rendered template or resolved prompt made of?** → `renderWithSegments` `IPromptComposition` · `ts-extras` `ts-prompt-assist`
+- **Is a resolved prompt's section ordering or slot stability hostile to prompt caching?** → `analyzePromptCacheStability` `IPromptComposition.cacheFindings` `PromptCacheStability` · `ts-prompt-assist`
+- **Jest matchers for `Result<T>`?** → `toSucceedAndSatisfy` `toFailWith` · `ts-utils-jest`
+- **CSV / record-jar?** → `csv` · `ts-extras`
+- **Numeric / date / orderable range?** → `RangeOf<T>` · `ts-extras`
+- **Need a Result-integrated WebAuthn registration / authentication primitive…?** → `generateRegistrationOptions` `verifyRegistrationResponse` · `ts-extras-webauthn`
+- **Need to start a WebAuthn ceremony in the browser?** → `startRegistration` `startAuthentication` · `ts-web-extras-webauthn`
+- **WebAuthn: PRF helpers, challenge stores, ceremony orchestration?** → **not in scope** — call `@simplewebauthn/*` directly · `ts-extras-webauthn`
+
+---
+
+## Cross-runtime interfaces
+
+Code against the interface; pick the implementation at the composition root. Compact form — the
+full table with per-interface notes is in
+[`.ai/conventions/cross-runtime-interfaces.md`](.ai/conventions/cross-runtime-interfaces.md).
+
+| interface | Node | browser |
+|---|---|---|
+| `FileTree` | `FsTree` · `ZipFileTreeAccessors` | File System Access, `localStorage`, HTTP accessors |
+| `ICryptoProvider` | `NodeCryptoProvider` | `BrowserCryptoProvider` |
+| `IArgon2idProvider` | `NodeArgon2Provider` | `BrowserArgon2Provider` |
+| `IPrivateKeyStorage` | `EncryptedFilePrivateKeyStorage` | `IdbPrivateKeyStorage` |
+| safer-fetch | `saferFetchJson` + `blockPrivateNetworks` | `SaferFetch.browserSaferFetchJson` + `allowAnyAddress` |
+| transformers facade | `@fgv/ts-extras-transformers` | `@fgv/ts-web-extras-transformers` |
+
+**Result-integration boundary** is the package shape used for thin wrappers over a well-maintained
+upstream (`ts-extras-webauthn`, `-transformers`, `-mcp`, `-ollama`, `ts-agent-memory-sqlite-vec`):
+convert throws into `Result<T>`, expose ~5–8 primitives, and enumerate what is explicitly **not** in
+scope. Dependency posture is per-package and deliberately not uniform — peer when the consumer must
+control the version or instance, direct otherwise. Full convention:
+[`.ai/conventions/result-integration-boundary.md`](.ai/conventions/result-integration-boundary.md).
+
+---
+
+## Recent additions
+
+*Newest first, bounded. **Generated** from each completed stream's `summary.sourceLine` by
+`common/scripts/generate-capability-feed.mjs`; CI fails if it is stale. Do not hand-edit inside the
+markers.*
+
+<!-- BEGIN GENERATED: recent-additions -->
+
+- **2026-11-14** — MCP's taskSupport vocabulary and a converter for it now ship in ai-assist, so a browser consumer can use them without the Node-only… ([#783](https://github.com/ErikFortune/fgv/pull/783)) · `ts-extras` `ts-extras-mcp`
+- **2026-11-12** — Only the principals an agent-task subscription names may bind and drain its delivery, and disposeWithheld ends withheld obligations… ([#781](https://github.com/ErikFortune/fgv/pull/781)) · `ts-agent-tasks` `testbed`
+- **2026-11-11** — ai-assist's @anthropic:fable alias now reaches Claude Fable 5.2, and Fable 5.2 and Mythos 5.2 get JSON-outputs structured output… ([#773](https://github.com/ErikFortune/fgv/pull/773)) · `ts-extras` `testbed`
+- **2026-11-11** — ai-assist sends Gemini's thinkingLevel from a declared per-model table — 'none' is minimal on Flash-Lite — and @google-gemini:pro… ([#775](https://github.com/ErikFortune/fgv/pull/775)) · `ts-extras` `testbed`
+- **2026-11-11** — ai-assist sends temperature 1 beside a reasoning effort on GPT-6 Luna and refuses any other value while it reasons, from a declared… ([#776](https://github.com/ErikFortune/fgv/pull/776)) · `ts-extras` `testbed`
+- **2026-11-11** — ai-assist sends max_completion_tokens to Groq and xAI, refuses a hand-built 'none' effort on models that cannot turn thinking off… ([#774](https://github.com/ErikFortune/fgv/pull/774)) · `ts-extras` `ts-extras-mcp` `ts-res-cli` `testbed`
+- **2026-11-10** — ai-assist sends temperature 1 to GPT-6.1 Sol and GPT-6 Astra, with or without reasoning effort, and still refuses any other value… ([#771](https://github.com/ErikFortune/fgv/pull/771)) · `ts-extras` `testbed`
+- **2026-11-09** — ai-assist turns thinking off on Claude Sonnet 5.5 with its own between_tools value, declared per model, and stops claiming… ([#769](https://github.com/ErikFortune/fgv/pull/769)) · `ts-extras` `testbed`
+- **2026-11-08** — ai-assist aliases now reach current models — Claude Sonnet 5.5 and Haiku 5.5, GPT-6.1 Sol, Nano Banana 2.1, and new Groq and… ([#767](https://github.com/ErikFortune/fgv/pull/767)) · `ts-extras` `testbed`
+- **2026-11-08** — resolveMaxOutputTokens tells you the largest maxTokens the model a call will use accepts, from the same ModelSpec and tier, so a… ([#765](https://github.com/ErikFortune/fgv/pull/765)) · `ts-extras`
+
+*Showing the 10 most recent of 90. Per-package history is in each `CAPABILITIES.md`.*
+
+<!-- END GENERATED: recent-additions -->

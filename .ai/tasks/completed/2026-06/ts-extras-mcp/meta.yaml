@@ -1,0 +1,83 @@
+id: ts-extras-mcp
+status: shipped
+packages:
+  - '@fgv/ts-extras-mcp'
+  - '@fgv/testbed'
+prs: [469, 471, 479]
+opened: 2026-06-06
+closed: 2026-06
+summary:
+  intended: >
+    Ship `@fgv/ts-extras-mcp` (Node) as a Result-integration boundary over
+    `@modelcontextprotocol/sdk` ^1.29.0 — transports, session lifecycle, `listMcpTools`
+    (cursor-paginated), `callMcpTool` (`isError` → `Result.fail`, never swallowed), and the
+    headline `adaptMcpTools` that turns each discovered MCP tool into an
+    `AiAssist.IAiClientTool` for `executeClientToolTurn`, so any MCP server's tools become
+    callable across all four cloud providers with no per-provider work. Two load-bearing
+    constraints from Erik: (1) graceful degradation with a NOISY warn — an `inputSchema`
+    outside the `JsonSchema.fromJson` subset excludes just that tool, surfaces it structurally
+    on `skipped[]` with name + JSON-pointer reason + raw schema, and warns with all three;
+    (2) a `samples/testbed` probe that reports a server's full compatibility without wiring it
+    into an app. Deps per the boundary convention (SDK direct, `@fgv/*` peer); browser sibling,
+    resources/prompts/sampling, OAuth, multimodal passthrough and cross-server namespacing
+    explicitly deferred; do NOT widen `JsonSchema.fromJson` here.
+  shipped: >
+    All of it, in three merged PRs. #469 landed the package (7 primitives; every
+    `@modelcontextprotocol/sdk` import confined to `src/packlets/mcp/sdk.ts` so the announced
+    v2 rename is a one-file change), both constraints, and the `mcp-probe` testbed scenario, at
+    100% coverage with the SDK mocked at the isolation seam. #471 added an unbriefed end-to-end
+    pass — a real in-memory MCP server (real SDK `Server`/`Client`, real initialize handshake,
+    real `listTools`/`callTool`) exercising all five `fromJson`-rejected classes
+    (`$ref`/`oneOf`/`anyOf`/`pattern`/union `type[]`) and asserting the warn text actually
+    contains the raw schema. It found no production bug; it closed the fidelity gap the
+    SDK-mocked slice-1 tests left. #479 promoted the integration branch to `release`.
+    `LIBRARY_CAPABILITIES.md` entry, decision shortcut, README with the NOT-in-scope list and
+    the stdio trust-boundary note, and the `FUTURE.md` slice-2 section all shipped with it.
+  diverged: >
+    The cut list did not move — README, `LIBRARY_CAPABILITIES.md` and `FUTURE.md` all carry
+    exactly the five deferrals the brief scoped out, plus the untouched `fromJson`-widening
+    lever. Three deltas, all recorded in flight. (1) The probe takes its server spec from
+    environment variables (`MCP_PROBE_URL` / `MCP_PROBE_COMMAND`), not the brief's "via args" —
+    the testbed CLI does not forward trailing argv to scenarios, so honoring the contract beat
+    widening `runTestbedCli`; flagged in design §8 for ratification and ratified by shipping.
+    (2) `@fgv/ts-extras` and `@fgv/ts-json-base` were classified peer deps (the brief named
+    only `@fgv/ts-utils` as peer) because `IAiClientTool` / `ISchemaValidator` instances cross
+    the boundary; also design §8, also ratified by shipping. (3) PR #471 is entirely unbriefed:
+    the stream chose to re-verify both constraints against a real SDK rather than trust a
+    coverage number over a mocked seam — the "coverage measures the lines you have, not the
+    test class you should have" failure mode, caught by the stream itself. It surfaced one new
+    deferral (no public seam to inject a custom transport, so external consumers cannot drive
+    the package in-process against a fake server), recorded at `docs/FUTURE.md`.
+  sourceLine: 'Shipped `@fgv/ts-extras-mcp` (Node) — the MCP → ai-assist client-tools bridge: connect to an MCP server, discover its tools, and `adaptMcpTools` each into an `AiAssist.IAiClientTool` that drops into `executeClientToolTurn`.'
+keywords:
+  - model-context-protocol
+  - mcp-client
+  - result-integration-boundary
+  - sdk-isolation-seam
+  - graceful-schema-degradation
+  - json-schema-subset-mismatch
+  - fromJson
+  - client-tools
+  - executeClientToolTurn
+  - cursor-pagination
+  - stdio-transport
+  - streamable-http-transport
+  - subprocess-trust-boundary
+  - compatibility-probe
+  - testbed-scenario
+  - in-memory-transport-e2e
+relatedStreams:
+  - id: ai-assist-client-tools
+    relationship: >
+      layer 1 — shipped `IAiClientTool` / `executeClientToolTurn`; its design §3.3 is this
+      stream's baseline design for the package
+  - id: ai-assist-tool-annotations
+    relationship: >
+      downstream — later threaded MCP `Tool.annotations` through `adaptMcpTools` (PR #524),
+      so the adapter as it stands today carries a field this stream did not ship
+  - id: task-corpus-index
+    relationship: >
+      references this package to establish that the missing piece for a corpus MCP server is a
+      *server*, not a capability — `ts-extras-mcp` is the client half and puts a server out of
+      scope
+sourceHash: 01e04418cede1bfa

@@ -44,8 +44,7 @@ export function splitResourceId(id: string | undefined): Result<ResourceName[]> 
  * Joins a list of {@link ResourceId | resource ID} or {@link ResourceName | resource name} with
  * to create a new {@link ResourceId | resource ID}. Fails if resulting ID is invalid or empty.
  *
- * @param base - The base name or ID to join.
- * @param names - Additional names to join.
+ * @param ids - The names or IDs to join.
  * @returns `Success` with the new ID if the base and names are valid, or `Failure` with an error message
  * if not.
  * @public
@@ -66,8 +65,7 @@ export function joinResourceIds(...ids: (string | undefined)[]): Result<Resource
  * Joins a list of {@link ResourceId | resource ID} or {@link ResourceName | resource name} with
  * to create a new {@link ResourceId | resource ID}. Returns `undefined` if no names are defined.
  *
- * @param base - The base name or ID to join.
- * @param names - Additional names to join.
+ * @param ids - The names or IDs to join.
  * @returns `Success` with the new ID if the base and names are valid, `Success` with `undefined`
  * if names were present, or `Failure` with an error message if the resulting id is invalid.
  * @public

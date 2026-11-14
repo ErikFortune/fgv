@@ -20,49 +20,70 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, DetailedResult, fail, failWithDetail, Result, succeed, Success } from '@fgv/ts-utils';
 import { Converter, Validator } from '@fgv/ts-utils';
 import { JsonValue } from '../json';
-import { IFileTreeAccessors, IFileTreeFileItem } from './fileTreeAccessors';
+import {
+  IFileTreeAccessors,
+  IMutableBinaryFileTreeFileItem,
+  IStrictTextFileTreeFileItem,
+  isBinaryAccessors,
+  isStrictTextAccessors,
+  isMutableAccessors,
+  isMutableBinaryAccessors,
+  SaveDetail
+} from './fileTreeAccessors';
 
 /**
  * Class representing a file in a file tree.
+ *
+ * @remarks
+ * Implements the optional binary capability
+ * ({@link FileTree.IMutableBinaryFileTreeFileItem}) and the optional strict-text
+ * capability ({@link FileTree.IStrictTextFileTreeFileItem}) by delegating to the
+ * underlying accessors. As with
+ * {@link FileTree.FileItem.setRawContents | setRawContents} and
+ * {@link FileTree.FileItem.getIsMutable | getIsMutable}, the byte methods and
+ * {@link FileTree.FileItem.getTextStrict | getTextStrict} report an accessor that
+ * lacks the capability as a `Failure` rather than by omitting the method.
  * @public
  */
-export class FileItem<TCT extends string = string> implements IFileTreeFileItem<TCT> {
+export class FileItem<TCT extends string = string>
+  implements IMutableBinaryFileTreeFileItem<TCT>, IStrictTextFileTreeFileItem<TCT>
+{
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem."type"}
+   * {@inheritDoc FileTree.IFileTreeFileItem."type"}
    */
   public readonly type: 'file' = 'file';
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.absolutePath}
+   * {@inheritDoc FileTree.IFileTreeFileItem.absolutePath}
    */
   public readonly absolutePath: string;
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.name}
+   * {@inheritDoc FileTree.IFileTreeFileItem.name}
    */
   public get name(): string {
     return this._hal.getBaseName(this.absolutePath);
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.baseName}
+   * {@inheritDoc FileTree.IFileTreeFileItem.baseName}
    */
   public get baseName(): string {
     return this._hal.getBaseName(this.absolutePath, this.extension);
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.extension}
+   * {@inheritDoc FileTree.IFileTreeFileItem.extension}
    */
   public get extension(): string {
     return this._hal.getExtension(this.absolutePath);
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.contentType}
+   * {@inheritDoc FileTree.IFileTreeFileItem.contentType}
    */
   public get contentType(): TCT | undefined {
     return this._contentType;
@@ -108,11 +129,24 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.(getContents:1)}
+   * Indicates whether this file can be saved.
+   * @returns `DetailedSuccess` with {@link FileTree.SaveCapability} if the file can be saved,
+   * or `DetailedFailure` with {@link FileTree.SaveFailureReason} if it cannot.
+   */
+  public getIsMutable(): DetailedResult<boolean, SaveDetail> {
+    if (isMutableAccessors(this._hal)) {
+      return this._hal.fileIsMutable(this.absolutePath);
+    }
+    /* c8 ignore next 2 - defensive: all current accessor implementations support mutation interface */
+    return failWithDetail(`${this.absolutePath}: mutation not supported`, 'not-supported');
+  }
+
+  /**
+   * {@inheritDoc FileTree.IFileTreeFileItem.getContents}
    */
   public getContents(): Result<JsonValue>;
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.(getContents:2)}
+   * {@inheritDoc FileTree.IFileTreeFileItem.getContents}
    */
   public getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
   public getContents<T>(converter?: Validator<T> | Converter<T>): Result<T | JsonValue> {
@@ -128,10 +162,40 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeFileItem.getRawContents}
+   * {@inheritDoc FileTree.IFileTreeFileItem.getRawContents}
    */
   public getRawContents(): Result<string> {
     return this._hal.getFileContents(this.absolutePath);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IStrictTextFileTreeFileItem.getTextStrict}
+   */
+  public getTextStrict(): Result<string> {
+    if (isStrictTextAccessors(this._hal)) {
+      return this._hal.getFileTextStrict(this.absolutePath);
+    }
+    return fail(`${this.absolutePath}: strict UTF-8 decoding is not supported by this store`);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IBinaryFileTreeFileItem.getRawBytes}
+   */
+  public getRawBytes(): Result<Uint8Array> {
+    if (isBinaryAccessors(this._hal)) {
+      return this._hal.getFileBytes(this.absolutePath);
+    }
+    return fail(`${this.absolutePath}: raw byte access not supported`);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableBinaryFileTreeFileItem.setRawBytes}
+   */
+  public setRawBytes(bytes: Uint8Array): Result<Uint8Array> {
+    if (isMutableBinaryAccessors(this._hal)) {
+      return this._hal.saveFileBytes(this.absolutePath, bytes);
+    }
+    return fail(`${this.absolutePath}: raw byte writes not supported`);
   }
 
   /**
@@ -143,16 +207,53 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
   }
 
   /**
+   * Sets the contents of the file from a JSON value.
+   * @param json - The JSON value to serialize and save.
+   * @returns `Success` if the file was saved, or `Failure` with an error message.
+   */
+  public setContents(json: JsonValue): Result<JsonValue> {
+    return captureResult(() => JSON.stringify(json, null, 2)).onSuccess((contents) =>
+      this.setRawContents(contents).onSuccess(() => Success.with(json))
+    );
+  }
+
+  /**
+   * Sets the raw contents of the file.
+   * @param contents - The string contents to save.
+   * @returns `Success` if the file was saved, or `Failure` with an error message.
+   */
+  public setRawContents(contents: string): Result<string> {
+    if (isMutableAccessors(this._hal)) {
+      return this._hal.saveFileContents(this.absolutePath, contents);
+    }
+    /* c8 ignore next 2 - defensive: all current accessor implementations support mutation interface */
+    return fail(`${this.absolutePath}: mutation not supported`);
+  }
+
+  /**
+   * Deletes this file from its backing store.
+   * @returns `Success` with `true` if the file was deleted, or `Failure` with an error message.
+   */
+  public delete(): Result<boolean> {
+    if (!isMutableAccessors(this._hal)) {
+      /* c8 ignore next 2 - defensive: all current accessor implementations support mutation interface */
+      return fail(`${this.absolutePath}: mutation not supported`);
+    }
+    return this._hal.deleteFile(this.absolutePath);
+  }
+
+  /**
    * Default function to infer the content type of a file.
    * @param filePath - The path of the file.
+   * @param provided - Optional supplied content type.
    * @returns `Success` with the content type of the file if successful, or
    * `Failure` with an error message otherwise.
    * @remarks This default implementation always returns `Success` with `undefined`.
    * @public
    */
   public static defaultInferContentType<TCT extends string = string>(
-    __filePath: string,
-    __provided?: string
+    filePath: string,
+    provided?: string
   ): Result<TCT | undefined> {
     return succeed(undefined);
   }
@@ -167,7 +268,7 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
    * @public
    */
   public static defaultAcceptContentType<TCT extends string = string>(
-    __filePath: string,
+    filePath: string,
     provided?: TCT
   ): Result<TCT | undefined> {
     return succeed(provided);

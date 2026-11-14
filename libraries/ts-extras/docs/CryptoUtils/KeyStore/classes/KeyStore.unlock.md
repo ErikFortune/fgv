@@ -1,0 +1,25 @@
+[Home](../../../README.md) > [CryptoUtils](../../README.md) > [KeyStore](../README.md) > [KeyStore](./KeyStore.md) > unlock
+
+## KeyStore.unlock() method
+
+Unlocks an existing key store with the master password.
+Decrypts the vault and loads secrets into memory.
+
+**Signature:**
+
+```typescript
+unlock(password: string): Promise<Result<KeyStore>>;
+```
+
+**Parameters:**
+
+<table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>password</td><td>string</td><td>The master password</td></tr>
+</tbody></table>
+
+**Returns:**
+
+Promise&lt;Result&lt;[KeyStore](../../../classes/KeyStore.md)&gt;&gt;
+
+Success with this instance when unlocked, Failure if password incorrect
