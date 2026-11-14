@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "Writable `FileTree`s: optional mutable, persistent, binary, strict-text and atomic-write capabilities, each with a type guard (`isMutableAccessors`, `isBinaryAccessors`, …). Filesystem and in-memory trees are writable when created with `mutable: true` (or a filter).",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "noreply@anthropic.com"
+}

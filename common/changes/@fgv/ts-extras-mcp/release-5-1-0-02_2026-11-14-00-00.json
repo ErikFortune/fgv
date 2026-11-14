@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-mcp",
+      "comment": "Stdio, HTTP and custom transports; `connectMcpSession`, `listMcpTools`, `callMcpTool` and `closeMcpSession` with timeouts, cancellation and a classified `McpFailureReason`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "noreply@anthropic.com"
+}

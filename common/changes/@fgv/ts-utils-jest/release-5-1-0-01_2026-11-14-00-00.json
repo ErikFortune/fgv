@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils-jest",
+      "comment": "Node ESM `import` of this package now works; in 5.0.2 it failed with `ERR_UNSUPPORTED_DIR_IMPORT`.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-utils-jest",
+  "email": "noreply@anthropic.com"
+}

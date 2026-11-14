@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-random",
+      "comment": "`Generator.PseudoRandomGenerator`: floats, integers, inclusive ranges, weighted booleans, strings and picks from candidate pools, reproducible from a string or numeric seed.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-random",
+  "email": "noreply@anthropic.com"
+}
