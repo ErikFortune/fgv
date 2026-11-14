@@ -50,7 +50,10 @@ impl's exact command:
 | after `rush version --bump` (5.1.0-62 → 5.1.0-63) | would `pnpm publish --tag alpha` × 35 at 5.1.0-63, tags `<pkg>_v5.1.0-63-alpha`, push `HEAD:prerelease --follow-tags` |
 
 So the alpha workflow publishes whatever `prerelease` already says; the `-N` bump is the maintainer's
-prior commit. The command is left byte-identical except that `${GITHUB_REF_NAME}` is now quoted.
+prior commit. *(First version kept the command byte-identical. The second review round replaced it
+with the same three-job split as stable, reproducing these semantics: package.json version as-is,
+`--tag alpha`, skip versions on npm without tagging them, tag `<pkg>_v<V>-alpha` on the dispatched
+commit — see "Second review round".)*
 
 ### The chosen sequence
 
@@ -76,7 +79,7 @@ is the version published. `--override-bump major` is not needed (C6/C7).
 |---|---|
 | `publish.yml` | top-level `contents: read`; `release` and `major` both call `publish-release-impl.yml` with `release_kind`; per-job `contents`/`id-token`/`pull-requests: write`; `concurrency` per ref |
 | `publish-release-impl.yml` | three jobs — `guard`, `build`, `publish` — described under *Security review round* below. (First version: one job ending in `rush publish --publish --include-all`.) |
-| `publish-alpha-impl.yml` | `prerelease`-only guard step; pins; npm exact; `git config` in a run step |
+| `publish-alpha-impl.yml` | three jobs, `guard` / `build` / `publish`, same shape as stable (second review round); first version was a `prerelease`-only guard step, pins, npm exact, `git config` in a run step |
 | `publish-major-impl.yml`, three `*-legacy.yml` | deleted |
 | `ci.yml` | triggers per brief (keeps `release`, drops `hotfix`); `contents: read`; `persist-credentials: false`; SHA-pin check step; pins; `git config` run step |
 | `dependabot.yml` | `github-actions` ecosystem, weekly (prettier requoted the file) |
@@ -167,15 +170,16 @@ An independent ref-only security review found no P1s. Every finding is fixed on 
 | P2-4 no `--tag`, so an older train would move `latest` back | guard compares V with `dist-tags.latest` of `@fgv/ts-utils`; older → `release-<n>`; summary says so | G15: latest 6.2.0 → `npm_tag=release-5`; G1 → `latest` |
 | P3-1 pin-check greps not anchored; composite actions not scanned | both greps anchored on `file:line:`; scans `.github/workflows/*` and `.github/actions/**/action.y(a)ml` | passes on the branch (4 files); fails on a copy, listing an unpinned composite `uses:` too, and ignoring a `run: echo uses: …` line |
 | P3-2 `${{ }}` in a `run:` in ci.yml | moved to `env:` | actionlint |
-| P3-3 change-verify compared the branch with itself | `build` compares with `origin/release/<n>`; alpha unchanged, commented | — |
+| P3-3 change-verify compared the branch with itself | first fix pointed the build job at `origin/release/<n>` — which, with HEAD required to equal that ref, still compared the branch with itself. **Second round removed the step** from both paths (the guard's exact-tip check and PR CI on the way into the train cover it) | — |
 | P3-4 re-run semantics | checklist *Recovery* section: *Re-run failed jobs* reuses `guard` outputs and the `build` artifact; a fresh dispatch is refused by the exact-tip guard by design | — |
 | P3-5 tag count unchecked | `publish` asserts tags on origin == tarball count | 34 == 34 on both attempts |
 | P3-7 `secrets: inherit` | the two named secrets, declared in each `workflow_call` | actionlint |
 | P3-8 `npm view --json` returns a bare string for one version | `[].concat(JSON.parse(...))` | — |
 | P3-9 `.npmrc-publish` | see below | — |
 
-**`.npmrc-publish` now matters only for alpha.** The stable path no longer runs `rush publish`, so it
-never reads that file; the alpha path still does, and its `NPM_TOKEN` line is now commented out.
+**`.npmrc-publish` (P3-9).** After the first round only the alpha path still ran `rush publish` and
+read that file. After the second round neither path does, so the file is unused by CI; its
+`NPM_TOKEN` line stays commented out.
 Recommended: **dispatch one alpha as a smoke test before `publish/5.1.0`** — it also exercises the
 pinned actions, npm 11.21.2 and OIDC for real.
 
@@ -185,3 +189,31 @@ attempt's artifact to `download-artifact` and reuses `guard`/`build` outputs (Gi
 re-run behaviour); the `gh` PR step. Validation after the round: actionlint 1.7.12 + ShellCheck
 0.11.0 zero findings; guard cases rerun this round — G1, G2, G4, G5, G7, G9–G16 (G16 and G13 replace the old G6 and G8) — via a
 stub `npm` on `PATH`.
+
+## Second review round (2026-11-14)
+
+No P1s. All fixed on this branch:
+
+| finding | fix | proved by (scratch clone, stub `npm` on `PATH`) |
+|---|---|---|
+| P2-1 alpha still one job with OIDC + write token + persisted credentials beside install/rebuild | alpha split into `guard` (read-only: ref, policy version, package list) / `build` (read-only, no npm credentials: install, rebuild, tarball-exports check, clean-tree and HEAD checks, every package at the policy version, `pnpm pack`, tarball checks) / `publish` (`npm-publish-alpha`, OIDC, `persist-credentials: false`, installs nothing, `npm publish <tgz> --tag alpha --ignore-scripts`, credentials only on `git push`) | on `prerelease` (`efc72db47`, 5.1.0-62): 35 tarballs; attempt 1 publishes 35 and pushes 35 tags `@fgv/ts-utils_v5.1.0-62-alpha` (annotated, message `@fgv/ts-utils v5.1.0-62-alpha`, on the dispatched commit — the format of the real tags); attempt 2 skips 35 ("Not updated"), tags nothing |
+| P2-2 bump commit pushed unchecked; package list was the build's own | `publish` first checks: bundle commit == reported SHA, exactly one commit on `GITHUB_SHA`, `git diff --no-renames --name-status` limited to `M version-policies.json`, `D common/changes/**`, `A/M` `package.json`/`CHANGELOG.json`/`CHANGELOG.md` outside `common/changes`; tarball names equal the guard's `packages` output, every file present. Alpha: no bump commit, so the check is that the build packed exactly `GITHUB_SHA` (an empty diff) plus the same package-list check | real bump (840 paths) passes; a crafted commit adding `.github/workflows/evil.yml` and modifying a change file is refused, naming both; a tarball list one short and one long are refused; alpha with a wrong build SHA is refused |
+| P2-3 trusted-publisher environment | checklist pre-flight item: each package's npm trusted-publisher entry names no environment or the path's own | — |
+| P3-4 Re-run all jobs | *Recovery* says Re-run failed jobs, **not** Re-run all jobs, and why | — |
+| P3-5 re-run artifact access unproved | pre-flight item: prove it with a throwaway workflow; *Recovery* gives the bundle-based fallback | — |
+| P3-6 dirty tree | build fails if the tree is dirty after the bump commit, and again (plus HEAD == bump) before packing | a modified tracked file → pack refused |
+| P3-7 partial-publish allowance too wide | guard allows `0 < DONE < TOTAL` only if every package already at V has `<pkg>_v<V>` on origin; `publish` now pushes each tag right after its package so a resume always qualifies | 3 published untagged → refused; 3 published and tagged → passes with a warning; 3 published, 1 untagged → refused naming it; after a simulated failure on the 6th tarball (5 published, 5 tags), a reset-and-redispatch guard passes, and *Re-run failed jobs* finishes 29 more, skips 5, ends at 34 tags with no package published twice |
+| P3-8 change-verify against itself | removed (see P3-3 above) | — |
+| P3-9 checklist ci.yml line | the ticked item now lists `release` and says it goes in Phase 4 | — |
+
+**Accepted residuals (no change):**
+
+- **Public repository assumed.** The guard's and publish job's `git ls-remote`, the `git fetch` of
+  `main`/the train, and the guard's tag checks run without credentials. On a private repository they
+  would fail closed (refuse), not open.
+- **npm self-install inside the OIDC job.** `npm install -g npm@11.21.2` runs in `publish` with
+  `id-token: write`. It is a single pinned package from the registry, not repository code.
+- **`ubuntu-latest`** is a moving runner image, as before.
+
+actionlint 1.7.12 + ShellCheck 0.11.0: zero findings after this round.
+

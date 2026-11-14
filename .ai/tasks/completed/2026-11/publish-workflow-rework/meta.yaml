@@ -30,7 +30,11 @@ summary:
     pushes the bump commit before npm, npm publish --ignore-scripts skipping published versions, tags
     in rush's format with a count check, recovery bundle on failure); upload/download-artifact
     pinned; pin check anchored and extended to composite actions; named secrets; recovery procedure
-    documented.
+    documented. Second review round: alpha split the same way; publish checks the bump commit
+    against a path allowlist and the tarballs against the guard's package list; per-package tag
+    push; resume allowed only for packages already tagged; dirty-tree checks; change-verify removed
+    from the build jobs; checklist pre-flight items for trusted-publisher environments and re-run
+    artifact access.
   diverged: >
     The brief's tree says 5.1.0 and must publish 5.1.0, which no single rush command does; the run
     adopts "the policy names the version to publish" and adds a branch-equals-policy guard the brief
@@ -59,4 +63,4 @@ relatedStreams:
       id: branch-model-plan,
       relationship: 'implements Phase 0 (orchestrator) and Phase 1 of its migration checklist (#784)'
     }
-sourceHash: sha256:5aec9e51f3a03c3c # over brief.md + state.md + result.md
+sourceHash: sha256:369871a87c2ed0e2 # over brief.md + state.md + result.md

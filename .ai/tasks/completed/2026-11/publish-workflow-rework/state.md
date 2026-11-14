@@ -62,3 +62,15 @@ proofs in `result.md` § "Security review round". Judgement calls in that round:
     Node 24 checkout/setup-node already pinned, rather than the Node 20 v4 line.
 13. **`npm publish --ignore-scripts`** on the tarballs, so nothing from the package runs in the job
     that holds OIDC.
+
+## Second review round (2026-11-14)
+
+14. **Alpha's "diff allowlist"** has nothing to diff: alpha commits nothing. The equivalent check is
+    that the build packed exactly the dispatched commit (empty diff) and that the tarballs equal the
+    guard's package list.
+15. **Alpha tags only what it publishes**, as `rush publish --include-all` did; a version already on
+    npm is skipped untagged. Stable tags skipped versions when their tag is missing, because its
+    resume rule depends on every published version being tagged.
+16. **Per-package tag push** replaced the single batch push on stable, so a run that stops part-way
+    leaves every published package tagged — which the narrowed resume guard requires.
+17. **`rush change --verify` removed from both build jobs** (it compared each branch with itself).

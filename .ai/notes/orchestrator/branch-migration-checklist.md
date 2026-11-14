@@ -92,15 +92,21 @@ Today the publish step is dispatched and then fixed up by hand — changelogs es
    # commit, rebuild, test, verify tarballs, then per project: pnpm pack (what rush --pack runs)
    ```
 
-   **As built, after the security review**, the run is three jobs so that no job holding npm or write
-   credentials runs repository dependency code: `guard` (read-only, no secrets), `build`
-   (read-only token, no OIDC: install → version → commit → rebuild → test → tarball check → `pnpm
-   pack` per package, each tarball checked for `<V>` and no `workspace:` range → uploads tarballs and
-   a `git bundle` of the bump commit), `publish` (environment `npm-publish-release`, OIDC, write
-   token, `persist-credentials: false`, installs nothing: pushes the bump commit **first**, then `npm
-   publish <tgz> --ignore-scripts` per package skipping versions npm has, then annotated tags
-   `<pkg>_v<V>` in rush's format, a tag-count check, and the PRs). Credentials are passed to the two
-   `git push` commands only.
+   **As built, after two security-review rounds**, the run is three jobs so that no job holding npm
+   or write credentials runs repository dependency code: `guard` (read-only, no secrets; also fixes
+   the package list), `build` (read-only token, no OIDC: install → version → commit → rebuild → test
+   → tarball check → `pnpm pack` per package, each tarball checked for `<V>` and no `workspace:`
+   range, the tree checked clean → uploads tarballs and a `git bundle` of the bump commit), and
+   `publish` (environment `npm-publish-release`, OIDC, write token, `persist-credentials: false`,
+   installs nothing). `publish` trusts nothing from `build` until it has checked it: the bump commit
+   must be one commit on the dispatched commit touching only `version-policies.json`, deletions under
+   `common/changes/`, `package.json` and `CHANGELOG.json`/`.md` files, and the tarballs must be
+   exactly the guard's package list. It then pushes the bump commit **first**, and per package runs
+   `npm publish <tgz> --ignore-scripts` (skipping a version npm has) and pushes the annotated tag
+   `<pkg>_v<V>` in rush's format; then a tag-count check and the PRs. Credentials are passed to `git
+   push` only. **Alpha has the same three-job shape** (no bump commit: the build must have packed the
+   dispatched commit; `--tag alpha`; tags `<pkg>_v<V>-alpha`; versions already on npm are skipped
+   and not tagged, as rush did).
 
    Result on the 5.1.0 tree: policy and all 34 `base-utils` `package.json`s at 5.1.0, every
    `CHANGELOG.json`/`.md` gains a populated 5.1.0 section (32 CHANGELOG files created where none existed),
@@ -121,7 +127,10 @@ bundle` of the bump commit and any tags it made (artifact `recovery-<V>-attempt-
 
 - **`build` or `guard` failed** (flaky test, install): nothing was pushed or published. *Re-run
   failed jobs* or dispatch again.
-- **`publish` failed** (npm, push, PR step): use **Re-run failed jobs**. It re-runs only `publish`,
+- **`publish` failed** (npm, push, PR step): use **Re-run failed jobs — NOT "Re-run all jobs"**.
+  Re-running all jobs rebuilds, and the new bump commit has a different SHA (CHANGELOG dates), so its
+  push to `publish/<V>` is rejected as non-fast-forward: safe, nothing reaches npm, but it looks like
+  a new failure. Re-run failed jobs re-runs only `publish`,
   reusing the `guard` outputs (version, dist-tag) and the `build` artifact (the same tarballs and bump
   commit) from the first attempt. The push is a no-op if the branch already has the commit, npm
   versions already published are skipped, existing tags are kept, the missing ones are made, and
@@ -132,9 +141,15 @@ bundle` of the bump commit and any tags it made (artifact `recovery-<V>-attempt-
   nothing reached npm. Reset `publish/<V>` to `release/<major>` (maintainer), dispatch again.
 - **The build artifact is gone** (retention expired) **and** packages are partly on npm: reset
   `publish/<V>` to `release/<major>` and dispatch again. The guard allows a partial publish; the new
-  run re-versions, skips the published packages, and creates only the missing tags. Packages already
-  published keep the first run's CHANGELOG date; their tags point at the first run's bump commit,
-  which the recovery bundle preserves.
+  run re-versions, skips the published packages, and creates only the missing tags. The guard allows
+  this only when every package already on npm at `<V>` also has its `<pkg>_v<V>` tag on origin (the
+  publish job pushes each tag right after its package), i.e. when it is a resume of this workflow's
+  own run. Packages already published keep the first run's CHANGELOG date; their tags point at the
+  first run's bump commit, which the recovery bundle preserves.
+- **If *Re-run failed jobs* cannot download the first attempt's artifact** (see the pre-flight item
+  below): treat it like the expired-artifact case above. The recovery bundle
+  (`recovery-<V>-attempt-<n>`) holds the bump commit and the tags already pushed, so the first run's
+  history is not lost; `git fetch <bundle> refs/heads/publish-bump` restores the commit locally.
 
 **Changelog curation stays upstream of the workflow.** The release-prep stream rewrites each package's
 pending change files into a few curated entries (with an "Upgrading from <previous>" note where the
@@ -174,9 +189,17 @@ every `uses:` floats — `actions/checkout@v5`, `actions/setup-node@v5`, third-p
       on, or the follow-up-PR step fails (403) after the packages are already published.
 - [ ] Know that PRs opened with the job's `GITHUB_TOKEN` do not trigger `ci.yml`; push to the
       branch, or close and reopen the PR, to get checks on it (or switch the step to an App token).
-- [ ] Before `publish/5.1.0`, dispatch **one alpha** as a smoke test: it exercises the pinned actions,
-      npm 11.21.2 and OIDC, and the alpha path is the only one still reading `.npmrc-publish`, whose
-      `NPM_TOKEN` line is now commented out.
+- [ ] Before `publish/5.1.0`, dispatch **one alpha** as a smoke test: it runs the same
+      guard / build / publish shape (pinned actions, `pnpm pack`, npm 11.21.2 publishing tarballs over
+      OIDC) in the `npm-publish-alpha` environment. It does **not** cover the stable environment —
+      see the next item.
+- [ ] For **each** package's npm trusted-publisher entry, confirm it names **no environment**, or the
+      environment the path uses: `npm-publish-release` for stable/major, `npm-publish-alpha` for
+      alpha. An entry naming only one environment makes the other path fail at OIDC — after the alpha
+      smoke test has passed.
+- [ ] Prove that **Re-run failed jobs** lets `download-artifact` fetch the first attempt's artifact
+      (a throwaway workflow: job A uploads, job B fails once, re-run B and see it download). Recovery
+      rests on it; if it does not hold, the bundle-based fallback in *Recovery* is the path.
 - [ ] Confirm npm trusted publishing (OIDC) is bound to repo + workflow file, not branch; verify on
       the first publish.
 
@@ -189,13 +212,13 @@ every `uses:` floats — `actions/checkout@v5`, `actions/setup-node@v5`, third-p
 
 - [x] `publish.yml` + impls per *Automated publish* (guards, test step, in-workflow version and
       changelog, child-branch commit, tags, follow-up PRs, summary).
-- [x] `ci.yml` triggers: push `['main']`; pull_request `['main', 'release/**', 'publish/**',
-      'prerelease', 'integration/**']` (drop `release`, `hotfix`). Change-verify keys off `base_ref`.
-      Done, with `release` **kept** in the pull_request list while the current PR flow still targets
-      it; drop it in Phase 4.
+- [x] `ci.yml` triggers: push `['main']`; pull_request `['main', 'release', 'release/**',
+      'publish/**', 'prerelease', 'integration/**']` (`hotfix` dropped). `release` stays while the
+      current PR flow still targets it and is dropped in Phase 4. Change-verify keys off `base_ref`.
 - [x] Delete `publish-legacy.yml`, `publish-alpha-legacy.yml`, `publish-major-legacy.yml`; confirm
       nothing references `NPM_TOKEN`. (`publish-major-impl.yml` also deleted — `major` reuses the
-      release impl. The `.npmrc-publish` token line is now commented out.)
+      release impl. Neither publish path runs `rush publish` any more, so nothing reads
+      `.npmrc-publish`; its token line is commented out.)
 - [x] All *Supply-chain pinning* items.
 
 ## Phase 2 — The drain

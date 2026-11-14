@@ -13,7 +13,7 @@ whose version policy says `<V>` into a published `<V>` with every CHANGELOG writ
 `rush version --ensure-version-policy --override-version`, then `rush version --bump --override-bump
 patch`. `publish-release-impl.yml` now runs that, guarded and tested, on a `publish/<version>`
 branch cut at the train's tip, commits and pushes the bump, publishes, pushes tags, and opens the PR into `release/<major>` plus a
-draft back-merge into `main`. The alpha path is unchanged apart from a `prerelease`-only guard.
+draft back-merge into `main`. The alpha path keeps its versioning and dist-tag and gets the same three-job split.
 Every action is pinned to a commit SHA and CI enforces it.
 
 ## What a reader should know
@@ -26,9 +26,10 @@ Every action is pinned to a commit SHA and CI enforces it.
   `origin` is a scratch repo.
 - **`major` is the same workflow** as `release`; it requires `<n>.0.0`. `--override-bump major` is
   gone (on a policy that already says `<n>.0.0` it would publish `<n+1>.0.0`).
-- **Three jobs** (after an independent security review): `guard` (read-only), `build` (no npm
+- **Three jobs on both paths** (after two independent security-review rounds): `guard` (read-only), `build` (no npm
   credentials; versions, tests and packs), `publish` (OIDC and write token, installs nothing,
-  publishes the tarballs). The bump commit is pushed before npm sees anything; if `publish` fails,
+  publishes the tarballs only after checking the bump commit's paths and the package list). The bump
+  commit is pushed before npm sees anything; if `publish` fails,
   **Re-run failed jobs** finishes it — see the checklist's *Recovery* section.
 - **Maintainer settings are prerequisites** — environment branch rules for `publish/*`, "allow
   Actions to create pull requests", push access to `publish/*`. Listed in `result.md` § "Needs the
