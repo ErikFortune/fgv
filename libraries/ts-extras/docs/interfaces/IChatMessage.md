@@ -58,4 +58,21 @@ string
 Message content
 
 </td></tr>
+<tr><td>
+
+[attachments](./IChatMessage.attachments.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [IAiImageAttachment](IAiImageAttachment.md)[]
+
+</td><td>
+
+Optional image attachments.
+
+</td></tr>
 </tbody></table>

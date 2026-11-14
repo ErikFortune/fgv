@@ -7,5 +7,5 @@ Discriminant tag carried by every schema node.
 ## Type
 
 ```typescript
-type SchemaNodeType = "string" | "number" | "integer" | "boolean" | "enum" | "optional" | "array" | "object"
+type SchemaNodeType = "string" | "number" | "integer" | "boolean" | "enum" | "optional" | "array" | "object" | "any"
 ```

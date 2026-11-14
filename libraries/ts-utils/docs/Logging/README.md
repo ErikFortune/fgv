@@ -229,3 +229,35 @@ Type guard that checks whether a logger implements IDetailLogger.
 
 </td></tr>
 </tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[allReporterLogLevels](./variables/allReporterLogLevels.md)
+
+</td><td>
+
+Exhaustive list of all Logging.ReporterLogLevel | ReporterLogLevel values.
+
+</td></tr>
+<tr><td>
+
+[reporterLogLevel](./variables/reporterLogLevel.md)
+
+</td><td>
+
+A ready-made Converter | Converter for Logging.ReporterLogLevel | ReporterLogLevel values.
+
+</td></tr>
+</tbody></table>

@@ -170,6 +170,19 @@ Renders the template with the given context.
 </td></tr>
 <tr><td>
 
+[renderWithSegments(context)](./MustacheTemplate.renderWithSegments.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Renders the template and reports which part of the output came from where.
+
+</td></tr>
+<tr><td>
+
 [validateAndRender(context)](./MustacheTemplate.validateAndRender.md)
 
 </td><td>

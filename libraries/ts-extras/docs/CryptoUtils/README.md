@@ -118,12 +118,31 @@ Result of an encryption operation.
 </td></tr>
 <tr><td>
 
+[IEncryptBytesResult](./interfaces/IEncryptBytesResult.md)
+
+</td><td>
+
+Result of a raw-byte AES-256-GCM encryption via
+CryptoUtils.ICryptoProvider.encryptBytes | encryptBytes.
+
+</td></tr>
+<tr><td>
+
 [IWrapBytesOptions](./interfaces/IWrapBytesOptions.md)
 
 </td><td>
 
 Caller-supplied HKDF parameters that domain-separate one
 CryptoUtils.ICryptoProvider.wrapBytes | wrapBytes call from another.
+
+</td></tr>
+<tr><td>
+
+[IHmacKeyOptions](./interfaces/IHmacKeyOptions.md)
+
+</td><td>
+
+Options for `ICryptoProvider.generateHmacKey`
 
 </td></tr>
 <tr><td>
@@ -160,6 +179,16 @@ Argon2id key derivation parameters (RFC 9106).
 </td><td>
 
 Parameters for Argon2id key derivation (RFC 9106).
+
+</td></tr>
+<tr><td>
+
+[IArgon2idKeyingOptions](./interfaces/IArgon2idKeyingOptions.md)
+
+</td><td>
+
+Optional keyed-hashing inputs for CryptoUtils.IArgon2idProvider.argon2id | argon2id
+(RFC 9106 §3.1).
 
 </td></tr>
 <tr><td>
@@ -259,6 +288,16 @@ Description
 <tbody>
 <tr><td>
 
+[MultibaseSpkiPublicKey](./type-aliases/MultibaseSpkiPublicKey.md)
+
+</td><td>
+
+A multibase base64url-encoded SPKI (SubjectPublicKeyInfo) public key string —
+a `'m'` multibase prefix followed by a base64url-no-pad body.
+
+</td></tr>
+<tr><td>
+
 [EncryptionAlgorithm](./type-aliases/EncryptionAlgorithm.md)
 
 </td><td>
@@ -282,6 +321,17 @@ Format version for encrypted files.
 </td><td>
 
 Asymmetric keypair algorithms supported by the crypto provider.
+
+</td></tr>
+<tr><td>
+
+[SeedDerivableAlgorithm](./type-aliases/SeedDerivableAlgorithm.md)
+
+</td><td>
+
+The subset of CryptoUtils.KeyPairAlgorithm whose keypair can be
+derived *deterministically* from a fixed secret seed, for use with
+CryptoUtils.ICryptoProvider.importKeyPairFromSeed | importKeyPairFromSeed.
 
 </td></tr>
 <tr><td>
@@ -345,6 +395,18 @@ Checks if a JSON object appears to be an encrypted file.
 </td></tr>
 <tr><td>
 
+[deriveKeyPairFromSeed](./functions/deriveKeyPairFromSeed.md)
+
+</td><td>
+
+Derives an asymmetric keypair *deterministically* from a fixed secret seed
+using `globalThis.crypto.subtle`, shared by the Node and browser
+CryptoUtils.ICryptoProvider implementations (both speak the same
+WebCrypto API).
+
+</td></tr>
+<tr><td>
+
 [createEncryptedFile](./functions/createEncryptedFile.md)
 
 </td><td>
@@ -372,6 +434,15 @@ Decodes a base64 string to a `Uint8Array`.
 </td></tr>
 <tr><td>
 
+[fromBase64Strict](./functions/fromBase64Strict.md)
+
+</td><td>
+
+Decodes a base64 string to a `Uint8Array`, **rejecting input that is not
+
+</td></tr>
+<tr><td>
+
 [toBase64](./functions/toBase64.md)
 
 </td><td>
@@ -390,6 +461,24 @@ Attempts to parse and decrypt a JSON object as an CryptoUtils.IEncryptedFile | e
 </td></tr>
 <tr><td>
 
+[base64UrlNoPadDecode](./functions/base64UrlNoPadDecode.md)
+
+</td><td>
+
+Decodes a base64url (no-padding) string (RFC 4648 §5) back to a `Uint8Array`.
+
+</td></tr>
+<tr><td>
+
+[base64UrlNoPadEncode](./functions/base64UrlNoPadEncode.md)
+
+</td><td>
+
+Encodes a `Uint8Array` as a base64url (no-padding) string (RFC 4648 §5).
+
+</td></tr>
+<tr><td>
+
 [exportPublicKeyAsMultibaseSpki](./functions/exportPublicKeyAsMultibaseSpki.md)
 
 </td><td>
@@ -399,11 +488,41 @@ Exports a public `CryptoKey` as a multibase base64url-encoded SPKI blob.
 </td></tr>
 <tr><td>
 
+[hexDecode](./functions/hexDecode.md)
+
+</td><td>
+
+Decodes a hexadecimal string (no `0x` prefix) back to a `Uint8Array`.
+
+</td></tr>
+<tr><td>
+
+[hexEncode](./functions/hexEncode.md)
+
+</td><td>
+
+Encodes a `Uint8Array` as a lowercase hexadecimal string with no `0x` prefix.
+
+</td></tr>
+<tr><td>
+
 [importPublicKeyFromMultibaseSpki](./functions/importPublicKeyFromMultibaseSpki.md)
 
 </td><td>
 
 Imports a public key from a multibase base64url-encoded SPKI blob.
+
+</td></tr>
+<tr><td>
+
+[isValidMultibaseSpkiPublicKey](./functions/isValidMultibaseSpkiPublicKey.md)
+
+</td><td>
+
+Type guard for CryptoUtils.MultibaseSpkiPublicKey: a string matching
+CryptoUtils.MultibaseSpkiPublicKeyRegExp (multibase `'m'` prefix + a
+non-empty base64url-no-pad body) whose body also satisfies the base64url-no-pad
+length rule shared with CryptoUtils.base64UrlNoPadDecode.
 
 </td></tr>
 <tr><td>
@@ -422,6 +541,16 @@ Decodes a multibase base64url (no-padding) string back to a `Uint8Array`.
 </td><td>
 
 Encodes a `Uint8Array` as a multibase base64url (no-padding) string.
+
+</td></tr>
+<tr><td>
+
+[spkiToRawX25519](./functions/spkiToRawX25519.md)
+
+</td><td>
+
+Strips the fixed DER prefix from an X25519 SubjectPublicKeyInfo blob, returning the raw
+32-byte public key.
 
 </td></tr>
 </tbody></table>
@@ -482,6 +611,17 @@ parameters needed to drive `crypto.subtle`.
 </td><td>
 
 Singleton instance of CryptoUtils.NodeCryptoProvider.
+
+</td></tr>
+<tr><td>
+
+[MultibaseSpkiPublicKeyRegExp](./variables/MultibaseSpkiPublicKeyRegExp.md)
+
+</td><td>
+
+The structural *shape* of a CryptoUtils.MultibaseSpkiPublicKey: the
+multibase `'m'` prefix followed by a non-empty base64url-no-pad body
+(`A-Z`, `a-z`, `0-9`, `-`, `_`).
 
 </td></tr>
 </tbody></table>

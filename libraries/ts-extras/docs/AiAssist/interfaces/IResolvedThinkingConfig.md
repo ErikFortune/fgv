@@ -43,7 +43,24 @@ Description
 
 </td><td>
 
-Anthropic: effort level; emit-site converts to `thinking.budget_tokens` via `anthropicEffortToBudgetTokens`.
+Anthropic: effort level.
+
+</td></tr>
+<tr><td>
+
+[anthropicThinkingDisabled](./IResolvedThinkingConfig.anthropicThinkingDisabled.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+true
+
+</td><td>
+
+Anthropic: a generic `effort: 'none'` asked for thinking off.
 
 </td></tr>
 <tr><td>
@@ -77,7 +94,24 @@ number
 
 </td><td>
 
-Gemini: generationConfig.thinkingConfig.thinkingBudget
+Gemini: generationConfig.thinkingConfig.thinkingBudget.
+
+</td></tr>
+<tr><td>
+
+[geminiThinkingLevel](./IResolvedThinkingConfig.geminiThinkingLevel.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[GeminiThinkingLevel](../../type-aliases/GeminiThinkingLevel.md)
+
+</td><td>
+
+Gemini: generationConfig.thinkingConfig.thinkingLevel.
 
 </td></tr>
 <tr><td>

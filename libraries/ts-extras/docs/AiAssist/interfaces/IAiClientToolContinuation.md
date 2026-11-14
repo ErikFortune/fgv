@@ -39,9 +39,8 @@ readonly JsonObject[]
 
 </td><td>
 
-Provider-native wire-format message objects to supply back on the next
-streaming call via `IExecuteClientToolTurnParams.continuationMessages`
-(which is forwarded as `rawTail` to the underlying call).
+**Cumulative** provider-native wire-format message objects covering all
+tool rounds so far.
 
 </td></tr>
 <tr><td>
@@ -58,7 +57,7 @@ readonly [IAiClientToolCallSummary](../../interfaces/IAiClientToolCallSummary.md
 
 </td><td>
 
-Summary of each tool call that was executed in this turn.
+Summary of each tool call executed in this turn (per-round, not cumulative).
 
 </td></tr>
 </tbody></table>

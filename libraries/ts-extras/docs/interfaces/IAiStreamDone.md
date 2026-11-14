@@ -94,4 +94,21 @@ string
 Provider-reported reason a truncated response was cut short (e.g.
 
 </td></tr>
+<tr><td>
+
+[usage](./IAiStreamDone.usage.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IAiCompletionUsage](IAiCompletionUsage.md)
+
+</td><td>
+
+Token usage, when the provider reports it on this stream.
+
+</td></tr>
 </tbody></table>

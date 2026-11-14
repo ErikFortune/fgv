@@ -4,7 +4,8 @@
 
 When `true` (default), the derived validator rejects numeric strings such as `'42'` and
 accepts only genuine JSON numbers. Set `false` to opt into permissive coercion (numeric
-strings are accepted and converted to their numeric value).
+strings are accepted and converted to their numeric value). Constraints apply to the
+converted number.
 
 **Signature:**
 

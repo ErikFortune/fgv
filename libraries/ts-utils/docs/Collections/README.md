@@ -684,3 +684,35 @@ Any valid input format for an AggregatedResultMap | aggregated result map collec
 
 </td></tr>
 </tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[allConversionErrorHandling](./variables/allConversionErrorHandling.md)
+
+</td><td>
+
+Exhaustive list of all Collections.ConversionErrorHandling | ConversionErrorHandling values.
+
+</td></tr>
+<tr><td>
+
+[conversionErrorHandling](./variables/conversionErrorHandling.md)
+
+</td><td>
+
+A ready-made Converter | Converter for
+
+</td></tr>
+</tbody></table>

@@ -189,6 +189,19 @@ Generates a new asymmetric keypair via Web Crypto.
 </td></tr>
 <tr><td>
 
+[importKeyPairFromSeed(algorithm, seed, extractable)](./BrowserCryptoProvider.importKeyPairFromSeed.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Derives an asymmetric keypair deterministically from a fixed secret seed.
+
+</td></tr>
+<tr><td>
+
 [exportPublicKeyJwk(publicKey)](./BrowserCryptoProvider.exportPublicKeyJwk.md)
 
 </td><td>
@@ -280,6 +293,33 @@ Compares two byte arrays in constant time.
 </td></tr>
 <tr><td>
 
+[generateHmacKey(options)](./BrowserCryptoProvider.generateHmacKey.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Generates a fresh random 256-bit HMAC-SHA256 key with usages
+
+</td></tr>
+<tr><td>
+
+[importHmacKey(raw, options)](./BrowserCryptoProvider.importHmacKey.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Imports raw key bytes as an HMAC-SHA256 key with usages
+`['sign', 'verify']`, non-extractable by default.
+
+</td></tr>
+<tr><td>
+
 [hmacSha256(key, data)](./BrowserCryptoProvider.hmacSha256.md)
 
 </td><td>
@@ -302,6 +342,34 @@ Computes an HMAC-SHA256 MAC for `data` using `key`.
 </td><td>
 
 Verifies an HMAC-SHA256 MAC in constant time.
+
+</td></tr>
+<tr><td>
+
+[encryptBytes(key, nonce, plaintext, aad)](./BrowserCryptoProvider.encryptBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Encrypts raw bytes using AES-256-GCM with a caller-supplied nonce and
+optional AAD.
+
+</td></tr>
+<tr><td>
+
+[decryptBytes(key, nonce, ciphertext, authTag, aad)](./BrowserCryptoProvider.decryptBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Decrypts raw bytes produced by BrowserCryptoProvider.encryptBytes
+using AES-256-GCM.
 
 </td></tr>
 <tr><td>

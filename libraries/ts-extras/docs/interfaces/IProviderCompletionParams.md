@@ -2,7 +2,11 @@
 
 # Interface: IProviderCompletionParams
 
-Parameters for a provider completion request.
+Parameters for a provider completion request. Carries the unified
+AiAssist.IChatRequest shape (`system?` + ordered `messages`, last =
+current user turn); history is linearized before the current turn.
+
+**Extends:** [`IChatRequest`](IChatRequest.md)
 
 ## Properties
 
@@ -60,40 +64,6 @@ API key for authentication
 </td></tr>
 <tr><td>
 
-[prompt](./IProviderCompletionParams.prompt.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-[AiPrompt](../classes/AiPrompt.md)
-
-</td><td>
-
-The structured prompt to send
-
-</td></tr>
-<tr><td>
-
-[additionalMessages](./IProviderCompletionParams.additionalMessages.md)
-
-</td><td>
-
-`readonly`
-
-</td><td>
-
-readonly [IChatMessage](IChatMessage.md)[]
-
-</td><td>
-
-Additional messages to append after system+user in order (e.g.
-
-</td></tr>
-<tr><td>
-
 [temperature](./IProviderCompletionParams.temperature.md)
 
 </td><td>
@@ -106,7 +76,7 @@ number
 
 </td><td>
 
-Sampling temperature (default: 0.7)
+Sampling temperature.
 
 </td></tr>
 <tr><td>
@@ -124,6 +94,23 @@ Sampling temperature (default: 0.7)
 </td><td>
 
 Optional model override — string or context-aware map (uses descriptor.defaultModel otherwise)
+
+</td></tr>
+<tr><td>
+
+[tier](./IProviderCompletionParams.tier.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+"advanced" | "frontier"
+
+</td><td>
+
+Optional quality tier selecting which completion model to use.
 
 </td></tr>
 <tr><td>
@@ -197,6 +184,24 @@ optional port + path prefix).
 </td></tr>
 <tr><td>
 
+[verifiedEndpoint](./IProviderCompletionParams.verifiedEndpoint.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IAiVerifiedEndpoint](IAiVerifiedEndpoint.md)
+
+</td><td>
+
+The host's assertion that `endpoint` reaches the descriptor's own provider, so this request's
+schemas are adapted with that provider's keyword table instead of the conservative one.
+
+</td></tr>
+<tr><td>
+
 [thinking](./IProviderCompletionParams.thinking.md)
 
 </td><td>
@@ -210,6 +215,95 @@ optional port + path prefix).
 </td><td>
 
 Optional thinking/reasoning config.
+
+</td></tr>
+<tr><td>
+
+[maxTokens](./IProviderCompletionParams.maxTokens.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+number
+
+</td><td>
+
+Optional cap on generated output tokens, mapped to each provider's native field:
+Anthropic `max_tokens`, OpenAI/xAI Responses `max_output_tokens`, Gemini
+`generationConfig.maxOutputTokens`, and on the chat-completions path the descriptor's
+`chatOutputTokensField` (`max_completion_tokens` for OpenAI, Groq and xAI; `max_tokens` for
+Mistral, Ollama and `openai-compat`).
+
+</td></tr>
+<tr><td>
+
+[structuredOutput](./IProviderCompletionParams.structuredOutput.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[StructuredOutputRequest](../type-aliases/StructuredOutputRequest.md)
+
+</td><td>
+
+Ask the provider to constrain its output — to a schema, or to syntactically
+
+</td></tr>
+<tr><td>
+
+[cache](./IProviderCompletionParams.cache.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IAiCacheRequest](IAiCacheRequest.md)
+
+</td><td>
+
+Prompt-caching plan for this request.
+
+</td></tr>
+<tr><td>
+
+[system](./IChatRequest.system.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+string
+
+</td><td>
+
+System instructions (schema docs, format rules, general guidance).
+
+</td></tr>
+<tr><td>
+
+[messages](./IChatRequest.messages.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+readonly [IChatMessage](IChatMessage.md)[]
+
+</td><td>
+
+The ordered conversation turns.
 
 </td></tr>
 </tbody></table>

@@ -5,9 +5,12 @@
 Computes an HMAC-SHA256 authentication code for `data` using `key`.
 
 The key must be a `CryptoKey` with `'sign'` usage and algorithm name
-`'HMAC'` (e.g. derived via PBKDF2 or imported with
-`crypto.subtle.importKey`). Use ICryptoProvider.verifyHmacSha256
-for constant-time verification of the output.
+`'HMAC'`. Obtain one from `generateHmacKey`,
+or from `importHmacKey` for raw key
+bytes — including bytes from `deriveKey`,
+which returns a `Uint8Array` rather than a `CryptoKey`.
+Use ICryptoProvider.verifyHmacSha256 for constant-time
+verification of the output.
 
 **Signature:**
 

@@ -2,10 +2,10 @@
 
 # Class: FsFileTreeAccessors
 
-Implementation of FileTree.IMutableFileTreeAccessors that uses the
+Implementation of FileTree.IMutableBinaryFileTreeAccessors that uses the
 file system to access and modify files and directories.
 
-**Implements:** [`IMutableFileTreeAccessors<TCT>`](../interfaces/IMutableFileTreeAccessors.md)
+**Implements:** [`IMutableBinaryFileTreeAccessors<TCT>`](../interfaces/IMutableBinaryFileTreeAccessors.md), [`IAtomicFileTreeAccessors<TCT>`](../interfaces/IAtomicFileTreeAccessors.md)
 
 ## Constructors
 
@@ -72,7 +72,42 @@ string | undefined
 
 </td><td>
 
-Optional path prefix to prepend to all paths.
+Optional root of the tree.
+
+</td></tr>
+<tr><td>
+
+[absolutePathPolicy](./FsFileTreeAccessors.absolutePathPolicy.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[FsAbsolutePathPolicy](../type-aliases/FsAbsolutePathPolicy.md)
+
+</td><td>
+
+How a path that resolves outside FileTree.FsFileTreeAccessors.prefix | prefix
+is treated.
+
+</td></tr>
+<tr><td>
+
+[realPath](./FsFileTreeAccessors.realPath.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+Whether every operation also checks the real path — symbolic links
 
 </td></tr>
 <tr><td>
@@ -112,6 +147,19 @@ Description
 <tbody>
 <tr><td>
 
+[create(params)](./FsFileTreeAccessors.create.md)
+
+</td><td>
+
+`static`
+
+</td><td>
+
+Creates a new FileTree.FsFileTreeAccessors | FsFileTreeAccessors.
+
+</td></tr>
+<tr><td>
+
 [resolveAbsolutePath(paths)](./FsFileTreeAccessors.resolveAbsolutePath.md)
 
 </td><td>
@@ -121,6 +169,20 @@ Description
 </td><td>
 
 Resolves paths to an absolute path.
+
+</td></tr>
+<tr><td>
+
+[resolveRealPath(itemPath)](./FsFileTreeAccessors.resolveRealPath.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Resolves a path to its canonical real path, with every symbolic link
+resolved.
 
 </td></tr>
 <tr><td>
@@ -190,6 +252,32 @@ Gets the contents of a file in the file tree.
 </td></tr>
 <tr><td>
 
+[getFileBytes(filePath)](./FsFileTreeAccessors.getFileBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the contents of a file in the file tree as bytes, with no text decoding applied.
+
+</td></tr>
+<tr><td>
+
+[getFileTextStrict(filePath)](./FsFileTreeAccessors.getFileTextStrict.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Reads a file's contents, decoding UTF-8 strictly.
+
+</td></tr>
+<tr><td>
+
 [getFileContentType(filePath, provided)](./FsFileTreeAccessors.getFileContentType.md)
 
 </td><td>
@@ -238,6 +326,58 @@ Checks if a file at the given path can be saved.
 </td><td>
 
 Saves the contents to a file at the given path.
+
+</td></tr>
+<tr><td>
+
+[saveFileBytes(path, bytes)](./FsFileTreeAccessors.saveFileBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Saves bytes to a file at the given path, with no text encoding applied.
+
+</td></tr>
+<tr><td>
+
+[getAtomicWriteCapabilities(directory)](./FsFileTreeAccessors.getAtomicWriteCapabilities.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Reports what atomic replacement this store can offer for writes into the
+
+</td></tr>
+<tr><td>
+
+[writeFileAtomically(filePath, contents, options)](./FsFileTreeAccessors.writeFileAtomically.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Replaces (or creates) a file's contents such that a reader never
+
+</td></tr>
+<tr><td>
+
+[cleanupAtomicTemporaries(directory)](./FsFileTreeAccessors.cleanupAtomicTemporaries.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Removes any working files this store reserves for interrupted atomic
 
 </td></tr>
 <tr><td>

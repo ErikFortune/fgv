@@ -34,7 +34,7 @@ Description
 
 </td><td>
 
-"keystore-v1"
+[KeyStoreFormat](../../type-aliases/KeyStoreFormat.md)
 
 </td><td>
 

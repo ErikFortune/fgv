@@ -183,6 +183,15 @@ Options for importing raw key material via KeyStore.importSecret.
 </td></tr>
 <tr><td>
 
+[IImportSecretBytesOptions](./interfaces/IImportSecretBytesOptions.md)
+
+</td><td>
+
+Options for importing raw opaque bytes via KeyStore.importSecretBytes.
+
+</td></tr>
+<tr><td>
+
 [IAddSecretFromPasswordOptions](./interfaces/IAddSecretFromPasswordOptions.md)
 
 </td><td>
@@ -215,6 +224,15 @@ Options for adding an Argon2id password-derived secret.
 </td><td>
 
 Options for adding an asymmetric keypair to the key store.
+
+</td></tr>
+<tr><td>
+
+[IGetKeyPairOptions](./interfaces/IGetKeyPairOptions.md)
+
+</td><td>
+
+Options for retrieving an asymmetric keypair via CryptoUtils.KeyStore.KeyStore.getKeyPair.
 
 </td></tr>
 <tr><td>
@@ -386,6 +404,15 @@ Description
 
 </th></tr></thead>
 <tbody>
+<tr><td>
+
+[allKeyStoreFormats](./variables/allKeyStoreFormats.md)
+
+</td><td>
+
+All recognized key store format versions (readable by the current library).
+
+</td></tr>
 <tr><td>
 
 [KEYSTORE_FORMAT](./variables/KEYSTORE_FORMAT.md)

@@ -2,7 +2,7 @@
 
 ## IInMemoryFile.contents property
 
-The contents of the file
+The contents of the file.
 
 **Signature:**
 

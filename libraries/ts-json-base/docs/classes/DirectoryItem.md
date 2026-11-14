@@ -4,7 +4,7 @@
 
 Class representing a directory in a file tree.
 
-**Implements:** [`IMutableFileTreeDirectoryItem<TCT>`](../interfaces/IMutableFileTreeDirectoryItem.md)
+**Implements:** [`IMutableBinaryFileTreeDirectoryItem<TCT>`](../interfaces/IMutableBinaryFileTreeDirectoryItem.md), [`IAtomicFileTreeDirectoryItem<TCT>`](../interfaces/IAtomicFileTreeDirectoryItem.md)
 
 ## Properties
 
@@ -149,6 +149,85 @@ Gets the children of the directory.
 </td><td>
 
 Creates a new file as a child of this directory.
+
+</td></tr>
+<tr><td>
+
+[canCreateChildFileBytes()](./DirectoryItem.canCreateChildFileBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Reports whether the backing store can persist bytes verbatim.
+
+</td></tr>
+<tr><td>
+
+[createChildFileBytes(name, bytes)](./DirectoryItem.createChildFileBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Creates a new file as a child of this directory from raw bytes, with no text
+
+</td></tr>
+<tr><td>
+
+[getStorageIdentity()](./DirectoryItem.getStorageIdentity.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Says what storage this directory names, so a consumer can tell whether two
+directory items reach the same place.
+
+</td></tr>
+<tr><td>
+
+[getAtomicWriteCapabilities()](./DirectoryItem.getAtomicWriteCapabilities.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Reports what atomic replacement this directory's backing store can
+
+</td></tr>
+<tr><td>
+
+[writeChildAtomically(name, contents, options)](./DirectoryItem.writeChildAtomically.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Atomically writes (creating or replacing) a child file of this
+
+</td></tr>
+<tr><td>
+
+[cleanupAtomicTemporaries()](./DirectoryItem.cleanupAtomicTemporaries.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Removes any working files this store reserves for interrupted atomic
 
 </td></tr>
 <tr><td>

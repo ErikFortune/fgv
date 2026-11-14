@@ -23,6 +23,15 @@ AI assist packlet - provider registry, prompt class, settings, and API client.
 </td></tr>
 <tr><td>
 
+[AsyncControl](./AsyncControl/README.md)
+
+</td><td>
+
+Control for asynchronous work: stop conditions — a deadline and a caller signal, raced against the
+
+</td></tr>
+<tr><td>
+
 [Converters](./Converters/README.md)
 
 </td><td>
@@ -82,6 +91,15 @@ Crypto utilities for encrypted file handling and key management.
 </td><td>
 
 
+
+</td></tr>
+<tr><td>
+
+[SaferFetch](./SaferFetch/README.md)
+
+</td><td>
+
+A safer `fetch` primitive with an explicit threat model.
 
 </td></tr>
 <tr><td>
