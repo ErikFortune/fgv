@@ -1,7 +1,7 @@
 id: changelog-curation-5-1-0
 status: shipped
 packages: ['@fgv/*'] # change files only, for all 32 published projects
-prs: [] # PR #TBD — the orchestrator opens it
+prs: [787]
 openPrs: []
 opened: 2026-11-14
 closed: 2026-11-14
