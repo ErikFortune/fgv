@@ -118,14 +118,6 @@ throughout the run. **Migrate to `.ai/tasks/completed/<YYYY-MM>/<stream-id>/`
 and write a polished `README.md` as part of the PR — before merge,
 not as a follow-up.** See `.ai/conventions/workflow/artifact-protocol.md`.
 
-## Out-of-scope packages
-
-The sudoku packages (`ts-sudoku-lib`, `ts-sudoku-ui`) are slated to
-move to their own monorepo and are out of scope for the workflow
-substrate. Don't queue streams against them here.
-
----
-
 ## Active workstreams
 
 ### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
