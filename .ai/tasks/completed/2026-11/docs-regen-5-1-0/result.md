@@ -7,11 +7,11 @@
 ## 1. Per-package docs (`rush build-docs`)
 
 Run after `rush install` and a full `rush rebuild` (clean: 0 errors, only the standing
-"1 Git-tracked symlink" notice). `rush build-docs` generated every project but **exited 1**:
+"1 Git-tracked symlink" notice). The first `rush build-docs` run generated every project but **exited 1**:
 `SUCCESS WITH WARNINGS: 4 operations` (12 distinct TSDoc warnings in `ts-utils`, `ts-json-base`,
-`ts-extras`, `ts-web-extras`; the command sets `allowWarningsInSuccessfulBuild: false`). The output
-was complete and is committed; the warnings are a follow-up below, not fixed here (no source
-changes in scope).
+`ts-extras`, `ts-web-extras`; the command sets `allowWarningsInSuccessfulBuild: false`). Those were
+then fixed under an approved scope extension (§ 5), after which `rush build-docs` exits 0 with no
+warnings. The counts below are from the first run; § 5 lists the few pages the fixes changed.
 
 Tracked files under each package's `docs/`, before → after (A/M/D without rename detection):
 
@@ -46,7 +46,7 @@ libraries/ts-extras/node_modules/.bin/typedoc --options ./typedoc.json
 ```
 
 (`typedoc@0.28.20`, `typedoc-plugin-markdown@4.14.1` via the rig's `typedoc.base.json`; any
-project with both in its `node_modules` works.) Result: **0 errors, 208 warnings** (unresolved
+project with both in its `node_modules` works.) Result: **0 errors, 208 warnings** (196 after the § 5 fixes) (unresolved
 `{@link}` targets, mostly overload-selector and cross-package links). Two runs (a scratch output dir,
 then `docs/api` in place) were byte-identical.
 
@@ -80,30 +80,67 @@ for the six packages whose `docs/` changed: `ts-extras`, `ts-http-storage`, `ts-
 `ts-random`, `ts-utils`, `ts-web-extras`. `docs/api` is not inside a package. `rush change --verify
 --target-branch origin/integration/asks` → exit 0. Commit `7fb73e1b7`.
 
+## 5. TSDoc fixes (scope extension, approved by the orchestrator)
+
+Comment-only; no behaviour change. Commit `3dc149a59`, API reports `9cbf84295`, regenerated docs
+`abb31ebd1`.
+
+- **`ts-utils`** `result.ts`: the back-compatible overloads `DetailedSuccess.thenOnFailure` and
+  `DetailedFailure.thenOnSuccess` name their parameter `__cb`; the docs said `@param cb`. Now
+  `@param __cb`.
+- **`ts-json-base`** `converters.ts`: the zero-argument `stringifiedJson()` overload documented an
+  `inner` parameter it does not have. Its comment now describes the no-inner form.
+- **`ts-extras`** `streamingAdapters/common.ts`: `IProviderCompletionStreamParams` had two
+  `@remarks` blocks; merged into one (typedoc also reported this site as a duplicate `@returns`,
+  which cleared with it). `safer-fetch/failureReason.ts`: the `'redirect-rejected'` union member's
+  comment carried a `@remarks` block tag, which typedoc forbids on union members; the paragraph is
+  kept as plain text.
+- **`ts-web-extras` (six warnings), fixed in `ts-json-base`:** `FileSystemAccessTreeAccessors`,
+  `HttpTreeAccessors` and `LocalStorageTreeAccessors` inherit `getFileBytes` and
+  `getAtomicWriteCapabilities` from `InMemoryTreeAccessors`, whose comments were
+  `{@inheritDoc FileTree.IBinaryFileTreeAccessors.getFileBytes}` /
+  `{@inheritDoc FileTree.IAtomicFileTreeAccessors.getAtomicWriteCapabilities}`. **No spelling of
+  that reference can resolve in `ts-web-extras`'s own typedoc build:** the target interfaces live
+  in another package and are not part of that project, and the generated pages showed the raw
+  reference text as the description. API Extractor could not resolve them in `ts-json-base` either
+  — `ts-json-base.api.md` carried `ae-unresolved-inheritdoc-reference` and `(undocumented)` on both.
+  So the fix writes the interface's text into the two `InMemoryTreeAccessors` comments, as the
+  class's other methods already do. The doc is kept, not deleted, and it now renders in all four
+  classes. `ts-json-base.api.md` loses both unresolved-inheritdoc warnings and gains one
+  `ae-unresolved-link` on `getAtomicWriteCapabilities` (for `{@link FileTree.IAtomicWriteCapabilities}`,
+  the same namespace-member link class as its neighbour `fileIsMutable`).
+- `etc/ts-extras.api.md` and `etc/ts-json-base.api.md` regenerated (comment text only).
+- Doc deltas: per-package `ts-json-base` (2 pages), `ts-web-extras` (3); root `docs/api` 8 pages.
+  `ts-utils` and `ts-extras` per-package docs did not change.
+
+Packages touched by the fixes (`ts-utils`, `ts-json-base`, `ts-extras`) already have this stream's
+`none` change file; no new one was needed.
+
 ## Gates
 
-`rush install` ✅ · `rush rebuild` ✅ (0 errors; only the symlink notice matches "warning") ·
-`rush change --verify --target-branch origin/integration/asks` ✅ · `rush build-docs` ⚠ exit 1 on
-TSDoc warnings (output complete). No `test`/`lint` — no source changed.
+Final, after § 5, all run in the foreground from the repo root:
+
+- `install` ✅
+- `change --verify --target-branch origin/integration/asks` ✅ exit 0
+- `rebuild` ✅ exit 0 — fail-grep 0; the only "warning" line is the tracked-symlink notice
+  (an intermediate rebuild flagged the API-report updates as warnings; the reports were committed
+  and the next rebuild was clean)
+- `lint` ✅ exit 0, `SUCCESS: 32 operations`
+- `test` ✅ exit 0, `SUCCESS: 35 operations` + 1 no-op — fail-grep 0, symlink notice only, no NUL
+  padding in the log
+- `build-docs` ✅ exit 0, `SUCCESS: 13 operations`, no warnings
 
 ## Follow-ups
 
-1. **`rush build-docs` is red** on 12 distinct TSDoc warnings (the command disallows warnings):
-   unused `@param cb` on `DetailedSuccess.thenOnFailure` / `DetailedFailure.thenOnSuccess`
-   (`ts-utils`); unused `@param inner` on `Converters.stringifiedJson` (`ts-json-base`); duplicate
-   `@remarks`/`@returns` at `ai-assist/streamingAdapters/common.ts:73` and a block tag in the
-   `SaferFetch` comment at `safer-fetch/failureReason.ts:83` (`ts-extras`); six `{@inheritDoc}`
-   targets on `FileTree.IBinaryFileTreeAccessors.getFileBytes` / `IAtomicFileTreeAccessors.getAtomicWriteCapabilities`
-   that typedoc cannot find (`ts-web-extras`). Small source fixes; out of scope here.
-2. **Packages with no `build-docs` script** (not added, per the brief): `ts-agent-memory`,
+1. **Packages with no `build-docs` script** (not added, per the brief): `ts-agent-memory`,
    `ts-agent-memory-sqlite-vec`, `ts-agent-tasks`, `ts-app-shell`, `ts-extras-argon2`,
    `ts-extras-mcp`, `ts-extras-ollama`, `ts-extras-re2`, `ts-extras-system-one`,
    `ts-extras-transformers`, `ts-extras-webauthn`, `ts-prompt-assist`, `ts-web-extras-argon2`,
    `ts-web-extras-transformers`, `ts-web-extras-webauthn`; under `tools/`: `ks`, `repo-template`,
    `ts-res-browser`, `ts-res-browser-cli`, `ts-res-tutorial`, `ts-res-ui-playground` (private).
    The root `docs/api` is now the only generated reference for the first fifteen.
-3. **Root `docs/api` has no script** — reproducing it means knowing the command above. A root
-   script (or a `build-docs` step) would make it a maintained artifact rather than a snapshot; 208
+2. **Root `docs/api` has no script** — reproducing it means knowing the command above. A root
+   script (or a `build-docs` step) would make it a maintained artifact rather than a snapshot; 196
    link warnings would surface if it were gated.
-4. The rig's `typedoc.base.json` `externalSymbolLinkMappings` still names `@fgv/ts-chocolate` (not
+3. The rig's `typedoc.base.json` `externalSymbolLinkMappings` still names `@fgv/ts-chocolate` (not
    in this repo) and points every mapping at `tree/main`; harmless, worth a look when (3) is done.
