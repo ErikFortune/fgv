@@ -14,6 +14,6 @@ use for both open-ended and complete
 
 | Property | Type |
 | ------ | ------ |
-| <a id="maxonly"></a> `maxOnly` | `string` |
-| <a id="minmax"></a> `minMax` | `string` |
-| <a id="minonly"></a> `minOnly` | `string` |
+| <a id="property-maxonly"></a> `maxOnly` | `string` |
+| <a id="property-minmax"></a> `minMax` | `string` |
+| <a id="property-minonly"></a> `minOnly` | `string` |

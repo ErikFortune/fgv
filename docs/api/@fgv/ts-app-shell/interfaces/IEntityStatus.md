@@ -12,5 +12,5 @@ Status indicator for an entity list item.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="colorclass"></a> `colorClass` | `readonly` | `string` | CSS color class for the status dot |
-| <a id="label"></a> `label` | `readonly` | `string` | Status label |
+| <a id="property-colorclass"></a> `colorClass` | `readonly` | `string` | CSS color class for the status dot |
+| <a id="property-label"></a> `label` | `readonly` | `string` | Status label |

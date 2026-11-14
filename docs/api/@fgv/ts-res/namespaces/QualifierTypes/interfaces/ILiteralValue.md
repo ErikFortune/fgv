@@ -12,12 +12,12 @@ Describes a single valid literal value including optional parent and child value
 
 | Type Parameter |
 | ------ |
-| `T` *extends* `string` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="children"></a> `children?` | `readonly` | readonly `T`[] |
-| <a id="name"></a> `name` | `readonly` | `T` |
-| <a id="parent"></a> `parent?` | `readonly` | `ILiteralValue`\<`T`\> |
+| <a id="property-children"></a> `children?` | `readonly` | readonly `T`[] |
+| <a id="property-name"></a> `name` | `readonly` | `T` |
+| <a id="property-parent"></a> `parent?` | `readonly` | `ILiteralValue`\<`T`\> |

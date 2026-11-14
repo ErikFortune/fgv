@@ -18,11 +18,11 @@ and item ID with a delimiter.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCOMPOSITEID` *extends* `string` | - |
-| `TCOLLECTIONID` *extends* `string` | - |
-| `TITEMID` *extends* `string` | - |
-| `TITEM` | - |
-| `TMETADATA` | `unknown` |
+| <a id="type-parameter-tcompositeid"></a> `TCOMPOSITEID` *extends* `string` | - |
+| <a id="type-parameter-tcollectionid"></a> `TCOLLECTIONID` *extends* `string` | - |
+| <a id="type-parameter-titemid"></a> `TITEMID` *extends* `string` | - |
+| <a id="type-parameter-titem"></a> `TITEM` | - |
+| <a id="type-parameter-tmetadata"></a> `TMETADATA` | `unknown` |
 
 ## Constructors
 
@@ -711,11 +711,11 @@ Creates a new AggregatedResultMap.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCOMPOSITEID` *extends* `string` | - |
-| `TCOLLECTIONID` *extends* `string` | - |
-| `TITEMID` *extends* `string` | - |
-| `TITEM` | - |
-| `TMETADATA` | `unknown` |
+| <a id="type-parameter-tcompositeid-1"></a> `TCOMPOSITEID` *extends* `string` | - |
+| <a id="type-parameter-tcollectionid-1"></a> `TCOLLECTIONID` *extends* `string` | - |
+| <a id="type-parameter-titemid-1"></a> `TITEMID` *extends* `string` | - |
+| <a id="type-parameter-titem-1"></a> `TITEM` | - |
+| <a id="type-parameter-tmetadata-1"></a> `TMETADATA` | `unknown` |
 
 #### Parameters
 

@@ -9,6 +9,17 @@
 Implementation of `FileTree.IPersistentFileTreeAccessors` that uses the File System Access API
 to provide persistent file editing in browsers.
 
+## Remarks
+
+Supports the read half of the optional binary capability
+(`FileTree.IBinaryFileTreeAccessors`) — narrow with
+`FileTree.isBinaryAccessors` and call `getFileBytes()` to
+read a file's bytes without going through a lenient UTF-8 decode.
+
+Byte *writes* are not supported yet: files are loaded via `File.text()` and synced
+back as text, so the in-memory layer holds no byte-native representation to write
+into. Enabling them is additive and does not change this class's read behaviour.
+
 ## Extends
 
 - [`InMemoryTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
@@ -17,11 +28,12 @@ to provide persistent file editing in browsers.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |
 
 ## Implements
 
 - [`IPersistentFileTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
+- [`IBinaryFileTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
 
 ## Constructors
 
@@ -50,6 +62,39 @@ Protected constructor for FileSystemAccessTreeAccessors.
 `FileTree.InMemoryTreeAccessors<TCT>.constructor`
 
 ## Methods
+
+### cleanupAtomicTemporaries()
+
+> **cleanupAtomicTemporaries**(`directory`): [`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<readonly `string`[]\>
+
+Removes any working files this store reserves for interrupted atomic
+writes from the given directory.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `directory` | `string` | Absolute path of the directory to reclaim. |
+
+#### Returns
+
+[`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<readonly `string`[]\>
+
+`Success` with an empty list, or `Failure` if the path is not an
+existing directory.
+
+#### Remarks
+
+Always an empty list: an in-memory replacement is a single synchronous
+assignment, so there is no intermediate working file for an interrupted
+write to leave behind. The method exists so a consumer's reopen path is the
+same shape whichever store is behind it.
+
+#### Inherited from
+
+`FileTree.InMemoryTreeAccessors.cleanupAtomicTemporaries`
+
+***
 
 ### createDirectory()
 
@@ -160,6 +205,28 @@ Implements `FileTree.IMutableFileTreeAccessors.fileIsMutable`
 
 ***
 
+### getAtomicWriteCapabilities()
+
+> **getAtomicWriteCapabilities**(`directory`): [`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<[`IAtomicWriteCapabilities`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
+
+FileTree.IAtomicFileTreeAccessors.getAtomicWriteCapabilities
+
+#### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `directory` | `string` |
+
+#### Returns
+
+[`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<[`IAtomicWriteCapabilities`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
+
+#### Inherited from
+
+`FileTree.InMemoryTreeAccessors.getAtomicWriteCapabilities`
+
+***
+
 ### getBaseName()
 
 > **getBaseName**(`path`, `suffix?`): `string`
@@ -261,6 +328,32 @@ The extension of the path.
 
 ***
 
+### getFileBytes()
+
+> **getFileBytes**(`path`): [`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+FileTree.IBinaryFileTreeAccessors.getFileBytes
+
+#### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `path` | `string` |
+
+#### Returns
+
+[`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+#### Implementation of
+
+`FileTree.IBinaryFileTreeAccessors.getFileBytes`
+
+#### Inherited from
+
+`FileTree.InMemoryTreeAccessors.getFileBytes`
+
+***
+
 ### getFileContents()
 
 > **getFileContents**(`path`): [`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
@@ -315,6 +408,44 @@ The content type of the file.
 #### Inherited from
 
 `FileTree.InMemoryTreeAccessors.getFileContentType`
+
+***
+
+### getFileTextStrict()
+
+> **getFileTextStrict**(`path`): [`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
+
+Reads a file's contents, decoding UTF-8 strictly.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | Absolute path of the file. |
+
+#### Returns
+
+[`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
+
+`Success` with the decoded text; `Failure` if the bytes are not
+valid UTF-8, or if this store no longer holds the original bytes to judge.
+
+#### Remarks
+
+Decidable **per file**, not per store: only a byte-seeded file still has the
+original bytes to judge. A `string`- or JSON-seeded file was decoded before
+this tree received it, so the substitution — if any — already happened
+upstream and re-encoding would produce well-formed UTF-8. Those fail rather
+than reporting a success this store cannot stand behind.
+
+This is also what makes the derived string-backed stores correct for free:
+an HTTP tree seeded from a JSON `contents` field, or a `localStorage` tree,
+holds only strings and so refuses every file — structurally, not by a
+hand-written special case.
+
+#### Inherited from
+
+`FileTree.InMemoryTreeAccessors.getFileTextStrict`
 
 ***
 
@@ -461,6 +592,42 @@ Implements `FileTree.IPersistentFileTreeAccessors.syncToDisk`
 
 ***
 
+### writeFileAtomically()
+
+> **writeFileAtomically**(`path`, `contents`, `options`): [`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IAtomicWriteReceipt`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`IAtomicWriteFailure`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
+
+Replaces (or creates) a file's contents such that a reader never observes
+a torn write.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | Absolute path of the file to write. |
+| `contents` | `string` | The string contents to write. |
+| `options` | [`IAtomicWriteOptions`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | The requested [options](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs). |
+
+#### Returns
+
+[`DetailedResult`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IAtomicWriteReceipt`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs), [`IAtomicWriteFailure`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>
+
+`DetailedSuccess` with the receipt if the write committed, or
+`DetailedFailure` with a classified failure.
+
+#### Remarks
+
+A replacement of an in-memory file's contents is a single synchronous
+assignment (see `MutableInMemoryFile.setContents`), so there is no
+intermediate state a reader could observe as torn — this store can honor
+`'session'` unconditionally whenever ordinary mutation would succeed, and
+fails any stronger request before touching anything.
+
+#### Inherited from
+
+`FileTree.InMemoryTreeAccessors.writeFileAtomically`
+
+***
+
 ### create()
 
 #### Call Signature
@@ -474,7 +641,7 @@ in-memory files.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-1"></a> `TCT` *extends* `string` | `string` |
 
 ##### Parameters
 
@@ -502,7 +669,7 @@ in-memory files.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-2"></a> `TCT` *extends* `string` | `string` |
 
 ##### Parameters
 
@@ -531,7 +698,7 @@ Creates a new FileSystemAccessTreeAccessors instance from a directory handle.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-3"></a> `TCT` *extends* `string` | `string` |
 
 #### Parameters
 
@@ -562,7 +729,7 @@ New file creation is not supported on this tree (no parent directory handle).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-4"></a> `TCT` *extends* `string` | `string` |
 
 #### Parameters
 

@@ -14,19 +14,19 @@ implementations without requiring the full ResourceManagerBuilder build mechanic
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TR` *extends* [`IResource`](../namespaces/Runtime/interfaces/IResource.md) | [`IResource`](../namespaces/Runtime/interfaces/IResource.md) |
+| <a id="type-parameter-tr"></a> `TR` *extends* [`IResource`](../namespaces/Runtime/interfaces/IResource.md) | [`IResource`](../namespaces/Runtime/interfaces/IResource.md) |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="builtresources"></a> `builtResources` | `readonly` | [`IReadOnlyValidatingResultMap`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ResourceId`](../type-aliases/ResourceId.md), `TR`\> | A read-only result map of all built resources, keyed by resource ID. Resources are built on-demand when accessed and returns Results for error handling. |
-| <a id="conditions"></a> `conditions` | `readonly` | [`ReadOnlyConditionCollector`](../namespaces/Conditions/type-aliases/ReadOnlyConditionCollector.md) | A [ReadOnlyConditionCollector](../namespaces/Conditions/type-aliases/ReadOnlyConditionCollector.md) which contains the [conditions](../classes/Condition.md) used by resource candidates. |
-| <a id="conditionsets"></a> `conditionSets` | `readonly` | [`ReadOnlyConditionSetCollector`](../namespaces/Conditions/type-aliases/ReadOnlyConditionSetCollector.md) | A [ReadOnlyConditionSetCollector](../namespaces/Conditions/type-aliases/ReadOnlyConditionSetCollector.md) which contains the [condition sets](../namespaces/Conditions/classes/ConditionSet.md) used by resource candidates. |
-| <a id="decisions"></a> `decisions` | `readonly` | [`ReadOnlyAbstractDecisionCollector`](../namespaces/Decisions/type-aliases/ReadOnlyAbstractDecisionCollector.md) | A [ReadOnlyAbstractDecisionCollector](../namespaces/Decisions/type-aliases/ReadOnlyAbstractDecisionCollector.md) which contains the [abstract decisions](../classes/Decision.md) used by resource candidates. |
-| <a id="numcandidates"></a> `numCandidates` | `readonly` | `number` | The number of candidates in this resource manager. |
-| <a id="numresources"></a> `numResources` | `readonly` | `number` | The number of resources in this resource manager. |
-| <a id="resourceids"></a> `resourceIds` | `readonly` | readonly [`ResourceId`](../type-aliases/ResourceId.md)[] | The resource IDs that this resource manager can resolve. |
+| <a id="property-builtresources"></a> `builtResources` | `readonly` | [`IReadOnlyValidatingResultMap`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ResourceId`](../type-aliases/ResourceId.md), `TR`\> | A read-only result map of all built resources, keyed by resource ID. Resources are built on-demand when accessed and returns Results for error handling. |
+| <a id="property-conditions"></a> `conditions` | `readonly` | [`ReadOnlyConditionCollector`](../namespaces/Conditions/type-aliases/ReadOnlyConditionCollector.md) | A [ReadOnlyConditionCollector](../namespaces/Conditions/type-aliases/ReadOnlyConditionCollector.md) which contains the [conditions](../classes/Condition.md) used by resource candidates. |
+| <a id="property-conditionsets"></a> `conditionSets` | `readonly` | [`ReadOnlyConditionSetCollector`](../namespaces/Conditions/type-aliases/ReadOnlyConditionSetCollector.md) | A [ReadOnlyConditionSetCollector](../namespaces/Conditions/type-aliases/ReadOnlyConditionSetCollector.md) which contains the [condition sets](../namespaces/Conditions/classes/ConditionSet.md) used by resource candidates. |
+| <a id="property-decisions"></a> `decisions` | `readonly` | [`ReadOnlyAbstractDecisionCollector`](../namespaces/Decisions/type-aliases/ReadOnlyAbstractDecisionCollector.md) | A [ReadOnlyAbstractDecisionCollector](../namespaces/Decisions/type-aliases/ReadOnlyAbstractDecisionCollector.md) which contains the [abstract decisions](../classes/Decision.md) used by resource candidates. |
+| <a id="property-numcandidates"></a> `numCandidates` | `readonly` | `number` | The number of candidates in this resource manager. |
+| <a id="property-numresources"></a> `numResources` | `readonly` | `number` | The number of resources in this resource manager. |
+| <a id="property-resourceids"></a> `resourceIds` | `readonly` | readonly [`ResourceId`](../type-aliases/ResourceId.md)[] | The resource IDs that this resource manager can resolve. |
 
 ## Methods
 

@@ -12,4 +12,4 @@ Represents a compiled resource type with a name.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="name"></a> `name` | [`ResourceTypeName`](../../../../../type-aliases/ResourceTypeName.md) | The name of the resource type. |
+| <a id="property-name"></a> `name` | [`ResourceTypeName`](../../../../../type-aliases/ResourceTypeName.md) | The name of the resource type. |

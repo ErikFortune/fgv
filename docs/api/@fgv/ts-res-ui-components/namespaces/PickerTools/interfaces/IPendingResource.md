@@ -36,14 +36,14 @@ const pendingResources: IPendingResource<MyResourceType>[] = [
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | `unknown` |
 
 ## Properties
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="displayname"></a> `displayName?` | `string` | Display name for the resource in the picker |
-| <a id="id"></a> `id` | `string` | Unique identifier for the pending resource |
-| <a id="resourcedata"></a> `resourceData?` | `T` | The actual resource data with type safety |
-| <a id="resourcetype"></a> `resourceType?` | `string` | Optional resource type identifier |
-| <a id="type"></a> `type` | `"deleted"` \| `"new"` \| `"modified"` | Type of pending operation |
+| <a id="property-displayname"></a> `displayName?` | `string` | Display name for the resource in the picker |
+| <a id="property-id"></a> `id` | `string` | Unique identifier for the pending resource |
+| <a id="property-resourcedata"></a> `resourceData?` | `T` | The actual resource data with type safety |
+| <a id="property-resourcetype"></a> `resourceType?` | `string` | Optional resource type identifier |
+| <a id="property-type"></a> `type` | `"deleted"` \| `"new"` \| `"modified"` | Type of pending operation |

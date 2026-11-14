@@ -16,5 +16,5 @@ Normalized non-validated child declaration of a [resource](../../../../../classe
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="candidates"></a> `candidates?` | `readonly` | readonly [`IChildResourceCandidateDecl`](IChildResourceCandidateDecl.md)[] | Possible candidates for this value. |
-| <a id="resourcetypename"></a> `resourceTypeName` | `readonly` | `string` | The name of the type of this resource. |
+| <a id="property-candidates"></a> `candidates?` | `readonly` | readonly [`IChildResourceCandidateDecl`](IChildResourceCandidateDecl.md)[] | Possible candidates for this value. |
+| <a id="property-resourcetypename"></a> `resourceTypeName` | `readonly` | `string` | The name of the type of this resource. |

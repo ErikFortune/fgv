@@ -16,7 +16,7 @@ Helper method to merge a loose resource with a base name and conditions.
 | ------ | ------ | ------ |
 | `resource` | [`IImporterResourceDecl`](../../Normalized/type-aliases/IImporterResourceDecl.md) | The resource to merge. |
 | `baseName?` | `string` | The base name to merge with the resource. |
-| `baseConditions?` | readonly [`ILooseConditionDecl`](../../Json/interfaces/ILooseConditionDecl.md)[] | The base conditions to merge with the resource. |
+| `baseConditions?` | readonly [`ILooseConditionDecl`](../../Json/interfaces/ILooseConditionDecl.md)\<`string`\>[] | The base conditions to merge with the resource. |
 
 ## Returns
 

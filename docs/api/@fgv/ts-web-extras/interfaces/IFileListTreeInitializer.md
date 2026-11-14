@@ -12,4 +12,4 @@ Tree initializer for FileList objects (from File API).
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="filelist"></a> `fileList` | `readonly` | `FileList` |
+| <a id="property-filelist"></a> `fileList` | `readonly` | `FileList` |

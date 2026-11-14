@@ -17,8 +17,8 @@ failure details in addition to the error message.
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `TD` |
+| <a id="type-parameter-t"></a> `T` |
+| <a id="type-parameter-td"></a> `TD` |
 
 ## Constructors
 
@@ -48,10 +48,10 @@ message and detail.
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="_detail"></a> `_detail?` | `protected` | `TD` | `undefined` | **`Internal`** |
-| <a id="_message"></a> `_message` | `readonly` | `string` | `undefined` | **`Internal`** |
-| <a id="success"></a> `success` | `readonly` | `false` | `false` | Indicates whether the operation was successful. |
-| <a id="value"></a> `value` | `readonly` | `undefined` | `undefined` | Failed operation always returns undefined for value. |
+| <a id="property-_detail"></a> `_detail?` | `protected` | `TD` | `undefined` | **`Internal`** |
+| <a id="property-_message"></a> `_message` | `protected readonly` | `string` | `undefined` | **`Internal`** |
+| <a id="property-success"></a> `success` | `public readonly` | `false` | `false` | Indicates whether the operation was successful. |
+| <a id="property-value"></a> `value` | `public readonly` | `undefined` | `undefined` | Failed operation always returns undefined for value. |
 
 ## Accessors
 
@@ -266,7 +266,7 @@ Propagates the error message and detail from this result.
 
 | Type Parameter |
 | ------ |
-| `TN` |
+| <a id="type-parameter-tn"></a> `TN` |
 
 #### Parameters
 
@@ -335,6 +335,46 @@ The return value, if the operation was successful, or
 ##### Inherited from
 
 [`Failure`](Failure.md).[`orDefault`](Failure.md#ordefault)
+
+***
+
+### orDefaultWith()
+
+> **orDefaultWith**(`cb`): `T`
+
+Gets the value associated with a successful [result](../interfaces/IResult.md), or a
+default produced by the supplied callback if the corresponding operation
+failed.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `cb` | () => `T` | Produces the default. Invoked only when the operation failed. |
+
+#### Returns
+
+`T`
+
+The result value if the operation succeeded, otherwise the value
+returned by `cb`.
+
+#### Remarks
+
+The deferring sibling of [orDefault(T)](../interfaces/IResult.md#ordefault). The
+callback runs **only on failure**, so an expensive default — a computation, a
+file read, an allocation — costs nothing on the success path. Reach for this
+whenever the default is anything more than a literal or an already-held
+value; `orDefault(expensive())` evaluates its argument before the call and
+pays that cost every time, which is a defect a reader has to look at the
+*argument* to spot.
+
+The name follows this library's `with*` convention for a method that takes a
+callback (see [withErrorFormat](../interfaces/IResult.md#witherrorformat)).
+
+#### Inherited from
+
+[`Failure`](Failure.md).[`orDefaultWith`](Failure.md#ordefaultwith)
 
 ***
 
@@ -411,71 +451,200 @@ Reports the result to the supplied reporter
 
 ***
 
-### thenOnFailure()
+### shouldNotFail()
 
-> **thenOnFailure**(`cb`): [`AsyncResult`](AsyncResult.md)\<`T`\>
+> **shouldNotFail**(`label?`, `frameDepth?`): `never`
 
-Calls a supplied [async failure continuation](../type-aliases/AsyncFailureContinuation.md) if
-the operation failed, bridging into an [AsyncResult](AsyncResult.md) chain.
+Asserts at the call site that this [result](../interfaces/IResult.md) MUST be a success.
+Returns the value on success; on failure, throws an `Error` whose message
+is composed from the original failure message and the captured call-site
+location (file, line, and where useful function name).
 
 #### Parameters
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `cb` | [`AsyncFailureContinuation`](../type-aliases/AsyncFailureContinuation.md)\<`T`\> | The [async failure continuation](../type-aliases/AsyncFailureContinuation.md) to be called in the event of failure. |
+| Parameter | Type | Default value | Description |
+| ------ | ------ | ------ | ------ |
+| `label?` | `string` | `undefined` | Optional human-meaningful identifier (e.g. the constant name) prefixed to the error message. |
+| `frameDepth?` | `number` | `1` | Optional 1-indexed depth into the caller stack. Default `1` (immediate caller). Library authors wrapping `shouldNotFail` inside their own helper pass `2` to attribute to their caller. |
 
 #### Returns
 
-[`AsyncResult`](AsyncResult.md)\<`T`\>
+`never`
 
-An [AsyncResult](AsyncResult.md) wrapping the async continuation result, or
-propagating the success value from this result.
+The result value, if the operation was successful.
 
 #### Remarks
 
-If the async callback rejects, the rejection is caught and converted
-to a [Failure](Failure.md).
+Use for declaration-time / setup-time invariants — module-level `const`
+initializers, static class properties, static initialization blocks, and
+test fixtures — where a failure indicates a coding bug that should
+surface at the call site rather than propagate as a `Result`. For chains
+where the throw is intentional control flow, prefer `orThrow`.
+
+On V8 (Node + Chromium) `Error.captureStackTrace` is used to elide
+`shouldNotFail` itself from the captured stack so the parsed frame is
+the user's call site directly. On WebKit (where `captureStackTrace` is
+unavailable) the stack is parsed manually and frames whose **parsed
+function name** contains `shouldNotFail` are filtered out — the raw
+stack-line text (including the file path) is deliberately NOT inspected,
+so consumer files named after `shouldNotFail` are not collateral damage.
+Function names and exact line numbers depend on source-map availability
+in the runtime. When no caller frame is recoverable (e.g. `frameDepth`
+out of range, or `frameDepth: 0`) the message falls back to the
+label-only form (or the bare original message when no label is given).
+
+Error message format (depending on whether a label and a usable function
+name are available):
+- both: `<label> (at <fn> in <file>:<line>): <original>`
+- label only: `<label> (at <file>:<line>): <original>`
+- fn only: `<fn> at <file>:<line>: <original>`
+- neither: `<file>:<line>: <original>`
 
 #### Inherited from
 
+[`Failure`](Failure.md).[`shouldNotFail`](Failure.md#shouldnotfail)
+
+***
+
+### thenOnFailure()
+
+#### Call Signature
+
+> **thenOnFailure**(`cb`): [`AsyncDetailedResult`](AsyncDetailedResult.md)\<`T`, `TD`\>
+
+Invokes the supplied [async failure callback](../type-aliases/AsyncDetailedFailureContinuation.md),
+bridging into an [AsyncDetailedResult](AsyncDetailedResult.md) chain which preserves the detail type.
+
+##### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `cb` | [`AsyncDetailedFailureContinuation`](../type-aliases/AsyncDetailedFailureContinuation.md)\<`T`, `TD`\> | The [async failure callback](../type-aliases/AsyncDetailedFailureContinuation.md) to be invoked. |
+
+##### Returns
+
+[`AsyncDetailedResult`](AsyncDetailedResult.md)\<`T`, `TD`\>
+
+An [AsyncDetailedResult\<T, TD\>](AsyncDetailedResult.md) wrapping the callback's
+result.
+
+##### Remarks
+
+Overrides [Failure.thenOnFailure](Failure.md#thenonfailure) to preserve the detail type. The callback receives
+this failure's detail alongside its message.
+
+A callback which throws synchronously or returns a rejected promise yields a
+DetailedFailure with no detail rather than escaping as an exception.
+
+##### Overrides
+
 [`Failure`](Failure.md).[`thenOnFailure`](Failure.md#thenonfailure)
+
+#### Call Signature
+
+> **thenOnFailure**(`cb`): [`AsyncResult`](AsyncResult.md)\<`T`\>
+
+Back-compatible form of the overload above, for a callback which returns a plain
+[Result](../type-aliases/Result.md) rather than a [DetailedResult](../type-aliases/DetailedResult.md).
+
+##### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `cb` | [`AsyncFailureContinuation`](../type-aliases/AsyncFailureContinuation.md)\<`T`\> | The async failure callback to be invoked. |
+
+##### Returns
+
+[`AsyncResult`](AsyncResult.md)\<`T`\>
+
+An [AsyncResult](AsyncResult.md) wrapping the callback's result, with no detail.
+
+##### Remarks
+
+Declared so such a callback keeps compiling, and keeps yielding a plain [AsyncResult](AsyncResult.md),
+exactly as it did when this class inherited [Failure.thenOnFailure](Failure.md#thenonfailure). Without it the override
+would *narrow* the inherited parameter type, which is a source-breaking change even though it
+only adds API surface - and therefore one an additive-looking API report cannot detect.
+
+##### Overrides
+
+`Failure.thenOnFailure`
 
 ***
 
 ### thenOnSuccess()
 
-> **thenOnSuccess**\<`TN`\>(`__`): [`AsyncResult`](AsyncResult.md)\<`TN`\>
+#### Call Signature
 
-Calls a supplied [async success continuation](../type-aliases/AsyncSuccessContinuation.md) if
-the operation was a success, bridging into an [AsyncResult](AsyncResult.md) chain.
+> **thenOnSuccess**\<`TN`\>(`__cb`): [`AsyncDetailedResult`](AsyncDetailedResult.md)\<`TN`, `TD`\>
 
-#### Type Parameters
+Propagates this failure's message **and detail** into an [AsyncDetailedResult](AsyncDetailedResult.md) chain
+without invoking the callback.
+
+##### Type Parameters
 
 | Type Parameter |
 | ------ |
-| `TN` |
+| <a id="type-parameter-tn-1"></a> `TN` |
 
-#### Parameters
+##### Parameters
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `__` | [`AsyncSuccessContinuation`](../type-aliases/AsyncSuccessContinuation.md)\<`T`, `TN`\> | The [async success continuation](../type-aliases/AsyncSuccessContinuation.md) to be called in the event of success. |
+| `__cb` | [`AsyncDetailedSuccessContinuation`](../type-aliases/AsyncDetailedSuccessContinuation.md)\<`T`, `TD`, `TN`\> | The [async success callback](../type-aliases/AsyncDetailedSuccessContinuation.md) to be called in case of success (ignored). |
 
-#### Returns
+##### Returns
+
+[`AsyncDetailedResult`](AsyncDetailedResult.md)\<`TN`, `TD`\>
+
+An [AsyncDetailedResult\<TN, TD\>](AsyncDetailedResult.md) carrying this failure's
+message and detail.
+
+##### Remarks
+
+Overrides [Failure.thenOnSuccess](Failure.md#thenonsuccess), which returns a plain
+[AsyncResult\<TN\>](AsyncResult.md) and would drop `<TD>` silently. Mutates the success
+type as the success callback would have, exactly as [DetailedFailure.onSuccess](#onsuccess) does.
+
+##### Overrides
+
+[`Failure`](Failure.md).[`thenOnSuccess`](Failure.md#thenonsuccess)
+
+#### Call Signature
+
+> **thenOnSuccess**\<`TN`\>(`__cb`): [`AsyncResult`](AsyncResult.md)\<`TN`\>
+
+Back-compatible form of the overload above, for a callback which returns a plain
+[Result](../type-aliases/Result.md) rather than a [DetailedResult](../type-aliases/DetailedResult.md).
+
+##### Type Parameters
+
+| Type Parameter |
+| ------ |
+| <a id="type-parameter-tn-2"></a> `TN` |
+
+##### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `__cb` | [`AsyncSuccessContinuation`](../type-aliases/AsyncSuccessContinuation.md)\<`T`, `TN`\> |
+
+##### Returns
 
 [`AsyncResult`](AsyncResult.md)\<`TN`\>
 
-An [AsyncResult](AsyncResult.md) wrapping the async continuation result, or
-propagating the error message from this failure.
+An [AsyncResult](AsyncResult.md) wrapping the callback's result, with no detail.
 
-#### Remarks
+##### Remarks
 
-If the async callback rejects, the rejection is caught and converted
-to a [Failure](Failure.md).
+Declared so such a callback keeps compiling, and keeps yielding a plain [AsyncResult](AsyncResult.md),
+exactly as it did when this class inherited [Failure.thenOnSuccess](Failure.md#thenonsuccess). Without it the override
+would *narrow* the inherited parameter type, which is a source-breaking change even though it
+only adds API surface - and therefore one an additive-looking API report cannot detect.
 
-#### Inherited from
+##### Overrides
 
-[`Failure`](Failure.md).[`thenOnSuccess`](Failure.md#thenonsuccess)
+`Failure.thenOnSuccess`
 
 ***
 
@@ -512,7 +681,7 @@ adding supplied details.
 
 | Type Parameter |
 | ------ |
-| `TD` |
+| <a id="type-parameter-td-1"></a> `TD` |
 
 #### Parameters
 
@@ -573,7 +742,7 @@ adding a supplied detail if the operation failed.
 
 | Type Parameter |
 | ------ |
-| `TD` |
+| <a id="type-parameter-td-2"></a> `TD` |
 
 #### Parameters
 
@@ -596,6 +765,60 @@ this result succeeded).
 
 ***
 
+### withType()
+
+> **withType**\<`U`\>(): [`Failure`](Failure.md)\<`U`\>
+
+Re-types this [Failure\<T\>](Failure.md) as [Failure\<U\>](Failure.md) for
+propagation under a different success type.
+
+#### Type Parameters
+
+| Type Parameter |
+| ------ |
+| <a id="type-parameter-u"></a> `U` |
+
+#### Returns
+
+[`Failure`](Failure.md)\<`U`\>
+
+This same [Failure](Failure.md) instance, statically retyped as
+[Failure\<U\>](Failure.md).
+
+#### Remarks
+
+Supports the canonical Result early-return-after-`isFailure()` pattern when the
+outer function's success type differs from the inner Result's success type:
+
+```ts
+const storeResult = await PromptStoreFixture.build(seed);
+if (storeResult.isFailure()) {
+  return storeResult.withType<PromptLibrary>();
+}
+return PromptLibrary.create({ store: storeResult.value, ... });
+```
+
+Without this helper, TypeScript rejects `return storeResult` because
+`Failure<IPromptStore>` is invariant in `T` and not assignable to
+`Result<PromptLibrary>`. The workaround `return fail<U>(r.message)` is
+semantically equivalent but allocates a new [Failure](Failure.md) instance;
+`withType` returns `this` and only retypes statically.
+
+This method is sound because a [Failure](Failure.md) variant carries no `T`-shaped
+data — only an error message — so re-typing it as `Failure<U>` cannot
+misrepresent any value. The same operation is NOT exposed on [Success](Success.md)
+because `Success<T>` carries `T`-shaped data and re-typing would be a lie.
+
+For `DetailedResult` propagation that preserves a typed `detail`, consider
+propagating the DetailedFailure directly through `onSuccess` (which
+already re-types the success arm) rather than reaching for `withType`.
+
+#### Inherited from
+
+[`Failure`](Failure.md).[`withType`](Failure.md#withtype)
+
+***
+
 ### with()
 
 > `static` **with**\<`T`, `TD`\>(`message`, `detail?`): `DetailedFailure`\<`T`, `TD`\>
@@ -607,8 +830,8 @@ and optional detail.
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `TD` |
+| <a id="type-parameter-t-1"></a> `T` |
+| <a id="type-parameter-td-3"></a> `TD` |
 
 #### Parameters
 

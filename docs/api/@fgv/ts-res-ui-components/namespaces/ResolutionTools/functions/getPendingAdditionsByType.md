@@ -14,7 +14,7 @@ Gets pending resources filtered by resource type.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `pendingResources` | `Map`\<`string`, [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs)\> | Map of pending resources (keys are guaranteed to be full resource IDs) |
+| `pendingResources` | `Map`\<`string`, [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs)\<`string`\>\> | Map of pending resources (keys are guaranteed to be full resource IDs) |
 | `resourceType` | `string` | Resource type to filter by (e.g., 'json', 'string') |
 
 ## Returns

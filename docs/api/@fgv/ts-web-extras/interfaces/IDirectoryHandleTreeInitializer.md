@@ -12,6 +12,6 @@ Tree initializer for File System Access API directory handles.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="dirhandles"></a> `dirHandles` | `readonly` | [`FileSystemDirectoryHandle`](FileSystemDirectoryHandle.md)[] |
-| <a id="nonrecursive"></a> `nonRecursive?` | `readonly` | `boolean` |
-| <a id="prefix"></a> `prefix?` | `readonly` | `string` |
+| <a id="property-dirhandles"></a> `dirHandles` | `readonly` | [`FileSystemDirectoryHandle`](FileSystemDirectoryHandle.md)[] |
+| <a id="property-nonrecursive"></a> `nonRecursive?` | `readonly` | `boolean` |
+| <a id="property-prefix"></a> `prefix?` | `readonly` | `string` |

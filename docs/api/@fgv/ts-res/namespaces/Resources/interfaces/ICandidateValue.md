@@ -18,9 +18,9 @@ multiple resource candidates to reduce duplication.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="index"></a> `index` | `readonly` | [`CandidateValueIndex`](../../../type-aliases/CandidateValueIndex.md) \| `undefined` | The index of this candidate value in the collection. |
-| <a id="json"></a> `json` | `readonly` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | The normalized JSON value. |
-| <a id="key"></a> `key` | `readonly` | [`CandidateValueKey`](../../../type-aliases/CandidateValueKey.md) | The unique key for this candidate value, derived from the hash of the normalized JSON. |
+| <a id="property-index"></a> `index` | `readonly` | [`CandidateValueIndex`](../../../type-aliases/CandidateValueIndex.md) \| `undefined` | The index of this candidate value in the collection. |
+| <a id="property-json"></a> `json` | `readonly` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | The normalized JSON value. |
+| <a id="property-key"></a> `key` | `readonly` | [`CandidateValueKey`](../../../type-aliases/CandidateValueKey.md) | The unique key for this candidate value, derived from the hash of the normalized JSON. |
 
 ## Methods
 

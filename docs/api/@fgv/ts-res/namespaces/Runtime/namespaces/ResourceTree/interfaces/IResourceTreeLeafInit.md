@@ -12,10 +12,10 @@ Interface for initializing a leaf node with a resource value.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="resource"></a> `resource` | `readonly` | `T` |
+| <a id="property-resource"></a> `resource` | `readonly` | `T` |

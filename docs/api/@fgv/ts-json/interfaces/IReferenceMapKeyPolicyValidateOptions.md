@@ -12,4 +12,4 @@ Options for creating a [ReferenceMapKeyPolicy](../classes/ReferenceMapKeyPolicy.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="makevalid"></a> `makeValid?` | `boolean` | If `true`, the validator coerces keys to some valid value. If `false`, invalid keys cause an error. |
+| <a id="property-makevalid"></a> `makeValid?` | `boolean` | If `true`, the validator coerces keys to some valid value. If `false`, invalid keys cause an error. |

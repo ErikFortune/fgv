@@ -13,7 +13,7 @@ type `<T>` with test and formatting.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Implements
 
@@ -42,8 +42,8 @@ Creates a new RangeOf\<T\>.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="max"></a> `max?` | `readonly` | `T` | Maximum extent of the range. |
-| <a id="min"></a> `min?` | `readonly` | `T` | Minimum extent of the range. |
+| <a id="property-max"></a> `max?` | `public readonly` | `T` | Maximum extent of the range. |
+| <a id="property-min"></a> `min?` | `public readonly` | `T` | Minimum extent of the range. |
 
 ## Methods
 
@@ -174,8 +174,8 @@ Formats the minimum and maximum values of this range.
 [`RangeOfProperties`](../interfaces/RangeOfProperties.md)\<`string`\>
 
 A [RangeOfProperties\<string\>](../interfaces/RangeOfProperties.md) containing the
-formatted representation of the [minimum](#min) and
-[maximum](#max)
+formatted representation of the [minimum](#property-min) and
+[maximum](#property-max)
 extent of the range, or `undefined` for an extent that is not present.
 
 ***
@@ -192,7 +192,7 @@ Default comparison uses javascript built-in comparison.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-1"></a> `T` |
 
 #### Parameters
 
@@ -220,7 +220,7 @@ Static constructor for a RangeOf\<T\>.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-2"></a> `T` |
 
 #### Parameters
 
@@ -247,7 +247,7 @@ optional set of formats and 'empty' value to use.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-3"></a> `T` |
 
 #### Parameters
 

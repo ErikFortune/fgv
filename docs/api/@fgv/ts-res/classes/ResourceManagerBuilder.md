@@ -37,17 +37,17 @@ Constructor for a ResourceManagerBuilder object.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_built"></a> `_built` | `protected` | `boolean` | **`Internal`** Whether the resources have been built. |
-| <a id="_builtresources"></a> `_builtResources` | `readonly` | [`ValidatingResultMap`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ResourceId`](../type-aliases/ResourceId.md), [`Resource`](Resource.md)\> | **`Internal`** The [resources](Resource.md) built by this resource manager. |
-| <a id="_cachedresourcetree"></a> `_cachedResourceTree?` | `protected` | [`IReadOnlyResourceTreeRoot`](../namespaces/Runtime/namespaces/ResourceTree/interfaces/IReadOnlyResourceTreeRoot.md)\<[`Resource`](Resource.md)\> | **`Internal`** The cached resource tree for this resource manager. |
-| <a id="_candidatevalues"></a> `_candidateValues` | `readonly` | [`CandidateValueCollector`](../namespaces/Resources/classes/CandidateValueCollector.md) | **`Internal`** The candidate value collector used by this resource manager. |
-| <a id="_conditions"></a> `_conditions` | `readonly` | [`ConditionCollector`](../namespaces/Conditions/classes/ConditionCollector.md) | **`Internal`** The [condition collector](../namespaces/Conditions/classes/ConditionCollector.md) used by this resource manager. |
-| <a id="_conditionsets"></a> `_conditionSets` | `readonly` | [`ConditionSetCollector`](../namespaces/Conditions/classes/ConditionSetCollector.md) | **`Internal`** The [condition set collector](../namespaces/Conditions/classes/ConditionSetCollector.md) used by this resource manager. |
-| <a id="_decisions"></a> `_decisions` | `readonly` | [`AbstractDecisionCollector`](../namespaces/Decisions/classes/AbstractDecisionCollector.md) | **`Internal`** The [abstract decision collector](../namespaces/Decisions/classes/AbstractDecisionCollector.md) used by this resource manager. |
-| <a id="_numcandidates"></a> `_numCandidates?` | `protected` | `number` | The number of candidates in this resource manager. |
-| <a id="_resources"></a> `_resources` | `readonly` | [`ValidatingResultMap`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ResourceId`](../type-aliases/ResourceId.md), [`ResourceBuilder`](../namespaces/Resources/classes/ResourceBuilder.md)\> | **`Internal`** The [resource builders](../namespaces/Resources/classes/ResourceBuilder.md) used by this resource manager. |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../namespaces/Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [qualifiers](../namespaces/Qualifiers/interfaces/IReadOnlyQualifierCollector.md) used by this resource manager. |
-| <a id="resourcetypes"></a> `resourceTypes` | `readonly` | [`ReadOnlyResourceTypeCollector`](../namespaces/ResourceTypes/type-aliases/ReadOnlyResourceTypeCollector.md) | The [resource types](../namespaces/ResourceTypes/type-aliases/ReadOnlyResourceTypeCollector.md) used by this resource manager. |
+| <a id="property-_built"></a> `_built` | `protected` | `boolean` | **`Internal`** Whether the resources have been built. |
+| <a id="property-_builtresources"></a> `_builtResources` | `protected readonly` | [`ValidatingResultMap`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ResourceId`](../type-aliases/ResourceId.md), [`Resource`](Resource.md)\> | **`Internal`** The [resources](Resource.md) built by this resource manager. |
+| <a id="property-_cachedresourcetree"></a> `_cachedResourceTree?` | `protected` | [`IReadOnlyResourceTreeRoot`](../namespaces/Runtime/namespaces/ResourceTree/interfaces/IReadOnlyResourceTreeRoot.md)\<[`Resource`](Resource.md)\> | **`Internal`** The cached resource tree for this resource manager. |
+| <a id="property-_candidatevalues"></a> `_candidateValues` | `protected readonly` | [`CandidateValueCollector`](../namespaces/Resources/classes/CandidateValueCollector.md) | **`Internal`** The candidate value collector used by this resource manager. |
+| <a id="property-_conditions"></a> `_conditions` | `protected readonly` | [`ConditionCollector`](../namespaces/Conditions/classes/ConditionCollector.md) | **`Internal`** The [condition collector](../namespaces/Conditions/classes/ConditionCollector.md) used by this resource manager. |
+| <a id="property-_conditionsets"></a> `_conditionSets` | `protected readonly` | [`ConditionSetCollector`](../namespaces/Conditions/classes/ConditionSetCollector.md) | **`Internal`** The [condition set collector](../namespaces/Conditions/classes/ConditionSetCollector.md) used by this resource manager. |
+| <a id="property-_decisions"></a> `_decisions` | `protected readonly` | [`AbstractDecisionCollector`](../namespaces/Decisions/classes/AbstractDecisionCollector.md) | **`Internal`** The [abstract decision collector](../namespaces/Decisions/classes/AbstractDecisionCollector.md) used by this resource manager. |
+| <a id="property-_numcandidates"></a> `_numCandidates?` | `protected` | `number` | The number of candidates in this resource manager. |
+| <a id="property-_resources"></a> `_resources` | `protected readonly` | [`ValidatingResultMap`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ResourceId`](../type-aliases/ResourceId.md), [`ResourceBuilder`](../namespaces/Resources/classes/ResourceBuilder.md)\> | **`Internal`** The [resource builders](../namespaces/Resources/classes/ResourceBuilder.md) used by this resource manager. |
+| <a id="property-qualifiers"></a> `qualifiers` | `public readonly` | [`IReadOnlyQualifierCollector`](../namespaces/Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [qualifiers](../namespaces/Qualifiers/interfaces/IReadOnlyQualifierCollector.md) used by this resource manager. |
+| <a id="property-resourcetypes"></a> `resourceTypes` | `public readonly` | [`ReadOnlyResourceTypeCollector`](../namespaces/ResourceTypes/type-aliases/ReadOnlyResourceTypeCollector.md) | The [resource types](../namespaces/ResourceTypes/type-aliases/ReadOnlyResourceTypeCollector.md) used by this resource manager. |
 
 ## Accessors
 
@@ -69,7 +69,7 @@ Resources are built on-demand when accessed and returns Results for error handli
 
 #### Implementation of
 
-[`IResourceManager`](../interfaces/IResourceManager.md).[`builtResources`](../interfaces/IResourceManager.md#builtresources)
+[`IResourceManager`](../interfaces/IResourceManager.md).[`builtResources`](../interfaces/IResourceManager.md#property-builtresources)
 
 ***
 
@@ -92,7 +92,7 @@ contains the [conditions](Condition.md) used by resource candidates.
 
 #### Implementation of
 
-[`IResourceManager`](../interfaces/IResourceManager.md).[`conditions`](../interfaces/IResourceManager.md#conditions)
+[`IResourceManager`](../interfaces/IResourceManager.md).[`conditions`](../interfaces/IResourceManager.md#property-conditions)
 
 ***
 
@@ -115,7 +115,7 @@ contains the [condition sets](../namespaces/Conditions/classes/ConditionSet.md) 
 
 #### Implementation of
 
-[`IResourceManager`](../interfaces/IResourceManager.md).[`conditionSets`](../interfaces/IResourceManager.md#conditionsets)
+[`IResourceManager`](../interfaces/IResourceManager.md).[`conditionSets`](../interfaces/IResourceManager.md#property-conditionsets)
 
 ***
 
@@ -138,7 +138,7 @@ contains the [abstract decisions](Decision.md) used by resource candidates.
 
 #### Implementation of
 
-[`IResourceManager`](../interfaces/IResourceManager.md).[`decisions`](../interfaces/IResourceManager.md#decisions)
+[`IResourceManager`](../interfaces/IResourceManager.md).[`decisions`](../interfaces/IResourceManager.md#property-decisions)
 
 ***
 
@@ -158,7 +158,7 @@ The number of candidates in this resource manager.
 
 #### Implementation of
 
-[`IResourceManager`](../interfaces/IResourceManager.md).[`numCandidates`](../interfaces/IResourceManager.md#numcandidates)
+[`IResourceManager`](../interfaces/IResourceManager.md).[`numCandidates`](../interfaces/IResourceManager.md#property-numcandidates)
 
 ***
 
@@ -178,7 +178,7 @@ The number of resources in this resource manager.
 
 #### Implementation of
 
-[`IResourceManager`](../interfaces/IResourceManager.md).[`numResources`](../interfaces/IResourceManager.md#numresources)
+[`IResourceManager`](../interfaces/IResourceManager.md).[`numResources`](../interfaces/IResourceManager.md#property-numresources)
 
 ***
 
@@ -212,7 +212,7 @@ The resource IDs that this resource manager can resolve.
 
 #### Implementation of
 
-[`IResourceManager`](../interfaces/IResourceManager.md).[`resourceIds`](../interfaces/IResourceManager.md#resourceids)
+[`IResourceManager`](../interfaces/IResourceManager.md).[`resourceIds`](../interfaces/IResourceManager.md#property-resourceids)
 
 ***
 

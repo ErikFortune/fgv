@@ -32,11 +32,11 @@ Constructs a new JsonEditorState.
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="_deferred"></a> `_deferred` | `readonly` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)[] | `[]` | **`Internal`** Any deferred JSON objects to be merged during finalization. |
-| <a id="_id"></a> `_id` | `readonly` | `number` | `undefined` | **`Internal`** Unique global identifier for this state object. |
-| <a id="editor"></a> `editor` | `readonly` | [`IJsonCloneEditor`](../interfaces/IJsonCloneEditor.md) | `undefined` | The [editor](../interfaces/IJsonCloneEditor.md) for which this state applies. |
-| <a id="options"></a> `options` | `readonly` | [`IJsonEditorOptions`](../interfaces/IJsonEditorOptions.md) | `undefined` | Fully resolved [editor options](../interfaces/IJsonEditorOptions.md) that apply to the operation for which this state applies. |
-| <a id="_nextid"></a> `_nextId` | `static` | `number` | `0` | **`Internal`** Static global counter used to assign each JsonEditorState a unique identifier. |
+| <a id="property-_deferred"></a> `_deferred` | `protected readonly` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)[] | `[]` | **`Internal`** Any deferred JSON objects to be merged during finalization. |
+| <a id="property-_id"></a> `_id` | `protected readonly` | `number` | `undefined` | **`Internal`** Unique global identifier for this state object. |
+| <a id="property-editor"></a> `editor` | `public readonly` | [`IJsonCloneEditor`](../interfaces/IJsonCloneEditor.md) | `undefined` | The [editor](../interfaces/IJsonCloneEditor.md) for which this state applies. |
+| <a id="property-options"></a> `options` | `public readonly` | [`IJsonEditorOptions`](../interfaces/IJsonEditorOptions.md) | `undefined` | Fully resolved [editor options](../interfaces/IJsonEditorOptions.md) that apply to the operation for which this state applies. |
+| <a id="property-_nextid"></a> `_nextId` | `protected static` | `number` | `0` | **`Internal`** Static global counter used to assign each JsonEditorState a unique identifier. |
 
 ## Accessors
 
@@ -122,7 +122,7 @@ for various validation failures.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
+| <a id="type-parameter-t"></a> `T` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
 
 #### Parameters
 

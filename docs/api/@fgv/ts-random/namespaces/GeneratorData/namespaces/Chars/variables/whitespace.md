@@ -6,6 +6,6 @@
 
 # Variable: whitespace
 
-> `const` **whitespace**: `string` = `' \t\n\r'`
+> `const` **whitespace**: `string` = ' \\t\\n\\r'
 
 Whitespace

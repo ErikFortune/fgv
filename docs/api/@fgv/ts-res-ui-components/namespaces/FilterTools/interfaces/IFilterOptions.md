@@ -12,6 +12,6 @@ Options for configuring filtering behavior and output.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="enabledebuglogging"></a> `enableDebugLogging?` | `boolean` | Enable detailed console logging for debugging filter operations |
-| <a id="partialcontextmatch"></a> `partialContextMatch?` | `boolean` | Allow partial context matches when filtering resources |
-| <a id="reducequalifiers"></a> `reduceQualifiers?` | `boolean` | Attempt to reduce qualifier complexity during filtering |
+| <a id="property-enabledebuglogging"></a> `enableDebugLogging?` | `boolean` | Enable detailed console logging for debugging filter operations |
+| <a id="property-partialcontextmatch"></a> `partialContextMatch?` | `boolean` | Allow partial context matches when filtering resources |
+| <a id="property-reducequalifiers"></a> `reduceQualifiers?` | `boolean` | Attempt to reduce qualifier complexity during filtering |

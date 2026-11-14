@@ -13,11 +13,11 @@ Describes the parameters used to create a new
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* `string` | `string` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` | `string` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="hierarchy"></a> `hierarchy?` | `Partial`\<[`LiteralValueHierarchyDecl`](../namespaces/Config/type-aliases/LiteralValueHierarchyDecl.md)\<`T`\>\> |
-| <a id="values"></a> `values` | readonly `T`[] |
+| <a id="property-hierarchy"></a> `hierarchy?` | `Partial`\<[`LiteralValueHierarchyDecl`](../namespaces/Config/type-aliases/LiteralValueHierarchyDecl.md)\<`T`\>\> |
+| <a id="property-values"></a> `values` | readonly `T`[] |

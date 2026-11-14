@@ -18,7 +18,7 @@ resource ID from the import context when no explicit ID is provided in the resou
 | ------ | ------ | ------ |
 | `resource` | [`IImporterResourceDecl`](../../Normalized/type-aliases/IImporterResourceDecl.md) | The resource to merge. Can be either a loose resource (with optional ID) or a child resource (without ID). |
 | `baseName?` | `string` | The base name from import context to merge with the resource. When provided, this will be used as the parent component of the resource ID. |
-| `baseConditions?` | readonly [`ILooseConditionDecl`](../../Json/interfaces/ILooseConditionDecl.md)[] | The base conditions from import context to merge with the resource's conditions. |
+| `baseConditions?` | readonly [`ILooseConditionDecl`](../../Json/interfaces/ILooseConditionDecl.md)\<`string`\>[] | The base conditions from import context to merge with the resource's conditions. |
 
 ## Returns
 

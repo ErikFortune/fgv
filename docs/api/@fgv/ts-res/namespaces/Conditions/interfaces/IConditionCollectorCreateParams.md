@@ -12,5 +12,5 @@ Parameters for creating a [ConditionCollector](../classes/ConditionCollector.md)
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="conditions"></a> `conditions?` | [`ILooseConditionDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseConditionDecl.md)[] | Optional array of condition declarations to add to the collector. |
-| <a id="qualifiers"></a> `qualifiers` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [ReadOnlyQualifierCollector](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) used to create conditions in this collector. |
+| <a id="property-conditions"></a> `conditions?` | [`IConditionDecl`](../type-aliases/IConditionDecl.md)[] | Optional array of condition declarations to add to the collector. |
+| <a id="property-qualifiers"></a> `qualifiers` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [ReadOnlyQualifierCollector](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) used to create conditions in this collector. |

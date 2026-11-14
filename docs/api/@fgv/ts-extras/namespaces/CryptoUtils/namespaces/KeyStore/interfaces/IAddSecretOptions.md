@@ -17,4 +17,4 @@ Options for adding a secret.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="description"></a> `description?` | `readonly` | `string` | Optional description for the secret. |
+| <a id="property-description"></a> `description?` | `readonly` | `string` | Optional description for the secret. |

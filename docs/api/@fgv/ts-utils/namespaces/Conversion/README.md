@@ -20,6 +20,7 @@
 - [ConverterTraits](interfaces/ConverterTraits.md)
 - [DefaultingConverter](interfaces/DefaultingConverter.md)
 - [ObjectConverterOptions](interfaces/ObjectConverterOptions.md)
+- [SingleLineOptions](interfaces/SingleLineOptions.md)
 - [StringMatchOptions](interfaces/StringMatchOptions.md)
 
 ## Type Aliases
@@ -32,6 +33,10 @@
 - [FieldConverters](type-aliases/FieldConverters.md)
 - [Infer](type-aliases/Infer.md)
 - [OnError](type-aliases/OnError.md)
+
+## Variables
+
+- [allOnError](variables/allOnError.md)
 
 ## References
 

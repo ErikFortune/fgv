@@ -12,6 +12,6 @@ Describes a single column in the cascade.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="content"></a> `content` | `readonly` | `ReactNode` | Column content |
-| <a id="key"></a> `key` | `readonly` | `string` | Unique key for React reconciliation |
-| <a id="label"></a> `label` | `readonly` | `string` | Breadcrumb label for this column |
+| <a id="property-content"></a> `content` | `readonly` | `ReactNode` | Column content |
+| <a id="property-key"></a> `key` | `readonly` | `string` | Unique key for React reconciliation |
+| <a id="property-label"></a> `label` | `readonly` | `string` | Breadcrumb label for this column |

@@ -17,14 +17,14 @@ A read-only interface exposing non-mutating methods of a
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](ICollectible.md)\<`any`, `any`\> |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="size"></a> `size` | `readonly` | `number` | Returns the number of entries in the map. |
-| <a id="validating"></a> `validating` | `readonly` | [`IReadOnlyCollectorValidator`](IReadOnlyCollectorValidator.md)\<`TITEM`\> | A [CollectorValidator](../classes/CollectorValidator.md) which validates keys and values before inserting them into this collector. |
+| <a id="property-size"></a> `size` | `readonly` | `number` | Returns the number of entries in the map. |
+| <a id="property-validating"></a> `validating` | `readonly` | [`IReadOnlyCollectorValidator`](IReadOnlyCollectorValidator.md)\<`TITEM`\> | A [CollectorValidator](../classes/CollectorValidator.md) which validates keys and values before inserting them into this collector. |
 
 ## Methods
 

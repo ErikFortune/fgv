@@ -13,4 +13,4 @@ Context necessary to convert a string or number to a
 
 | Property | Type |
 | ------ | ------ |
-| <a id="qualifiers"></a> `qualifiers` | [`IReadOnlyQualifierCollector`](../../../interfaces/IReadOnlyQualifierCollector.md) |
+| <a id="property-qualifiers"></a> `qualifiers` | [`IReadOnlyQualifierCollector`](../../../interfaces/IReadOnlyQualifierCollector.md) |

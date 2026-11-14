@@ -12,4 +12,4 @@ Options for removing entries
 
 | Property | Type |
 | ------ | ------ |
-| <a id="recursive"></a> `recursive?` | `boolean` |
+| <a id="property-recursive"></a> `recursive?` | `boolean` |

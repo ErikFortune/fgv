@@ -13,8 +13,8 @@ that validates weakly-typed keys before accessing values.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv"></a> `TV` | `unknown` |
 
 ## Implements
 
@@ -43,7 +43,7 @@ Constructs a new ReadOnlyResultMapValidator.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="converters"></a> `converters` | `readonly` | [`KeyValueConverters`](KeyValueConverters.md)\<`TK`, `TV`\> | The key-value converters used for validation. |
+| <a id="property-converters"></a> `converters` | `public readonly` | [`KeyValueConverters`](KeyValueConverters.md)\<`TK`, `TV`\> | The key-value converters used for validation. |
 
 ## Accessors
 
@@ -63,7 +63,7 @@ The underlying map.
 
 #### Implementation of
 
-[`IReadOnlyResultMapValidator`](../interfaces/IReadOnlyResultMapValidator.md).[`map`](../interfaces/IReadOnlyResultMapValidator.md#map)
+[`IReadOnlyResultMapValidator`](../interfaces/IReadOnlyResultMapValidator.md).[`map`](../interfaces/IReadOnlyResultMapValidator.md#property-map)
 
 ## Methods
 

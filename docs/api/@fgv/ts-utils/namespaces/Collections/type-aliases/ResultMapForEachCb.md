@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-utils](../../../README.md) / [Collections](../README.md) / ResultMapForEachCb
 
-# Type Alias: ResultMapForEachCb()\<TK, TE\>
+# Type Alias: ResultMapForEachCb\<TK, TE\>
 
 > **ResultMapForEachCb**\<`TK`, `TE`\> = (`value`, `key`, `map`, `thisArg?`) => `void`
 
@@ -14,8 +14,8 @@ Callback for [ResultMap](../classes/ResultMap.md) `forEach` method.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TE` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-te"></a> `TE` | `unknown` |
 
 ## Parameters
 

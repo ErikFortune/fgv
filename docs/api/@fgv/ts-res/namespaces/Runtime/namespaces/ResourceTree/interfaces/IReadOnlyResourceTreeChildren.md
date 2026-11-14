@@ -20,15 +20,15 @@ Interface for a read-only result-based resource tree with navigation methods.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TID` *extends* `string` | [`ResourceId`](../../../../../type-aliases/ResourceId.md) |
-| `TNAME` *extends* `string` | [`ResourceName`](../../../../../type-aliases/ResourceName.md) |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tid"></a> `TID` *extends* `string` | [`ResourceId`](../../../../../type-aliases/ResourceId.md) |
+| <a id="type-parameter-tname"></a> `TNAME` *extends* `string` | [`ResourceName`](../../../../../type-aliases/ResourceName.md) |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="size"></a> `size` | `readonly` | `number` | Returns the number of entries in the map. |
+| <a id="property-size"></a> `size` | `readonly` | `number` | Returns the number of entries in the map. |
 
 ## Methods
 

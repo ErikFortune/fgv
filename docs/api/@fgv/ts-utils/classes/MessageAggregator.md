@@ -50,7 +50,7 @@ Indicates whether any messages have been aggregated.
 
 #### Implementation of
 
-[`IMessageAggregator`](../interfaces/IMessageAggregator.md).[`hasMessages`](../interfaces/IMessageAggregator.md#hasmessages)
+[`IMessageAggregator`](../interfaces/IMessageAggregator.md).[`hasMessages`](../interfaces/IMessageAggregator.md#property-hasmessages)
 
 ***
 
@@ -70,7 +70,7 @@ The aggregated messages.
 
 #### Implementation of
 
-[`IMessageAggregator`](../interfaces/IMessageAggregator.md).[`messages`](../interfaces/IMessageAggregator.md#messages)
+[`IMessageAggregator`](../interfaces/IMessageAggregator.md).[`messages`](../interfaces/IMessageAggregator.md#property-messages)
 
 ***
 
@@ -90,7 +90,7 @@ The number of messages aggregated.
 
 #### Implementation of
 
-[`IMessageAggregator`](../interfaces/IMessageAggregator.md).[`numMessages`](../interfaces/IMessageAggregator.md#nummessages)
+[`IMessageAggregator`](../interfaces/IMessageAggregator.md).[`numMessages`](../interfaces/IMessageAggregator.md#property-nummessages)
 
 ## Methods
 
@@ -156,7 +156,7 @@ the supplied [Result\<T\>](../type-aliases/Result.md).
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 #### Parameters
 

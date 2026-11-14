@@ -13,16 +13,16 @@ required characteristics (type, values, etc).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="brand"></a> `brand` | `readonly` | `string` \| `undefined` | The brand for a branded type. |
-| <a id="isoptional"></a> `isOptional` | `readonly` | `boolean` | Indicates whether this element is explicitly optional. |
-| <a id="traits"></a> `traits` | `readonly` | [`ValidatorTraits`](../classes/ValidatorTraits.md) | [Traits](../classes/ValidatorTraits.md) describing this validation. |
+| <a id="property-brand"></a> `brand` | `readonly` | `string` \| `undefined` | The brand for a branded type. |
+| <a id="property-isoptional"></a> `isOptional` | `readonly` | `boolean` | Indicates whether this element is explicitly optional. |
+| <a id="property-traits"></a> `traits` | `readonly` | [`ValidatorTraits`](../classes/ValidatorTraits.md) | [Traits](../classes/ValidatorTraits.md) describing this validation. |
 
 ## Methods
 
@@ -158,7 +158,7 @@ is derived from this one but which matches a branded result.
 
 | Type Parameter |
 | ------ |
-| `B` *extends* `string` |
+| <a id="type-parameter-b"></a> `B` *extends* `string` |
 
 #### Parameters
 

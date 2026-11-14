@@ -25,11 +25,15 @@ const result: Result<Final> = await parseInput(input)
   .withErrorFormat((msg) => `pipeline failed: ${msg}`);
 ```
 
+## Extended by
+
+- [`AsyncDetailedResult`](AsyncDetailedResult.md)
+
 ## Type Parameters
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Implements
 
@@ -41,13 +45,15 @@ const result: Result<Final> = await parseInput(input)
 
 > **new AsyncResult**\<`T`\>(`promise`): `AsyncResult`\<`T`\>
 
-Constructs an AsyncResult wrapping the supplied promise.
+Constructs an AsyncResult wrapping the supplied promise (or any
+`PromiseLike` that resolves to a [Result](../type-aliases/Result.md), such as another
+AsyncResult).
 
 #### Parameters
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `promise` | `Promise`\<[`Result`](../type-aliases/Result.md)\<`T`\>\> | A `Promise` that resolves to a [Result](../type-aliases/Result.md). |
+| `promise` | `PromiseLike`\<[`Result`](../type-aliases/Result.md)\<`T`\>\> | A `Promise` (or `PromiseLike`) that resolves to a [Result](../type-aliases/Result.md). |
 
 #### Returns
 
@@ -73,7 +79,7 @@ supplied errors aggregator.
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `errors` | [`IMessageAggregator`](../interfaces/IMessageAggregator.md) | [Error aggregator](../interfaces/IMessageAggregator.md) in which errors will be aggregated. |
-| `formatter?` | [`ErrorFormatter`](../type-aliases/ErrorFormatter.md)\<`unknown`\> | An optional [error formatter](../type-aliases/ErrorFormatter.md) to be used to format the error message. |
+| `formatter?` | [`ErrorFormatter`](../type-aliases/ErrorFormatter.md) | An optional [error formatter](../type-aliases/ErrorFormatter.md) to be used to format the error message. |
 
 #### Returns
 
@@ -115,7 +121,7 @@ the wrapped result is successful.
 
 | Type Parameter |
 | ------ |
-| `TN` |
+| <a id="type-parameter-tn"></a> `TN` |
 
 #### Parameters
 
@@ -162,15 +168,15 @@ Implementation of `PromiseLike.then` enabling `await` on AsyncResult.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TResult1` | [`Result`](../type-aliases/Result.md)\<`T`\> |
-| `TResult2` | `never` |
+| <a id="type-parameter-tresult1"></a> `TResult1` | [`Result`](../type-aliases/Result.md)\<`T`\> |
+| <a id="type-parameter-tresult2"></a> `TResult2` | `never` |
 
 #### Parameters
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `onfulfilled?` | (`value`) => `TResult1` \| `PromiseLike`\<`TResult1`\> \| `null` | Callback invoked when the promise resolves. |
-| `onrejected?` | (`reason`) => `TResult2` \| `PromiseLike`\<`TResult2`\> \| `null` | Callback invoked when the promise rejects. |
+| `onfulfilled?` | ((`value`) => `TResult1` \| `PromiseLike`\<`TResult1`\>) \| `null` | Callback invoked when the promise resolves. |
+| `onrejected?` | ((`reason`) => `TResult2` \| `PromiseLike`\<`TResult2`\>) \| `null` | Callback invoked when the promise rejects. |
 
 #### Returns
 
@@ -221,7 +227,7 @@ the wrapped result is successful.
 
 | Type Parameter |
 | ------ |
-| `TN` |
+| <a id="type-parameter-tn-1"></a> `TN` |
 
 #### Parameters
 
@@ -274,7 +280,7 @@ Creates an AsyncResult from a [Result](../type-aliases/Result.md).
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-1"></a> `T` |
 
 #### Parameters
 

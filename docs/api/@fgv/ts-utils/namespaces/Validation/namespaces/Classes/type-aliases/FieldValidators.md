@@ -14,5 +14,5 @@ Per-property [validators](../../../interfaces/Validator.md) for each of the prop
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |

@@ -14,4 +14,4 @@ JSON format for an [aggregated result map](../../../classes/AggregatedResultMap.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCOLLECTIONID` *extends* `string` | `string` |
+| <a id="type-parameter-tcollectionid"></a> `TCOLLECTIONID` *extends* `string` | `string` |

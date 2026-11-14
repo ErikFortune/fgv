@@ -13,7 +13,7 @@ The root provides the entry point for tree navigation and resource access by Res
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Implements
 
@@ -41,7 +41,7 @@ Creates a new root node. Use the static create method instead.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="children"></a> `children` | `readonly` | [`IReadOnlyValidatingResourceTreeChildren`](../interfaces/IReadOnlyValidatingResourceTreeChildren.md)\<`T`\> |
+| <a id="property-children"></a> `children` | `public readonly` | [`IReadOnlyValidatingResourceTreeChildren`](../interfaces/IReadOnlyValidatingResourceTreeChildren.md)\<`T`\> |
 
 ## Accessors
 
@@ -57,7 +57,7 @@ Creates a new root node. Use the static create method instead.
 
 #### Implementation of
 
-[`IReadOnlyResourceTreeRoot`](../interfaces/IReadOnlyResourceTreeRoot.md).[`isBranch`](../interfaces/IReadOnlyResourceTreeRoot.md#isbranch)
+[`IReadOnlyResourceTreeRoot`](../interfaces/IReadOnlyResourceTreeRoot.md).[`isBranch`](../interfaces/IReadOnlyResourceTreeRoot.md#property-isbranch)
 
 ***
 
@@ -73,7 +73,7 @@ Creates a new root node. Use the static create method instead.
 
 #### Implementation of
 
-[`IReadOnlyResourceTreeRoot`](../interfaces/IReadOnlyResourceTreeRoot.md).[`isLeaf`](../interfaces/IReadOnlyResourceTreeRoot.md#isleaf)
+[`IReadOnlyResourceTreeRoot`](../interfaces/IReadOnlyResourceTreeRoot.md).[`isLeaf`](../interfaces/IReadOnlyResourceTreeRoot.md#property-isleaf)
 
 ***
 
@@ -89,7 +89,7 @@ Creates a new root node. Use the static create method instead.
 
 #### Implementation of
 
-[`IReadOnlyResourceTreeRoot`](../interfaces/IReadOnlyResourceTreeRoot.md).[`isRoot`](../interfaces/IReadOnlyResourceTreeRoot.md#isroot)
+[`IReadOnlyResourceTreeRoot`](../interfaces/IReadOnlyResourceTreeRoot.md).[`isRoot`](../interfaces/IReadOnlyResourceTreeRoot.md#property-isroot)
 
 ## Methods
 
@@ -98,6 +98,8 @@ Creates a new root node. Use the static create method instead.
 Creates a new ReadOnlyResourceTreeRoot from either resources or initialization data.
 
 #### Param
+
+**init**
 
 Either an array of [ResourceId, resource] pairs or tree initialization structure
 
@@ -111,7 +113,7 @@ Creates a new ReadOnlyResourceTreeRoot from an array of resources.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-1"></a> `T` |
 
 ##### Parameters
 
@@ -135,7 +137,7 @@ Creates a new ReadOnlyResourceTreeRoot from initialization data.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-2"></a> `T` |
 
 ##### Parameters
 
@@ -163,7 +165,7 @@ it cannot itself be a resource (e.g., if 'app.messages.welcome' exists, then 'ap
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-3"></a> `T` |
 
 #### Parameters
 

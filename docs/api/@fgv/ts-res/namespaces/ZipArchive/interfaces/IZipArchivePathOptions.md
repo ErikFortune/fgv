@@ -12,5 +12,5 @@ Options for creating a ZIP archive buffer
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="configpath"></a> `configPath?` | `string` | Optional configuration file path |
-| <a id="inputpath"></a> `inputPath?` | `string` | File or directory path to include in the archive |
+| <a id="property-configpath"></a> `configPath?` | `string` | Optional configuration file path |
+| <a id="property-inputpath"></a> `inputPath?` | `string` | File or directory path to include in the archive |

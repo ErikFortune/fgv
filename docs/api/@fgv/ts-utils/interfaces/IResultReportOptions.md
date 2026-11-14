@@ -12,11 +12,11 @@ Options for reporting a result.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TD` | `unknown` |
+| <a id="type-parameter-td"></a> `TD` | `unknown` |
 
 ## Properties
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="failure"></a> `failure?` | [`MessageLogLevel`](../type-aliases/MessageLogLevel.md) \| [`IMessageReportDetail`](IMessageReportDetail.md)\<`TD`\> | The level of reporting to be used for failure results. Default is 'error'. |
-| <a id="success"></a> `success?` | [`MessageLogLevel`](../type-aliases/MessageLogLevel.md) \| [`IMessageReportDetail`](IMessageReportDetail.md)\<`TD`\> | The level of reporting to be used for success results. Default is 'quiet'. |
+| <a id="property-failure"></a> `failure?` | [`MessageLogLevel`](../type-aliases/MessageLogLevel.md) \| [`IMessageReportDetail`](IMessageReportDetail.md)\<`TD`\> | The level of reporting to be used for failure results. Default is 'error'. |
+| <a id="property-success"></a> `success?` | [`MessageLogLevel`](../type-aliases/MessageLogLevel.md) \| [`IMessageReportDetail`](IMessageReportDetail.md)\<`TD`\> | The level of reporting to be used for success results. Default is 'quiet'. |

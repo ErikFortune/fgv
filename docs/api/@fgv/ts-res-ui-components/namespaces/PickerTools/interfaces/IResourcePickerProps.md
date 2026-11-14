@@ -46,17 +46,17 @@ passed as separate props.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | `unknown` |
 
 ## Properties
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="classname"></a> `className?` | `string` | Additional CSS class names for styling |
-| <a id="onresourceselect"></a> `onResourceSelect` | (`selection`) => `void` | Callback fired when a resource is selected, providing comprehensive selection data |
-| <a id="options"></a> `options?` | [`IResourcePickerOptions`](IResourcePickerOptions.md) | Options controlling picker appearance and behavior |
-| <a id="pendingresources"></a> `pendingResources?` | [`IPendingResource`](IPendingResource.md)\<`T`\>[] | Pending (unsaved) resources to display alongside persisted resources |
-| <a id="pickeroptionspanelpresentation"></a> `pickerOptionsPanelPresentation?` | `"inline"` \| `"hidden"` \| `"popover"` \| `"popup"` \| `"collapsible"` | How to present the ResourcePicker options control panel (default: 'hidden' for production use) |
-| <a id="resourceannotations"></a> `resourceAnnotations?` | [`IResourceAnnotations`](IResourceAnnotations.md) | Annotations to display next to resource names (badges, indicators, etc.) |
-| <a id="resources"></a> `resources` | [`IProcessedResources`](../../ResourceTools/interfaces/IProcessedResources.md) \| [`IExtendedProcessedResources`](../../ResourceTools/interfaces/IExtendedProcessedResources.md) \| `null` | Processed resources to display in the picker |
-| <a id="selectedresourceid"></a> `selectedResourceId` | `string` \| `null` | Currently selected resource ID |
+| <a id="property-classname"></a> `className?` | `string` | Additional CSS class names for styling |
+| <a id="property-onresourceselect"></a> `onResourceSelect` | (`selection`) => `void` | Callback fired when a resource is selected, providing comprehensive selection data |
+| <a id="property-options"></a> `options?` | [`IResourcePickerOptions`](IResourcePickerOptions.md) | Options controlling picker appearance and behavior |
+| <a id="property-pendingresources"></a> `pendingResources?` | [`IPendingResource`](IPendingResource.md)\<`T`\>[] | Pending (unsaved) resources to display alongside persisted resources |
+| <a id="property-pickeroptionspanelpresentation"></a> `pickerOptionsPanelPresentation?` | `"inline"` \| `"hidden"` \| `"popover"` \| `"popup"` \| `"collapsible"` | How to present the ResourcePicker options control panel (default: 'hidden' for production use) |
+| <a id="property-resourceannotations"></a> `resourceAnnotations?` | [`IResourceAnnotations`](IResourceAnnotations.md) | Annotations to display next to resource names (badges, indicators, etc.) |
+| <a id="property-resources"></a> `resources` | [`IProcessedResources`](../../ResourceTools/interfaces/IProcessedResources.md) \| [`IExtendedProcessedResources`](../../ResourceTools/interfaces/IExtendedProcessedResources.md) \| `null` | Processed resources to display in the picker |
+| <a id="property-selectedresourceid"></a> `selectedResourceId` | `string` \| `null` | Currently selected resource ID |

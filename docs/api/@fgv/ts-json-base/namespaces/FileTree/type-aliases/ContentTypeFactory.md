@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-json-base](../../../README.md) / [FileTree](../README.md) / ContentTypeFactory
 
-# Type Alias: ContentTypeFactory()\<TCT\>
+# Type Alias: ContentTypeFactory\<TCT\>
 
 > **ContentTypeFactory**\<`TCT`\> = (`filePath`, `provided?`) => [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`TCT` \| `undefined`\>
 
@@ -14,7 +14,7 @@ Type of function to infer the content type of a file.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |
 
 ## Parameters
 

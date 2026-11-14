@@ -14,7 +14,7 @@ Aggregates error messages from a collection of [Result\<T\>](../type-aliases/Res
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Parameters
 

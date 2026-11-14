@@ -14,7 +14,7 @@ Second-level tab bar for switching views within a mode.
 
 | Type Parameter |
 | ------ |
-| `TTab` *extends* `string` |
+| <a id="type-parameter-ttab"></a> `TTab` *extends* `string` |
 
 ## Parameters
 

@@ -16,7 +16,7 @@ Writable file stream interface
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="locked"></a> `locked` | `readonly` | `boolean` | The **`locked`** read-only property of the WritableStream interface returns a boolean indicating whether the `WritableStream` is locked to a writer. [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStream/locked) |
+| <a id="property-locked"></a> `locked` | `readonly` | `boolean` | The **`locked`** read-only property of the WritableStream interface returns a boolean indicating whether the `WritableStream` is locked to a writer. [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStream/locked) |
 
 ## Methods
 

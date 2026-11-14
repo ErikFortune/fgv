@@ -20,7 +20,7 @@
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="overrides"></a> `overrides` | `readonly` | `Map`\<[`LanguageSubtag`](../../../../Iana/namespaces/LanguageSubtags/type-aliases/LanguageSubtag.md), [`ILanguageOverride`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs)\> |
+| <a id="property-overrides"></a> `overrides` | `public readonly` | `Map`\<[`LanguageSubtag`](../../../../Iana/namespaces/LanguageSubtags/type-aliases/LanguageSubtag.md), [`ILanguageOverride`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs)\> |
 
 ## Methods
 

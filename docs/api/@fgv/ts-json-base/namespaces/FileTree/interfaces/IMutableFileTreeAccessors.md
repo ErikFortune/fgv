@@ -16,13 +16,15 @@ type guard to check if an accessor supports mutation.
 
 ## Extended by
 
+- [`IMutableBinaryFileTreeAccessors`](IMutableBinaryFileTreeAccessors.md)
 - [`IPersistentFileTreeAccessors`](IPersistentFileTreeAccessors.md)
+- [`IAtomicFileTreeAccessors`](IAtomicFileTreeAccessors.md)
 
 ## Type Parameters
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |
 
 ## Methods
 
@@ -199,6 +201,20 @@ Gets the contents of a file in the file tree.
 
 The contents of the file.
 
+#### Remarks
+
+The bytes are decoded as UTF-8 with the *lenient* WHATWG default, so malformed
+input is silently replaced with U+FFFD rather than reported. Accessors whose
+backing store is byte-native also implement
+[IBinaryFileTreeAccessors](IBinaryFileTreeAccessors.md); narrow with
+[isBinaryAccessors](../functions/isBinaryAccessors.md) and call
+[getFileBytes](IBinaryFileTreeAccessors.md#getfilebytes) to read the
+undecoded bytes — for a strict decode that fails loudly on malformed UTF-8:
+
+```ts
+new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+```
+
 #### Inherited from
 
 [`IFileTreeAccessors`](IFileTreeAccessors.md).[`getFileContents`](IFileTreeAccessors.md#getfilecontents)
@@ -302,6 +318,33 @@ The resolved absolute path.
 
 ***
 
+### resolveRealPath()?
+
+> `optional` **resolveRealPath**(`path`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
+
+Resolves a path to its canonical real path, with every symbolic link
+resolved. Optional: only storage that has symbolic links (a filesystem)
+implements it.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | The path to resolve. |
+
+#### Returns
+
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
+
+`Success` with the real path, or `Failure` if it cannot be
+resolved (for example, it does not exist).
+
+#### Inherited from
+
+[`IFileTreeAccessors`](IFileTreeAccessors.md).[`resolveRealPath`](IFileTreeAccessors.md#resolverealpath)
+
+***
+
 ### saveFileContents()
 
 > **saveFileContents**(`path`, `contents`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
@@ -320,3 +363,9 @@ Saves the contents to a file at the given path.
 [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
 
 `Success` if the file was saved, or `Failure` with an error message.
+
+#### Remarks
+
+The string is encoded as UTF-8. To write bytes that are not valid UTF-8, narrow
+with [isMutableBinaryAccessors](../functions/isMutableBinaryAccessors.md) and use
+[saveFileBytes](IMutableBinaryFileTreeAccessors.md#savefilebytes) instead.

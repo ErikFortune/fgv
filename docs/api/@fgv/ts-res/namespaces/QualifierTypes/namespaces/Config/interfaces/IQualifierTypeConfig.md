@@ -18,12 +18,12 @@ Templated configuration for [qualifier type](../../../../../classes/QualifierTyp
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
+| <a id="type-parameter-t"></a> `T` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="configuration"></a> `configuration?` | `T` |
-| <a id="name"></a> `name` | `string` |
-| <a id="systemtype"></a> `systemType` | `string` |
+| <a id="property-configuration"></a> `configuration?` | `T` |
+| <a id="property-name"></a> `name` | `string` |
+| <a id="property-systemtype"></a> `systemType` | `string` |

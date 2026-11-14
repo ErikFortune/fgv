@@ -26,7 +26,7 @@ to remove undefined properties before actual JSON serialization.
 
 | Type Parameter | Description |
 | ------ | ------ |
-| `T` | The type to be constrained |
+| <a id="type-parameter-t"></a> `T` | The type to be constrained |
 
 ## Returns
 

@@ -12,7 +12,7 @@ Implementation of `IFileTreeDirectoryItem` for directories in a ZIP archive.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |
 
 ## Implements
 
@@ -41,9 +41,9 @@ Constructor for ZipDirectoryItem.
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="absolutepath"></a> `absolutePath` | `readonly` | `string` | `undefined` | The absolute path of the directory within the ZIP archive. |
-| <a id="name"></a> `name` | `readonly` | `string` | `undefined` | The name of the directory |
-| <a id="type"></a> `type` | `readonly` | `"directory"` | `'directory'` | Indicates that this `FileTree.FileTreeItem` is a directory. |
+| <a id="property-absolutepath"></a> `absolutePath` | `public readonly` | `string` | `undefined` | The absolute path of the directory within the ZIP archive. |
+| <a id="property-name"></a> `name` | `public readonly` | `string` | `undefined` | The name of the directory |
+| <a id="property-type"></a> `type` | `public readonly` | `"directory"` | `'directory'` | Indicates that this `FileTree.FileTreeItem` is a directory. |
 
 ## Methods
 

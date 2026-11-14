@@ -21,6 +21,7 @@ as a single archive.
 ## Interfaces
 
 - [ICreateZipOptions](interfaces/ICreateZipOptions.md)
+- [IZipFile](interfaces/IZipFile.md)
 - [IZipTextFile](interfaces/IZipTextFile.md)
 
 ## Type Aliases
@@ -29,4 +30,5 @@ as a single archive.
 
 ## Functions
 
+- [createZipFromFiles](functions/createZipFromFiles.md)
 - [createZipFromTextFiles](functions/createZipFromTextFiles.md)

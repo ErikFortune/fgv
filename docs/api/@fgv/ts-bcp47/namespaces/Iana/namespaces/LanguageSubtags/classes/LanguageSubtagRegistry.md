@@ -28,19 +28,19 @@
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_all"></a> `_all` | `readonly` | [`RegisteredItem`](../namespaces/Model/type-aliases/RegisteredItem.md)[] | **`Internal`** |
-| <a id="collections"></a> `collections` | `readonly` | [`LanguageSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
-| <a id="extlangs"></a> `extlangs` | `readonly` | [`ExtLangSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
-| <a id="filedate"></a> `fileDate` | `readonly` | [`YearMonthDaySpec`](../../Jar/namespaces/LanguageSubtags/namespaces/Registry/type-aliases/YearMonthDaySpec.md) | - |
-| <a id="grandfathered"></a> `grandfathered` | `readonly` | [`GrandfatheredTagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
-| <a id="languages"></a> `languages` | `readonly` | [`LanguageSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
-| <a id="macrolanguages"></a> `macrolanguages` | `readonly` | [`LanguageSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
-| <a id="privateuse"></a> `privateUse` | `readonly` | [`LanguageSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
-| <a id="redundant"></a> `redundant` | `readonly` | [`RedundantTagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
-| <a id="regions"></a> `regions` | `readonly` | [`RegionSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
-| <a id="scripts"></a> `scripts` | `readonly` | [`ScriptSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
-| <a id="special"></a> `special` | `readonly` | [`LanguageSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
-| <a id="variants"></a> `variants` | `readonly` | [`VariantSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
+| <a id="property-_all"></a> `_all` | `protected readonly` | [`RegisteredItem`](../namespaces/Model/type-aliases/RegisteredItem.md)[] | **`Internal`** |
+| <a id="property-collections"></a> `collections` | `public readonly` | [`LanguageSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
+| <a id="property-extlangs"></a> `extlangs` | `public readonly` | [`ExtLangSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
+| <a id="property-filedate"></a> `fileDate` | `public readonly` | [`YearMonthDaySpec`](../../Jar/namespaces/LanguageSubtags/namespaces/Registry/type-aliases/YearMonthDaySpec.md) | - |
+| <a id="property-grandfathered"></a> `grandfathered` | `public readonly` | [`GrandfatheredTagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
+| <a id="property-languages"></a> `languages` | `public readonly` | [`LanguageSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
+| <a id="property-macrolanguages"></a> `macrolanguages` | `public readonly` | [`LanguageSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
+| <a id="property-privateuse"></a> `privateUse` | `public readonly` | [`LanguageSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
+| <a id="property-redundant"></a> `redundant` | `public readonly` | [`RedundantTagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
+| <a id="property-regions"></a> `regions` | `public readonly` | [`RegionSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
+| <a id="property-scripts"></a> `scripts` | `public readonly` | [`ScriptSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
+| <a id="property-special"></a> `special` | `public readonly` | [`LanguageSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
+| <a id="property-variants"></a> `variants` | `public readonly` | [`VariantSubtagScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
 
 ## Methods
 

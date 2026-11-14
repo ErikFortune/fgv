@@ -20,4 +20,4 @@ Narrow with [FileTree.isMutableFileItem](../functions/isMutableFileItem.md) to a
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |

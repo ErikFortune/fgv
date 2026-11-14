@@ -92,13 +92,16 @@ Filesystem-backed implementation of [IHttpStorageProvider](../interfaces/IHttpSt
 
 ### getFile()
 
-> **getFile**(`itemPath`): `Promise`\<[`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<[`IStorageFileResponse`](../interfaces/IStorageFileResponse.md)\>\>
+> **getFile**(`itemPath`, `encoding?`): `Promise`\<[`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<[`IStorageFileResponse`](../interfaces/IStorageFileResponse.md)\>\>
+
+Reads a file.
 
 #### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `itemPath` | `string` |
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `itemPath` | `string` | Path of the file to read. |
+| `encoding?` | [`StorageContentEncoding`](../type-aliases/StorageContentEncoding.md) | Preferred wire encoding for the returned `contents`. A provider that does not implement the requested encoding MUST answer in `'utf8'` and report that on the response, rather than failing — the field is a preference and the response is the authority. |
 
 #### Returns
 

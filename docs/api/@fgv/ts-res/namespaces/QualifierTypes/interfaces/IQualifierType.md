@@ -18,16 +18,16 @@ territories, etc).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCFGJSON` *extends* [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
+| <a id="type-parameter-tcfgjson"></a> `TCFGJSON` *extends* [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="index"></a> `index` | `readonly` | [`QualifierTypeIndex`](../../../type-aliases/QualifierTypeIndex.md) \| `undefined` | Global index for this qualifier type. Immutable once set, either at construction or using [setIndex](#setindex). |
-| <a id="key"></a> `key` | `readonly` | [`QualifierTypeName`](../../../type-aliases/QualifierTypeName.md) | Unique key for this qualifier. |
-| <a id="name"></a> `name` | `readonly` | [`QualifierTypeName`](../../../type-aliases/QualifierTypeName.md) | The name of the qualifier type. |
-| <a id="systemtypename"></a> `systemTypeName` | `readonly` | [`QualifierTypeName`](../../../type-aliases/QualifierTypeName.md) | Name of the underlying system type. |
+| <a id="property-index"></a> `index` | `readonly` | [`QualifierTypeIndex`](../../../type-aliases/QualifierTypeIndex.md) \| `undefined` | Global index for this qualifier type. Immutable once set, either at construction or using [setIndex](#setindex). |
+| <a id="property-key"></a> `key` | `readonly` | [`QualifierTypeName`](../../../type-aliases/QualifierTypeName.md) | Unique key for this qualifier. |
+| <a id="property-name"></a> `name` | `readonly` | [`QualifierTypeName`](../../../type-aliases/QualifierTypeName.md) | The name of the qualifier type. |
+| <a id="property-systemtypename"></a> `systemTypeName` | `readonly` | [`QualifierTypeName`](../../../type-aliases/QualifierTypeName.md) | Name of the underlying system type. |
 
 ## Methods
 

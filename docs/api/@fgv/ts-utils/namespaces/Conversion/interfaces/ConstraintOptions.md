@@ -12,4 +12,4 @@ Options for [Converter.withConstraint](Converter.md#withconstraint).
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="description"></a> `description` | `readonly` | `string` | Optional description for error messages when constraint function returns false. |
+| <a id="property-description"></a> `description` | `readonly` | `string` | Optional description for error messages when constraint function returns false. |

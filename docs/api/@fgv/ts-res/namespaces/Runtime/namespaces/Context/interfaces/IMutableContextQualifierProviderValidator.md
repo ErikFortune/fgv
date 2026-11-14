@@ -17,14 +17,14 @@ Extends the base interface with mutation operations and provides compile-time ty
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* [`IMutableContextQualifierProvider`](IMutableContextQualifierProvider.md) | [`IMutableContextQualifierProvider`](IMutableContextQualifierProvider.md) |
+| <a id="type-parameter-t"></a> `T` *extends* [`IMutableContextQualifierProvider`](IMutableContextQualifierProvider.md) | [`IMutableContextQualifierProvider`](IMutableContextQualifierProvider.md) |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="provider"></a> `provider` | `readonly` | `T` | The wrapped mutable context qualifier provider. |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The readonly qualifier collector that defines and validates the qualifiers for this context. |
+| <a id="property-provider"></a> `provider` | `readonly` | `T` | The wrapped mutable context qualifier provider. |
+| <a id="property-qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The readonly qualifier collector that defines and validates the qualifiers for this context. |
 
 ## Methods
 

@@ -22,8 +22,8 @@
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="areas"></a> `areas` | `readonly` | [`Areas`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) |
-| <a id="regions"></a> `regions` | `readonly` | [`Regions`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) |
+| <a id="property-areas"></a> `areas` | `public readonly` | [`Areas`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) |
+| <a id="property-regions"></a> `regions` | `public readonly` | [`Regions`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) |
 
 ## Methods
 

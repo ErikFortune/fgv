@@ -15,7 +15,7 @@ objects with values validated by a supplied value converter.
 
 | Type Parameter |
 | ------ |
-| `T` *extends* `string` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` |
 
 ## Parameters
 

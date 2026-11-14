@@ -15,6 +15,6 @@ a [Converters.transformObject](../functions/transformObject.md) call.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TSRC` | - |
-| `TDEST` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-tsrc"></a> `TSRC` | - |
+| <a id="type-parameter-tdest"></a> `TDEST` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |

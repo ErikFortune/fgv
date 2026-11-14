@@ -14,8 +14,8 @@ Attempts to parse and decrypt a JSON object as an [encrypted file](../interfaces
 
 | Type Parameter | Default type | Description |
 | ------ | ------ | ------ |
-| `TPayload` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | Expected type of decrypted content |
-| `TMetadata` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | Type of optional unencrypted metadata |
+| <a id="type-parameter-tpayload"></a> `TPayload` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | Expected type of decrypted content |
+| <a id="type-parameter-tmetadata"></a> `TMetadata` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | Type of optional unencrypted metadata |
 
 ## Parameters
 

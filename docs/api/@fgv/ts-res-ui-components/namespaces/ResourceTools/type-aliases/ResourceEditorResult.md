@@ -15,10 +15,12 @@ Used by ResourceEditorFactory to provide type-specific editors.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | `unknown` |
-| `TV` *extends* [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> | [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> |
+| <a id="type-parameter-t"></a> `T` | `unknown` |
+| <a id="type-parameter-tv"></a> `TV` *extends* [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> | [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> |
 
-## Type Declaration
+## Union Members
+
+### Type Literal
 
 \{ `editor`: `React.ComponentType`\<[`IResourceEditorProps`](../interfaces/IResourceEditorProps.md)\<`T`, `TV`\>\>; `success`: `true`; \}
 
@@ -26,6 +28,10 @@ Used by ResourceEditorFactory to provide type-specific editors.
 | ------ | ------ | ------ |
 | `editor` | `React.ComponentType`\<[`IResourceEditorProps`](../interfaces/IResourceEditorProps.md)\<`T`, `TV`\>\> | The React component to render for editing this resource |
 | `success` | `true` | Indicates whether the factory was able to create an editor for the resource |
+
+***
+
+### Type Literal
 
 \{ `message?`: `string`; `success`: `false`; \}
 

@@ -12,13 +12,13 @@ Represents a partial composite ID, where separator is optional.
 
 | Type Parameter |
 | ------ |
-| `TCOLLECTIONID` *extends* `string` |
-| `TITEMID` *extends* `string` |
+| <a id="type-parameter-tcollectionid"></a> `TCOLLECTIONID` *extends* `string` |
+| <a id="type-parameter-titemid"></a> `TITEMID` *extends* `string` |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="collectionid"></a> `collectionId` | `readonly` | `TCOLLECTIONID` |
-| <a id="itemid"></a> `itemId` | `readonly` | `TITEMID` |
-| <a id="separator"></a> `separator?` | `readonly` | `string` |
+| <a id="property-collectionid"></a> `collectionId` | `readonly` | `TCOLLECTIONID` |
+| <a id="property-itemid"></a> `itemId` | `readonly` | `TITEMID` |
+| <a id="property-separator"></a> `separator?` | `readonly` | `string` |

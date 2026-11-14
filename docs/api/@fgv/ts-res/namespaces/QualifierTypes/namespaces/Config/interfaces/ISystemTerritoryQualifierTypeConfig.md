@@ -16,6 +16,6 @@ Discriminated configuration for [territory qualifier type](../../../classes/Terr
 
 | Property | Type |
 | ------ | ------ |
-| <a id="configuration"></a> `configuration?` | [`ITerritoryQualifierTypeConfig`](ITerritoryQualifierTypeConfig.md) |
-| <a id="name"></a> `name` | `string` |
-| <a id="systemtype"></a> `systemType` | `"territory"` |
+| <a id="property-configuration"></a> `configuration?` | [`ITerritoryQualifierTypeConfig`](ITerritoryQualifierTypeConfig.md) |
+| <a id="property-name"></a> `name` | `string` |
+| <a id="property-systemtype"></a> `systemType` | `"territory"` |

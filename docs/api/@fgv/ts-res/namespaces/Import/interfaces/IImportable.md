@@ -20,5 +20,5 @@ Base interface for importable entities.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="context"></a> `context?` | [`ImportContext`](../classes/ImportContext.md) |
-| <a id="type"></a> `type` | `string` |
+| <a id="property-context"></a> `context?` | [`ImportContext`](../classes/ImportContext.md) |
+| <a id="property-type"></a> `type` | `string` |

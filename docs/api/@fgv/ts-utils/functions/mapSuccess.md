@@ -14,19 +14,19 @@ Aggregates successful results from a a collection of [Result\<T\>](../type-alias
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Parameters
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `results` | `Iterable`\<[`Result`](../type-aliases/Result.md)\<`T`\>\> | An `Iterable` of [Result\<T\>](../type-aliases/Result.md) from which success results are to be aggregated. |
-| `aggregatedErrors?` | [`IMessageAggregator`](../interfaces/IMessageAggregator.md) | Optional string array to which any returned error messages will be appended. Each error is appended as an individual string. |
+| `aggregatedErrors?` | [`IMessageAggregator`](../interfaces/IMessageAggregator.md) | Optional string array to which every returned error message will be appended, in input order, whether or not any result succeeded. Each error is appended as an individual string. This is how a caller of a partial fold learns what was dropped. |
 
 ## Returns
 
 [`Result`](../type-aliases/Result.md)\<`T`[]\>
 
-[Success](../classes/Success.md) with an array of `<T>` if any results were successful. If
-all [results](../type-aliases/Result.md) failed, returns [Failure](../classes/Failure.md) with a concatenated
-summary of all error messages.
+[Success](../classes/Success.md) with an array of `<T>` if any results were successful, or if there
+were no results at all. If all [results](../type-aliases/Result.md) failed, returns [Failure](../classes/Failure.md) with a
+concatenated summary of all error messages.

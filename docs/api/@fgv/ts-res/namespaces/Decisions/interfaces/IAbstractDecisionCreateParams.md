@@ -12,5 +12,5 @@ Parameters to create an [AbstractDecision](../classes/AbstractDecision.md).
 
 | Property | Type |
 | ------ | ------ |
-| <a id="conditionsets"></a> `conditionSets` | [`ConditionSet`](../../Conditions/classes/ConditionSet.md)[] |
-| <a id="index"></a> `index?` | `number` |
+| <a id="property-conditionsets"></a> `conditionSets` | [`ConditionSet`](../../Conditions/classes/ConditionSet.md)[] |
+| <a id="property-index"></a> `index?` | `number` |

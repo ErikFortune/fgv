@@ -18,8 +18,8 @@ Generic base implementation for an in-place [Validator](../../../interfaces/Vali
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Implements
 
@@ -43,13 +43,26 @@ Constructs a new GenericValidator\<T\>.
 
 `GenericValidator`\<`T`, `TC`\>
 
+#### Remarks
+
+The validator is a `Result` boundary, so it never throws: if the supplied validator function
+throws (a bug in a custom callback, or a getter or Proxy trap on the value being validated),
+validation fails with `validator threw: <message>` instead, and `guard` returns `false`. Stack
+exhaustion inside nested validators unwinds to the outermost one and fails once there; a
+`captureResult` (or any `try`) the caller places between two nested validators catches it there
+instead.
+
+The conversion to a `Failure` masks the error wherever a failure is expected: `guard`, `or` and
+`oneOf` (which try the alternative), and `orDefault` all treat a buggy callback like invalid
+input. `orThrow` re-raises the message, but not the original error's class or stack.
+
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_options"></a> `_options` | `readonly` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> | **`Internal`** |
-| <a id="_validator"></a> `_validator` | `readonly` | [`ValidatorFunc`](../../../type-aliases/ValidatorFunc.md)\<`T`, `TC`\> | **`Internal`** |
-| <a id="traits"></a> `traits` | `readonly` | [`ValidatorTraits`](../../../classes/ValidatorTraits.md) | [Traits](../../../classes/ValidatorTraits.md) describing this validation. |
+| <a id="property-_options"></a> `_options` | `protected readonly` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> | **`Internal`** |
+| <a id="property-_validator"></a> `_validator` | `protected readonly` | [`ValidatorFunc`](../../../type-aliases/ValidatorFunc.md)\<`T`, `TC`\> | **`Internal`** |
+| <a id="property-traits"></a> `traits` | `public readonly` | [`ValidatorTraits`](../../../classes/ValidatorTraits.md) | [Traits](../../../classes/ValidatorTraits.md) describing this validation. |
 
 ## Accessors
 
@@ -69,7 +82,7 @@ The brand for a branded type.
 
 #### Implementation of
 
-[`Validator`](../../../interfaces/Validator.md).[`brand`](../../../interfaces/Validator.md#brand)
+[`Validator`](../../../interfaces/Validator.md).[`brand`](../../../interfaces/Validator.md#property-brand)
 
 ***
 
@@ -89,7 +102,7 @@ Indicates whether this element is explicitly optional.
 
 #### Implementation of
 
-[`Validator`](../../../interfaces/Validator.md).[`isOptional`](../../../interfaces/Validator.md#isoptional)
+[`Validator`](../../../interfaces/Validator.md).[`isOptional`](../../../interfaces/Validator.md#property-isoptional)
 
 ## Methods
 
@@ -270,7 +283,7 @@ The brand for a branded type.
 
 | Type Parameter |
 | ------ |
-| `B` *extends* `string` |
+| <a id="type-parameter-b"></a> `B` *extends* `string` |
 
 #### Parameters
 

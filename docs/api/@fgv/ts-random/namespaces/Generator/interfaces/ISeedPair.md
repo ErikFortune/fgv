@@ -12,5 +12,5 @@ Represents a seed as both a string and a number.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="seed"></a> `seed` | `string` |
-| <a id="state"></a> `state` | `number` |
+| <a id="property-seed"></a> `seed` | `string` |
+| <a id="property-state"></a> `state` | `number` |

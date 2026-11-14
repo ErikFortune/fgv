@@ -17,13 +17,13 @@ with accessors for the filesystem.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |
 
 ### Parameters
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `prefix?` | `string` | An optional prefix to prepended to supplied relative paths. |
+| `prefix?` | `string` | An optional prefix, against which relative paths are resolved. An absolute path is used as given (the default `'unconfined'` policy); pass [parameters](../interfaces/IFsFileTreeInitParams.md) with `absolutePathPolicy` to confine paths to the prefix. |
 
 ### Returns
 
@@ -43,17 +43,19 @@ with accessors for the filesystem.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-1"></a> `TCT` *extends* `string` | `string` |
 
 ### Parameters
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `params?` | [`IFileTreeInitParams`](../interfaces/IFileTreeInitParams.md)\<`TCT`\> | Optional [initialization parameters](../interfaces/IFileTreeInitParams.md) for the file tree. |
+| `params?` | [`IFsFileTreeInitParams`](../interfaces/IFsFileTreeInitParams.md)\<`TCT`\> | Optional [initialization parameters](../interfaces/IFsFileTreeInitParams.md) for the file tree. |
 
 ### Returns
 
 [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`FileTree`](../classes/FileTree.md)\<`TCT`\>\>
 
 `Success` with the new [FileTree](../classes/FileTree.md) instance
-if successful, or `Failure` with an error message otherwise.
+if successful, or `Failure` with an error message otherwise — including when
+`params` asks for confinement without a `prefix` (see
+[FsFileTreeAccessors.create](../classes/FsFileTreeAccessors.md#create)).

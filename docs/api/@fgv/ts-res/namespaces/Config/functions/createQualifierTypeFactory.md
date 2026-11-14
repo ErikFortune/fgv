@@ -14,7 +14,7 @@ Creates a [IConfigInitFactory](../interfaces/IConfigInitFactory.md) from a facto
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* [`QualifierType`](../../../classes/QualifierType.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\> | [`QualifierType`](../../../classes/QualifierType.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\> |
+| <a id="type-parameter-t"></a> `T` *extends* [`QualifierType`](../../../classes/QualifierType.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\> | [`QualifierType`](../../../classes/QualifierType.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\> |
 
 ## Parameters
 

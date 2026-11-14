@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-utils](../../../README.md) / [Validation](../README.md) / ValidatorFunc
 
-# Type Alias: ValidatorFunc()\<T, TC\>
+# Type Alias: ValidatorFunc\<T, TC\>
 
 > **ValidatorFunc**\<`T`, `TC`\> = (`from`, `context?`, `self?`) => `boolean` \| [`Failure`](../../../classes/Failure.md)\<`T`\>
 
@@ -16,8 +16,8 @@ an optionally-supplied validation context of type `<TC>`.
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `TC` |
+| <a id="type-parameter-t"></a> `T` |
+| <a id="type-parameter-tc"></a> `TC` |
 
 ## Parameters
 

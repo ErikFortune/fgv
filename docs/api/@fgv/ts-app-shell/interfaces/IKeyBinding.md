@@ -12,7 +12,7 @@ Describes a keyboard shortcut binding.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="alt"></a> `alt?` | `readonly` | `boolean` | Require Alt/Option |
-| <a id="key"></a> `key` | `readonly` | `string` | The key (e.g., 'k', 'z', 'Escape'). Case-insensitive. |
-| <a id="meta"></a> `meta?` | `readonly` | `boolean` | Require Cmd (Mac) / Ctrl (Windows/Linux) |
-| <a id="shift"></a> `shift?` | `readonly` | `boolean` | Require Shift |
+| <a id="property-alt"></a> `alt?` | `readonly` | `boolean` | Require Alt/Option |
+| <a id="property-key"></a> `key` | `readonly` | `string` | The key (e.g., 'k', 'z', 'Escape'). Case-insensitive. |
+| <a id="property-meta"></a> `meta?` | `readonly` | `boolean` | Require Cmd (Mac) / Ctrl (Windows/Linux) |
+| <a id="property-shift"></a> `shift?` | `readonly` | `boolean` | Require Shift |

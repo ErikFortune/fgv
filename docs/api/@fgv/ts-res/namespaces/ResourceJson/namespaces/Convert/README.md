@@ -21,3 +21,18 @@
 - [resourceCollectionDecl](variables/resourceCollectionDecl.md)
 - [resourceTreeChildNodeDecl](variables/resourceTreeChildNodeDecl.md)
 - [resourceTreeRootDecl](variables/resourceTreeRootDecl.md)
+
+## Functions
+
+- [typedChildResourceCandidateDecl](functions/typedChildResourceCandidateDecl.md)
+- [typedChildResourceDecl](functions/typedChildResourceDecl.md)
+- [typedConditionSetDecl](functions/typedConditionSetDecl.md)
+- [typedContainerContextDecl](functions/typedContainerContextDecl.md)
+- [typedImporterResourceCandidateDecl](functions/typedImporterResourceCandidateDecl.md)
+- [typedImporterResourceCollectionDecl](functions/typedImporterResourceCollectionDecl.md)
+- [typedLooseConditionDecl](functions/typedLooseConditionDecl.md)
+- [typedLooseResourceCandidateDecl](functions/typedLooseResourceCandidateDecl.md)
+- [typedLooseResourceDecl](functions/typedLooseResourceDecl.md)
+- [typedResourceCollectionDecl](functions/typedResourceCollectionDecl.md)
+- [typedResourceTreeChildNodeDecl](functions/typedResourceTreeChildNodeDecl.md)
+- [typedResourceTreeRootDecl](functions/typedResourceTreeRootDecl.md)

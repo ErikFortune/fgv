@@ -12,6 +12,6 @@ Props for the TextAreaInput component.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="onchange"></a> `onChange` | `readonly` | (`value`) => `void` | Called when value changes (empty string → undefined) |
-| <a id="placeholder"></a> `placeholder?` | `readonly` | `string` | Placeholder text |
-| <a id="value"></a> `value` | `readonly` | `string` \| `undefined` | Current value (undefined means empty) |
+| <a id="property-onchange"></a> `onChange` | `readonly` | (`value`) => `void` | Called when value changes (empty string → undefined) |
+| <a id="property-placeholder"></a> `placeholder?` | `readonly` | `string` | Placeholder text |
+| <a id="property-value"></a> `value` | `readonly` | `string` \| `undefined` | Current value (undefined means empty) |

@@ -13,12 +13,12 @@ a defined, strongly-typed index.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TKEY` *extends* `string` | `string` |
-| `TINDEX` *extends* `number` | `number` |
+| <a id="type-parameter-tkey"></a> `TKEY` *extends* `string` | `string` |
+| <a id="type-parameter-tindex"></a> `TINDEX` *extends* `number` | `number` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="index"></a> `index` | `TINDEX` |
-| <a id="key"></a> `key` | `TKEY` |
+| <a id="property-index"></a> `index` | `TINDEX` |
+| <a id="property-key"></a> `key` | `TKEY` |

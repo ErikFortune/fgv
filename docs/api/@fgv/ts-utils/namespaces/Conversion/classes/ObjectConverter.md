@@ -24,8 +24,8 @@ for other conversion options.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Constructors
 
@@ -67,7 +67,7 @@ properties specified as an array of `keyof T`.
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `fields` | [`FieldConverters`](../type-aliases/FieldConverters.md)\<`T`, `TC`\> | A [FieldConverters\<T\>](../type-aliases/FieldConverters.md) containing a [Converter](../interfaces/Converter.md) for each field. |
-| `optional?` | keyof `T`[] | An array of `keyof T` listing fields that are not required. |
+| `optional?` | (keyof `T`)[] | An array of `keyof T` listing fields that are not required. |
 
 #### Returns
 
@@ -86,11 +86,11 @@ fields, or pass [ObjectConverterOptions\<T\>](../interfaces/ObjectConverterOptio
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="_brand"></a> `_brand?` | `protected` | `string` | `undefined` | **`Internal`** |
-| <a id="_defaultcontext"></a> `_defaultContext?` | `readonly` | `TC` | `undefined` | **`Internal`** |
-| <a id="_isoptional"></a> `_isOptional` | `protected` | `boolean` | `false` | **`Internal`** |
-| <a id="fields"></a> `fields` | `readonly` | [`FieldConverters`](../type-aliases/FieldConverters.md)\<`T`, `TC`\> | `undefined` | Fields converted by this ObjectConverter. |
-| <a id="options"></a> `options` | `readonly` | [`ObjectConverterOptions`](../interfaces/ObjectConverterOptions.md)\<`T`\> | `undefined` | Options used to initialize this ObjectConverter. |
+| <a id="property-_brand"></a> `_brand?` | `protected` | `string` | `undefined` | **`Internal`** |
+| <a id="property-_defaultcontext"></a> `_defaultContext?` | `protected readonly` | `TC` | `undefined` | **`Internal`** |
+| <a id="property-_isoptional"></a> `_isOptional` | `protected` | `boolean` | `false` | **`Internal`** |
+| <a id="property-fields"></a> `fields` | `public readonly` | [`FieldConverters`](../type-aliases/FieldConverters.md)\<`T`, `TC`\> | `undefined` | Fields converted by this ObjectConverter. |
+| <a id="property-options"></a> `options` | `public readonly` | [`ObjectConverterOptions`](../interfaces/ObjectConverterOptions.md)\<`T`\> | `undefined` | Options used to initialize this ObjectConverter. |
 
 ## Accessors
 
@@ -211,7 +211,7 @@ new optional properties as specified by a supplied array of `keyof T`.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `addOptionalProperties` | keyof `T`[] | The keys to be made optional. |
+| `addOptionalProperties` | (keyof `T`)[] | The keys to be made optional. |
 
 #### Returns
 
@@ -224,7 +224,7 @@ properties.
 
 ### convert()
 
-> **convert**(`from`, `context?`): [`Result`](../../../type-aliases/Result.md)\<`T`\>
+> **convert**(`from`, `context?`, `selfOverride?`): [`Result`](../../../type-aliases/Result.md)\<`T`\>
 
 Converts from `unknown` to `<T>`. For objects and arrays, is guaranteed
 to return a new entity, with any unrecognized properties removed.
@@ -235,6 +235,7 @@ to return a new entity, with any unrecognized properties removed.
 | ------ | ------ | ------ |
 | `from` | `unknown` | The `unknown` to be converted |
 | `context?` | `TC` | An optional conversion context of type `<TC>` to be used in the conversion. |
+| `selfOverride?` | [`Converter`](../interfaces/Converter.md)\<`T`, `TC`\> | An optional override for the `self` reference passed to the converter function, enabling outer converters (e.g. discriminated-object) to thread themselves through to per-arm converters for recursive parsing. |
 
 #### Returns
 
@@ -340,7 +341,7 @@ the converted value of this [Converter](../interfaces/Converter.md).
 
 | Type Parameter |
 | ------ |
-| `T2` |
+| <a id="type-parameter-t2"></a> `T2` |
 
 #### Parameters
 
@@ -371,7 +372,7 @@ converter to the result of this converter.
 
 | Type Parameter |
 | ------ |
-| `T2` |
+| <a id="type-parameter-t2-1"></a> `T2` |
 
 #### Parameters
 
@@ -402,7 +403,7 @@ resulting from this [Converter](../interfaces/Converter.md) using the supplied [
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti"></a> `TI` |
 
 #### Parameters
 
@@ -437,7 +438,7 @@ resulting from this [Converter](../interfaces/Converter.md) using the supplied m
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-1"></a> `TI` |
 
 #### Parameters
 
@@ -572,7 +573,7 @@ new optional properties as specified by a supplied array of `keyof T`.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `optional` | keyof `T`[] | The keys of the source object properties to be made optional. |
+| `optional` | (keyof `T`)[] | The keys of the source object properties to be made optional. |
 
 ##### Returns
 
@@ -610,7 +611,7 @@ of the base conversion and is allowed to mutate the return type.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-2"></a> `TI` |
 
 #### Parameters
 
@@ -639,7 +640,7 @@ of simple types.
 
 | Type Parameter |
 | ------ |
-| `B` *extends* `string` |
+| <a id="type-parameter-b"></a> `B` *extends* `string` |
 
 #### Parameters
 
@@ -698,7 +699,7 @@ Returns a Converter which always succeeds with a default value rather than faili
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TD` | `T` |
+| <a id="type-parameter-td"></a> `TD` | `T` |
 
 #### Parameters
 
@@ -752,7 +753,7 @@ the conversion result from this converter.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-3"></a> `TI` |
 
 #### Parameters
 
@@ -789,7 +790,7 @@ result.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-4"></a> `TI` |
 
 #### Parameters
 

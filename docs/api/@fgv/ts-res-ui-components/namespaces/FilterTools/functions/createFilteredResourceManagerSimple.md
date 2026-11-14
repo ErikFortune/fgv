@@ -6,7 +6,7 @@
 
 # Function: createFilteredResourceManagerSimple()
 
-> **createFilteredResourceManagerSimple**(`originalSystem`, `partialContext`, `options`): `Promise`\<[`Result`](../../../type-aliases/Result.md)\<[`IProcessedResources`](../../ResourceTools/interfaces/IProcessedResources.md)\>\>
+> **createFilteredResourceManagerSimple**(`originalSystem`, `partialContext`, `options?`): `Promise`\<[`Result`](../../../type-aliases/Result.md)\<[`IProcessedResources`](../../ResourceTools/interfaces/IProcessedResources.md)\>\>
 
 Creates a filtered resource manager by applying context filters to reduce resource candidates.
 
@@ -26,7 +26,7 @@ preview modes, testing specific configurations, or optimizing resource resolutio
 | `originalSystem.resourceManager` | [`ResourceManagerBuilder`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) | Primary resource manager for building and managing resources |
 | `originalSystem.resourceTypes` | [`ReadOnlyResourceTypeCollector`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) | Collection of resource type definitions |
 | `partialContext` | `Record`\<`string`, `string` \| `undefined`\> | Filter values to apply for candidate reduction |
-| `options` | [`IFilterOptions`](../interfaces/IFilterOptions.md) | Configuration options for filtering behavior |
+| `options?` | [`IFilterOptions`](../interfaces/IFilterOptions.md) | Configuration options for filtering behavior |
 
 ## Returns
 

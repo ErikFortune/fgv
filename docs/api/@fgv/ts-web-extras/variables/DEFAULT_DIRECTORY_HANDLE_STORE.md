@@ -6,6 +6,6 @@
 
 # Variable: DEFAULT\_DIRECTORY\_HANDLE\_STORE
 
-> `const` **DEFAULT\_DIRECTORY\_HANDLE\_STORE**: `"directory-handles"` = `'directory-handles'`
+> `const` **DEFAULT\_DIRECTORY\_HANDLE\_STORE**: `string` = `'directory-handles'`
 
 Default IndexedDB store name for directory handles.

@@ -12,13 +12,13 @@ Parameters for creating a [LogReporter](../classes/LogReporter.md).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TD` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-td"></a> `TD` | `unknown` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="logger"></a> `logger?` | [`ILogger`](ILogger.md) |
-| <a id="messageformatter"></a> `messageFormatter?` | [`LogMessageFormatter`](../type-aliases/LogMessageFormatter.md)\<`TD`\> |
-| <a id="valueformatter"></a> `valueFormatter?` | [`LogValueFormatter`](../type-aliases/LogValueFormatter.md)\<`T`, `TD`\> |
+| <a id="property-logger"></a> `logger?` | [`ILogger`](ILogger.md) |
+| <a id="property-messageformatter"></a> `messageFormatter?` | [`LogMessageFormatter`](../type-aliases/LogMessageFormatter.md)\<`TD`\> |
+| <a id="property-valueformatter"></a> `valueFormatter?` | [`LogValueFormatter`](../type-aliases/LogValueFormatter.md)\<`T`, `TD`\> |

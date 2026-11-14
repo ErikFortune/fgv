@@ -32,9 +32,9 @@ supplied [system configuration](../namespaces/Model/interfaces/ISystemConfigurat
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [qualifier types](../../QualifierTypes/classes/QualifierTypeCollector.md) that this system configuration uses. |
-| <a id="qualifiertypes"></a> `qualifierTypes` | `readonly` | [`ReadOnlyQualifierTypeCollector`](../../QualifierTypes/type-aliases/ReadOnlyQualifierTypeCollector.md) | The [qualifier types](../../QualifierTypes/classes/QualifierTypeCollector.md) that this system configuration uses. |
-| <a id="resourcetypes"></a> `resourceTypes` | `readonly` | [`ReadOnlyResourceTypeCollector`](../../ResourceTypes/type-aliases/ReadOnlyResourceTypeCollector.md) | The [resource types](../../ResourceTypes/classes/ResourceTypeCollector.md) that this system configuration uses. |
+| <a id="property-qualifiers"></a> `qualifiers` | `public readonly` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [qualifier types](../../QualifierTypes/classes/QualifierTypeCollector.md) that this system configuration uses. |
+| <a id="property-qualifiertypes"></a> `qualifierTypes` | `public readonly` | [`ReadOnlyQualifierTypeCollector`](../../QualifierTypes/type-aliases/ReadOnlyQualifierTypeCollector.md) | The [qualifier types](../../QualifierTypes/classes/QualifierTypeCollector.md) that this system configuration uses. |
+| <a id="property-resourcetypes"></a> `resourceTypes` | `public readonly` | [`ReadOnlyResourceTypeCollector`](../../ResourceTypes/type-aliases/ReadOnlyResourceTypeCollector.md) | The [resource types](../../ResourceTypes/classes/ResourceTypeCollector.md) that this system configuration uses. |
 
 ## Accessors
 

@@ -12,6 +12,6 @@ Declared context for a resource container.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="baseid"></a> `baseId?` | `readonly` | `string` |
-| <a id="conditions"></a> `conditions?` | `readonly` | [`ConditionSetDecl`](../type-aliases/ConditionSetDecl.md) |
-| <a id="mergemethod"></a> `mergeMethod?` | `readonly` | [`ResourceValueMergeMethod`](../../../../../type-aliases/ResourceValueMergeMethod.md) |
+| <a id="property-baseid"></a> `baseId?` | `readonly` | `string` |
+| <a id="property-conditions"></a> `conditions?` | `readonly` | [`ConditionSetDecl`](../type-aliases/ConditionSetDecl.md) |
+| <a id="property-mergemethod"></a> `mergeMethod?` | `readonly` | [`ResourceValueMergeMethod`](../../../../../type-aliases/ResourceValueMergeMethod.md) |

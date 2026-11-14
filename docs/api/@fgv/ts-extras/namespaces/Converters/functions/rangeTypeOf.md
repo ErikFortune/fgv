@@ -15,9 +15,9 @@ range of some comparable type.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `RT` *extends* [`RangeOf`](../../Experimental/classes/RangeOf.md)\<`T`\> | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-rt"></a> `RT` *extends* [`RangeOf`](../../Experimental/classes/RangeOf.md)\<`T`\> | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Parameters
 

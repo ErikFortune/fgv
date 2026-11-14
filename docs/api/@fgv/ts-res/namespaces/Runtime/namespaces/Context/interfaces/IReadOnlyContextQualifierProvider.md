@@ -17,8 +17,8 @@ Explicitly marked as immutable with compile-time type discrimination.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="mutable"></a> `mutable` | `readonly` | `false` | Explicit mutability marker for compile-time type discrimination. Always `false` for read-only providers. |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The readonly qualifier collector that defines and validates the qualifiers for this context. |
+| <a id="property-mutable"></a> `mutable` | `readonly` | `false` | Explicit mutability marker for compile-time type discrimination. Always `false` for read-only providers. |
+| <a id="property-qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The readonly qualifier collector that defines and validates the qualifiers for this context. |
 
 ## Methods
 

@@ -8,4 +8,8 @@
 
 > **MessageSeverity** = `"info"` \| `"success"` \| `"warning"` \| `"error"`
 
-Severity levels for messages.
+Display styling levels for messages — drives color, icon, and toast behavior.
+
+This is the styling axis, orthogonal to the @fgv/ts-utils#MessageLogLevel \| log level
+filter axis on [IMessage.level](../interfaces/IMessage.md#property-level). `'success'` lives here (a UI affordance with no
+log-level analog) and is only ever set explicitly — never derived from a logger bridge.

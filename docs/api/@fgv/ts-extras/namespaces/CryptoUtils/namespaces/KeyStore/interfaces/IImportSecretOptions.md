@@ -15,10 +15,11 @@ Options for importing a secret.
 ## Extended by
 
 - [`IImportKeyOptions`](IImportKeyOptions.md)
+- [`IImportSecretBytesOptions`](IImportSecretBytesOptions.md)
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="description"></a> `description?` | `readonly` | `string` | Optional description for the secret. |
-| <a id="replace"></a> `replace?` | `readonly` | `boolean` | Whether to replace an existing secret with the same name. |
+| <a id="property-description"></a> `description?` | `readonly` | `string` | Optional description for the secret. |
+| <a id="property-replace"></a> `replace?` | `readonly` | `boolean` | Whether to replace an existing secret with the same name. |

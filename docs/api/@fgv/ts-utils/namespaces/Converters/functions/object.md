@@ -23,8 +23,8 @@ without changing shape, given a [FieldConverters\<T, TC\>](../../Conversion/type
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ### Parameters
 
@@ -61,15 +61,15 @@ optional properties.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t-1"></a> `T` | - |
+| <a id="type-parameter-tc-1"></a> `TC` | `unknown` |
 
 ### Parameters
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `properties` | [`FieldConverters`](../../Conversion/type-aliases/FieldConverters.md)\<`T`, `TC`\> | An [FieldConverters\<T, TC\>](../../Conversion/type-aliases/FieldConverters.md) defining the shape of the source object and [converters](../../Conversion/interfaces/Converter.md) to be applied to each properties. |
-| `optional` | keyof `T`[] | An array of `(keyof T)` listing the keys to be considered optional. |
+| `optional` | (keyof `T`)[] | An array of `(keyof T)` listing the keys to be considered optional. |
 
 ### Returns
 

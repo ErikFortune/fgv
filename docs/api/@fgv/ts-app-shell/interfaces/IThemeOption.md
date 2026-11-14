@@ -12,5 +12,5 @@ Describes an available theme for display in selectors.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="id"></a> `id` | `readonly` | `string` | Theme identifier used in settings and CSS class mapping |
-| <a id="label"></a> `label` | `readonly` | `string` | Human-readable label for display |
+| <a id="property-id"></a> `id` | `readonly` | `string` | Theme identifier used in settings and CSS class mapping |
+| <a id="property-label"></a> `label` | `readonly` | `string` | Human-readable label for display |

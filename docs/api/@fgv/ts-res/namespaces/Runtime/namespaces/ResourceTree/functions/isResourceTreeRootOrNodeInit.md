@@ -14,7 +14,7 @@ Type guard to determine if an init object represents a branch or root with child
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Parameters
 

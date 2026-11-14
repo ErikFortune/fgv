@@ -10,5 +10,5 @@
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="colorclass"></a> `colorClass` | `readonly` | `string` | Tailwind color classes, e.g. `'bg-amber-100 text-amber-800'` |
-| <a id="label"></a> `label` | `readonly` | `string` | - |
+| <a id="property-colorclass"></a> `colorClass` | `readonly` | `string` | Tailwind color classes, e.g. `'bg-amber-100 text-amber-800'` |
+| <a id="property-label"></a> `label` | `readonly` | `string` | - |

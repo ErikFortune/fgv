@@ -4,15 +4,15 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-extras](../../../README.md) / [RecordJar](../README.md) / JarFieldPicker
 
-# Type Alias: JarFieldPicker()\<T\>
+# Type Alias: JarFieldPicker\<T\>
 
-> **JarFieldPicker**\<`T`\> = (`record`) => keyof `T`[]
+> **JarFieldPicker**\<`T`\> = (`record`) => (keyof `T`)[]
 
 ## Type Parameters
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* [`JarRecord`](JarRecord.md) | [`JarRecord`](JarRecord.md) |
+| <a id="type-parameter-t"></a> `T` *extends* [`JarRecord`](JarRecord.md) | [`JarRecord`](JarRecord.md) |
 
 ## Parameters
 
@@ -22,4 +22,4 @@
 
 ## Returns
 
-keyof `T`[]
+(keyof `T`)[]

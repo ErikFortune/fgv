@@ -12,9 +12,9 @@ The encrypted key store file format.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="algorithm"></a> `algorithm` | `readonly` | `"AES-256-GCM"` | Algorithm used for encryption. |
-| <a id="authtag"></a> `authTag` | `readonly` | `string` | Base64-encoded authentication tag. |
-| <a id="encrypteddata"></a> `encryptedData` | `readonly` | `string` | Base64-encoded encrypted vault contents. |
-| <a id="format"></a> `format` | `readonly` | `"keystore-v1"` | Format identifier. |
-| <a id="iv"></a> `iv` | `readonly` | `string` | Base64-encoded initialization vector. |
-| <a id="keyderivation"></a> `keyDerivation` | `readonly` | [`IKeyDerivationParams`](../../../interfaces/IKeyDerivationParams.md) | Key derivation parameters (required for key store - always password-derived). |
+| <a id="property-algorithm"></a> `algorithm` | `readonly` | `"AES-256-GCM"` | Algorithm used for encryption. |
+| <a id="property-authtag"></a> `authTag` | `readonly` | `string` | Base64-encoded authentication tag. |
+| <a id="property-encrypteddata"></a> `encryptedData` | `readonly` | `string` | Base64-encoded encrypted vault contents. |
+| <a id="property-format"></a> `format` | `readonly` | [`KeyStoreFormat`](../type-aliases/KeyStoreFormat.md) | Format identifier. |
+| <a id="property-iv"></a> `iv` | `readonly` | `string` | Base64-encoded initialization vector. |
+| <a id="property-keyderivation"></a> `keyDerivation` | `readonly` | [`IPbkdf2KeyDerivationParams`](../../../interfaces/IPbkdf2KeyDerivationParams.md) | Key derivation parameters for the vault master key (always PBKDF2). |

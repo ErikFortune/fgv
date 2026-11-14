@@ -17,7 +17,7 @@ Extends ResultMap to provide collection-like access while adding tree-specific n
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Implements
 
@@ -50,9 +50,9 @@ Creates a new ReadOnlyResourceTreeChildren instance.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_inner"></a> `_inner` | `readonly` | `Map`\<[`ResourceName`](../../../../../type-aliases/ResourceName.md), [`IReadOnlyResourceTreeNode`](../type-aliases/IReadOnlyResourceTreeNode.md)\<`T`\>\> | Protected raw access to the inner `Map<TK, TV>` object. |
-| <a id="path"></a> `path` | `protected` | [`ResourceId`](../../../../../type-aliases/ResourceId.md) \| `undefined` | - |
-| <a id="validating"></a> `validating` | `public` | [`IReadOnlyResourceTreeChildren`](../interfaces/IReadOnlyResourceTreeChildren.md)\<`T`, `string`, `string`\> | - |
+| <a id="property-_inner"></a> `_inner` | `public readonly` | `Map`\<[`ResourceName`](../../../../../type-aliases/ResourceName.md), [`IReadOnlyResourceTreeNode`](../type-aliases/IReadOnlyResourceTreeNode.md)\<`T`\>\> | Protected raw access to the inner `Map<TK, TV>` object. |
+| <a id="property-path"></a> `path` | `protected` | [`ResourceId`](../../../../../type-aliases/ResourceId.md) \| `undefined` | - |
+| <a id="property-validating"></a> `validating` | `public` | [`IReadOnlyResourceTreeChildren`](../interfaces/IReadOnlyResourceTreeChildren.md)\<`T`, `string`, `string`\> | - |
 
 ## Accessors
 
@@ -72,7 +72,7 @@ Returns the number of entries in the map.
 
 #### Implementation of
 
-[`IReadOnlyValidatingResourceTreeChildren`](../interfaces/IReadOnlyValidatingResourceTreeChildren.md).[`size`](../interfaces/IReadOnlyValidatingResourceTreeChildren.md#size)
+[`IReadOnlyValidatingResourceTreeChildren`](../interfaces/IReadOnlyValidatingResourceTreeChildren.md).[`size`](../interfaces/IReadOnlyValidatingResourceTreeChildren.md#property-size)
 
 #### Inherited from
 
@@ -90,8 +90,8 @@ Determines if a value is a [ResultMapValueFactory](https://github.com/ErikFortun
 
 | Type Parameter |
 | ------ |
-| `TK` *extends* `string` |
-| `TV` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` |
+| <a id="type-parameter-tv"></a> `TV` |
 
 #### Parameters
 
@@ -616,8 +616,8 @@ Creates a new [ResultMap](https://github.com/ErikFortune/fgv/tree/main/libraries
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk-1"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv-1"></a> `TV` | `unknown` |
 
 ##### Parameters
 
@@ -646,8 +646,8 @@ Creates a new [ResultMap](https://github.com/ErikFortune/fgv/tree/main/libraries
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk-2"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv-2"></a> `TV` | `unknown` |
 
 ##### Parameters
 

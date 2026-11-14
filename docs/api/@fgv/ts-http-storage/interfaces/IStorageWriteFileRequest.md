@@ -16,7 +16,7 @@ Request for writing file contents.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="contents"></a> `contents` | `readonly` | `string` |
-| <a id="contenttype"></a> `contentType?` | `readonly` | `string` |
-| <a id="namespace"></a> `namespace?` | `readonly` | `string` |
-| <a id="path"></a> `path` | `readonly` | `string` |
+| <a id="property-contents"></a> `contents` | `readonly` | `string` |
+| <a id="property-contenttype"></a> `contentType?` | `readonly` | `string` |
+| <a id="property-namespace"></a> `namespace?` | `readonly` | `string` |
+| <a id="property-path"></a> `path` | `readonly` | `string` |

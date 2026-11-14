@@ -12,10 +12,10 @@ Parameters for constructing a read-only context qualifier provider validator.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* [`IReadOnlyContextQualifierProvider`](IReadOnlyContextQualifierProvider.md) | [`IReadOnlyContextQualifierProvider`](IReadOnlyContextQualifierProvider.md) |
+| <a id="type-parameter-t"></a> `T` *extends* [`IReadOnlyContextQualifierProvider`](IReadOnlyContextQualifierProvider.md) | [`IReadOnlyContextQualifierProvider`](IReadOnlyContextQualifierProvider.md) |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="provider"></a> `provider` | `T` |
+| <a id="property-provider"></a> `provider` | `T` |

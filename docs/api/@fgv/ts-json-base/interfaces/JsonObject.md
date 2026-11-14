@@ -11,4 +11,4 @@ containing only valid [JSON values](../type-aliases/JsonValue.md).
 
 ## Indexable
 
-\[`key`: `string`\]: [`JsonValue`](../type-aliases/JsonValue.md)
+> \[`key`: `string`\]: [`JsonValue`](../type-aliases/JsonValue.md)

@@ -12,8 +12,8 @@ Interface for file metadata.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="lastmodified"></a> `lastModified` | `number` |
-| <a id="name"></a> `name` | `string` |
-| <a id="path"></a> `path` | `string` |
-| <a id="size"></a> `size` | `number` |
-| <a id="type"></a> `type` | `string` |
+| <a id="property-lastmodified"></a> `lastModified` | `number` |
+| <a id="property-name"></a> `name` | `string` |
+| <a id="property-path"></a> `path` | `string` |
+| <a id="property-size"></a> `size` | `number` |
+| <a id="property-type"></a> `type` | `string` |

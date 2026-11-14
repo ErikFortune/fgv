@@ -15,4 +15,4 @@ For simple single-level extraction. For complex nested types, use [Infer](Infer.
 
 | Type Parameter |
 | ------ |
-| `C` |
+| <a id="type-parameter-c"></a> `C` |
