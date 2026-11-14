@@ -22,6 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import { BrowserHashProvider } from '../../packlets/crypto-utils';
+import * as Root from '../..';
 
 describe('BrowserHashProvider', () => {
   describe('hashString', () => {
@@ -150,6 +151,20 @@ describe('BrowserHashProvider', () => {
       if (result.isSuccess() && stringResult.isSuccess()) {
         expect(result.value).toBe(stringResult.value);
       }
+    });
+  });
+
+  describe('package root export', () => {
+    test('is the same class as CryptoUtils.BrowserHashProvider', () => {
+      expect(Root.BrowserHashProvider).toBe(Root.CryptoUtils.BrowserHashProvider);
+      expect(Root.BrowserHashProvider).toBe(BrowserHashProvider);
+    });
+
+    test('hashes a string when reached from the root', async () => {
+      // FIPS 180-2 test vector for SHA-256("abc")
+      expect(await Root.BrowserHashProvider.hashString('abc')).toSucceedWith(
+        'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
+      );
     });
   });
 });

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "comment": "Restore the root `BrowserHashProvider` export that 5.0.2 had; it is also available as `CryptoUtils.BrowserHashProvider`.",
+      "type": "patch",
+      "packageName": "@fgv/ts-web-extras"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras",
+  "email": "noreply@anthropic.com"
+}
