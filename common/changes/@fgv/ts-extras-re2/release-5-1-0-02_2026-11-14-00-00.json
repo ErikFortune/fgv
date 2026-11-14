@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-re2",
+      "comment": "Pass it as `patternValidator` to `JsonSchema.fromJson` or `adaptMcpTools`; `createRe2PatternValidator` sets the source-length and program-size limits.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-re2",
+  "email": "noreply@anthropic.com"
+}

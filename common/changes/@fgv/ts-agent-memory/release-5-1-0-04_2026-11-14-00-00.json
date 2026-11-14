@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "Index consistency: vector indexes report `size` / `has` and rebuild with a per-kind report, so a store can check its derived state against its records.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

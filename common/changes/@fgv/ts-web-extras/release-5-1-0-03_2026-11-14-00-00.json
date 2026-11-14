@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "New `SaferFetch.browserSaferFetchBytes` / `browserSaferFetchText` / `browserSaferFetchJson`, the browser entry points for `@fgv/ts-extras`' safer-fetch.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras",
+  "email": "noreply@anthropic.com"
+}

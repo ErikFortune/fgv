@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils-jest",
+      "comment": "Packaging: source maps and `CAPABILITIES.md` now ship in the package.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-utils-jest",
+  "email": "noreply@anthropic.com"
+}

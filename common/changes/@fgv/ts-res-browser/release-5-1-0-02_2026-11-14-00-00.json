@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-browser",
+      "comment": "Packaging: the MIT `LICENSE` file now ships in the package.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-res-browser",
+  "email": "noreply@anthropic.com"
+}
