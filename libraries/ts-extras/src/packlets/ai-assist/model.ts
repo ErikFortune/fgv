@@ -232,8 +232,10 @@ export type {
   IAiToolConflictReport,
   IAiClientToolCallSummary,
   IAiClientToolContinuation,
-  IAiClientToolTurnResult
+  IAiClientToolTurnResult,
+  McpTaskSupport
 } from './toolTypes';
+export { MCP_TASK_SUPPORT_VALUES } from './toolTypes';
 
 // ============================================================================
 // Model Specification

@@ -32,7 +32,7 @@
  * @packageDocumentation
  */
 
-import { type Result } from '@fgv/ts-utils';
+import { type Result, type StringOneOf } from '@fgv/ts-utils';
 import { type JsonObject, type JsonSchema } from '@fgv/ts-json-base';
 import type { IAiCompletionUsage } from './usageTypes';
 
@@ -130,6 +130,30 @@ export interface IAiToolAnnotations {
   /** Hint: the tool interacts with an open world of external entities. */
   readonly openWorldHint?: boolean;
 }
+
+/**
+ * Every MCP `Tool.execution.taskSupport` value, as a runtime list, in the order the MCP spec
+ * declares them. `McpTaskSupport` is derived from it, so the two cannot diverge.
+ *
+ * @remarks
+ * Declared here, beside `IAiToolAnnotations`, because the vocabulary is MCP-spec-level
+ * rather than SDK- or transport-level, and this packlet ships in both the Node and browser builds.
+ * Use `mcpTaskSupport` to convert an untrusted value into it.
+ * @public
+ */
+export const MCP_TASK_SUPPORT_VALUES = ['forbidden', 'optional', 'required'] as const;
+
+/**
+ * Whether a tool may, must or must not be invoked as an MCP task (task-augmented execution) — the
+ * MCP `Tool.execution.taskSupport` vocabulary.
+ *
+ * @remarks
+ * Per the MCP spec, an **absent** value means `'forbidden'`. That rule is the caller's to apply:
+ * `mcpTaskSupport` converts a present value only, so a caller can still tell a tool
+ * that declared `'forbidden'` from one that declared nothing.
+ * @public
+ */
+export type McpTaskSupport = StringOneOf<typeof MCP_TASK_SUPPORT_VALUES>;
 
 /**
  * Configuration for a client-defined (harness-supplied) tool.

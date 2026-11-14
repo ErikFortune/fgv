@@ -212,6 +212,7 @@ markers.*
 
 <!-- BEGIN GENERATED: recent-additions -->
 
+- **2026-11-14** — MCP's taskSupport vocabulary and a converter for it now ship in ai-assist, so a browser consumer can use them without the Node-only… ([#783](https://github.com/ErikFortune/fgv/pull/783)) · `ts-extras` `ts-extras-mcp`
 - **2026-11-12** — Only the principals an agent-task subscription names may bind and drain its delivery, and disposeWithheld ends withheld obligations… ([#781](https://github.com/ErikFortune/fgv/pull/781)) · `ts-agent-tasks` `testbed`
 - **2026-11-11** — ai-assist's @anthropic:fable alias now reaches Claude Fable 5.2, and Fable 5.2 and Mythos 5.2 get JSON-outputs structured output… ([#773](https://github.com/ErikFortune/fgv/pull/773)) · `ts-extras` `testbed`
 - **2026-11-11** — ai-assist sends Gemini's thinkingLevel from a declared per-model table — 'none' is minimal on Flash-Lite — and @google-gemini:pro… ([#775](https://github.com/ErikFortune/fgv/pull/775)) · `ts-extras` `testbed`
@@ -221,8 +222,7 @@ markers.*
 - **2026-11-09** — ai-assist turns thinking off on Claude Sonnet 5.5 with its own between_tools value, declared per model, and stops claiming… ([#769](https://github.com/ErikFortune/fgv/pull/769)) · `ts-extras` `testbed`
 - **2026-11-08** — ai-assist aliases now reach current models — Claude Sonnet 5.5 and Haiku 5.5, GPT-6.1 Sol, Nano Banana 2.1, and new Groq and… ([#767](https://github.com/ErikFortune/fgv/pull/767)) · `ts-extras` `testbed`
 - **2026-11-08** — resolveMaxOutputTokens tells you the largest maxTokens the model a call will use accepts, from the same ModelSpec and tier, so a… ([#765](https://github.com/ErikFortune/fgv/pull/765)) · `ts-extras`
-- **2026-10-30** — A converter or validator handed a cyclic, BigInt or Proxy value now fails instead of throwing, via a new formatValueForMessage that… ([#764](https://github.com/ErikFortune/fgv/pull/764)) · `ts-utils` `ts-json-base` `ts-extras` `ts-bcp47`
 
-*Showing the 10 most recent of 89. Per-package history is in each `CAPABILITIES.md`.*
+*Showing the 10 most recent of 90. Per-package history is in each `CAPABILITIES.md`.*
 
 <!-- END GENERATED: recent-additions -->
