@@ -67,32 +67,35 @@ export interface IMcpProbeDeps {
  * from the environment; the probe follows that idiom.
  *
  * @param env - The environment record (`process.env` in production; a fixture in tests).
- * @returns The parsed spec, or a `Failure` describing the missing configuration.
+ * @returns The parsed spec, or `undefined` when neither variable is set (blank counts as unset) —
+ * no server configured, which the scenario reports as skipped (see {@link MCP_PROBE_SETUP_HINT}).
  */
-export function parseMcpProbeSpecFromEnv(env: Record<string, string | undefined>): Result<IMcpProbeSpec> {
+export function parseMcpProbeSpecFromEnv(env: Record<string, string | undefined>): IMcpProbeSpec | undefined {
   const url = env.MCP_PROBE_URL?.trim();
   if (url !== undefined && url.length > 0) {
     const headers = _parseHeaders(env.MCP_PROBE_HEADERS);
-    return succeed(headers !== undefined ? { kind: 'http', url, headers } : { kind: 'http', url });
+    return headers !== undefined ? { kind: 'http', url, headers } : { kind: 'http', url };
   }
 
   const command = env.MCP_PROBE_COMMAND?.trim();
   if (command !== undefined && command.length > 0) {
     const args = (env.MCP_PROBE_ARGS ?? '').split(/\s+/).filter((a) => a.length > 0);
     const cwd = env.MCP_PROBE_CWD?.trim();
-    return succeed(
-      cwd !== undefined && cwd.length > 0
-        ? { kind: 'stdio', command, args, cwd }
-        : { kind: 'stdio', command, args }
-    );
+    return cwd !== undefined && cwd.length > 0
+      ? { kind: 'stdio', command, args, cwd }
+      : { kind: 'stdio', command, args };
   }
 
-  return fail(
-    'mcp-probe: no server spec found. Set MCP_PROBE_URL (HTTP) or MCP_PROBE_COMMAND (+ optional ' +
-      'MCP_PROBE_ARGS) for a stdio server. Example: MCP_PROBE_COMMAND=npx ' +
-      'MCP_PROBE_ARGS="-y @modelcontextprotocol/server-everything"'
-  );
+  return undefined;
 }
+
+/**
+ * How to point the probe at a server — printed when none is configured.
+ */
+export const MCP_PROBE_SETUP_HINT: string =
+  'Set MCP_PROBE_URL (HTTP, + optional MCP_PROBE_HEADERS) or MCP_PROBE_COMMAND (+ optional ' +
+  'MCP_PROBE_ARGS, MCP_PROBE_CWD) for a stdio server. Example: MCP_PROBE_COMMAND=npx ' +
+  'MCP_PROBE_ARGS="-y @modelcontextprotocol/server-everything"';
 
 /** Parses a `k=v,k=v` header string. Returns `undefined` when empty (no header pairs found). */
 function _parseHeaders(raw: string | undefined): Record<string, string> | undefined {

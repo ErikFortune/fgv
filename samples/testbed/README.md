@@ -49,10 +49,23 @@ node bin/testbed.js --help          # usage banner
 # run a single scenario by id
 node bin/testbed.js --scenario sqlite-vec-fragment-persistence
 node bin/testbed.js --scenario sqlite-vec-memory-persistence
+
+# run every scenario that has a CLI surface, in order, then print a summary
+node bin/testbed.js --all
+node bin/testbed.js --all --skip local-summarization,mcp-probe
 ```
 
-`rushx cli` runs the same shim (`rushx cli` to list; `rushx cli -- --scenario <id>` to pass
-flags through). Structured output goes to stdout; scenario diagnostics go to stderr.
+`rushx cli` runs the same shim (`rushx cli` to list; `rushx cli -- --scenario <id>` or
+`rushx cli -- --all` to pass flags through). Structured output goes to stdout; scenario
+diagnostics go to stderr.
+
+`--all` runs the scenarios one after another under a `=== <id>` header each, carries on past a
+failure (a scenario that throws counts as failed too), and ends with a summary: passed, failed
+and skipped counts, each failed id with its message, and the skipped ids — web-only scenarios
+and any named in `--skip`. It exits `1` if any scenario failed, otherwise `0`. Scenarios that need
+something unconfigured — a provider key, an `MCP_PROBE_*` server — succeed and say they skipped,
+so a bare `--all` is meaningful offline; scenarios that need the network (model downloads) fail
+where it is blocked.
 
 ### Web
 

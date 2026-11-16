@@ -122,12 +122,13 @@ export const WIRE_PROBE_WIRES: ReadonlyArray<IWireProbeWire> = [
 ];
 
 /**
- * The output cap on every raw request. 16 is the smallest OpenAI's Responses API accepts; a
- * rejection for the schema arrives before any token is generated, so the cap only bounds the cost
- * of an accepted request.
+ * The output cap on every raw request. A rejection for the schema arrives before any token is
+ * generated, so the cap only bounds the cost of an accepted request — but it must leave room for a
+ * reasoning model to think: OpenAI fails an accepted request with a `400` when the cap runs out
+ * first, which reads as a rejection. Matches the end-to-end cap for the same reason.
  * @public
  */
-export const RAW_MAX_TOKENS: number = 16;
+export const RAW_MAX_TOKENS: number = 256;
 
 /**
  * The prompt. Irrelevant to what is measured, so it asks for as little as possible.

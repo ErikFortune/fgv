@@ -284,6 +284,32 @@ describe('wireProbe', () => {
       });
     });
 
+    test('a 400 for running out of output budget is inconclusive, not a schema rejection', () => {
+      const outputLimit400: string = JSON.stringify({
+        error: {
+          message:
+            'Could not finish the message because max_tokens or model output limit was reached. ' +
+            'Please try again with higher max_tokens.'
+        }
+      });
+      expect(observeRaw(succeed({ status: 400, body: outputLimit400 }))).toEqual({
+        kind: 'inconclusive',
+        detail: expect.stringMatching(/^400 Could not finish the message/)
+      });
+      expect(observeAdapted(fail(`OpenAI API: AI API returned 400: ${outputLimit400}`))).toEqual({
+        kind: 'inconclusive',
+        detail: expect.stringMatching(/^400 Could not finish the message/)
+      });
+      expect(
+        observeRaw(
+          succeed({
+            status: 400,
+            body: JSON.stringify({ error: { message: 'max_completion_tokens is too large' } })
+          })
+        )
+      ).toMatchObject({ kind: 'inconclusive' });
+    });
+
     test('observeAdapted reads the library failure text', () => {
       expect(observeAdapted(succeed('x'))).toEqual({ kind: 'accepted' });
       expect(

@@ -48,40 +48,44 @@
  * @packageDocumentation
  */
 
-import { fail } from '@fgv/ts-utils';
+import { fail, succeed } from '@fgv/ts-utils';
 import type { Result } from '@fgv/ts-utils';
 
 import type { IScenario, ICliScenarioImpl, IScenarioContext } from '../../shell';
-import { type IMcpProbeDeps, parseMcpProbeSpecFromEnv, runMcpProbe } from './probe';
+import { type IMcpProbeDeps, MCP_PROBE_SETUP_HINT, parseMcpProbeSpecFromEnv, runMcpProbe } from './probe';
 
 const cliImpl: ICliScenarioImpl = {
   async run(context: IScenarioContext): Promise<Result<string>> {
-    const specResult = parseMcpProbeSpecFromEnv(process.env);
-    // Only the live dispatch below is coverage-ignored; the spec parse + failure return is
-    // exercised by mcpProbe.test.ts (real cli.run with the probe env vars cleared).
+    const spec = parseMcpProbeSpecFromEnv(process.env);
+    // No server configured is not a failure: like a keyless provider scenario, the run succeeds
+    // and says what a configured run would do. A configured server that fails the probe still
+    // fails. Exercised by mcpProbe.test.ts (real cli.run with the probe env vars cleared).
+    if (spec === undefined) {
+      return succeed(
+        'mcp-probe: skipped — no MCP server configured. A configured run connects to the server, ' +
+          `adapts its tools and reports which ones ai-assist can carry. ${MCP_PROBE_SETUP_HINT}`
+      );
+    }
     /* c8 ignore start - orchestration seam: wires the node-native @fgv/ts-extras-mcp deps via a
        webpackIgnore dynamic import and requires a live MCP server. The probe logic (run
        orchestration, report formatting) is fully covered via injected deps in probe.test.ts. */
-    if (specResult.isSuccess()) {
-      const mcp = await import(/* webpackIgnore: true */ '@fgv/ts-extras-mcp');
-      const deps: IMcpProbeDeps = {
-        connect: async (spec, logger) => {
-          const transport =
-            spec.kind === 'http'
-              ? mcp.createHttpTransport({ url: spec.url, headers: spec.headers })
-              : mcp.createStdioTransport({ command: spec.command, args: spec.args, cwd: spec.cwd });
-          if (transport.isFailure()) {
-            return fail(transport.message);
-          }
-          return mcp.connectMcpSession({ transport: transport.value, logger });
-        },
-        adapt: (session, logger) => mcp.adaptMcpTools(session, { logger }),
-        close: (session) => mcp.closeMcpSession(session)
-      };
-      return runMcpProbe(specResult.value, deps, context.logger);
-    }
+    const mcp = await import(/* webpackIgnore: true */ '@fgv/ts-extras-mcp');
+    const deps: IMcpProbeDeps = {
+      connect: async (target, logger) => {
+        const transport =
+          target.kind === 'http'
+            ? mcp.createHttpTransport({ url: target.url, headers: target.headers })
+            : mcp.createStdioTransport({ command: target.command, args: target.args, cwd: target.cwd });
+        if (transport.isFailure()) {
+          return fail(transport.message);
+        }
+        return mcp.connectMcpSession({ transport: transport.value, logger });
+      },
+      adapt: (session, logger) => mcp.adaptMcpTools(session, { logger }),
+      close: (session) => mcp.closeMcpSession(session)
+    };
+    return runMcpProbe(spec, deps, context.logger);
     /* c8 ignore stop */
-    return fail(specResult.message);
   }
 };
 
@@ -95,7 +99,7 @@ export const mcpProbeScenario: IScenario = {
   description:
     'Point @fgv/ts-extras-mcp at any MCP server and report which tools adapt into ai-assist ' +
     'client tools and which are skipped (with the failing schema + reason). Configure via ' +
-    'MCP_PROBE_URL or MCP_PROBE_COMMAND. CLI-only.',
+    'MCP_PROBE_URL or MCP_PROBE_COMMAND; with neither set the run is skipped. CLI-only.',
   category: 'ai',
   tags: ['mcp', 'client-tools', 'ai-assist', 'diagnostic', 'cli'],
   cli: cliImpl
