@@ -35,6 +35,21 @@ await keystore2.unlock('master-password');
 const encryptionConfig = keystore2.getEncryptionConfig().orThrow();
 ```
 
+## Remarks
+
+SECURITY — private-key escrow. By default an asymmetric keypair's private
+key lives only in the per-device [CryptoUtils.KeyStore.IPrivateKeyStorage](../interfaces/IPrivateKeyStorage.md)
+backend; the vault carries only the public JWK, so a vault recovered on a new
+device reconstitutes with no private keys (a lost device is a lost identity).
+`addKeyPair(name, { escrow: true })` opts into carrying an encrypted private-key
+copy inside the vault ciphertext, so the vault file plus the master password can
+recover the identity on a fresh device via `getKeyPair(name, { rehydrate: true })`.
+
+When escrow is used, **the master password becomes the sole gate** protecting a
+private signing/decryption key that was previously unrecoverable from the vault.
+Configure escrow-bearing stores with a strong KDF — an Argon2id-derived master
+key or a high-iteration PBKDF2 count — and treat the vault file accordingly.
+
 ## Implements
 
 - [`IEncryptionProvider`](../../../interfaces/IEncryptionProvider.md)
@@ -114,6 +129,45 @@ Gets the current lock state.
 
 ## Methods
 
+### addKeyPair()
+
+> **addKeyPair**(`name`, `options`): `Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddKeyPairResult`](../interfaces/IAddKeyPairResult.md)\>\>
+
+Adds a new asymmetric keypair to the vault. Storage-first: the private key
+is stored under a freshly-minted `id` before the public-key vault entry is
+committed. If the storage call fails, no vault entry is written and the
+operation returns Failure.
+
+When `replace: true` displaces an existing entry (asymmetric or symmetric),
+a fresh `id` is minted; the displaced entry's resources are released
+best-effort. Failure of the storage delete is reported via `warning` on the
+result but does not roll back the replacement.
+
+Requires a [CryptoUtils.KeyStore.IPrivateKeyStorage](../interfaces/IPrivateKeyStorage.md) backend
+supplied at construction.
+
+Extractability of the generated private key defaults to the storage
+backend's [CryptoUtils.KeyStore.IPrivateKeyStorage.supportsNonExtractable](../interfaces/IPrivateKeyStorage.md#property-supportsnonextractable).
+`options.extractable` overrides that default for this key only; requesting
+`extractable: false` against a backend that cannot store non-extractable
+keys fails loudly rather than silently generating an extractable key.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `name` | `string` | Unique name for the entry |
+| `options` | [`IAddKeyPairOptions`](../interfaces/IAddKeyPairOptions.md) | Algorithm, optional description, replace flag, extractable override |
+
+#### Returns
+
+`Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddKeyPairResult`](../interfaces/IAddKeyPairResult.md)\>\>
+
+Success with the new entry, Failure if locked, no provider, storage write failed,
+or the requested extractability cannot be honored by the backend
+
+***
+
 ### addSecret()
 
 > **addSecret**(`name`, `options?`): `Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddSecretResult`](../interfaces/IAddSecretResult.md)\>\>
@@ -162,6 +216,35 @@ Success with entry and keyDerivation params, Failure if locked or invalid
 
 ***
 
+### addSecretFromPasswordArgon2id()
+
+> **addSecretFromPasswordArgon2id**(`name`, `password`, `argon2idProvider`, `options?`): `Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddSecretFromPasswordResult`](../interfaces/IAddSecretFromPasswordResult.md)\>\>
+
+Adds a secret derived from a password using Argon2id (RFC 9106).
+
+The Argon2id provider must be supplied explicitly; the KeyStore does not
+hold one by default (consumers opt in by depending on the argon2 package).
+
+Returns the key derivation parameters so callers can store them alongside
+encrypted artifacts, enabling future re-derivation and verification.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `name` | `string` | Unique name for the secret |
+| `password` | `string` | Password or passphrase |
+| `argon2idProvider` | [`IArgon2idProvider`](../../../interfaces/IArgon2idProvider.md) | Argon2id provider (Node or Browser implementation) |
+| `options?` | [`IAddSecretFromPasswordArgon2idOptions`](../interfaces/IAddSecretFromPasswordArgon2idOptions.md) | Optional: Argon2id params (defaults to ARGON2ID_OWASP_MIN), description, replace flag |
+
+#### Returns
+
+`Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddSecretFromPasswordResult`](../interfaces/IAddSecretFromPasswordResult.md)\>\>
+
+Success with entry and keyDerivation params, Failure if locked or invalid
+
+***
+
 ### changePassword()
 
 > **changePassword**(`currentPassword`, `newPassword`): `Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<`KeyStore`\>\>
@@ -194,7 +277,7 @@ Encrypts JSON content under a named secret.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TMetadata` | [`JsonValue`](../../../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="type-parameter-tmetadata"></a> `TMetadata` | [`JsonValue`](../../../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
 
 #### Parameters
 
@@ -251,11 +334,74 @@ Partial config that can be spread into a full IEncryptionConfig
 
 ***
 
+### getKeyPair()
+
+> **getKeyPair**(`name`, `options?`): `Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<\{ `privateKey`: `CryptoKey`; `publicKey`: `CryptoKey`; \}\>\>
+
+Retrieves the keypair for an asymmetric-keypair entry. The private key is
+loaded from [CryptoUtils.KeyStore.IPrivateKeyStorage](../interfaces/IPrivateKeyStorage.md) on every call —
+the keystore never caches private `CryptoKey` references between calls.
+The public key is re-imported from the vault's JWK so callers always
+receive a `CryptoKey` rather than the JWK form.
+
+With `options.rehydrate: true`, if the storage backend holds no blob for
+the entry's `id` and the entry carries an `escrowedPrivateKeyJwk` (see
+`addKeyPair(name, { escrow: true })`), the escrowed JWK is imported and
+stored under the entry's `id` before being returned — recovering the
+private key on a fresh device from the vault plus master password. This is
+fill-a-gap only: an existing storage blob is never overwritten.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `name` | `string` | Name of the entry |
+| `options?` | [`IGetKeyPairOptions`](../interfaces/IGetKeyPairOptions.md) | Optional [CryptoUtils.KeyStore.IGetKeyPairOptions](../interfaces/IGetKeyPairOptions.md) (currently the `rehydrate` escrow-recovery flag). |
+
+#### Returns
+
+`Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<\{ `privateKey`: `CryptoKey`; `publicKey`: `CryptoKey`; \}\>\>
+
+Success with `{ publicKey, privateKey }`, Failure if not found,
+locked, wrong type, no provider, or storage load (and any escrow
+rehydration) failed.
+
+***
+
+### getPublicKeyJwk()
+
+> **getPublicKeyJwk**(`name`): [`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<`JsonWebKey`\>
+
+Returns the public-key JWK for an asymmetric-keypair entry.
+Available without [CryptoUtils.KeyStore.IPrivateKeyStorage](../interfaces/IPrivateKeyStorage.md) since the
+public key lives in the vault metadata directly.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `name` | `string` | Name of the entry |
+
+#### Returns
+
+[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<`JsonWebKey`\>
+
+Success with the JWK, Failure if not found, locked, or wrong type
+
+***
+
 ### getSecret()
 
-> **getSecret**(`name`): [`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IKeyStoreSecretEntry`](../interfaces/IKeyStoreSecretEntry.md)\>
+> **getSecret**(`name`): [`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IKeyStoreEntry`](../type-aliases/IKeyStoreEntry.md)\>
 
-Gets a secret by name.
+Gets a secret by name. Returns the [discriminated union](../type-aliases/IKeyStoreEntry.md)
+— callers must check `entry.type` before accessing `key`/`id` since asymmetric
+entries carry no raw key material.
+
+SECURITY: for an escrow-enabled asymmetric-keypair entry the returned object
+carries `escrowedPrivateKeyJwk` in cleartext (same custody class as
+`publicKeyJwk`, gated by the same unlock) — do not log or serialize a
+`getSecret()` result casually.
 
 #### Parameters
 
@@ -265,9 +411,33 @@ Gets a secret by name.
 
 #### Returns
 
-[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IKeyStoreSecretEntry`](../interfaces/IKeyStoreSecretEntry.md)\>
+[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IKeyStoreEntry`](../type-aliases/IKeyStoreEntry.md)\>
 
 Success with secret entry, Failure if not found or locked
+
+***
+
+### getSecretBytes()
+
+> **getSecretBytes**(`name`): [`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+Retrieves the raw stored bytes for a symmetric entry, returned verbatim
+(never UTF-8 decoded). Intended for `'opaque'` entries but works for any
+symmetric type; asymmetric-keypair entries carry no raw key material and
+are rejected.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `name` | `string` | Name of the secret |
+
+#### Returns
+
+[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+Success with a copy of the stored bytes, Failure if not found,
+locked, or the entry is asymmetric
 
 ***
 
@@ -308,7 +478,7 @@ Success with boolean, Failure if locked
 
 ### importApiKey()
 
-> **importApiKey**(`name`, `apiKey`, `options?`): [`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddSecretResult`](../interfaces/IAddSecretResult.md)\>
+> **importApiKey**(`name`, `apiKey`, `options?`): `Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddSecretResult`](../interfaces/IAddSecretResult.md)\>\>
 
 Imports an API key string into the vault.
 The string is UTF-8 encoded and stored with type `'api-key'`.
@@ -323,7 +493,7 @@ The string is UTF-8 encoded and stored with type `'api-key'`.
 
 #### Returns
 
-[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddSecretResult`](../interfaces/IAddSecretResult.md)\>
+`Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddSecretResult`](../interfaces/IAddSecretResult.md)\>\>
 
 Success with entry, Failure if locked, empty, or exists and !replace
 
@@ -331,7 +501,7 @@ Success with entry, Failure if locked, empty, or exists and !replace
 
 ### importSecret()
 
-> **importSecret**(`name`, `key`, `options?`): [`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddSecretResult`](../interfaces/IAddSecretResult.md)\>
+> **importSecret**(`name`, `key`, `options?`): `Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddSecretResult`](../interfaces/IAddSecretResult.md)\>\>
 
 Imports raw 32-byte key material into the vault.
 
@@ -350,9 +520,38 @@ length), use [KeyStore.importApiKey](#importapikey) instead.
 
 #### Returns
 
-[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddSecretResult`](../interfaces/IAddSecretResult.md)\>
+`Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddSecretResult`](../interfaces/IAddSecretResult.md)\>\>
 
 Success with entry, Failure if locked, key invalid, or exists and !replace
+
+***
+
+### importSecretBytes()
+
+> **importSecretBytes**(`name`, `bytes`, `options?`): `Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddSecretResult`](../interfaces/IAddSecretResult.md)\>\>
+
+Imports arbitrary raw bytes into the vault with type `'opaque'`.
+
+Unlike [KeyStore.importSecret](#importsecret) (which enforces a 32-byte AES-256 key)
+and [KeyStore.importApiKey](#importapikey) (which UTF-8 encodes a string), this
+accepts a byte buffer of any length and stores it verbatim — including
+embedded NUL bytes. Use it for byte blobs that are neither a fixed-size key
+nor a UTF-8 string (e.g. a serialized credential bundle), so they are not
+mistyped as `'api-key'`.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `name` | `string` | Unique name for the secret |
+| `bytes` | `Uint8Array` | The raw bytes to store |
+| `options?` | [`IImportSecretBytesOptions`](../interfaces/IImportSecretBytesOptions.md) | Optional description, initial metadata, whether to replace existing |
+
+#### Returns
+
+`Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAddSecretResult`](../interfaces/IAddSecretResult.md)\>\>
+
+Success with entry, Failure if locked, empty, or exists and !replace
 
 ***
 
@@ -434,9 +633,13 @@ Success when locked, Failure if unsaved changes and !force
 
 ### removeSecret()
 
-> **removeSecret**(`name`): [`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IKeyStoreSecretEntry`](../interfaces/IKeyStoreSecretEntry.md)\>
+> **removeSecret**(`name`): `Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IRemoveSecretResult`](../interfaces/IRemoveSecretResult.md)\>\>
 
-Removes a secret by name.
+Removes a secret by name. Vault-first: the in-memory vault entry is dropped
+before any storage cleanup runs. For asymmetric-keypair entries, best-effort
+calls [CryptoUtils.KeyStore.IPrivateKeyStorage](../interfaces/IPrivateKeyStorage.md).delete on the entry's
+`id`; a failure is reported via `warning` on the result but does not roll
+back the vault removal.
 
 #### Parameters
 
@@ -446,15 +649,15 @@ Removes a secret by name.
 
 #### Returns
 
-[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IKeyStoreSecretEntry`](../interfaces/IKeyStoreSecretEntry.md)\>
+`Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IRemoveSecretResult`](../interfaces/IRemoveSecretResult.md)\>\>
 
-Success with removed entry, Failure if not found or locked
+Success with removed entry (and optional warning), Failure if not found or locked
 
 ***
 
 ### renameSecret()
 
-> **renameSecret**(`oldName`, `newName`): [`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IKeyStoreSecretEntry`](../interfaces/IKeyStoreSecretEntry.md)\>
+> **renameSecret**(`oldName`, `newName`): [`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IKeyStoreEntry`](../type-aliases/IKeyStoreEntry.md)\>
 
 Renames a secret.
 
@@ -467,7 +670,7 @@ Renames a secret.
 
 #### Returns
 
-[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IKeyStoreSecretEntry`](../interfaces/IKeyStoreSecretEntry.md)\>
+[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IKeyStoreEntry`](../type-aliases/IKeyStoreEntry.md)\>
 
 Success with updated entry, Failure if source not found, target exists, or locked
 
@@ -520,6 +723,33 @@ Success with IKeyStoreFile, Failure if locked or key invalid
 
 ***
 
+### setSecretMetadata()
+
+> **setSecretMetadata**(`name`, `value`): [`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IKeyStoreSymmetricEntry`](../interfaces/IKeyStoreSymmetricEntry.md)\>
+
+Replaces the mutable metadata on a symmetric entry and stamps `updatedAt`
+with the current timestamp. Does NOT touch the secret `key` bytes — the
+material reads back identically afterward.
+
+Metadata is non-secret by contract but physically lives inside the vault
+ciphertext (see [CryptoUtils.KeyStore.IKeyStoreSymmetricEntry.metadata](../interfaces/IKeyStoreSymmetricEntry.md#property-metadata)).
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `name` | `string` | Name of the secret to update |
+| `value` | [`JsonValue`](../../../../../../ts-res-ui-components/type-aliases/JsonValue.md) | New metadata value (replaces any prior metadata) |
+
+#### Returns
+
+[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IKeyStoreSymmetricEntry`](../interfaces/IKeyStoreSymmetricEntry.md)\>
+
+Success with the updated entry, Failure if not found, locked, or
+the entry is asymmetric
+
+***
+
 ### unlock()
 
 > **unlock**(`password`): `Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<`KeyStore`\>\>
@@ -565,6 +795,76 @@ iteration count).
 `Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<`KeyStore`\>\>
 
 Success with this instance when unlocked, Failure if key is incorrect
+
+***
+
+### verifySecretFromPassword()
+
+> **verifySecretFromPassword**(`name`, `password`, `keyDerivation`): `Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<`boolean`\>\>
+
+Verifies that a candidate password derives the same key material currently
+stored under `name`, using the supplied
+[key derivation parameters](../../../type-aliases/IKeyDerivationParams.md).
+
+The keystore does not persist per-slot key derivation parameters with the
+entry — callers receive them from `addSecretFromPassword` and store them
+alongside the encrypted artifact (or wherever else makes sense). Pass
+those same parameters here for verification.
+
+Re-derives a key from `password` + `keyDerivation`, then compares it to
+the stored key material in constant time. Restricted to entries of type
+`'encryption-key'` — the type produced by `addSecretFromPassword`. Other
+symmetric types (`'api-key'`) and asymmetric entries are rejected so
+the boolean result reflects "this slot accepts this password" rather
+than an incidental byte-equality match against unrelated material.
+
+Note: the keystore does not currently flag whether an `'encryption-key'`
+entry was actually password-derived (vs. random via `addSecret` or raw
+via `importSecret`). A `true` result therefore means "the candidate
+password produces the same 32 bytes currently stored", which is what
+the equivalent consumer-side helper (`verifyGatePassword`) already
+implies for entries it manages.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `name` | `string` | Name of the secret to verify against |
+| `password` | `string` | Candidate password to test |
+| `keyDerivation` | [`IKeyDerivationParams`](../../../type-aliases/IKeyDerivationParams.md) | The key derivation parameters returned by `addSecretFromPassword` when the secret was created. Only `kdf: 'pbkdf2'` is supported. |
+
+#### Returns
+
+`Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<`boolean`\>\>
+
+Success(true) when the candidate matches the stored key,
+Success(false) when it does not, Failure if locked, secret missing,
+wrong type, unsupported `kdf`, or key derivation fails
+
+***
+
+### verifySecretFromPasswordArgon2id()
+
+> **verifySecretFromPasswordArgon2id**(`name`, `password`, `argon2idProvider`, `keyDerivation`): `Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<`boolean`\>\>
+
+Verifies a candidate password against an Argon2id-derived entry using the
+supplied key derivation parameters. Constant-time comparison.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `name` | `string` | Name of the secret to verify against |
+| `password` | `string` | Candidate password to test |
+| `argon2idProvider` | [`IArgon2idProvider`](../../../interfaces/IArgon2idProvider.md) | Argon2id provider (must produce bit-identical output for identical inputs) |
+| `keyDerivation` | [`IArgon2idKeyDerivationParams`](../../../interfaces/IArgon2idKeyDerivationParams.md) | The Argon2id key derivation parameters returned by `addSecretFromPasswordArgon2id` |
+
+#### Returns
+
+`Promise`\<[`Result`](../../../../../../ts-res-ui-components/type-aliases/Result.md)\<`boolean`\>\>
+
+Success(true) if candidate matches stored key, Success(false) if not,
+Failure if locked, secret missing, wrong type, or derivation fails
 
 ***
 

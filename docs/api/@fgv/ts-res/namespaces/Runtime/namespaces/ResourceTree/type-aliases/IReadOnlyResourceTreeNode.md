@@ -15,4 +15,4 @@ This allows for flexible handling of different node types in the tree structure.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |

@@ -14,7 +14,7 @@ Returns the first successful result from a collection of [Result\<T\>](../type-a
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Parameters
 

@@ -33,9 +33,9 @@ Class that extracts resources and candidates from a
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="_candidates"></a> `_candidates` | `protected` | [`IImporterResourceCandidateDecl`](../namespaces/Normalized/interfaces/IImporterResourceCandidateDecl.md)[] | `[]` | - |
-| <a id="_resources"></a> `_resources` | `protected` | [`IImporterResourceDecl`](../namespaces/Normalized/type-aliases/IImporterResourceDecl.md)[] | `[]` | - |
-| <a id="collection"></a> `collection` | `readonly` | [`IImporterResourceCollectionDecl`](../namespaces/Normalized/interfaces/IImporterResourceCollectionDecl.md) | `undefined` | The [resource collection declaration](../namespaces/Normalized/interfaces/IResourceCollectionDecl.md) being processed. |
+| <a id="property-_candidates"></a> `_candidates` | `protected` | [`IImporterResourceCandidateDecl`](../namespaces/Normalized/interfaces/IImporterResourceCandidateDecl.md)[] | `[]` | - |
+| <a id="property-_resources"></a> `_resources` | `protected` | [`IImporterResourceDecl`](../namespaces/Normalized/type-aliases/IImporterResourceDecl.md)[] | `[]` | - |
+| <a id="property-collection"></a> `collection` | `public readonly` | [`IImporterResourceCollectionDecl`](../namespaces/Normalized/interfaces/IImporterResourceCollectionDecl.md) | `undefined` | The [resource collection declaration](../namespaces/Normalized/interfaces/IResourceCollectionDecl.md) being processed. |
 
 ## Accessors
 
@@ -57,7 +57,7 @@ declaration for the container.
 
 #### Implementation of
 
-[`IResourceDeclContainer`](../interfaces/IResourceDeclContainer.md).[`context`](../interfaces/IResourceDeclContainer.md#context)
+[`IResourceDeclContainer`](../interfaces/IResourceDeclContainer.md).[`context`](../interfaces/IResourceDeclContainer.md#property-context)
 
 ## Methods
 

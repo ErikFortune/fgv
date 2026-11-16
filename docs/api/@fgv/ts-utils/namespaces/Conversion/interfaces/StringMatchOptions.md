@@ -13,4 +13,4 @@ matching method
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="message"></a> `message?` | `string` | An optional message to be displayed if a non-matching string is encountered. |
+| <a id="property-message"></a> `message?` | `string` | An optional message to be displayed if a non-matching string is encountered. |

@@ -12,4 +12,4 @@ Metadata for a compiled condition set, containing human-readable information.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="key"></a> `key` | [`ConditionSetKey`](../../../../../type-aliases/ConditionSetKey.md) | The semantic key of the condition set (e.g., "language=en-US,territory=US"). |
+| <a id="property-key"></a> `key` | [`ConditionSetKey`](../../../../../type-aliases/ConditionSetKey.md) | The semantic key of the condition set (e.g., "language=en-US,territory=US"). |

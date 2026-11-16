@@ -16,10 +16,10 @@ Options that apply to any [Validator](Validator.md).
 
 | Type Parameter |
 | ------ |
-| `TC` |
+| <a id="type-parameter-tc"></a> `TC` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="defaultcontext"></a> `defaultContext?` | `TC` |
+| <a id="property-defaultcontext"></a> `defaultContext?` | `TC` |

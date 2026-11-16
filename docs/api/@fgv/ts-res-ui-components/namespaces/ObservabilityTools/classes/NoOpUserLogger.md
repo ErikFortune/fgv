@@ -42,13 +42,13 @@ Creates a new no-op user logger.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="loglevel"></a> `logLevel` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | The level of logging to be used. |
+| <a id="property-loglevel"></a> `logLevel` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | The level of logging to be used. |
 
 ## Methods
 
 ### \_format()
 
-> **\_format**(`message?`, ...`parameters?`): `string`
+> **\_format**(`message?`, ...`parameters`): `string`
 
 Formats a message and parameters into a string.
 
@@ -94,9 +94,38 @@ Implements base class _log method.
 
 ***
 
+### \_logStructured()
+
+> **\_logStructured**(`__level`, `__formatted`, `__message?`, `__parameters?`): `void`
+
+Inner hook called for logged messages alongside [\_log](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs),
+exposing the structured `(level, formatted, message, parameters)` form before it is
+collapsed to the formatted string. The default implementation is a no-op; subclasses
+that need to retain structured records (e.g. [RetainingLogger](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs))
+override this. Fired only in the `shouldLog` branch, so suppressed messages never reach it.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `__level` | [`MessageLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | The [level](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) of the message. |
+| `__formatted` | `string` | The formatted message (same string passed to `_log`). |
+| `__message?` | `unknown` | The raw message argument before formatting. |
+| `__parameters?` | readonly `unknown`[] | The raw parameter arguments before formatting. |
+
+#### Returns
+
+`void`
+
+#### Inherited from
+
+`Logging.LoggerBase._logStructured`
+
+***
+
 ### \_suppressLog()
 
-> **\_suppressLog**(`__level`, `__message?`, ...`__parameters?`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`undefined`\>
+> **\_suppressLog**(`__level`, `__message?`, ...`__parameters`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`undefined`\>
 
 Inner method called for suppressed log messages.
 
@@ -120,7 +149,7 @@ Inner method called for suppressed log messages.
 
 ### detail()
 
-> **detail**(`message?`, ...`parameters?`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
+> **detail**(`message?`, ...`parameters`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
 
 Logs a detail message.
 
@@ -150,7 +179,7 @@ Logs a detail message.
 
 ### error()
 
-> **error**(`message?`, ...`parameters?`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
+> **error**(`message?`, ...`parameters`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
 
 Logs an error message.
 
@@ -203,7 +232,7 @@ Logs a short error summary at `error` level, then emits `detail` at `detail` lev
 
 ### info()
 
-> **info**(`message?`, ...`parameters?`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
+> **info**(`message?`, ...`parameters`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
 
 Logs an info message.
 
@@ -233,7 +262,7 @@ Logs an info message.
 
 ### log()
 
-> **log**(`level`, `message?`, ...`parameters?`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
+> **log**(`level`, `message?`, ...`parameters`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
 
 Logs a message at the given level.
 
@@ -264,7 +293,7 @@ Logs a message at the given level.
 
 ### success()
 
-> **success**(`message?`, ...`parameters?`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
+> **success**(`message?`, ...`parameters`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
 
 Logs a success message for user feedback.
 
@@ -290,7 +319,7 @@ Logs a success message for user feedback.
 
 ### warn()
 
-> **warn**(`message?`, ...`parameters?`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
+> **warn**(`message?`, ...`parameters`): [`Success`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string` \| `undefined`\>
 
 Logs a warning message.
 

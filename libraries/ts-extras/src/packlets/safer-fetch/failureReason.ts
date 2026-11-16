@@ -67,7 +67,6 @@ export type FetchFailureReason =
    * or the response carried no usable `Location`, or following it would revisit a URL already
    * in the chain.
    *
-   * @remarks
    * The three are deliberately one kind. Splitting them would buy a caller almost nothing and
    * would widen the scanning oracle this taxonomy already is — and the two follow-time cases
    * are facts about the chain the redirecting server produced, not about the network behind

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res",
+      "comment": "Importers accept `fileContentConverter` and `fileContentExtensions`, so resource files in another format — YAML, for example — can be imported.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-res",
+  "email": "noreply@anthropic.com"
+}

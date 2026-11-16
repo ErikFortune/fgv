@@ -13,14 +13,14 @@ Tracks changes to resource values and states.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | `unknown` |
-| `TV` *extends* [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> | [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> |
+| <a id="type-parameter-t"></a> `T` | `unknown` |
+| <a id="type-parameter-tv"></a> `TV` *extends* [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> | [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> |
 
 ## Properties
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="editedvalue"></a> `editedValue` | `TV` | - |
-| <a id="originalvalue"></a> `originalValue` | `TV` | - |
-| <a id="resourceid"></a> `resourceId` | `string` | Unique identifier of the resource being edited |
-| <a id="timestamp"></a> `timestamp` | `Date` | - |
+| <a id="property-editedvalue"></a> `editedValue` | `TV` | - |
+| <a id="property-originalvalue"></a> `originalValue` | `TV` | - |
+| <a id="property-resourceid"></a> `resourceId` | `string` | Unique identifier of the resource being edited |
+| <a id="property-timestamp"></a> `timestamp` | `Date` | - |

@@ -10,8 +10,8 @@
 
 | Property | Type |
 | ------ | ------ |
-| <a id="areas"></a> `areas` | [`ICountryOrArea`](ICountryOrArea.md)[] |
-| <a id="code"></a> `code` | [`UnM49RegionCode`](../../Iana/namespaces/Model/type-aliases/UnM49RegionCode.md) |
-| <a id="name"></a> `name` | `string` |
-| <a id="regions"></a> `regions` | [`IIntermediateRegion`](IIntermediateRegion.md)[] |
-| <a id="tier"></a> `tier` | `"global"` |
+| <a id="property-areas"></a> `areas` | [`ICountryOrArea`](ICountryOrArea.md)[] |
+| <a id="property-code"></a> `code` | [`UnM49RegionCode`](../../Iana/namespaces/Model/type-aliases/UnM49RegionCode.md) |
+| <a id="property-name"></a> `name` | `string` |
+| <a id="property-regions"></a> `regions` | [`IIntermediateRegion`](IIntermediateRegion.md)[] |
+| <a id="property-tier"></a> `tier` | `"global"` |

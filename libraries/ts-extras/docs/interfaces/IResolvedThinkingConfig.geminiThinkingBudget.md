@@ -2,7 +2,7 @@
 
 ## IResolvedThinkingConfig.geminiThinkingBudget property
 
-Gemini: generationConfig.thinkingConfig.thinkingBudget
+Gemini: generationConfig.thinkingConfig.thinkingBudget. Never set together with `geminiThinkingLevel`.
 
 **Signature:**
 

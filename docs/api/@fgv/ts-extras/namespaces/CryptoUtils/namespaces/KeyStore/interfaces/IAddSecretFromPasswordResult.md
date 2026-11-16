@@ -18,6 +18,7 @@ needed to store alongside encrypted files.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="entry"></a> `entry` | `readonly` | [`IKeyStoreSecretEntry`](IKeyStoreSecretEntry.md) | The secret entry that was added. |
-| <a id="keyderivation"></a> `keyDerivation` | `readonly` | [`IKeyDerivationParams`](../../../interfaces/IKeyDerivationParams.md) | Key derivation parameters used to derive the secret key. Store these in encrypted file metadata so the password alone can re-derive the same key for decryption. |
-| <a id="replaced"></a> `replaced` | `readonly` | `boolean` | Whether this replaced an existing secret. |
+| <a id="property-entry"></a> `entry` | `readonly` | [`IKeyStoreSymmetricEntry`](IKeyStoreSymmetricEntry.md) | The secret entry that was added. |
+| <a id="property-keyderivation"></a> `keyDerivation` | `readonly` | [`IKeyDerivationParams`](../../../type-aliases/IKeyDerivationParams.md) | Key derivation parameters used to derive the secret key. Store these in encrypted file metadata so the password alone can re-derive the same key for decryption. |
+| <a id="property-replaced"></a> `replaced` | `readonly` | `boolean` | Whether this replaced an existing secret. |
+| <a id="property-warning"></a> `warning?` | `readonly` | `string` | Best-effort warning from displaced-resource cleanup. Set when this call replaced an asymmetric-keypair entry but the corresponding [CryptoUtils.KeyStore.IPrivateKeyStorage](IPrivateKeyStorage.md).delete failed; the new entry is still committed and the orphaned blob is left for consumer-side GC to reconcile. |

@@ -14,5 +14,5 @@ A validator which validates arrays of [JsonCompatible](../../../type-aliases/Jso
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |

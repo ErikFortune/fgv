@@ -6,7 +6,7 @@
 
 # Function: createNoOpObservabilityContext()
 
-> **createNoOpObservabilityContext**(`diagLogLevel`, `userLogLevel`): [`IObservabilityContext`](../interfaces/IObservabilityContext.md)
+> **createNoOpObservabilityContext**(`diagLogLevel?`, `userLogLevel?`): [`IObservabilityContext`](../interfaces/IObservabilityContext.md)
 
 Creates a no-op observability context that suppresses all logging.
 
@@ -14,8 +14,8 @@ Creates a no-op observability context that suppresses all logging.
 
 | Parameter | Type | Default value | Description |
 | ------ | ------ | ------ | ------ |
-| `diagLogLevel` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | `'silent'` | Log level for diagnostic messages. |
-| `userLogLevel` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | `'silent'` | Log level for user messages. |
+| `diagLogLevel?` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | `'silent'` | Log level for diagnostic messages. |
+| `userLogLevel?` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | `'silent'` | Log level for user messages. |
 
 ## Returns
 

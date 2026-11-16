@@ -30,10 +30,10 @@ Protected constructor for the ImportManager.
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="_importers"></a> `_importers` | `protected` | [`IImporter`](../namespaces/Importers/interfaces/IImporter.md)[] | `[]` | - |
-| <a id="_stack"></a> `_stack` | `protected` | [`IImportable`](../interfaces/IImportable.md)[] | `[]` | - |
-| <a id="initialcontext"></a> `initialContext` | `public` | [`ImportContext`](ImportContext.md) | `undefined` | The initial [import context](ImportContext.md) for the import operation. |
-| <a id="resources"></a> `resources` | `readonly` | [`ResourceManagerBuilder`](../../../classes/ResourceManagerBuilder.md) | `undefined` | The [resource manager builder](../../../classes/ResourceManagerBuilder.md) into which resources will be imported. |
+| <a id="property-_importers"></a> `_importers` | `protected` | [`IImporter`](../namespaces/Importers/interfaces/IImporter.md)[] | `[]` | - |
+| <a id="property-_stack"></a> `_stack` | `protected` | [`IImportable`](../interfaces/IImportable.md)[] | `[]` | - |
+| <a id="property-initialcontext"></a> `initialContext` | `public` | [`ImportContext`](ImportContext.md) | `undefined` | The initial [import context](ImportContext.md) for the import operation. |
+| <a id="property-resources"></a> `resources` | `public readonly` | [`ResourceManagerBuilder`](../../../classes/ResourceManagerBuilder.md) | `undefined` | The [resource manager builder](../../../classes/ResourceManagerBuilder.md) into which resources will be imported. |
 
 ## Accessors
 

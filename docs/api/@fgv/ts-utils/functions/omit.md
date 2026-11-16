@@ -15,8 +15,8 @@ object except those specified for exclusion.
 
 | Type Parameter |
 | ------ |
-| `T` *extends* `object` |
-| `K` *extends* `string` \| `number` \| `symbol` |
+| <a id="type-parameter-t"></a> `T` *extends* `object` |
+| <a id="type-parameter-k"></a> `K` *extends* `string` \| `number` \| `symbol` |
 
 ## Parameters
 

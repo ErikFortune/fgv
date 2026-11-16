@@ -70,7 +70,7 @@ Description
 
 </td><td>
 
-"gpt-image-1"[]
+[GptImageModelNames](../type-aliases/GptImageModelNames.md)[]
 
 </td><td>
 

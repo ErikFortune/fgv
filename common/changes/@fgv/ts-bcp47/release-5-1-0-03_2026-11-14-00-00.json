@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-bcp47",
+      "comment": "Upgrading from 5.0.2: the package is now dual-published — ESM for bundlers, CommonJS for Node. There is no API change.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-bcp47",
+  "email": "noreply@anthropic.com"
+}

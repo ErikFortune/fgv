@@ -14,7 +14,7 @@ Checks if a result is a deferred result.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Parameters
 

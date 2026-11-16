@@ -16,4 +16,4 @@ Type inference to determine the result type `T` of a [DetailedResult\<T, TD\>](D
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |

@@ -182,8 +182,8 @@ function validateFilterResults(filterResult: IFilterResult): {
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="error"></a> `error?` | `string` | Error message if the filtering operation failed |
-| <a id="filteredresources"></a> `filteredResources` | [`IFilteredResource`](IFilteredResource.md)[] | Analysis of individual resources after filtering, showing per-resource impact |
-| <a id="processedresources"></a> `processedResources?` | [`IProcessedResources`](../../ResourceTools/interfaces/IProcessedResources.md) | The filtered processed resources, available if filtering succeeded |
-| <a id="success"></a> `success` | `boolean` | Whether the filtering operation completed successfully |
-| <a id="warnings"></a> `warnings` | `string`[] | Warning messages about potential filtering issues or edge cases |
+| <a id="property-error"></a> `error?` | `string` | Error message if the filtering operation failed |
+| <a id="property-filteredresources"></a> `filteredResources` | [`IFilteredResource`](IFilteredResource.md)[] | Analysis of individual resources after filtering, showing per-resource impact |
+| <a id="property-processedresources"></a> `processedResources?` | [`IProcessedResources`](../../ResourceTools/interfaces/IProcessedResources.md) | The filtered processed resources, available if filtering succeeded |
+| <a id="property-success"></a> `success` | `boolean` | Whether the filtering operation completed successfully |
+| <a id="property-warnings"></a> `warnings` | `string`[] | Warning messages about potential filtering issues or edge cases |

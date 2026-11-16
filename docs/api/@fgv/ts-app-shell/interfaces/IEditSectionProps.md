@@ -12,6 +12,6 @@ Props for the EditSection component.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="children"></a> `children` | `readonly` | `ReactNode` | Section content (typically EditField components) |
-| <a id="title"></a> `title` | `readonly` | `string` | Section heading text |
-| <a id="tooltip"></a> `tooltip?` | `readonly` | `string` | Optional tooltip shown on hover over the section heading |
+| <a id="property-children"></a> `children` | `readonly` | `ReactNode` | Section content (typically EditField components) |
+| <a id="property-title"></a> `title` | `readonly` | `string` | Section heading text |
+| <a id="property-tooltip"></a> `tooltip?` | `readonly` | `string` | Optional tooltip shown on hover over the section heading |

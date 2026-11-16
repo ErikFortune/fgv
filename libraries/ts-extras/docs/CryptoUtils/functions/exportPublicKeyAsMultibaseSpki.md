@@ -11,5 +11,5 @@ algorithm-agnostic and suitable for storage and transmission.
 ## Signature
 
 ```typescript
-function exportPublicKeyAsMultibaseSpki(key: CryptoKey, provider: ICryptoProvider): Promise<Result<string>>
+function exportPublicKeyAsMultibaseSpki(key: CryptoKey, provider: ICryptoProvider): Promise<Result<MultibaseSpkiPublicKey>>
 ```

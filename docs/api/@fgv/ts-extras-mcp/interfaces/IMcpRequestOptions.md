@@ -1,0 +1,34 @@
+[**@fgv Monorepo API Documentation**](../../../README.md)
+
+***
+
+[@fgv Monorepo API Documentation](../../../README.md) / [@fgv/ts-extras-mcp](../README.md) / IMcpRequestOptions
+
+# Interface: IMcpRequestOptions
+
+Options for a single MCP request, mapped onto the SDK's `RequestOptions`. Accepted by
+[callMcpTool](../functions/callMcpTool.md) and [listMcpTools](../functions/listMcpTools.md).
+
+## Remarks
+
+When the request is aborted or its `timeoutMs` elapses, the SDK sends the server a
+`notifications/cancelled` for it, so the server can stop the work rather than run it to
+completion. Whether it does is the server's choice. **Exception:** when `maxTotalTimeoutMs`
+trips (it is checked as a progress notification arrives), the SDK fails the request without
+sending a cancellation, so the server is not told to stop; pair it with a `signal` you abort on
+a `'timeout'` failure if that matters.
+
+## Extended by
+
+- [`IListMcpToolsOptions`](IListMcpToolsOptions.md)
+- [`IMcpCallToolOptions`](IMcpCallToolOptions.md)
+
+## Properties
+
+| Property | Modifier | Type | Description |
+| ------ | ------ | ------ | ------ |
+| <a id="property-maxtotaltimeoutms"></a> `maxTotalTimeoutMs?` | `readonly` | `number` | An overall limit, in milliseconds, that progress cannot extend. The SDK checks it when a progress notification arrives, so it only has effect together with `resetTimeoutOnProgress`. The same range as `timeoutMs` applies. |
+| <a id="property-onprogress"></a> `onProgress?` | `readonly` | (`progress`) => `void` | Receives the server's progress notifications for this request. Supplying it is what asks the server for progress (the SDK attaches a progress token only when a callback is given). |
+| <a id="property-resettimeoutonprogress"></a> `resetTimeoutOnProgress?` | `readonly` | `boolean` | When `true`, each progress notification restarts the `timeoutMs` clock. Default `false`. |
+| <a id="property-signal"></a> `signal?` | `readonly` | `AbortSignal` | Aborts the request. A request aborted before it settles fails with the `'aborted'` [McpFailureReason](../type-aliases/McpFailureReason.md), never `'timeout'` or `'transport'`; a signal already aborted when the call is made fails the same way without sending anything. |
+| <a id="property-timeoutms"></a> `timeoutMs?` | `readonly` | `number` | Request timeout in milliseconds. When it elapses the request fails with the `'timeout'` [McpFailureReason](../type-aliases/McpFailureReason.md). Defaults to the SDK's `DEFAULT_REQUEST_TIMEOUT_MSEC`, 60 000. For [listMcpTools](../functions/listMcpTools.md) it applies to each page. Must be a positive, finite number no greater than 2³¹−1 (`setTimeout`'s limit; the SDK would otherwise fire a larger or infinite value after 1 ms); anything else fails with `'invalid-options'` before a request is sent. |

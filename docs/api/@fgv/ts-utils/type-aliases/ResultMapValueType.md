@@ -17,7 +17,7 @@ Type inference to determine the value type returned from a result-map style
 
 | Type Parameter |
 | ------ |
-| `TCollection` *extends* `object` |
+| <a id="type-parameter-tcollection"></a> `TCollection` *extends* `object` |
 
 ## Remarks
 

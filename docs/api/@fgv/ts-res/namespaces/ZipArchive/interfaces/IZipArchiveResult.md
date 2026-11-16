@@ -12,6 +12,6 @@ Result of ZIP archive buffer creation
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="manifest"></a> `manifest` | [`IZipArchiveManifest`](../namespaces/Json/interfaces/IZipArchiveManifest.md) | Archive manifest with metadata |
-| <a id="size"></a> `size` | `number` | Total ZIP size in bytes |
-| <a id="zipbuffer"></a> `zipBuffer` | `Uint8Array` | Raw ZIP data buffer |
+| <a id="property-manifest"></a> `manifest` | [`IZipArchiveManifest`](../namespaces/Json/interfaces/IZipArchiveManifest.md) | Archive manifest with metadata |
+| <a id="property-size"></a> `size` | `number` | Total ZIP size in bytes |
+| <a id="property-zipbuffer"></a> `zipBuffer` | `Uint8Array` | Raw ZIP data buffer |

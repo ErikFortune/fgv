@@ -40,13 +40,13 @@ Creates a new TerritoryQualifierType instance.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_collectible"></a> `_collectible` | `readonly` | [`Collectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`QualifierTypeName`](../../../type-aliases/QualifierTypeName.md), [`QualifierTypeIndex`](../../../type-aliases/QualifierTypeIndex.md)\> | - |
-| <a id="acceptlowercase"></a> `acceptLowercase` | `readonly` | `boolean` | Flag indicating whether the qualifier type should accept lowercase territory codes. Defaults to `false`. |
-| <a id="allowcontextlist"></a> `allowContextList` | `readonly` | `boolean` | Flag indicating whether this qualifier type allows a list of values in a context. |
-| <a id="allowedterritories"></a> `allowedTerritories?` | `readonly` | readonly [`QualifierConditionValue`](../../../type-aliases/QualifierConditionValue.md)[] | Optional array enumerating allowed territories to further constrain the type. |
-| <a id="hierarchy"></a> `hierarchy?` | `readonly` | [`LiteralValueHierarchy`](LiteralValueHierarchy.md)\<`string`\> | Optional [hierarchy](LiteralValueHierarchy.md) of territory values to use for matching. If not provided, no hierarchy will be used. |
-| <a id="name"></a> `name` | `readonly` | [`QualifierTypeName`](../../../type-aliases/QualifierTypeName.md) | The name of the qualifier type. |
-| <a id="systemtypename"></a> `systemTypeName` | `readonly` | [`QualifierTypeName`](../../../type-aliases/QualifierTypeName.md) | Name of the underlying system type. |
+| <a id="property-_collectible"></a> `_collectible` | `protected readonly` | [`Collectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`QualifierTypeName`](../../../type-aliases/QualifierTypeName.md), [`QualifierTypeIndex`](../../../type-aliases/QualifierTypeIndex.md)\> | - |
+| <a id="property-acceptlowercase"></a> `acceptLowercase` | `public readonly` | `boolean` | Flag indicating whether the qualifier type should accept lowercase territory codes. Defaults to `false`. |
+| <a id="property-allowcontextlist"></a> `allowContextList` | `public readonly` | `boolean` | Flag indicating whether this qualifier type allows a list of values in a context. |
+| <a id="property-allowedterritories"></a> `allowedTerritories?` | `public readonly` | readonly [`QualifierConditionValue`](../../../type-aliases/QualifierConditionValue.md)[] | Optional array enumerating allowed territories to further constrain the type. |
+| <a id="property-hierarchy"></a> `hierarchy?` | `public readonly` | [`LiteralValueHierarchy`](LiteralValueHierarchy.md)\<`string`\> | Optional [hierarchy](LiteralValueHierarchy.md) of territory values to use for matching. If not provided, no hierarchy will be used. |
+| <a id="property-name"></a> `name` | `public readonly` | [`QualifierTypeName`](../../../type-aliases/QualifierTypeName.md) | The name of the qualifier type. |
+| <a id="property-systemtypename"></a> `systemTypeName` | `public readonly` | [`QualifierTypeName`](../../../type-aliases/QualifierTypeName.md) | Name of the underlying system type. |
 
 ## Accessors
 

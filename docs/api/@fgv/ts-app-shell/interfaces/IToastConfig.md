@@ -12,4 +12,4 @@ Configuration for toast auto-dismiss behavior.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="autodismissms"></a> `autoDismissMs` | `readonly` | `number` | Auto-dismiss duration in ms. 0 = no auto-dismiss. |
+| <a id="property-autodismissms"></a> `autoDismissMs` | `readonly` | `number` | Auto-dismiss duration in ms. 0 = no auto-dismiss. |

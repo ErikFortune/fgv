@@ -17,14 +17,14 @@ Contains common methods that don't depend on provider mutability.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* [`IContextQualifierProvider`](../type-aliases/IContextQualifierProvider.md) | [`IContextQualifierProvider`](../type-aliases/IContextQualifierProvider.md) |
+| <a id="type-parameter-t"></a> `T` *extends* [`IContextQualifierProvider`](../type-aliases/IContextQualifierProvider.md) | [`IContextQualifierProvider`](../type-aliases/IContextQualifierProvider.md) |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="provider"></a> `provider` | `readonly` | `T` | The wrapped context qualifier provider. |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The readonly qualifier collector that defines and validates the qualifiers for this context. |
+| <a id="property-provider"></a> `provider` | `readonly` | `T` | The wrapped context qualifier provider. |
+| <a id="property-qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The readonly qualifier collector that defines and validates the qualifiers for this context. |
 
 ## Methods
 

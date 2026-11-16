@@ -6,6 +6,11 @@
 
 # Variable: conditionDecl
 
-> `const` **conditionDecl**: [`ObjectConverter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ILooseConditionDecl`](../../../../ResourceJson/namespaces/Json/interfaces/ILooseConditionDecl.md), `unknown`\>
+> `const` **conditionDecl**: [`ObjectConverter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IConditionDecl`](../../../type-aliases/IConditionDecl.md), `unknown`\>
 
 Converter for a [condition declaration](../../../type-aliases/IConditionDecl.md).
+
+## Remarks
+
+Accepts any string as the `qualifierName`. Use `typedConditionDecl` to narrow the
+accepted set of qualifier names to a literal-string union.

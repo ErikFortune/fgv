@@ -59,4 +59,13 @@ IV size in bytes for GCM mode.
 Auth tag size in bytes for GCM mode.
 
 </td></tr>
+<tr><td>
+
+[HMAC_SHA256_KEY_SIZE](./variables/HMAC_SHA256_KEY_SIZE.md)
+
+</td><td>
+
+Key size in bytes for an HMAC-SHA256 key: the SHA-256 output length (RFC 2104's `L`).
+
+</td></tr>
 </tbody></table>

@@ -30,7 +30,7 @@ Construct a new JsonTreeHelper.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="json"></a> `json` | `readonly` | [`IJsonLike`](../interfaces/IJsonLike.md) | Configuration for this JsonTreeHelper. |
+| <a id="property-json"></a> `json` | `public readonly` | [`IJsonLike`](../interfaces/IJsonLike.md) | Configuration for this JsonTreeHelper. |
 
 ## Methods
 
@@ -44,8 +44,8 @@ Reads all JSON files from a directory in a FileTree and applies a converter or v
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 #### Parameters
 
@@ -76,8 +76,8 @@ returning a Map indexed by file base name.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t-1"></a> `T` | - |
+| <a id="type-parameter-tc-1"></a> `TC` | `unknown` |
 
 #### Parameters
 
@@ -107,8 +107,8 @@ Read a JSON file from a FileTree and apply a supplied converter or validator.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t-2"></a> `T` | - |
+| <a id="type-parameter-tc-2"></a> `TC` | `unknown` |
 
 #### Parameters
 

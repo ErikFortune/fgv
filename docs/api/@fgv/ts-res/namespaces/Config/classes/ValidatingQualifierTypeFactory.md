@@ -33,7 +33,7 @@ const result = validatingFactory.create(config); // Validates and converts inter
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* [`QualifierType`](../../../classes/QualifierType.md) | [`SystemQualifierType`](../../QualifierTypes/type-aliases/SystemQualifierType.md) |
+| <a id="type-parameter-t"></a> `T` *extends* [`QualifierType`](../../../classes/QualifierType.md) | [`SystemQualifierType`](../../QualifierTypes/type-aliases/SystemQualifierType.md) |
 
 ## Implements
 

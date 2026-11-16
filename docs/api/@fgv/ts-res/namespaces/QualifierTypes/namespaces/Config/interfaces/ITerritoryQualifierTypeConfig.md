@@ -12,7 +12,7 @@ Configuration for [territory qualifier type](../../../classes/TerritoryQualifier
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="acceptlowercase"></a> `acceptLowercase?` | `boolean` | - |
-| <a id="allowcontextlist"></a> `allowContextList?` | `boolean` | - |
-| <a id="allowedterritories"></a> `allowedTerritories?` | `string`[] | - |
-| <a id="hierarchy"></a> `hierarchy?` | [`LiteralValueHierarchyDecl`](../type-aliases/LiteralValueHierarchyDecl.md)\<`string`\> | Optional [hierarchy declaration](../type-aliases/LiteralValueHierarchyDecl.md) of territory values to use for matching. If not provided, no hierarchy will be used. |
+| <a id="property-acceptlowercase"></a> `acceptLowercase?` | `boolean` | - |
+| <a id="property-allowcontextlist"></a> `allowContextList?` | `boolean` | - |
+| <a id="property-allowedterritories"></a> `allowedTerritories?` | `string`[] | - |
+| <a id="property-hierarchy"></a> `hierarchy?` | [`LiteralValueHierarchyDecl`](../type-aliases/LiteralValueHierarchyDecl.md)\<`string`\> | Optional [hierarchy declaration](../type-aliases/LiteralValueHierarchyDecl.md) of territory values to use for matching. If not provided, no hierarchy will be used. |

@@ -12,13 +12,13 @@ Interface for the root node of a resource tree.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="children"></a> `children` | `readonly` | [`IReadOnlyValidatingResourceTreeChildren`](IReadOnlyValidatingResourceTreeChildren.md)\<`T`\> |
-| <a id="isbranch"></a> `isBranch` | `readonly` | `false` |
-| <a id="isleaf"></a> `isLeaf` | `readonly` | `false` |
-| <a id="isroot"></a> `isRoot` | `readonly` | `true` |
+| <a id="property-children"></a> `children` | `readonly` | [`IReadOnlyValidatingResourceTreeChildren`](IReadOnlyValidatingResourceTreeChildren.md)\<`T`\> |
+| <a id="property-isbranch"></a> `isBranch` | `readonly` | `false` |
+| <a id="property-isleaf"></a> `isLeaf` | `readonly` | `false` |
+| <a id="property-isroot"></a> `isRoot` | `readonly` | `true` |

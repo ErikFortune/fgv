@@ -14,7 +14,7 @@ Dropdown select for enumerated string values.
 
 | Type Parameter |
 | ------ |
-| `T` *extends* `string` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` |
 
 ## Parameters
 

@@ -12,15 +12,15 @@ An item that can be collected by some [Collector](../classes/ConvertingCollector
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TKEY` *extends* `string` | `string` |
-| `TINDEX` *extends* `number` | `number` |
+| <a id="type-parameter-tkey"></a> `TKEY` *extends* `string` | `string` |
+| <a id="type-parameter-tindex"></a> `TINDEX` *extends* `number` | `number` |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="index"></a> `index` | `readonly` | `TINDEX` \| `undefined` |
-| <a id="key"></a> `key` | `readonly` | `TKEY` |
+| <a id="property-index"></a> `index` | `readonly` | `TINDEX` \| `undefined` |
+| <a id="property-key"></a> `key` | `readonly` | `TKEY` |
 
 ## Methods
 

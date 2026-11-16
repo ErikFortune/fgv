@@ -24,15 +24,15 @@ using a supplied [Converter\<T, TC\>](../../Conversion/interfaces/Converter.md) 
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
-| `TK` *extends* `string` | `string` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
 
 ### Parameters
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `converter` | [`Converter`](../../Conversion/interfaces/Converter.md)\<`T`, `TC`\> \| [`Validator`](../../Validation/interfaces/Validator.md)\<`T`, `TC`\> | [Converter](../../Conversion/interfaces/Converter.md) | [Validator](../../Validation/interfaces/Validator.md) used for each item in the source object. |
+| `converter` | [`Converter`](../../Conversion/interfaces/Converter.md)\<`T`, `TC`\> \| [`Validator`](../../Validation/interfaces/Validator.md)\<`T`, `TC`\> | [Converter](../../Conversion/interfaces/Converter.md) \| [Validator](../../Validation/interfaces/Validator.md) used for each item in the source object. |
 
 ### Returns
 
@@ -56,9 +56,9 @@ using a supplied [Converter\<T, TC\>](../../Conversion/interfaces/Converter.md) 
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
-| `TK` *extends* `string` | `string` |
+| <a id="type-parameter-t-1"></a> `T` | - |
+| <a id="type-parameter-tc-1"></a> `TC` | `unknown` |
+| <a id="type-parameter-tk-1"></a> `TK` *extends* `string` | `string` |
 
 ### Parameters
 
@@ -90,9 +90,9 @@ a `Map<TK,T>`.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
-| `TK` *extends* `string` | `string` |
+| <a id="type-parameter-t-2"></a> `T` | - |
+| <a id="type-parameter-tc-2"></a> `TC` | `unknown` |
+| <a id="type-parameter-tk-2"></a> `TK` *extends* `string` | `string` |
 
 ### Parameters
 

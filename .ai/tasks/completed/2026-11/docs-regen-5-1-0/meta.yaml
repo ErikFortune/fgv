@@ -1,0 +1,48 @@
+id: docs-regen-5-1-0
+status: shipped
+packages:
+  [
+    '@fgv/ts-extras',
+    '@fgv/ts-http-storage',
+    '@fgv/ts-json-base',
+    '@fgv/ts-random',
+    '@fgv/ts-utils',
+    '@fgv/ts-web-extras'
+  ]
+prs: [789]
+openPrs: []
+opened: 2026-11-14
+closed: 2026-11-14
+summary:
+  intended: >
+    Release prep for 5.1.0: regenerate the committed generated API docs, three months stale since
+    #652. Run rush build-docs after install and rebuild and commit every package's docs/ (deletions
+    included); reproduce the root docs/api from the root typedoc.json with the repo's own typedoc,
+    or, if that needs new dependencies or scripts, leave it and record the gap; add no build-docs
+    scripts; sanity-check for machine paths and sudoku pages; add none change files.
+  shipped: >
+    Six of the twelve build-docs packages changed (ts-extras 2094→2940 files, ts-json-base
+    542→866, ts-utils 1635→1709, ts-web-extras 255→280, ts-random 229→239, ts-http-storage 66→72),
+    with stale pages deleted. Root docs/api reproduced deterministically with the workspace
+    typedoc 0.28.20 (0 errors, 208 link warnings) and now covers all 26 libraries (2978→4758
+    files). Under an approved scope extension, comment-only fixes in ts-utils, ts-json-base and
+    ts-extras cleared the 12 TSDoc warnings, so rush build-docs exits 0; two API reports updated.
+    Six none change files; install, change --verify, rebuild, lint and test all pass.
+  diverged: >
+    The brief excluded source changes; the first build-docs run exited 1 on 12 TSDoc warnings, and
+    the orchestrator then extended scope to fix them. The six ts-web-extras warnings came from an
+    @inheritDoc in ts-json-base that no spelling can resolve across packages, so the interface's
+    text was written into the base-class comments instead of re-pointing the reference.
+  sourceLine: "**Shipped:** the committed generated API docs are regenerated for 5.1.0 — six of the twelve `build-docs` packages changed, and the root `docs/api` was reproduced with the repo's own typedoc 0.28.20 and now covers all 26 packages under `libraries/`."
+  headline: '' # opted out per the brief: regenerated docs add no capability
+keywords:
+  - typedoc
+  - typedoc-plugin-markdown
+  - generated API documentation
+  - build-docs
+  - docs/api reproduction
+  - release prep 5.1.0
+  - stale generated pages
+  - TSDoc warnings
+  - inheritDoc unresolved
+sourceHash: sha256:40ea09ad1d1ec081 # over brief.md + state.md + result.md

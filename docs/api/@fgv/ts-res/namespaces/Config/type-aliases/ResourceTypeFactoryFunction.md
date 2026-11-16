@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-res](../../../README.md) / [Config](../README.md) / ResourceTypeFactoryFunction
 
-# Type Alias: ResourceTypeFactoryFunction()
+# Type Alias: ResourceTypeFactoryFunction
 
 > **ResourceTypeFactoryFunction** = (`config`) => [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`ResourceType`](../../../classes/ResourceType.md)\>
 

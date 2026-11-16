@@ -12,6 +12,6 @@ Parameters for creating a generator.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="global"></a> `global?` | `boolean` |
-| <a id="seed"></a> `seed?` | `string` \| `number` |
-| <a id="step"></a> `step?` | [`RandomStepFunction`](../type-aliases/RandomStepFunction.md) |
+| <a id="property-global"></a> `global?` | `boolean` |
+| <a id="property-seed"></a> `seed?` | `string` \| `number` |
+| <a id="property-step"></a> `step?` | [`RandomStepFunction`](../type-aliases/RandomStepFunction.md) |

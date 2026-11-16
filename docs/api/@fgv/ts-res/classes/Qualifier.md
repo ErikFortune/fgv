@@ -37,13 +37,13 @@ supplied [validated declaration](../namespaces/Qualifiers/interfaces/IValidatedQ
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_collectible"></a> `_collectible` | `readonly` | [`Collectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`QualifierName`](../type-aliases/QualifierName.md), [`QualifierIndex`](../type-aliases/QualifierIndex.md)\> | - |
-| <a id="defaultpriority"></a> `defaultPriority` | `readonly` | [`ConditionPriority`](../type-aliases/ConditionPriority.md) | The default [priority](../type-aliases/ConditionPriority.md) of conditions that depend on this qualifier. |
-| <a id="defaultvalue"></a> `defaultValue?` | `readonly` | [`QualifierContextValue`](../type-aliases/QualifierContextValue.md) | Optional default value for the qualifier. |
-| <a id="name"></a> `name` | `readonly` | [`QualifierName`](../type-aliases/QualifierName.md) | The name of the qualifier. |
-| <a id="token"></a> `token` | `readonly` | [`QualifierName`](../type-aliases/QualifierName.md) | The token used to identify the qualifier in the name or path of a resource being imported. |
-| <a id="tokenisoptional"></a> `tokenIsOptional` | `readonly` | `boolean` | Indicates whether the token is optional in the name or path of a resource being imported. |
-| <a id="type"></a> `type` | `readonly` | [`QualifierType`](QualifierType.md) | The [type](QualifierType.md) of the qualifier. |
+| <a id="property-_collectible"></a> `_collectible` | `protected readonly` | [`Collectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`QualifierName`](../type-aliases/QualifierName.md), [`QualifierIndex`](../type-aliases/QualifierIndex.md)\> | - |
+| <a id="property-defaultpriority"></a> `defaultPriority` | `public readonly` | [`ConditionPriority`](../type-aliases/ConditionPriority.md) | The default [priority](../type-aliases/ConditionPriority.md) of conditions that depend on this qualifier. |
+| <a id="property-defaultvalue"></a> `defaultValue?` | `public readonly` | [`QualifierContextValue`](../type-aliases/QualifierContextValue.md) | Optional default value for the qualifier. |
+| <a id="property-name"></a> `name` | `public readonly` | [`QualifierName`](../type-aliases/QualifierName.md) | The name of the qualifier. |
+| <a id="property-token"></a> `token` | `public readonly` | [`QualifierName`](../type-aliases/QualifierName.md) | The token used to identify the qualifier in the name or path of a resource being imported. |
+| <a id="property-tokenisoptional"></a> `tokenIsOptional` | `public readonly` | `boolean` | Indicates whether the token is optional in the name or path of a resource being imported. |
+| <a id="property-type"></a> `type` | `public readonly` | [`QualifierType`](QualifierType.md) | The [type](QualifierType.md) of the qualifier. |
 
 ## Accessors
 
@@ -63,7 +63,7 @@ Index of the qualifier.
 
 #### Implementation of
 
-[`IValidatedQualifierDecl`](../namespaces/Qualifiers/interfaces/IValidatedQualifierDecl.md).[`index`](../namespaces/Qualifiers/interfaces/IValidatedQualifierDecl.md#index)
+[`IValidatedQualifierDecl`](../namespaces/Qualifiers/interfaces/IValidatedQualifierDecl.md).[`index`](../namespaces/Qualifiers/interfaces/IValidatedQualifierDecl.md#property-index)
 
 ***
 

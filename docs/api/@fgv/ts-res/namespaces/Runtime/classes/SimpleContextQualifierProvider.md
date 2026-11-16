@@ -47,8 +47,8 @@ Constructor for a SimpleContextQualifierProvider object.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="mutable"></a> `mutable` | `readonly` | `true` | Explicit mutability marker for compile-time type discrimination. Always `true` for mutable providers. |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The readonly qualifier collector that defines and validates the qualifiers for this context. |
+| <a id="property-mutable"></a> `mutable` | `public readonly` | `true` | Explicit mutability marker for compile-time type discrimination. Always `true` for mutable providers. |
+| <a id="property-qualifiers"></a> `qualifiers` | `public readonly` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The readonly qualifier collector that defines and validates the qualifiers for this context. |
 
 ## Accessors
 

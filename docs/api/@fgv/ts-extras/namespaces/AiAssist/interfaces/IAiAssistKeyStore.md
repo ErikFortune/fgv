@@ -13,7 +13,7 @@ Satisfied structurally by the concrete `KeyStore` class from `@fgv/ts-extras`.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="isunlocked"></a> `isUnlocked` | `readonly` | `boolean` | Whether the keystore is currently unlocked |
+| <a id="property-isunlocked"></a> `isUnlocked` | `readonly` | `boolean` | Whether the keystore is currently unlocked |
 
 ## Methods
 

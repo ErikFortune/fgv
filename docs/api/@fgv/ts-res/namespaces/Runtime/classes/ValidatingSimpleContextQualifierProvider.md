@@ -41,9 +41,9 @@ Constructor for a ValidatingSimpleContextQualifierProvider object.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="mutable"></a> `mutable` | `readonly` | `true` | Explicit mutability marker for compile-time type discrimination. Always `true` for mutable providers. |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The readonly qualifier collector that defines and validates the qualifiers for this context. |
-| <a id="validating"></a> `validating` | `readonly` | [`IMutableContextQualifierProviderValidator`](../namespaces/Context/interfaces/IMutableContextQualifierProviderValidator.md) | A [MutableContextQualifierProviderValidator](../namespaces/Context/classes/MutableContextQualifierProviderValidator.md) which validates string inputs before passing them to this provider. |
+| <a id="property-mutable"></a> `mutable` | `public readonly` | `true` | Explicit mutability marker for compile-time type discrimination. Always `true` for mutable providers. |
+| <a id="property-qualifiers"></a> `qualifiers` | `public readonly` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The readonly qualifier collector that defines and validates the qualifiers for this context. |
+| <a id="property-validating"></a> `validating` | `public readonly` | [`IMutableContextQualifierProviderValidator`](../namespaces/Context/interfaces/IMutableContextQualifierProviderValidator.md) | A [MutableContextQualifierProviderValidator](../namespaces/Context/classes/MutableContextQualifierProviderValidator.md) which validates string inputs before passing them to this provider. |
 
 ## Accessors
 

@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-utils](../../../README.md) / [Collections](../README.md) / CollectibleFactoryCallback
 
-# Type Alias: CollectibleFactoryCallback()\<TITEM\>
+# Type Alias: CollectibleFactoryCallback\<TITEM\>
 
 > **CollectibleFactoryCallback**\<`TITEM`\> = (`key`, `index`) => [`Result`](../../../type-aliases/Result.md)\<`TITEM`\>
 
@@ -14,7 +14,7 @@ Factory function for creating a new [ICollectible](../interfaces/ICollectible.md
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
 
 ## Parameters
 

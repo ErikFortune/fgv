@@ -68,13 +68,13 @@ console.log(`Has edits: ${hasEdits}`);
 
 | Property | Type |
 | ------ | ------ |
-| <a id="configuration"></a> `configuration` | [`ISystemConfiguration`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) \| `null` |
-| <a id="error"></a> `error` | `string` \| `null` |
-| <a id="filterresult"></a> `filterResult` | [`IFilterResult`](../namespaces/FilterTools/interfaces/IFilterResult.md) \| `null` |
-| <a id="filterstate"></a> `filterState` | [`IFilterState`](../namespaces/FilterTools/interfaces/IFilterState.md) |
-| <a id="isprocessing"></a> `isProcessing` | `boolean` |
-| <a id="messages"></a> `messages` | `IMessage`[] |
-| <a id="resolutionstate"></a> `resolutionState` | [`IResolutionState`](../namespaces/ResolutionTools/interfaces/IResolutionState.md) |
-| <a id="resourceeditorfactory"></a> `resourceEditorFactory?` | [`IResourceEditorFactory`](../namespaces/ResourceTools/interfaces/IResourceEditorFactory.md)\<`unknown`, [`JsonValue`](../type-aliases/JsonValue.md)\> |
-| <a id="resources"></a> `resources` | [`IExtendedProcessedResources`](../namespaces/ResourceTools/interfaces/IExtendedProcessedResources.md) \| `null` |
-| <a id="selectedresourceid"></a> `selectedResourceId` | `string` \| `null` |
+| <a id="property-configuration"></a> `configuration` | [`ISystemConfiguration`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) \| `null` |
+| <a id="property-error"></a> `error` | `string` \| `null` |
+| <a id="property-filterresult"></a> `filterResult` | [`IFilterResult`](../namespaces/FilterTools/interfaces/IFilterResult.md) \| `null` |
+| <a id="property-filterstate"></a> `filterState` | [`IFilterState`](../namespaces/FilterTools/interfaces/IFilterState.md) |
+| <a id="property-isprocessing"></a> `isProcessing` | `boolean` |
+| <a id="property-messages"></a> `messages` | `IMessage`[] |
+| <a id="property-resolutionstate"></a> `resolutionState` | [`IResolutionState`](../namespaces/ResolutionTools/interfaces/IResolutionState.md) |
+| <a id="property-resourceeditorfactory"></a> `resourceEditorFactory?` | [`IResourceEditorFactory`](../namespaces/ResourceTools/interfaces/IResourceEditorFactory.md)\<`unknown`, [`JsonValue`](../type-aliases/JsonValue.md)\> |
+| <a id="property-resources"></a> `resources` | [`IExtendedProcessedResources`](../namespaces/ResourceTools/interfaces/IExtendedProcessedResources.md) \| `null` |
+| <a id="property-selectedresourceid"></a> `selectedResourceId` | `string` \| `null` |

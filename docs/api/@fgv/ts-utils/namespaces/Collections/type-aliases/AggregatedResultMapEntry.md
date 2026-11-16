@@ -14,7 +14,7 @@ A collection entry in an [aggregated result map](../../../classes/AggregatedResu
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCOLLECTIONID` *extends* `string` | - |
-| `TITEMID` *extends* `string` | - |
-| `TITEM` | - |
-| `TMETADATA` | `unknown` |
+| <a id="type-parameter-tcollectionid"></a> `TCOLLECTIONID` *extends* `string` | - |
+| <a id="type-parameter-titemid"></a> `TITEMID` *extends* `string` | - |
+| <a id="type-parameter-titem"></a> `TITEM` | - |
+| <a id="type-parameter-tmetadata"></a> `TMETADATA` | `unknown` |

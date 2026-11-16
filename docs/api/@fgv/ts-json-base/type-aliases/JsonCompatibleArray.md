@@ -14,7 +14,7 @@ A type that represents an array of JSON-compatible values.
 
 | Type Parameter | Description |
 | ------ | ------ |
-| `T` | The type to be constrained |
+| <a id="type-parameter-t"></a> `T` | The type to be constrained |
 
 ## Returns
 

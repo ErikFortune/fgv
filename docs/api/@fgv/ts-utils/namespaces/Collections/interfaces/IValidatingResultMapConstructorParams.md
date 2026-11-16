@@ -12,12 +12,12 @@ Parameters for constructing a [ResultMap](../classes/ResultMap.md).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv"></a> `TV` | `unknown` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="converters"></a> `converters` | [`KeyValueConverters`](../classes/KeyValueConverters.md)\<`TK`, `TV`\> |
-| <a id="entries"></a> `entries?` | `Iterable`\<[`KeyValueEntry`](../type-aliases/KeyValueEntry.md)\<`string`, `unknown`\>, `any`, `any`\> |
+| <a id="property-converters"></a> `converters` | [`KeyValueConverters`](../classes/KeyValueConverters.md)\<`TK`, `TV`\> |
+| <a id="property-entries"></a> `entries?` | `Iterable`\<[`KeyValueEntry`](../type-aliases/KeyValueEntry.md)\<`string`, `unknown`\>, `any`, `any`\> |

@@ -14,4 +14,4 @@ Helper type to extract the element type and preserve readonly status.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |

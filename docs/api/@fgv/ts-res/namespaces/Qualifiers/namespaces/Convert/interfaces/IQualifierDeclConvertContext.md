@@ -12,5 +12,5 @@ Context necessary to convert a [validated qualifier declaration](../../../interf
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="qualifierindex"></a> `qualifierIndex?` | `public` | `number` |
-| <a id="qualifiertypes"></a> `qualifierTypes` | `readonly` | [`ReadOnlyQualifierTypeCollector`](../../../../QualifierTypes/type-aliases/ReadOnlyQualifierTypeCollector.md) |
+| <a id="property-qualifierindex"></a> `qualifierIndex?` | `public` | `number` |
+| <a id="property-qualifiertypes"></a> `qualifierTypes` | `readonly` | [`ReadOnlyQualifierTypeCollector`](../../../../QualifierTypes/type-aliases/ReadOnlyQualifierTypeCollector.md) |

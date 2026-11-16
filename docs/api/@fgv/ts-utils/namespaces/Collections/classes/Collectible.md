@@ -13,8 +13,8 @@ changed once set.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TKEY` *extends* `string` | `string` |
-| `TINDEX` *extends* `number` | `number` |
+| <a id="type-parameter-tkey"></a> `TKEY` *extends* `string` | `string` |
+| <a id="type-parameter-tindex"></a> `TINDEX` *extends* `number` | `number` |
 
 ## Implements
 
@@ -76,9 +76,9 @@ Constructs a new Collectible instance.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_index"></a> `_index` | `protected` | `TINDEX` \| `undefined` | - |
-| <a id="_indexconverter"></a> `_indexConverter?` | `readonly` | [`Validator`](../../Validation/interfaces/Validator.md)\<`TINDEX`, `unknown`\> \| [`Converter`](../../Conversion/interfaces/Converter.md)\<`TINDEX`, `unknown`\> | - |
-| <a id="key"></a> `key` | `readonly` | `TKEY` | [Collections.ICollectible.key](../interfaces/ICollectible.md#key) |
+| <a id="property-_index"></a> `_index` | `protected` | `TINDEX` \| `undefined` | - |
+| <a id="property-_indexconverter"></a> `_indexConverter?` | `protected readonly` | [`Validator`](../../Validation/interfaces/Validator.md)\<`TINDEX`, `unknown`\> \| [`Converter`](../../Conversion/interfaces/Converter.md)\<`TINDEX`, `unknown`\> | - |
+| <a id="property-key"></a> `key` | `public readonly` | `TKEY` | [Collections.ICollectible.key](../interfaces/ICollectible.md#property-key) |
 
 ## Accessors
 
@@ -88,7 +88,7 @@ Constructs a new Collectible instance.
 
 > **get** **index**(): `TINDEX` \| `undefined`
 
-[Collections.ICollectible.index](../interfaces/ICollectible.md#index)
+[Collections.ICollectible.index](../interfaces/ICollectible.md#property-index)
 
 ##### Returns
 
@@ -96,7 +96,7 @@ Constructs a new Collectible instance.
 
 #### Implementation of
 
-[`ICollectible`](../interfaces/ICollectible.md).[`index`](../interfaces/ICollectible.md#index)
+[`ICollectible`](../interfaces/ICollectible.md).[`index`](../interfaces/ICollectible.md#property-index)
 
 ## Methods
 
@@ -134,8 +134,8 @@ Creates a new Collectible instance with a defined, strongly-typed index.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TKEY` *extends* `string` | `string` |
-| `TINDEX` *extends* `number` | `number` |
+| <a id="type-parameter-tkey-1"></a> `TKEY` *extends* `string` | `string` |
+| <a id="type-parameter-tindex-1"></a> `TINDEX` *extends* `number` | `number` |
 
 ##### Parameters
 
@@ -160,8 +160,8 @@ converter to validate the index when it is set.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TKEY` *extends* `string` | `string` |
-| `TINDEX` *extends* `number` | `number` |
+| <a id="type-parameter-tkey-2"></a> `TKEY` *extends* `string` | `string` |
+| <a id="type-parameter-tindex-2"></a> `TINDEX` *extends* `number` | `number` |
 
 ##### Parameters
 
@@ -185,8 +185,8 @@ Creates a new Collectible instance.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TKEY` *extends* `string` | `string` |
-| `TINDEX` *extends* `number` | `number` |
+| <a id="type-parameter-tkey-3"></a> `TKEY` *extends* `string` | `string` |
+| <a id="type-parameter-tindex-3"></a> `TINDEX` *extends* `number` | `number` |
 
 ##### Parameters
 

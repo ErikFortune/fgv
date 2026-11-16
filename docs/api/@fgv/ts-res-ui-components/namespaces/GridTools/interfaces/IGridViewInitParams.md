@@ -13,9 +13,9 @@ Defines resource selection, column mapping, and presentation options.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="columnmapping"></a> `columnMapping` | [`IResourceTypeColumnMapping`](IResourceTypeColumnMapping.md)[] | Column mappings for resource types in this grid |
-| <a id="description"></a> `description?` | `string` | Optional description for this grid |
-| <a id="id"></a> `id` | `string` | Unique identifier for this grid |
-| <a id="presentationoptions"></a> `presentationOptions?` | [`IGridPresentationOptions`](IGridPresentationOptions.md) | Optional presentation overrides |
-| <a id="resourceselection"></a> `resourceSelection` | [`GridResourceSelector`](../type-aliases/GridResourceSelector.md) | How to select resources for this grid |
-| <a id="title"></a> `title` | `string` | Display title for this grid |
+| <a id="property-columnmapping"></a> `columnMapping` | [`IResourceTypeColumnMapping`](IResourceTypeColumnMapping.md)[] | Column mappings for resource types in this grid |
+| <a id="property-description"></a> `description?` | `string` | Optional description for this grid |
+| <a id="property-id"></a> `id` | `string` | Unique identifier for this grid |
+| <a id="property-presentationoptions"></a> `presentationOptions?` | [`IGridPresentationOptions`](IGridPresentationOptions.md) | Optional presentation overrides |
+| <a id="property-resourceselection"></a> `resourceSelection` | [`GridResourceSelector`](../type-aliases/GridResourceSelector.md) | How to select resources for this grid |
+| <a id="property-title"></a> `title` | `string` | Display title for this grid |

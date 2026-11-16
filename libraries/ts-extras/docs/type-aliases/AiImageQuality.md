@@ -7,5 +7,5 @@ All accepted quality strings across all providers.
 ## Type
 
 ```typescript
-type AiImageQuality = DallE3Quality | GptImageQuality
+type AiImageQuality = GptImageQuality
 ```

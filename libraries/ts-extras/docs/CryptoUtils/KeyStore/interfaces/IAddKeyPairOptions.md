@@ -75,4 +75,38 @@ boolean
 Whether to replace an existing entry with the same name.
 
 </td></tr>
+<tr><td>
+
+[extractable](./IAddKeyPairOptions.extractable.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+Overrides the storage-backend-derived extractability for this key only.
+
+</td></tr>
+<tr><td>
+
+[escrow](./IAddKeyPairOptions.escrow.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+Opt in to private-key escrow.
+
+</td></tr>
 </tbody></table>

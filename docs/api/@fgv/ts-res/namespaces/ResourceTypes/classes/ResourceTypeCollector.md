@@ -36,8 +36,8 @@ Map [resource type names](../../../type-aliases/ResourceTypeName.md) to [resourc
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_converters"></a> `_converters` | `readonly` | [`KeyValueConverters`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ResourceTypeName`](../../../type-aliases/ResourceTypeName.md), [`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\>\> | - |
-| <a id="validating"></a> `validating` | `readonly` | [`CollectorValidator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\>\> | A [CollectorValidator](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) which validates keys and values before inserting them into this collector. |
+| <a id="property-_converters"></a> `_converters` | `protected readonly` | [`KeyValueConverters`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ResourceTypeName`](../../../type-aliases/ResourceTypeName.md), [`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\>\> | - |
+| <a id="property-validating"></a> `validating` | `readonly` | [`CollectorValidator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\>\> | A [CollectorValidator](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) which validates keys and values before inserting them into this collector. |
 
 ## Accessors
 
@@ -414,7 +414,7 @@ Creates a new [Collector](https://github.com/ErikFortune/fgv/tree/main/libraries
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
 
 #### Parameters
 
@@ -446,7 +446,7 @@ the supplied [parameters](https://github.com/ErikFortune/fgv/tree/main/libraries
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
+| <a id="type-parameter-titem-1"></a> `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
 
 #### Parameters
 

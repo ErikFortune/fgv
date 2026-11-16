@@ -94,7 +94,6 @@ rush install          # Install from shrinkwrap
 │   ├── ts-bcp47/             # @fgv/ts-bcp47
 │   ├── ts-json/              # @fgv/ts-json
 │   ├── ts-json-base/         # @fgv/ts-json-base
-│   ├── ts-sudoku-lib/        # @fgv/ts-sudoku-lib
 │   ├── ts-extras/            # @fgv/ts-extras
 │   └── ts-utils-jest/        # @fgv/ts-utils-jest
 │

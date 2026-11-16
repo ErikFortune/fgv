@@ -8,5 +8,5 @@ value within the LLM-tool subset.
 ## Signature
 
 ```typescript
-function fromJson(json: JsonObject): Result<ISchemaValidator<JsonValue>>
+function fromJson(json: JsonObject, options: IFromJsonOptions): Result<ISchemaValidator<JsonValue>>
 ```

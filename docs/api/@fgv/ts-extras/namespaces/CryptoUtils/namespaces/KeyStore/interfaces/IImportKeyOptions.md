@@ -17,6 +17,6 @@ Extends [IImportSecretOptions](IImportSecretOptions.md) with a type classificati
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="description"></a> `description?` | `readonly` | `string` | `undefined` | Optional description for the secret. |
-| <a id="replace"></a> `replace?` | `readonly` | `boolean` | `undefined` | Whether to replace an existing secret with the same name. |
-| <a id="type"></a> `type?` | `readonly` | [`KeyStoreSecretType`](../type-aliases/KeyStoreSecretType.md) | `'encryption-key'` | Secret type classification for the imported key material. |
+| <a id="property-description"></a> `description?` | `readonly` | `string` | `undefined` | Optional description for the secret. |
+| <a id="property-replace"></a> `replace?` | `readonly` | `boolean` | `undefined` | Whether to replace an existing secret with the same name. |
+| <a id="property-type"></a> `type?` | `readonly` | [`KeyStoreSymmetricSecretType`](../type-aliases/KeyStoreSymmetricSecretType.md) | `'encryption-key'` | Symmetric secret type classification for the imported key material. |

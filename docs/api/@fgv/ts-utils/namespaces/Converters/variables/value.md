@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-utils](../../../README.md) / [Converters](../README.md) / value
 
-# ~~Variable: value()~~
+# ~~Variable: value~~
 
 > `const` **value**: \<`T`, `TC`\>(`value`) => [`Converter`](../../Conversion/interfaces/Converter.md)\<`T`, `TC`\> = `literal`
 
@@ -19,8 +19,8 @@ the supplied value if an identity comparison succeeds, fails otherwise.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-__typet"></a> `T` | - |
+| <a id="type-parameter-__typetc"></a> `TC` | `unknown` |
 
 ## Parameters
 
@@ -39,6 +39,8 @@ A [Converter](../../Conversion/interfaces/Converter.md) which returns the suppli
 literal
 
 ## Param
+
+**value**
 
 The value to be compared.
 

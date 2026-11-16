@@ -52,7 +52,7 @@ The index of this candidate value in the collection.
 
 #### Implementation of
 
-[`ICandidateValue`](../interfaces/ICandidateValue.md).[`index`](../interfaces/ICandidateValue.md#index)
+[`ICandidateValue`](../interfaces/ICandidateValue.md).[`index`](../interfaces/ICandidateValue.md#property-index)
 
 ***
 
@@ -72,7 +72,7 @@ The normalized JSON value.
 
 #### Implementation of
 
-[`ICandidateValue`](../interfaces/ICandidateValue.md).[`json`](../interfaces/ICandidateValue.md#json)
+[`ICandidateValue`](../interfaces/ICandidateValue.md).[`json`](../interfaces/ICandidateValue.md#property-json)
 
 ***
 
@@ -92,7 +92,7 @@ The unique key for this candidate value, derived from the hash of the normalized
 
 #### Implementation of
 
-[`ICandidateValue`](../interfaces/ICandidateValue.md).[`key`](../interfaces/ICandidateValue.md#key)
+[`ICandidateValue`](../interfaces/ICandidateValue.md).[`key`](../interfaces/ICandidateValue.md#property-key)
 
 ## Methods
 

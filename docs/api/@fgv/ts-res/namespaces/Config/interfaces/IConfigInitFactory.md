@@ -12,8 +12,8 @@ Interface for a factory that creates a new instance of a configuration object.
 
 | Type Parameter |
 | ------ |
-| `TConfig` |
-| `T` |
+| <a id="type-parameter-tconfig"></a> `TConfig` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Methods
 

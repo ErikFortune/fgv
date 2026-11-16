@@ -7,5 +7,5 @@ Format version for vault contents.
 **Signature:**
 
 ```typescript
-readonly version: "keystore-v1";
+readonly version: KeyStoreFormat;
 ```

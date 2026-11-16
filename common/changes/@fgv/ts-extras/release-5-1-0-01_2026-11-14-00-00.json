@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "New `AiAssist` namespace: Result-returning LLM clients for OpenAI, Anthropic, Google Gemini, xAI, Groq, Mistral, Ollama and OpenAI-compatible servers — completion, streaming, image generation and embeddings, with model aliases (`@provider:role`) and quality tiers.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

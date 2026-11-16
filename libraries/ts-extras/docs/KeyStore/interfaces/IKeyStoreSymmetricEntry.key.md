@@ -5,6 +5,7 @@
 The secret data.
 - For `'encryption-key'`: 32-byte AES-256 key.
 - For `'api-key'`: UTF-8 encoded API key string (arbitrary length).
+- For `'opaque'`: arbitrary raw bytes, stored and returned verbatim.
 
 **Signature:**
 

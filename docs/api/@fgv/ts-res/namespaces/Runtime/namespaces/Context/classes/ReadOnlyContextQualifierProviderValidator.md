@@ -18,7 +18,7 @@ Only provides read operations for compile-time type safety.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* [`IReadOnlyContextQualifierProvider`](../interfaces/IReadOnlyContextQualifierProvider.md) | [`IReadOnlyContextQualifierProvider`](../interfaces/IReadOnlyContextQualifierProvider.md) |
+| <a id="type-parameter-t"></a> `T` *extends* [`IReadOnlyContextQualifierProvider`](../interfaces/IReadOnlyContextQualifierProvider.md) | [`IReadOnlyContextQualifierProvider`](../interfaces/IReadOnlyContextQualifierProvider.md) |
 
 ## Implements
 
@@ -50,7 +50,7 @@ Constructs a new ReadOnlyContextQualifierProviderValidator.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="provider"></a> `provider` | `readonly` | `T` | The wrapped read-only context qualifier provider. |
+| <a id="property-provider"></a> `provider` | `public readonly` | `T` | The wrapped read-only context qualifier provider. |
 
 ## Accessors
 

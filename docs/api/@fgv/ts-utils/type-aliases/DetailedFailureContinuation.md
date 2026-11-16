@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../README.md) / [@fgv/ts-utils](../README.md) / DetailedFailureContinuation
 
-# Type Alias: DetailedFailureContinuation()\<T, TD\>
+# Type Alias: DetailedFailureContinuation\<T, TD\>
 
 > **DetailedFailureContinuation**\<`T`, `TD`\> = (`message`, `detail?`) => [`DetailedResult`](DetailedResult.md)\<`T`, `TD`\>
 
@@ -14,8 +14,8 @@ Callback to be called when a [DetailedResult](DetailedResult.md) encounters a fa
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `TD` |
+| <a id="type-parameter-t"></a> `T` |
+| <a id="type-parameter-td"></a> `TD` |
 
 ## Parameters
 

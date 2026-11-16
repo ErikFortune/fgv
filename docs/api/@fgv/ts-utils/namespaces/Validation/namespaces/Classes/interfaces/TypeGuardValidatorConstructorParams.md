@@ -16,14 +16,14 @@ Parameters used to construct a [Validation.Classes.TypeGuardValidator](../classe
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="description"></a> `description` | `string` |
-| <a id="guard"></a> `guard` | [`TypeGuardWithContext`](../../../type-aliases/TypeGuardWithContext.md)\<`T`, `TC`\> |
-| <a id="options"></a> `options?` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> |
-| <a id="traits"></a> `traits?` | `Partial`\<[`ValidatorTraits`](../../../classes/ValidatorTraits.md)\> |
+| <a id="property-description"></a> `description` | `string` |
+| <a id="property-guard"></a> `guard` | [`TypeGuardWithContext`](../../../type-aliases/TypeGuardWithContext.md)\<`T`, `TC`\> |
+| <a id="property-options"></a> `options?` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> |
+| <a id="property-traits"></a> `traits?` | `Partial`\<[`ValidatorTraits`](../../../classes/ValidatorTraits.md)\> |

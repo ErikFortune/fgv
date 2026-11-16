@@ -12,4 +12,4 @@ Metadata for a compiled condition, containing human-readable information.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="key"></a> `key` | [`ConditionKey`](../../../../../type-aliases/ConditionKey.md) | The semantic key of the condition (e.g., "language=en-US"). |
+| <a id="property-key"></a> `key` | [`ConditionKey`](../../../../../type-aliases/ConditionKey.md) | The semantic key of the condition (e.g., "language=en-US"). |

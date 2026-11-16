@@ -12,6 +12,6 @@ Props for the TagsInput component.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="onchange"></a> `onChange` | `readonly` | (`value`) => `void` | Called when tags change (empty → undefined) |
-| <a id="placeholder"></a> `placeholder?` | `readonly` | `string` | Placeholder text |
-| <a id="value"></a> `value` | `readonly` | readonly `string`[] \| `undefined` | Current tags (undefined means no tags) |
+| <a id="property-onchange"></a> `onChange` | `readonly` | (`value`) => `void` | Called when tags change (empty → undefined) |
+| <a id="property-placeholder"></a> `placeholder?` | `readonly` | `string` | Placeholder text |
+| <a id="property-value"></a> `value` | `readonly` | readonly `string`[] \| `undefined` | Current tags (undefined means no tags) |

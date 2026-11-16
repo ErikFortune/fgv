@@ -12,13 +12,13 @@ Props for the ResolutionContextOptionsControl component.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="allowresourcecreation"></a> `allowResourceCreation?` | `boolean` | Editing/creation toggle - when provided, show UI to control it |
-| <a id="availablequalifiers"></a> `availableQualifiers?` | `string`[] | Available qualifiers for configuration |
-| <a id="classname"></a> `className?` | `string` | Custom class name |
-| <a id="onallowresourcecreationchange"></a> `onAllowResourceCreationChange?` | (`allow`) => `void` | Callback for editing/creation toggle |
-| <a id="onoptionschange"></a> `onOptionsChange` | (`options`) => `void` | Callback when options change |
-| <a id="onshowpendingresourcesinlistchange"></a> `onShowPendingResourcesInListChange?` | (`show`) => `void` | Callback for pending resources list visibility |
-| <a id="options"></a> `options` | [`IResolutionContextOptions`](IResolutionContextOptions.md) | Current context options |
-| <a id="presentation"></a> `presentation?` | `"inline"` \| `"hidden"` \| `"popover"` \| `"popup"` \| `"collapsible"` | How to present the options control (default: 'hidden' for production use) |
-| <a id="showpendingresourcesinlist"></a> `showPendingResourcesInList?` | `boolean` | Pending resources list visibility - when provided, show UI to control it |
-| <a id="title"></a> `title?` | `string` | Title for the control section |
+| <a id="property-allowresourcecreation"></a> `allowResourceCreation?` | `boolean` | Editing/creation toggle - when provided, show UI to control it |
+| <a id="property-availablequalifiers"></a> `availableQualifiers?` | `string`[] | Available qualifiers for configuration |
+| <a id="property-classname"></a> `className?` | `string` | Custom class name |
+| <a id="property-onallowresourcecreationchange"></a> `onAllowResourceCreationChange?` | (`allow`) => `void` | Callback for editing/creation toggle |
+| <a id="property-onoptionschange"></a> `onOptionsChange` | (`options`) => `void` | Callback when options change |
+| <a id="property-onshowpendingresourcesinlistchange"></a> `onShowPendingResourcesInListChange?` | (`show`) => `void` | Callback for pending resources list visibility |
+| <a id="property-options"></a> `options` | [`IResolutionContextOptions`](IResolutionContextOptions.md) | Current context options |
+| <a id="property-presentation"></a> `presentation?` | `"inline"` \| `"hidden"` \| `"popover"` \| `"popup"` \| `"collapsible"` | How to present the options control (default: 'hidden' for production use) |
+| <a id="property-showpendingresourcesinlist"></a> `showPendingResourcesInList?` | `boolean` | Pending resources list visibility - when provided, show UI to control it |
+| <a id="property-title"></a> `title?` | `string` | Title for the control section |

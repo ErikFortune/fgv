@@ -14,10 +14,10 @@ Converts a strongly-typed [CompositeId](../interfaces/ICompositeId.md) into a st
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* `string` | - |
-| `TCOLLECTIONID` *extends* `string` | - |
-| `TITEMID` *extends* `string` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` | - |
+| <a id="type-parameter-tcollectionid"></a> `TCOLLECTIONID` *extends* `string` | - |
+| <a id="type-parameter-titemid"></a> `TITEMID` *extends* `string` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Parameters
 

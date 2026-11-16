@@ -8,10 +8,17 @@ the keystore never caches private `CryptoKey` references between calls.
 The public key is re-imported from the vault's JWK so callers always
 receive a `CryptoKey` rather than the JWK form.
 
+With `options.rehydrate: true`, if the storage backend holds no blob for
+the entry's `id` and the entry carries an `escrowedPrivateKeyJwk` (see
+`addKeyPair(name, { escrow: true })`), the escrowed JWK is imported and
+stored under the entry's `id` before being returned — recovering the
+private key on a fresh device from the vault plus master password. This is
+fill-a-gap only: an existing storage blob is never overwritten.
+
 **Signature:**
 
 ```typescript
-getKeyPair(name: string): Promise<Result<{ publicKey: CryptoKey; privateKey: CryptoKey }>>;
+getKeyPair(name: string, options?: IGetKeyPairOptions): Promise<Result<{ publicKey: CryptoKey; privateKey: CryptoKey }>>;
 ```
 
 **Parameters:**
@@ -19,6 +26,8 @@ getKeyPair(name: string): Promise<Result<{ publicKey: CryptoKey; privateKey: Cry
 <table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
 <tr><td>name</td><td>string</td><td>Name of the entry</td></tr>
+<tr><td>options</td><td>IGetKeyPairOptions</td><td>Optional CryptoUtils.KeyStore.IGetKeyPairOptions
+(currently the `rehydrate` escrow-recovery flag).</td></tr>
 </tbody></table>
 
 **Returns:**
@@ -26,4 +35,5 @@ getKeyPair(name: string): Promise<Result<{ publicKey: CryptoKey; privateKey: Cry
 Promise&lt;Result&lt;{ publicKey: CryptoKey; privateKey: CryptoKey }&gt;&gt;
 
 Success with `{ publicKey, privateKey }`, Failure if not found,
-locked, wrong type, no provider, or storage load failed.
+locked, wrong type, no provider, or storage load (and any escrow
+rehydration) failed.

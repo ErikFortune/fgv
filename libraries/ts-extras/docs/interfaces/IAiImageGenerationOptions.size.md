@@ -3,10 +3,10 @@
 ## IAiImageGenerationOptions.size property
 
 Image dimensions for OpenAI models (mapped to `size` field).
-For xAI aspect ratio or Imagen aspect ratio, use the corresponding `models` family block.
+For xAI or Gemini Flash aspect ratio, use the corresponding `models` family block.
 
 **Signature:**
 
 ```typescript
-readonly size: AiImageSize;
+readonly size: GptImageSize;
 ```

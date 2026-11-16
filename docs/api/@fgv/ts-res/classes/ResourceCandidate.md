@@ -36,12 +36,12 @@ Constructor for a ResourceCandidate object.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="candidatevalue"></a> `candidateValue` | `readonly` | [`CandidateValue`](../namespaces/Resources/classes/CandidateValue.md) | The candidate value that contains the JSON representation of the instance data. |
-| <a id="conditions"></a> `conditions` | `readonly` | [`ConditionSet`](../namespaces/Conditions/classes/ConditionSet.md) | The conditions under which this candidate applies. |
-| <a id="id"></a> `id` | `readonly` | [`ResourceId`](../type-aliases/ResourceId.md) | The unique identifier of the resource for which this candidate is a possible instance. |
-| <a id="ispartial"></a> `isPartial` | `readonly` | `boolean` | True if this candidate is a partial instance. |
-| <a id="mergemethod"></a> `mergeMethod` | `readonly` | [`ResourceValueMergeMethod`](../type-aliases/ResourceValueMergeMethod.md) | The method to use when merging this candidate with other instances. |
-| <a id="resourcetype"></a> `resourceType` | `readonly` | [`ResourceType`](ResourceType.md)\<`unknown`\> \| `undefined` | The [resource type](ResourceType.md) for the resource to which this candidate belongs. |
+| <a id="property-candidatevalue"></a> `candidateValue` | `public readonly` | [`CandidateValue`](../namespaces/Resources/classes/CandidateValue.md) | The candidate value that contains the JSON representation of the instance data. |
+| <a id="property-conditions"></a> `conditions` | `public readonly` | [`ConditionSet`](../namespaces/Conditions/classes/ConditionSet.md) | The conditions under which this candidate applies. |
+| <a id="property-id"></a> `id` | `public readonly` | [`ResourceId`](../type-aliases/ResourceId.md) | The unique identifier of the resource for which this candidate is a possible instance. |
+| <a id="property-ispartial"></a> `isPartial` | `public readonly` | `boolean` | True if this candidate is a partial instance. |
+| <a id="property-mergemethod"></a> `mergeMethod` | `public readonly` | [`ResourceValueMergeMethod`](../type-aliases/ResourceValueMergeMethod.md) | The method to use when merging this candidate with other instances. |
+| <a id="property-resourcetype"></a> `resourceType` | `public readonly` | [`ResourceType`](ResourceType.md)\<`unknown`\> \| `undefined` | The [resource type](ResourceType.md) for the resource to which this candidate belongs. |
 
 ## Accessors
 
@@ -79,7 +79,7 @@ The JSON value for this candidate
 
 #### Implementation of
 
-[`IResourceCandidate`](../namespaces/Runtime/interfaces/IResourceCandidate.md).[`json`](../namespaces/Runtime/interfaces/IResourceCandidate.md#json)
+[`IResourceCandidate`](../namespaces/Runtime/interfaces/IResourceCandidate.md).[`json`](../namespaces/Runtime/interfaces/IResourceCandidate.md#property-json)
 
 ## Methods
 

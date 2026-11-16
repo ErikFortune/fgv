@@ -25,5 +25,5 @@ Provides common functionality for messaging and styling.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="classname"></a> `className?` | `string` | Additional CSS class names for styling |
-| <a id="pickeroptionspanelpresentation"></a> `pickerOptionsPanelPresentation?` | `"inline"` \| `"hidden"` \| `"popover"` \| `"popup"` \| `"collapsible"` | How to present the ResourcePicker options control panel (default: 'hidden' for production use) |
+| <a id="property-classname"></a> `className?` | `string` | Additional CSS class names for styling |
+| <a id="property-pickeroptionspanelpresentation"></a> `pickerOptionsPanelPresentation?` | `"inline"` \| `"hidden"` \| `"popover"` \| `"popup"` \| `"collapsible"` | How to present the ResourcePicker options control panel (default: 'hidden' for production use) |

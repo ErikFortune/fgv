@@ -8,7 +8,7 @@ supplied errors array.
 **Signature:**
 
 ```typescript
-aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter<unknown>): this;
+aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): this;
 ```
 
 **Parameters:**
@@ -17,7 +17,7 @@ aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter<unknown>):
 <tbody>
 <tr><td>errors</td><td>IMessageAggregator</td><td>IMessageAggregator | Error aggregator in which
 errors will be aggregated.</td></tr>
-<tr><td>formatter</td><td>ErrorFormatter&lt;unknown&gt;</td><td>An optional ErrorFormatter | error formatter to be used to format the error message.</td></tr>
+<tr><td>formatter</td><td>ErrorFormatter</td><td>An optional ErrorFormatter | error formatter to be used to format the error message.</td></tr>
 </tbody></table>
 
 **Returns:**

@@ -8,5 +8,5 @@ a filter and as a tag in AiAssist.IAiModelInfo.capabilities.
 ## Type
 
 ```typescript
-type AiModelCapability = "chat" | "tools" | "vision" | "image-generation" | "thinking"
+type AiModelCapability = "chat" | "tools" | "vision" | "image-generation" | "thinking" | "embedding"
 ```

@@ -81,7 +81,7 @@ Description
 </td></tr>
 <tr><td>
 
-[getFile(itemPath)](./FsStorageProvider.getFile.md)
+[getFile(itemPath, encoding)](./FsStorageProvider.getFile.md)
 
 </td><td>
 
@@ -89,7 +89,7 @@ Description
 
 </td><td>
 
-
+Reads a file.
 
 </td></tr>
 <tr><td>

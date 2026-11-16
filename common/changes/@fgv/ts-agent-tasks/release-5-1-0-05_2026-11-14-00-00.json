@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "`createTaskTools`: model tools over the tasks a principal may see — read-only by default, with create, update, reassign, typed commands and stop requests opt-in.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks",
+  "email": "noreply@anthropic.com"
+}

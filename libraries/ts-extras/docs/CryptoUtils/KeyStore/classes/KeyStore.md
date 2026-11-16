@@ -385,6 +385,47 @@ Retrieves an API key string by name.
 </td></tr>
 <tr><td>
 
+[importSecretBytes(name, bytes, options)](./KeyStore.importSecretBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Imports arbitrary raw bytes into the vault with type `'opaque'`.
+
+</td></tr>
+<tr><td>
+
+[getSecretBytes(name)](./KeyStore.getSecretBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Retrieves the raw stored bytes for a symmetric entry, returned verbatim
+(never UTF-8 decoded).
+
+</td></tr>
+<tr><td>
+
+[setSecretMetadata(name, value)](./KeyStore.setSecretMetadata.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Replaces the mutable metadata on a symmetric entry and stamps `updatedAt`
+with the current timestamp.
+
+</td></tr>
+<tr><td>
+
 [addKeyPair(name, options)](./KeyStore.addKeyPair.md)
 
 </td><td>
@@ -398,7 +439,7 @@ Adds a new asymmetric keypair to the vault.
 </td></tr>
 <tr><td>
 
-[getKeyPair(name)](./KeyStore.getKeyPair.md)
+[getKeyPair(name, options)](./KeyStore.getKeyPair.md)
 
 </td><td>
 

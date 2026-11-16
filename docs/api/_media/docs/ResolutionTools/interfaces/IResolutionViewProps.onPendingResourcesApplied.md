@@ -7,5 +7,5 @@ Callback when pending resources are applied
 **Signature:**
 
 ```typescript
-onPendingResourcesApplied: (added: ILooseResourceDecl[], deleted: string[]) => void;
+onPendingResourcesApplied: (added: ILooseResourceDecl<string>[], deleted: string[]) => void;
 ```

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "Fix: the recursive `jsonObject`, `jsonArray` and `jsonValue` converters and validators fail on a cyclic input instead of overflowing the stack, and failure messages render the offending value safely.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "noreply@anthropic.com"
+}

@@ -66,6 +66,24 @@ Options for template parsing and validation.
 </td></tr>
 <tr><td>
 
+[IRenderedSegment](./interfaces/IRenderedSegment.md)
+
+</td><td>
+
+One contiguous run of the rendered output, attributed to what produced it.
+
+</td></tr>
+<tr><td>
+
+[IRenderedTemplate](./interfaces/IRenderedTemplate.md)
+
+</td><td>
+
+A render plus the map of which part of the output came from where.
+
+</td></tr>
+<tr><td>
+
 [IVariableRef](./interfaces/IVariableRef.md)
 
 </td><td>

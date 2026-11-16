@@ -20,15 +20,15 @@ A read-only interface exposing non-mutating methods of a [ValidatingResultMap](.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv"></a> `TV` | `unknown` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="size"></a> `size` | `readonly` | `number` | Returns the number of entries in the map. |
-| <a id="validating"></a> `validating` | `readonly` | [`IReadOnlyResultMapValidator`](IReadOnlyResultMapValidator.md)\<`TK`, `TV`\> | A [ResultMapValidator](../classes/ResultMapValidator.md) which validates keys and values before inserting them into this collection. |
+| <a id="property-size"></a> `size` | `readonly` | `number` | Returns the number of entries in the map. |
+| <a id="property-validating"></a> `validating` | `readonly` | [`IReadOnlyResultMapValidator`](IReadOnlyResultMapValidator.md)\<`TK`, `TV`\> | A [ResultMapValidator](../classes/ResultMapValidator.md) which validates keys and values before inserting them into this collection. |
 
 ## Methods
 

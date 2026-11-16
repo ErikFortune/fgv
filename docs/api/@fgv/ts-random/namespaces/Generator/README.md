@@ -20,8 +20,13 @@
 - [ISeededRandomSourceCreateParams](interfaces/ISeededRandomSourceCreateParams.md)
 - [ISeedPair](interfaces/ISeedPair.md)
 - [ISequentialPickParams](interfaces/ISequentialPickParams.md)
+- [IWeightedCandidate](interfaces/IWeightedCandidate.md)
 
 ## Type Aliases
 
 - [RandomStepFunction](type-aliases/RandomStepFunction.md)
 - [SequencePickParams](type-aliases/SequencePickParams.md)
+
+## Functions
+
+- [pickWeightedAt](functions/pickWeightedAt.md)

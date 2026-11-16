@@ -10,15 +10,23 @@ Read-only file tree accessors for ZIP archives.
 ZIP archives are read-only by design — use [isMutableAccessors](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)
 to check before attempting mutations.
 
+## Remarks
+
+ZIP entries are byte-native, so these accessors also implement the read half of the
+optional binary capability (`FileTree.IBinaryFileTreeAccessors`) — use
+`FileTree.isBinaryAccessors` to narrow and `getFileBytes()` to read an entry's
+undecoded bytes.
+
 ## Type Parameters
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |
 
 ## Implements
 
-- [`IFileTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
+- [`IBinaryFileTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
+- [`IStrictTextFileTreeAccessors`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
 
 ## Methods
 
@@ -41,7 +49,7 @@ Gets the base name of a path.
 
 #### Implementation of
 
-`FileTree.IFileTreeAccessors.getBaseName`
+`FileTree.IBinaryFileTreeAccessors.getBaseName`
 
 ***
 
@@ -63,7 +71,7 @@ Gets the children of a directory in the file tree.
 
 #### Implementation of
 
-`FileTree.IFileTreeAccessors.getChildren`
+`FileTree.IBinaryFileTreeAccessors.getChildren`
 
 ***
 
@@ -85,7 +93,33 @@ Gets the extension of a path.
 
 #### Implementation of
 
-`FileTree.IFileTreeAccessors.getExtension`
+`FileTree.IBinaryFileTreeAccessors.getExtension`
+
+***
+
+### getFileBytes()
+
+> **getFileBytes**(`path`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+Gets the raw bytes of a ZIP entry, with no text decoding applied.
+
+#### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `path` | `string` |
+
+#### Returns
+
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+#### Remarks
+
+The returned array is the archive's internal buffer and must not be modified.
+
+#### Implementation of
+
+`FileTree.IBinaryFileTreeAccessors.getFileBytes`
 
 ***
 
@@ -105,9 +139,14 @@ Gets the contents of a file in the file tree.
 
 [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
 
+#### Remarks
+
+The entry's bytes are decoded as UTF-8 with the lenient WHATWG default. Use
+`getFileBytes()` for the undecoded bytes.
+
 #### Implementation of
 
-`FileTree.IFileTreeAccessors.getFileContents`
+`FileTree.IBinaryFileTreeAccessors.getFileContents`
 
 ***
 
@@ -130,7 +169,37 @@ Gets the content type of a file in the file tree.
 
 #### Implementation of
 
-`FileTree.IFileTreeAccessors.getFileContentType`
+`FileTree.IBinaryFileTreeAccessors.getFileContentType`
+
+***
+
+### getFileTextStrict()
+
+> **getFileTextStrict**(`path`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
+
+Gets the contents of a file in the file tree, decoding UTF-8 strictly.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | Absolute path of the entry. |
+
+#### Returns
+
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
+
+`Success` with the decoded text; `Failure` if the entry's bytes are
+not valid UTF-8.
+
+#### Remarks
+
+Always decidable here: ZIP entries are byte-native, so this store holds
+exactly the bytes the archive carried.
+
+#### Implementation of
+
+`FileTree.IStrictTextFileTreeAccessors.getFileTextStrict`
 
 ***
 
@@ -152,7 +221,7 @@ Gets an item from the file tree.
 
 #### Implementation of
 
-`FileTree.IFileTreeAccessors.getItem`
+`FileTree.IBinaryFileTreeAccessors.getItem`
 
 ***
 
@@ -174,7 +243,7 @@ Joins paths together.
 
 #### Implementation of
 
-`FileTree.IFileTreeAccessors.joinPaths`
+`FileTree.IBinaryFileTreeAccessors.joinPaths`
 
 ***
 
@@ -196,7 +265,7 @@ Resolves paths to an absolute path.
 
 #### Implementation of
 
-`FileTree.IFileTreeAccessors.resolveAbsolutePath`
+`FileTree.IBinaryFileTreeAccessors.resolveAbsolutePath`
 
 ***
 
@@ -210,7 +279,7 @@ Default function to infer the content type of a file.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-1"></a> `TCT` *extends* `string` | `string` |
 
 #### Parameters
 
@@ -244,7 +313,7 @@ Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (synchronous)
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-2"></a> `TCT` *extends* `string` | `string` |
 
 ##### Parameters
 
@@ -269,7 +338,7 @@ Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (synchronous)
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-3"></a> `TCT` *extends* `string` | `string` |
 
 ##### Parameters
 
@@ -298,7 +367,7 @@ Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (asynchronous
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-4"></a> `TCT` *extends* `string` | `string` |
 
 ##### Parameters
 
@@ -323,7 +392,7 @@ Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (asynchronous
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-5"></a> `TCT` *extends* `string` | `string` |
 
 ##### Parameters
 
@@ -350,7 +419,7 @@ Creates a new ZipFileTreeAccessors instance from a File object (browser environm
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-6"></a> `TCT` *extends* `string` | `string` |
 
 #### Parameters
 

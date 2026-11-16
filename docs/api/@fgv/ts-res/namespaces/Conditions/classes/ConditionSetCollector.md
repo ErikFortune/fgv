@@ -41,10 +41,10 @@ Creates a new ConditionSetCollector.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_converters"></a> `_converters` | `readonly` | [`KeyValueConverters`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ConditionSetKey`](../../../type-aliases/ConditionSetKey.md), [`ConditionSet`](ConditionSet.md)\> | - |
-| <a id="conditions"></a> `conditions` | `public` | [`ConditionCollector`](ConditionCollector.md) | Gets the [ConditionCollector](ConditionCollector.md) used to create conditions for conditions in this collector. |
-| <a id="validating"></a> `validating` | `readonly` | [`CollectorValidator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ConditionSet`](ConditionSet.md)\> | A [CollectorValidator](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) which validates keys and values before inserting them into this collector. |
-| <a id="unconditionalindex"></a> `UnconditionalIndex` | `static` | [`ConditionSetIndex`](../../../type-aliases/ConditionSetIndex.md) | The index of the unconditional condition set. |
+| <a id="property-_converters"></a> `_converters` | `protected readonly` | [`KeyValueConverters`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ConditionSetKey`](../../../type-aliases/ConditionSetKey.md), [`ConditionSet`](ConditionSet.md)\> | - |
+| <a id="property-conditions"></a> `conditions` | `public` | [`ConditionCollector`](ConditionCollector.md) | Gets the [ConditionCollector](ConditionCollector.md) used to create conditions for conditions in this collector. |
+| <a id="property-validating"></a> `validating` | `readonly` | [`CollectorValidator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ConditionSet`](ConditionSet.md)\> | A [CollectorValidator](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) which validates keys and values before inserting them into this collector. |
+| <a id="property-unconditionalindex"></a> `UnconditionalIndex` | `public static` | [`ConditionSetIndex`](../../../type-aliases/ConditionSetIndex.md) | The index of the unconditional condition set. |
 
 ## Accessors
 
@@ -420,7 +420,7 @@ Creates a new [Collector](https://github.com/ErikFortune/fgv/tree/main/libraries
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
 
 #### Parameters
 
@@ -452,7 +452,7 @@ the supplied [parameters](https://github.com/ErikFortune/fgv/tree/main/libraries
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
+| <a id="type-parameter-titem-1"></a> `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
 
 #### Parameters
 

@@ -18,20 +18,20 @@ resource value.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | `unknown` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="index"></a> `index` | `readonly` | [`ResourceTypeIndex`](../../../type-aliases/ResourceTypeIndex.md) \| `undefined` | The index for this resource type. |
-| <a id="key"></a> `key` | `readonly` | [`ResourceTypeName`](../../../type-aliases/ResourceTypeName.md) | The key for this resource type. |
+| <a id="property-index"></a> `index` | `readonly` | [`ResourceTypeIndex`](../../../type-aliases/ResourceTypeIndex.md) \| `undefined` | The index for this resource type. |
+| <a id="property-key"></a> `key` | `readonly` | [`ResourceTypeName`](../../../type-aliases/ResourceTypeName.md) | The key for this resource type. |
 
 ## Methods
 
 ### createTemplate()
 
-> **createTemplate**(`resourceId`, `init?`, `conditions?`, `resolver?`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`ILooseResourceDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseResourceDecl.md)\>
+> **createTemplate**(`resourceId`, `init?`, `conditions?`, `resolver?`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`ILooseResourceDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseResourceDecl.md)\<`string`\>\>
 
 Creates a template for a new resource of this type.
 The template provides a default structure for creating new resource instances.
@@ -42,12 +42,12 @@ The template provides a default structure for creating new resource instances.
 | ------ | ------ | ------ |
 | `resourceId` | [`ResourceId`](../../../type-aliases/ResourceId.md) | The id for the new resource. |
 | `init?` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | An optional initial value for the resource. |
-| `conditions?` | [`ConditionSetDecl`](../../ResourceJson/namespaces/Json/type-aliases/ConditionSetDecl.md) | An optional set of conditions that must be met for the resource to be selected. |
+| `conditions?` | [`ConditionSetDecl`](../../ResourceJson/namespaces/Json/type-aliases/ConditionSetDecl.md)\<`string`\> | An optional set of conditions that must be met for the resource to be selected. |
 | `resolver?` | [`IResourceResolver`](../../../interfaces/IResourceResolver.md) | An optional resource resolver that can be used to create the template. |
 
 #### Returns
 
-[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`ILooseResourceDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseResourceDecl.md)\>
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`ILooseResourceDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseResourceDecl.md)\<`string`\>\>
 
 A loose resource declaration with default values for this resource type.
 

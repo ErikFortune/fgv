@@ -14,10 +14,10 @@ Strongly-typed JAR format grandfathered tag entry
 
 | Property | Type |
 | ------ | ------ |
-| <a id="added"></a> `Added` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
-| <a id="comments"></a> `Comments?` | `string`[] |
-| <a id="deprecated"></a> `Deprecated?` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
-| <a id="description"></a> `Description` | `string`[] |
-| <a id="preferred-value"></a> `Preferred-Value?` | [`ExtendedLanguageRange`](../../../../../../LanguageSubtags/type-aliases/ExtendedLanguageRange.md) |
-| <a id="tag"></a> `Tag` | [`GrandfatheredTag`](../../../../../../LanguageSubtags/type-aliases/GrandfatheredTag.md) |
-| <a id="type"></a> `Type` | `"grandfathered"` |
+| <a id="property-added"></a> `Added` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
+| <a id="property-comments"></a> `Comments?` | `string`[] |
+| <a id="property-deprecated"></a> `Deprecated?` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
+| <a id="property-description"></a> `Description` | `string`[] |
+| <a id="property-preferred-value"></a> `Preferred-Value?` | [`ExtendedLanguageRange`](../../../../../../LanguageSubtags/type-aliases/ExtendedLanguageRange.md) |
+| <a id="property-tag"></a> `Tag` | [`GrandfatheredTag`](../../../../../../LanguageSubtags/type-aliases/GrandfatheredTag.md) |
+| <a id="property-type"></a> `Type` | `"grandfathered"` |

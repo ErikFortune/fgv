@@ -12,13 +12,13 @@ JSON format for an [aggregated result map](../../../classes/AggregatedResultMap.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCOLLECTIONID` *extends* `string` | `string` |
+| <a id="type-parameter-tcollectionid"></a> `TCOLLECTIONID` *extends* `string` | `string` |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="entries"></a> `entries` | `readonly` | readonly [`KeyValueEntry`](../type-aliases/KeyValueEntry.md)\<`string`, `unknown`\>[] |
-| <a id="id"></a> `id` | `readonly` | `TCOLLECTIONID` |
-| <a id="ismutable"></a> `isMutable` | `readonly` | `boolean` |
-| <a id="metadata"></a> `metadata?` | `readonly` | `unknown` |
+| <a id="property-entries"></a> `entries` | `readonly` | readonly [`KeyValueEntry`](../type-aliases/KeyValueEntry.md)\<`string`, `unknown`\>[] |
+| <a id="property-id"></a> `id` | `readonly` | `TCOLLECTIONID` |
+| <a id="property-ismutable"></a> `isMutable` | `readonly` | `boolean` |
+| <a id="property-metadata"></a> `metadata?` | `readonly` | `unknown` |

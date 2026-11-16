@@ -12,7 +12,7 @@ Result of context validation, containing details about missing variables.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="isvalid"></a> `isValid` | `readonly` | `boolean` | Whether the context is valid (has all required variables) |
-| <a id="missingdetails"></a> `missingDetails` | `readonly` | readonly [`IMissingVariableDetail`](IMissingVariableDetail.md)[] | Detailed information about each missing variable |
-| <a id="missingvariables"></a> `missingVariables` | `readonly` | readonly `string`[] | Variables that are missing from the context |
-| <a id="presentvariables"></a> `presentVariables` | `readonly` | readonly `string`[] | Variables that are present in the context |
+| <a id="property-isvalid"></a> `isValid` | `readonly` | `boolean` | Whether the context is valid (has all required variables) |
+| <a id="property-missingdetails"></a> `missingDetails` | `readonly` | readonly [`IMissingVariableDetail`](IMissingVariableDetail.md)[] | Detailed information about each missing variable |
+| <a id="property-missingvariables"></a> `missingVariables` | `readonly` | readonly `string`[] | Variables that are missing from the context |
+| <a id="property-presentvariables"></a> `presentVariables` | `readonly` | readonly `string`[] | Variables that are present in the context |

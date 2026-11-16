@@ -125,3 +125,37 @@ Combined single-string version (user + system joined) for copy/paste.
 
 </td></tr>
 </tbody></table>
+
+## Methods
+
+<table><thead><tr><th>
+
+Method
+
+</th><th>
+
+Modifiers
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[toRequest()](./AiPrompt.toRequest.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Lowers this prompt to the unified AiAssist.IChatRequest shape consumed
+by the turn entry points (`callProviderCompletion`,
+`callProviderCompletionStream`, `generateJsonCompletion`,
+`executeClientToolTurn`).
+
+</td></tr>
+</tbody></table>

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json",
+      "comment": "Fix: `JsonEditor.mergeObjectInPlace`, converter-option merging and `JsonContextHelper.mergeContext` no longer throw on null-prototype objects.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-json",
+  "email": "noreply@anthropic.com"
+}

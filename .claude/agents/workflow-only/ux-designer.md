@@ -224,31 +224,6 @@ design_specification:
 - **Accessibility specifications** - Built-in accessibility features
 - **Responsive behaviors** - Component behavior across breakpoints
 
-## Sudoku-Specific UX Expertise
-
-Given the project context, you have specialized knowledge in:
-
-### 1. Puzzle Game Interfaces
-- **Grid-based layouts** - Optimal touch and visual design for 9x9 grids
-- **Note-taking systems** - Multiple input modes (pencil marks, highlights)
-- **Visual feedback** - Error indication, completion celebration
-- **Difficulty progression** - Adaptive UI for different skill levels
-- **Hint systems** - Progressive help without spoiling the puzzle
-
-### 2. Game State Management
-- **Save/restore flows** - Seamless game continuation
-- **Multiple puzzle modes** - Classic, killer, variant sudoku types
-- **Timer and scoring** - Non-intrusive progress tracking
-- **Achievement systems** - Progress celebration and motivation
-- **Social features** - Sharing and competition interfaces
-
-### 3. Cross-Platform Considerations
-- **iOS/Android differences** - Platform-specific interaction patterns
-- **Web app optimization** - PWA features and mobile web performance
-- **Responsive scaling** - Grid readability across screen sizes
-- **Input method switching** - Touch, stylus, keyboard support
-- **Offline functionality** - Graceful degradation when disconnected
-
 ## Quality Standards
 
 ### Accessibility Requirements

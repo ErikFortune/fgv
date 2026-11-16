@@ -2,7 +2,7 @@
 
 ## IAiClientToolCallSummary.isError property
 
-Whether execution failed (schema validation failure, execute error, or unknown tool).
+Whether execution failed (schema validation failure, execute error, unknown tool, or an aborted turn).
 
 **Signature:**
 

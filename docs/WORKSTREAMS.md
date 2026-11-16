@@ -118,14 +118,6 @@ throughout the run. **Migrate to `.ai/tasks/completed/<YYYY-MM>/<stream-id>/`
 and write a polished `README.md` as part of the PR — before merge,
 not as a follow-up.** See `.ai/conventions/workflow/artifact-protocol.md`.
 
-## Out-of-scope packages
-
-The sudoku packages (`ts-sudoku-lib`, `ts-sudoku-ui`) are slated to
-move to their own monorepo and are out of scope for the workflow
-substrate. Don't queue streams against them here.
-
----
-
 ## Active workstreams
 
 ### `personaility-asks-2026-08` (Stream A — the embedding lane) 🟢
@@ -462,8 +454,8 @@ here so a stream can be found by id without opening them; each archive links bac
 the same "docs ship with the code" rule as everywhere else, so the working ledger never
 accumulates history again.
 
-**[2026-11](workstreams/2026-11.md)** — 11 shipped
-`agent-tasks-drain-principals` · `luna-temperature-with-effort` · `gemini-thinking-level` · `model-followups` · `fable-5-2` · `live-run-corrections` · `final-model-fixes` · `testbed-model-probes` · `model-alias-refresh` · `deps-refresh` · `model-max-output-tokens`
+**[2026-11](workstreams/2026-11.md)** — 17 shipped
+`docs-regen-5-1-0` · `publish-workflow-rework` · `changelog-curation-5-1-0` · `sudoku-extraction` · `release-compat` · `mcp-task-support-vocabulary` · `agent-tasks-drain-principals` · `luna-temperature-with-effort` · `gemini-thinking-level` · `model-followups` · `fable-5-2` · `live-run-corrections` · `final-model-fixes` · `testbed-model-probes` · `model-alias-refresh` · `deps-refresh` · `model-max-output-tokens`
 
 **[2026-10](workstreams/2026-10.md)** — 52 shipped
 `converter-safe-failure-format` · `filetree-prefix-confinement` · `async-control-write-gate` · `agent-memory-cas-write` · `agent-tasks-delivery-and-deferral` · `agent-tasks-host-helpers` · `mcp-task-support-and-bounds` · `agent-memory-atomic-writes` · `ai-assist-client-tool-loop` · `chores-2026-10-asks-hmac-compositeid` · `sqlite-vec-index-identity` · `ts-utils-mapsuccess-partial-errors` · `safer-fetch-walk-chain` · `agent-memory-scope-decoding` · `ts-extras-re2` · `deterministic-timing-tests` · `ai-assist-wire-followups` · `json-schema-pattern` · `json-schema-options` · `memory-search-scope` · `testbed-wire-probe` · `json-schema-shapes` · `json-schema-constraints` · `agent-memory-scope-invariant` · `agent-memory-merge-scope` · `mcp-round-2b` · `mcp-round-2a` · `json-schema-fromjson-widening` · `mcp-client-cancellation` · `system-one-decisions` · `json-schema-open-object` · `ts-extras-browser-barrel-gaps` · `agent-tasks-cluster-close` · `personality-intake` · `agent-tasks-p1` · `agent-tasks-m1-stop` · `agent-tasks-i2` · `agent-tasks-tracked-commands` · `agent-tasks-i1d` · `agent-tasks-i1c` · `agent-tasks-i1b` · `agent-tasks-i1a` · `agent-tasks-t9` · `agent-tasks-t8b` · `agent-tasks-t8` · `agent-tasks-t7` · `agent-tasks-t6` · `agent-tasks-t5` · `agent-tasks-t4` · `agent-tasks-t3` · `agent-tasks-t2` · `agent-tasks-t1`

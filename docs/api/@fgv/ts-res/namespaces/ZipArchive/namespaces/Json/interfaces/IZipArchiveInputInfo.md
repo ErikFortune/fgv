@@ -12,6 +12,6 @@ JSON representation of ZIP archive input information
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="archivepath"></a> `archivePath` | `string` | Path within the archive (e.g., "input/mydir") |
-| <a id="originalpath"></a> `originalPath` | `string` | Original file/directory path |
-| <a id="type"></a> `type` | `"file"` \| `"directory"` | Type of input (file or directory) |
+| <a id="property-archivepath"></a> `archivePath` | `string` | Path within the archive (e.g., "input/mydir") |
+| <a id="property-originalpath"></a> `originalPath` | `string` | Original file/directory path |
+| <a id="property-type"></a> `type` | `"file"` \| `"directory"` | Type of input (file or directory) |

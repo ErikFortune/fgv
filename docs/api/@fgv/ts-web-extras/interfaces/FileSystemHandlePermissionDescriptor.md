@@ -12,4 +12,4 @@ Permission descriptor for file system handles
 
 | Property | Type |
 | ------ | ------ |
-| <a id="mode"></a> `mode?` | `"readwrite"` \| `"read"` |
+| <a id="property-mode"></a> `mode?` | `"readwrite"` \| `"read"` |

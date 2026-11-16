@@ -30,7 +30,7 @@ Protected CollectionImporter constructor for derived classes
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="types"></a> `types` | `readonly` | `string`[] | The types of [importable](../../../type-aliases/Importable.md) items that this importer can process. |
+| <a id="property-types"></a> `types` | `public readonly` | `string`[] | The types of [importable](../../../type-aliases/Importable.md) items that this importer can process. |
 
 ## Methods
 

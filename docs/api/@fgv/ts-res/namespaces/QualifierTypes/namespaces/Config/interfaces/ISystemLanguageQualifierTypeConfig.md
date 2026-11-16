@@ -16,6 +16,6 @@ Discriminated configuration for [language qualifier type](../../../classes/Langu
 
 | Property | Type |
 | ------ | ------ |
-| <a id="configuration"></a> `configuration?` | [`ILanguageQualifierTypeConfig`](ILanguageQualifierTypeConfig.md) |
-| <a id="name"></a> `name` | `string` |
-| <a id="systemtype"></a> `systemType` | `"language"` |
+| <a id="property-configuration"></a> `configuration?` | [`ILanguageQualifierTypeConfig`](ILanguageQualifierTypeConfig.md) |
+| <a id="property-name"></a> `name` | `string` |
+| <a id="property-systemtype"></a> `systemType` | `"language"` |

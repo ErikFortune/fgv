@@ -34,11 +34,29 @@ Description
 
 </td><td>
 
-"high" | "low" | "medium"
+"none" | "high" | "low" | "medium"
 
 </td><td>
 
 Cross-provider effort level.
+
+</td></tr>
+<tr><td>
+
+[onUnsupported](./IThinkingConfig.onUnsupported.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+"fail" | "degrade"
+
+</td><td>
+
+What to do when `effort` is `'none'` and the resolved model cannot run with thinking off
+(see IAiProviderDescriptor.thinkingRequiredModelPrefixes).
 
 </td></tr>
 <tr><td>

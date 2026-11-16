@@ -14,11 +14,11 @@ Strongly-typed JAR format variant subtag entry
 
 | Property | Type |
 | ------ | ------ |
-| <a id="added"></a> `Added` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
-| <a id="comments"></a> `Comments?` | `string`[] |
-| <a id="deprecated"></a> `Deprecated?` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
-| <a id="description"></a> `Description` | `string`[] |
-| <a id="preferred-value"></a> `Preferred-Value?` | [`VariantSubtag`](../../../../../../LanguageSubtags/type-aliases/VariantSubtag.md) |
-| <a id="prefix"></a> `Prefix?` | [`ExtendedLanguageRange`](../../../../../../LanguageSubtags/type-aliases/ExtendedLanguageRange.md)[] |
-| <a id="subtag"></a> `Subtag` | [`VariantSubtag`](../../../../../../LanguageSubtags/type-aliases/VariantSubtag.md) |
-| <a id="type"></a> `Type` | `"variant"` |
+| <a id="property-added"></a> `Added` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
+| <a id="property-comments"></a> `Comments?` | `string`[] |
+| <a id="property-deprecated"></a> `Deprecated?` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
+| <a id="property-description"></a> `Description` | `string`[] |
+| <a id="property-preferred-value"></a> `Preferred-Value?` | [`VariantSubtag`](../../../../../../LanguageSubtags/type-aliases/VariantSubtag.md) |
+| <a id="property-prefix"></a> `Prefix?` | [`ExtendedLanguageRange`](../../../../../../LanguageSubtags/type-aliases/ExtendedLanguageRange.md)[] |
+| <a id="property-subtag"></a> `Subtag` | [`VariantSubtag`](../../../../../../LanguageSubtags/type-aliases/VariantSubtag.md) |
+| <a id="property-type"></a> `Type` | `"variant"` |

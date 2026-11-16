@@ -8,7 +8,7 @@
 
 > **stringifyLogValue**(`value`, `maxLength?`): `string`
 
-Stringifies an arbitrary value for logging.
+Stringifies an arbitrary value for logging. Never throws.
 
 ## Parameters
 
@@ -22,3 +22,11 @@ Stringifies an arbitrary value for logging.
 `string`
 
 The stringified value.
+
+## Remarks
+
+A string is returned as is, and anything else as `String(value)` unless that is
+`"[object Object]"` or throws. Those are rendered with [formatValueForMessage](../../../functions/formatValueForMessage.md) — the
+`JSON.stringify` text, with a cycle as `"[Circular]"`, a `BigInt` as `"123n"` and an unreadable
+member as `[Unreadable]` — and cut to `maxLength` with `...`. A value whose rendering is nothing
+at all (a throwing or empty `toJSON`) falls back to `"[object Object]"`.

@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-json-base](../../../README.md) / [JsonFile](../README.md) / ItemNameTransformFunction
 
-# Type Alias: ItemNameTransformFunction()\<T\>
+# Type Alias: ItemNameTransformFunction\<T\>
 
 > **ItemNameTransformFunction**\<`T`\> = (`name`, `item`) => [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
 
@@ -15,7 +15,7 @@ and the contents of the entity.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Parameters
 

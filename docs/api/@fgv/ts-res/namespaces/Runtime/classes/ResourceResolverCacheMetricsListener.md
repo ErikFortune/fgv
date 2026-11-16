@@ -13,7 +13,7 @@ hit counts and rates across all cache types.
 
 | Type Parameter |
 | ------ |
-| `TM` *extends* [`ICacheMetrics`](../interfaces/ICacheMetrics.md) |
+| <a id="type-parameter-tm"></a> `TM` *extends* [`ICacheMetrics`](../interfaces/ICacheMetrics.md) |
 
 ## Implements
 

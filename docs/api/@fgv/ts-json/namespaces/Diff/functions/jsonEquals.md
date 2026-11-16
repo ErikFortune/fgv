@@ -43,6 +43,8 @@ True if the values are deeply equal, false otherwise
 
 ## Examples
 
+**Basic equality checking**
+
 ```typescript
 // Objects with same structure and values
 const user1 = { name: "John", hobbies: ["reading", "gaming"] };
@@ -60,6 +62,8 @@ const after = { status: "completed" };
 console.log(jsonEquals(before, after)); // false
 ```
 
+**With nested structures**
+
 ```typescript
 const config1 = {
   database: { host: "localhost", port: 5432 },
@@ -74,6 +78,8 @@ if (jsonEquals(config1, config2)) {
   console.log("Configurations are identical");
 }
 ```
+
+**Array order sensitivity**
 
 ```typescript
 const list1 = [1, 2, 3];

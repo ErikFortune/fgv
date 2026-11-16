@@ -16,4 +16,4 @@ Options for controlling the compilation of resource objects.
 
 | Property | Type | Default value | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="includemetadata"></a> `includeMetadata?` | `boolean` | `false` | Whether to include metadata in the compiled objects. Metadata includes human-readable information like semantic keys that can be useful for debugging or tooling. |
+| <a id="property-includemetadata"></a> `includeMetadata?` | `boolean` | `false` | Whether to include metadata in the compiled objects. Metadata includes human-readable information like semantic keys that can be useful for debugging or tooling. |

@@ -14,12 +14,12 @@ list of [candidates](ICandidate.md).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="type-parameter-tvalue"></a> `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="candidates"></a> `candidates` | readonly [`ICandidate`](ICandidate.md)\<`TVALUE`\>[] |
-| <a id="decisions"></a> `decisions` | [`AbstractDecisionCollector`](../classes/AbstractDecisionCollector.md) |
-| <a id="index"></a> `index?` | `number` |
+| <a id="property-candidates"></a> `candidates` | readonly [`ICandidate`](ICandidate.md)\<`TVALUE`\>[] |
+| <a id="property-decisions"></a> `decisions` | [`AbstractDecisionCollector`](../classes/AbstractDecisionCollector.md) |
+| <a id="property-index"></a> `index?` | `number` |

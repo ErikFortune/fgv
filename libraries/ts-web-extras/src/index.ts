@@ -34,6 +34,10 @@
 import * as CryptoUtils from './packlets/crypto-utils';
 export { CryptoUtils };
 
+// Also exported at the root, as it was before the crypto packlet moved under `CryptoUtils`; the
+// same class is reachable as `CryptoUtils.BrowserHashProvider`.
+export { BrowserHashProvider } from './packlets/crypto-utils';
+
 // Namespaced rather than star-exported, following `CryptoUtils`: the entry-point names are
 // deliberately close to their `@fgv/ts-extras` counterparts, and a namespace keeps which runtime
 // a call site reached for legible at the import.

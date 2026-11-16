@@ -17,7 +17,7 @@ Expanded: a flyout panel slides out to the right of the sidebar, overlaying the 
 
 | Type Parameter |
 | ------ |
-| `TValue` |
+| <a id="type-parameter-tvalue"></a> `TValue` |
 
 ## Parameters
 

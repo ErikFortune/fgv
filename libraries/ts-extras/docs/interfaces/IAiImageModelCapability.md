@@ -3,7 +3,7 @@
 # Interface: IAiImageModelCapability
 
 Image-generation capability for a model family within a provider. Used as
-an entry in IAiProviderDescriptor.imageGeneration.
+an entry in `imageGeneration`.
 
 ## Properties
 

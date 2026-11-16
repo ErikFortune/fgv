@@ -12,11 +12,11 @@ Configuration for a single mode in the mode selector.
 
 | Type Parameter |
 | ------ |
-| `TMode` *extends* `string` |
+| <a id="type-parameter-tmode"></a> `TMode` *extends* `string` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="id"></a> `id` | `readonly` | `TMode` | Mode identifier |
-| <a id="label"></a> `label` | `readonly` | `string` | Display label |
+| <a id="property-id"></a> `id` | `readonly` | `TMode` | Mode identifier |
+| <a id="property-label"></a> `label` | `readonly` | `string` | Display label |

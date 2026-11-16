@@ -86,13 +86,13 @@ The level of logging to be used.
 
 #### Implementation of
 
-[`IDetailLogger`](../interfaces/IDetailLogger.md).[`logLevel`](../interfaces/IDetailLogger.md#loglevel)
+[`IDetailLogger`](../interfaces/IDetailLogger.md).[`logLevel`](../interfaces/IDetailLogger.md#property-loglevel)
 
 ## Methods
 
 ### detail()
 
-> **detail**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **detail**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs a detail message.
 
@@ -118,7 +118,7 @@ Logs a detail message.
 
 ### error()
 
-> **error**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **error**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs an error message.
 
@@ -167,7 +167,7 @@ Logs a short error summary at `error` level, then emits `detail` at `detail` lev
 
 ### info()
 
-> **info**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **info**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs an info message.
 
@@ -193,7 +193,7 @@ Logs an info message.
 
 ### log()
 
-> **log**(`level`, `message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **log**(`level`, `message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs a message at the given level.
 
@@ -240,7 +240,7 @@ and all subsequent calls are forwarded directly.
 
 ### warn()
 
-> **warn**(`message?`, ...`parameters?`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
+> **warn**(`message?`, ...`parameters`): [`Success`](../../../classes/Success.md)\<`string` \| `undefined`\>
 
 Logs a warning message.
 

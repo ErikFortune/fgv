@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "Upgrading from 5.0.2: `FileApiTreeAccessors` no longer takes a type parameter, which was unused; drop the type argument.",
+      "type": "major"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras",
+  "email": "noreply@anthropic.com"
+}

@@ -22,7 +22,7 @@ Once added, items are immutable - they cannot be removed or replaced.
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
 
 ## Implements
 
@@ -64,7 +64,7 @@ Returns the number of entries in the map.
 
 #### Implementation of
 
-[`IReadOnlyCollector`](../interfaces/IReadOnlyCollector.md).[`size`](../interfaces/IReadOnlyCollector.md#size)
+[`IReadOnlyCollector`](../interfaces/IReadOnlyCollector.md).[`size`](../interfaces/IReadOnlyCollector.md#property-size)
 
 ## Methods
 
@@ -365,7 +365,7 @@ Creates a new Collector instance.
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem-1"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
 
 #### Parameters
 

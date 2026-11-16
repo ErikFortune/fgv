@@ -40,6 +40,6 @@ Initial values take priority over base values, which fall back to the global def
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="brand"></a> `brand?` | `readonly` | `string` | If present, indicates that the result will be branded with the corresponding brand. |
-| <a id="constraints"></a> `constraints` | `readonly` | [`FunctionConstraintTrait`](../interfaces/FunctionConstraintTrait.md)[] | Zero or more additional [ConstraintTrait](../type-aliases/ConstraintTrait.md)s describing additional constraints applied by this [Validator](../interfaces/Validator.md). |
-| <a id="isoptional"></a> `isOptional` | `readonly` | `boolean` | Indicates whether the validator accepts `undefined` as a valid value. |
+| <a id="property-brand"></a> `brand?` | `public readonly` | `string` | If present, indicates that the result will be branded with the corresponding brand. |
+| <a id="property-constraints"></a> `constraints` | `public readonly` | [`FunctionConstraintTrait`](../interfaces/FunctionConstraintTrait.md)[] | Zero or more additional [ConstraintTrait](../type-aliases/ConstraintTrait.md)s describing additional constraints applied by this [Validator](../interfaces/Validator.md). |
+| <a id="property-isoptional"></a> `isOptional` | `public readonly` | `boolean` | Indicates whether the validator accepts `undefined` as a valid value. |

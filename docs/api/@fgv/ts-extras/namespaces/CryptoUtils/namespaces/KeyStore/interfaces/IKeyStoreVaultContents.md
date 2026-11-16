@@ -6,11 +6,11 @@
 
 # Interface: IKeyStoreVaultContents
 
-The decrypted vault contents - a versioned map of secrets.
+The decrypted vault contents - a versioned map of entries.
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="secrets"></a> `secrets` | `readonly` | `Record`\<`string`, [`IKeyStoreSecretEntryJson`](IKeyStoreSecretEntryJson.md)\> | Map of secret name to secret entry. |
-| <a id="version"></a> `version` | `readonly` | `"keystore-v1"` | Format version for vault contents. |
+| <a id="property-secrets"></a> `secrets` | `readonly` | `Record`\<`string`, [`IKeyStoreEntryJson`](../type-aliases/IKeyStoreEntryJson.md)\> | Map of entry name to entry (symmetric or asymmetric). |
+| <a id="property-version"></a> `version` | `readonly` | [`KeyStoreFormat`](../type-aliases/KeyStoreFormat.md) | Format version for vault contents. |

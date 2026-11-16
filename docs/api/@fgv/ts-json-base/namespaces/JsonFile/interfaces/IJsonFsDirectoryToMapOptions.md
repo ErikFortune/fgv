@@ -16,13 +16,13 @@ Options controlling conversion of a directory to a `Map`.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Properties
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="converter"></a> `converter` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> \| [`Validator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> | The converter used to convert incoming JSON objects. |
-| <a id="files"></a> `files?` | `RegExp`[] | Filter applied to items in the directory |
-| <a id="transformname"></a> `transformName?` | [`ItemNameTransformFunction`](../type-aliases/ItemNameTransformFunction.md)\<`T`\> | - |
+| <a id="property-converter"></a> `converter` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> \| [`Validator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> | The converter used to convert incoming JSON objects. |
+| <a id="property-files"></a> `files?` | `RegExp`[] | Filter applied to items in the directory |
+| <a id="property-transformname"></a> `transformName?` | [`ItemNameTransformFunction`](../type-aliases/ItemNameTransformFunction.md)\<`T`\> | - |

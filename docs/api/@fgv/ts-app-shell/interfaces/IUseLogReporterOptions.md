@@ -12,4 +12,4 @@ Options for the useLogReporter hook.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="loglevel"></a> `logLevel?` | `readonly` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | Minimum log level (default: 'info') |
+| <a id="property-loglevel"></a> `logLevel?` | `readonly` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | Minimum log level (default: 'info') |

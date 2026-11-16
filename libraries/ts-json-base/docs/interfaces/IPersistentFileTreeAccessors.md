@@ -141,6 +141,20 @@ Resolves paths to an absolute path.
 </td></tr>
 <tr><td>
 
+[resolveRealPath(path)](./IMutableFileTreeAccessors.resolveRealPath.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Resolves a path to its canonical real path, with every symbolic link
+resolved.
+
+</td></tr>
+<tr><td>
+
 [getExtension(path)](./IMutableFileTreeAccessors.getExtension.md)
 
 </td><td>

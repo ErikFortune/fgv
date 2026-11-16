@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-random](../../../README.md) / [Generator](../README.md) / RandomStepFunction
 
-# Type Alias: RandomStepFunction()
+# Type Alias: RandomStepFunction
 
 > **RandomStepFunction** = (`state`) => [`INextResult`](../interfaces/INextResult.md)
 

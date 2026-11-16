@@ -12,4 +12,4 @@ Parameters for creating a [ResourceTypeCollector](../classes/ResourceTypeCollect
 
 | Property | Type |
 | ------ | ------ |
-| <a id="resourcetypes"></a> `resourceTypes?` | [`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\>[] |
+| <a id="property-resourcetypes"></a> `resourceTypes?` | [`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\>[] |

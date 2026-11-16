@@ -12,5 +12,5 @@ Validated declaration of a [set of conditions](../classes/ConditionSet.md).
 
 | Property | Type |
 | ------ | ------ |
-| <a id="conditions"></a> `conditions` | readonly [`Condition`](../../../classes/Condition.md)[] |
-| <a id="index"></a> `index?` | `number` |
+| <a id="property-conditions"></a> `conditions` | readonly [`Condition`](../../../classes/Condition.md)[] |
+| <a id="property-index"></a> `index?` | `number` |

@@ -13,10 +13,10 @@ Only exposes read operations, providing compile-time type safety by excluding mu
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* [`IReadOnlyContextQualifierProvider`](IReadOnlyContextQualifierProvider.md) | [`IReadOnlyContextQualifierProvider`](IReadOnlyContextQualifierProvider.md) |
+| <a id="type-parameter-t"></a> `T` *extends* [`IReadOnlyContextQualifierProvider`](IReadOnlyContextQualifierProvider.md) | [`IReadOnlyContextQualifierProvider`](IReadOnlyContextQualifierProvider.md) |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="provider"></a> `provider` | `readonly` | `T` | The wrapped read-only context qualifier provider. |
+| <a id="property-provider"></a> `provider` | `readonly` | `T` | The wrapped read-only context qualifier provider. |

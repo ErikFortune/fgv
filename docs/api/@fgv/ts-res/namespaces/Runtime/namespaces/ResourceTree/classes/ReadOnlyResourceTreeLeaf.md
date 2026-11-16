@@ -13,7 +13,7 @@ Leaf nodes represent the actual resources in the tree and cannot have children.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Implements
 
@@ -43,9 +43,9 @@ Creates a new leaf node. Use the static create method instead.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="id"></a> `id` | `readonly` | [`ResourceId`](../../../../../type-aliases/ResourceId.md) |
-| <a id="name"></a> `name` | `readonly` | [`ResourceName`](../../../../../type-aliases/ResourceName.md) |
-| <a id="resource"></a> `resource` | `readonly` | `T` |
+| <a id="property-id"></a> `id` | `public readonly` | [`ResourceId`](../../../../../type-aliases/ResourceId.md) |
+| <a id="property-name"></a> `name` | `public readonly` | [`ResourceName`](../../../../../type-aliases/ResourceName.md) |
+| <a id="property-resource"></a> `resource` | `public readonly` | `T` |
 
 ## Accessors
 
@@ -61,7 +61,7 @@ Creates a new leaf node. Use the static create method instead.
 
 #### Implementation of
 
-[`IReadOnlyResourceTreeLeaf`](../interfaces/IReadOnlyResourceTreeLeaf.md).[`isBranch`](../interfaces/IReadOnlyResourceTreeLeaf.md#isbranch)
+[`IReadOnlyResourceTreeLeaf`](../interfaces/IReadOnlyResourceTreeLeaf.md).[`isBranch`](../interfaces/IReadOnlyResourceTreeLeaf.md#property-isbranch)
 
 ***
 
@@ -77,7 +77,7 @@ Creates a new leaf node. Use the static create method instead.
 
 #### Implementation of
 
-[`IReadOnlyResourceTreeLeaf`](../interfaces/IReadOnlyResourceTreeLeaf.md).[`isLeaf`](../interfaces/IReadOnlyResourceTreeLeaf.md#isleaf)
+[`IReadOnlyResourceTreeLeaf`](../interfaces/IReadOnlyResourceTreeLeaf.md).[`isLeaf`](../interfaces/IReadOnlyResourceTreeLeaf.md#property-isleaf)
 
 ***
 
@@ -93,7 +93,7 @@ Creates a new leaf node. Use the static create method instead.
 
 #### Implementation of
 
-[`IReadOnlyResourceTreeLeaf`](../interfaces/IReadOnlyResourceTreeLeaf.md).[`isRoot`](../interfaces/IReadOnlyResourceTreeLeaf.md#isroot)
+[`IReadOnlyResourceTreeLeaf`](../interfaces/IReadOnlyResourceTreeLeaf.md).[`isRoot`](../interfaces/IReadOnlyResourceTreeLeaf.md#property-isroot)
 
 ## Methods
 
@@ -107,7 +107,7 @@ Creates a new ReadOnlyResourceTreeLeaf instance.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-1"></a> `T` |
 
 #### Parameters
 

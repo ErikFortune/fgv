@@ -38,11 +38,11 @@ Creates a new instance of AbstractDecisionCollector.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_converters"></a> `_converters` | `readonly` | [`KeyValueConverters`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`DecisionKey`](../../../type-aliases/DecisionKey.md), [`AbstractDecision`](AbstractDecision.md)\> | - |
-| <a id="conditionsets"></a> `conditionSets` | `readonly` | [`ReadOnlyConditionSetCollector`](../../Conditions/type-aliases/ReadOnlyConditionSetCollector.md) | The [ConditionSetCollector](../../Conditions/type-aliases/ReadOnlyConditionSetCollector.md) used to create conditions sets for decisions in this collector. |
-| <a id="validating"></a> `validating` | `readonly` | [`CollectorValidator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`AbstractDecision`](AbstractDecision.md)\> | A [CollectorValidator](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) which validates keys and values before inserting them into this collector. |
-| <a id="defaultonlydecisionindex"></a> `DefaultOnlyDecisionIndex` | `readonly` | [`DecisionIndex`](../../../type-aliases/DecisionIndex.md) | The index for the default-only decision. |
-| <a id="emptydecisionindex"></a> `EmptyDecisionIndex` | `readonly` | [`DecisionIndex`](../../../type-aliases/DecisionIndex.md) | The index for the empty decision. |
+| <a id="property-_converters"></a> `_converters` | `protected readonly` | [`KeyValueConverters`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`DecisionKey`](../../../type-aliases/DecisionKey.md), [`AbstractDecision`](AbstractDecision.md)\> | - |
+| <a id="property-conditionsets"></a> `conditionSets` | `public readonly` | [`ReadOnlyConditionSetCollector`](../../Conditions/type-aliases/ReadOnlyConditionSetCollector.md) | The [ConditionSetCollector](../../Conditions/type-aliases/ReadOnlyConditionSetCollector.md) used to create conditions sets for decisions in this collector. |
+| <a id="property-validating"></a> `validating` | `readonly` | [`CollectorValidator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`AbstractDecision`](AbstractDecision.md)\> | A [CollectorValidator](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) which validates keys and values before inserting them into this collector. |
+| <a id="property-defaultonlydecisionindex"></a> `DefaultOnlyDecisionIndex` | `public static readonly` | [`DecisionIndex`](../../../type-aliases/DecisionIndex.md) | The index for the default-only decision. |
+| <a id="property-emptydecisionindex"></a> `EmptyDecisionIndex` | `public static readonly` | [`DecisionIndex`](../../../type-aliases/DecisionIndex.md) | The index for the empty decision. |
 
 ## Accessors
 
@@ -430,7 +430,7 @@ Creates a new [Collector](https://github.com/ErikFortune/fgv/tree/main/libraries
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
 
 #### Parameters
 
@@ -462,7 +462,7 @@ the supplied [parameters](https://github.com/ErikFortune/fgv/tree/main/libraries
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
+| <a id="type-parameter-titem-1"></a> `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
 
 #### Parameters
 

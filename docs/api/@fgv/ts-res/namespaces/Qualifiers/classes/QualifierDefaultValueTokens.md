@@ -30,7 +30,7 @@ Constructs a new QualifierDefaultValueTokens instance.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../interfaces/IReadOnlyQualifierCollector.md) | The [qualifier collector](../interfaces/IReadOnlyQualifierCollector.md) used to validate qualifier names and values. |
+| <a id="property-qualifiers"></a> `qualifiers` | `public readonly` | [`IReadOnlyQualifierCollector`](../interfaces/IReadOnlyQualifierCollector.md) | The [qualifier collector](../interfaces/IReadOnlyQualifierCollector.md) used to validate qualifier names and values. |
 
 ## Methods
 
@@ -59,7 +59,7 @@ Converts a validated qualifier default values declaration to a [qualifier defaul
 > **parseQualifierDefaultValuesToken**(`token`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IValidatedQualifierDefaultValueDecl`](../interfaces/IValidatedQualifierDefaultValueDecl.md)[]\>
 
 Parses a [qualifier default values token](../../../type-aliases/QualifierDefaultValuesToken.md) string and validates the parts
-against the qualifiers present in the [qualifier collector](#qualifiers).
+against the qualifiers present in the [qualifier collector](#property-qualifiers).
 
 #### Parameters
 
@@ -81,7 +81,7 @@ if successful, `Failure` with an error message if not.
 > **parseQualifierDefaultValueToken**(`token`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IValidatedQualifierDefaultValueDecl`](../interfaces/IValidatedQualifierDefaultValueDecl.md)\>
 
 Parses a [qualifier default value token](../../../type-aliases/QualifierDefaultValueToken.md) string and validates the parts
-against the qualifiers present in the [qualifier collector](#qualifiers).
+against the qualifiers present in the [qualifier collector](#property-qualifiers).
 
 #### Parameters
 

@@ -17,13 +17,13 @@ with accessors for an in-memory file tree.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |
 
 ### Parameters
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `files` | [`IInMemoryFile`](../interfaces/IInMemoryFile.md)\<`TCT`\>[] | An array of File |[in-memory files](../interfaces/IInMemoryFile.md) to include in the tree. |
+| `files` | [`IInMemoryFile`](../interfaces/IInMemoryFile.md)\<`TCT`\>[] | An array of File \|[in-memory files](../interfaces/IInMemoryFile.md) to include in the tree. |
 | `prefix?` | `string` | An optional prefix to add to the paths of all files in the tree. |
 
 ### Returns
@@ -44,13 +44,13 @@ with accessors for an in-memory file tree.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-1"></a> `TCT` *extends* `string` | `string` |
 
 ### Parameters
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `files` | [`IInMemoryFile`](../interfaces/IInMemoryFile.md)\<`TCT`\>[] | An array of File |[in-memory files](../interfaces/IInMemoryFile.md) to include in the tree. |
+| `files` | [`IInMemoryFile`](../interfaces/IInMemoryFile.md)\<`TCT`\>[] | An array of File \|[in-memory files](../interfaces/IInMemoryFile.md) to include in the tree. |
 | `params?` | [`IFileTreeInitParams`](../interfaces/IFileTreeInitParams.md)\<`TCT`\> | Optional [initialization parameters](../interfaces/IFileTreeInitParams.md) for the file tree. |
 
 ### Returns

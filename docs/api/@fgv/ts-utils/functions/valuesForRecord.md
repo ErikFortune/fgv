@@ -14,8 +14,8 @@ Type-safe(ish) value extractor for typed records.
 
 | Type Parameter |
 | ------ |
-| `TK` *extends* `string` |
-| `TV` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` |
+| <a id="type-parameter-tv"></a> `TV` |
 
 ## Parameters
 

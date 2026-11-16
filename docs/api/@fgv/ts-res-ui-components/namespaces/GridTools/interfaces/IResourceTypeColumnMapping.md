@@ -13,6 +13,6 @@ Defines how resources of a given type should be displayed in the grid.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="columns"></a> `columns` | [`IGridColumnDefinition`](IGridColumnDefinition.md)[] | Column definitions for this resource type |
-| <a id="defaultcolumn"></a> `defaultColumn?` | [`IGridColumnDefinition`](IGridColumnDefinition.md) | Optional default column for unmapped properties |
-| <a id="resourcetype"></a> `resourceType` | `string` | The resource type this mapping applies to |
+| <a id="property-columns"></a> `columns` | [`IGridColumnDefinition`](IGridColumnDefinition.md)[] | Column definitions for this resource type |
+| <a id="property-defaultcolumn"></a> `defaultColumn?` | [`IGridColumnDefinition`](IGridColumnDefinition.md) | Optional default column for unmapped properties |
+| <a id="property-resourcetype"></a> `resourceType` | `string` | The resource type this mapping applies to |

@@ -12,4 +12,4 @@ Parameters for creating a [AbstractDecisionCollector](../classes/AbstractDecisio
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="conditionsets"></a> `conditionSets` | [`ReadOnlyConditionSetCollector`](../../Conditions/type-aliases/ReadOnlyConditionSetCollector.md) | [ConditionSetCollector](../../Conditions/type-aliases/ReadOnlyConditionSetCollector.md) used to create conditions sets for decisions in this collector. |
+| <a id="property-conditionsets"></a> `conditionSets` | [`ReadOnlyConditionSetCollector`](../../Conditions/type-aliases/ReadOnlyConditionSetCollector.md) | [ConditionSetCollector](../../Conditions/type-aliases/ReadOnlyConditionSetCollector.md) used to create conditions sets for decisions in this collector. |

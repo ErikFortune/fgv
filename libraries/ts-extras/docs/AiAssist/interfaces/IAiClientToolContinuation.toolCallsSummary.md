@@ -2,7 +2,7 @@
 
 ## IAiClientToolContinuation.toolCallsSummary property
 
-Summary of each tool call that was executed in this turn.
+Summary of each tool call executed in this turn (per-round, not cumulative).
 
 **Signature:**
 

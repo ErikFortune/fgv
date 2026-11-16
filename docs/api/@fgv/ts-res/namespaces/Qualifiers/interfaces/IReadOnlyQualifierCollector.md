@@ -16,9 +16,9 @@ Readonly version of [QualifierCollector](../classes/QualifierCollector.md).
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="qualifiertypes"></a> `qualifierTypes` | `readonly` | [`ReadOnlyQualifierTypeCollector`](../../QualifierTypes/type-aliases/ReadOnlyQualifierTypeCollector.md) | The [qualifier types](../../QualifierTypes/classes/QualifierTypeCollector.md) that this collector uses. |
-| <a id="size"></a> `size` | `readonly` | `number` | Returns the number of entries in the map. |
-| <a id="validating"></a> `validating` | `readonly` | [`IReadOnlyCollectorValidator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`Qualifier`](../../../classes/Qualifier.md)\> | A [CollectorValidator](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) which validates keys and values before inserting them into this collector. |
+| <a id="property-qualifiertypes"></a> `qualifierTypes` | `readonly` | [`ReadOnlyQualifierTypeCollector`](../../QualifierTypes/type-aliases/ReadOnlyQualifierTypeCollector.md) | The [qualifier types](../../QualifierTypes/classes/QualifierTypeCollector.md) that this collector uses. |
+| <a id="property-size"></a> `size` | `readonly` | `number` | Returns the number of entries in the map. |
+| <a id="property-validating"></a> `validating` | `readonly` | [`IReadOnlyCollectorValidator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`Qualifier`](../../../classes/Qualifier.md)\> | A [CollectorValidator](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) which validates keys and values before inserting them into this collector. |
 
 ## Methods
 

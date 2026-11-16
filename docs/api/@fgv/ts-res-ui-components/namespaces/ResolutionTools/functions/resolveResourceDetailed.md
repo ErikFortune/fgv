@@ -6,7 +6,7 @@
 
 # Function: resolveResourceDetailed()
 
-> **resolveResourceDetailed**(`resolver`, `resourceId`, `processedResources`, `options`): [`Result`](../../../type-aliases/Result.md)\<[`IResolutionResult`](../interfaces/IResolutionResult.md)\<`unknown`, [`JsonValue`](../../../type-aliases/JsonValue.md)\>\>
+> **resolveResourceDetailed**(`resolver`, `resourceId`, `processedResources`, `options?`): [`Result`](../../../type-aliases/Result.md)\<[`IResolutionResult`](../interfaces/IResolutionResult.md)\<`unknown`, [`JsonValue`](../../../type-aliases/JsonValue.md)\>\>
 
 Resolve a resource and create detailed resolution result with comprehensive analysis.
 
@@ -22,7 +22,7 @@ resource and context.
 | `resolver` | [`ResourceResolver`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) | The configured ResourceResolver with context |
 | `resourceId` | `string` | The ID of the resource to resolve |
 | `processedResources` | [`IProcessedResources`](../../ResourceTools/interfaces/IProcessedResources.md) | The processed resource system |
-| `options` | [`IResolutionOptions`](../interfaces/IResolutionOptions.md) | Configuration options for resolution behavior |
+| `options?` | [`IResolutionOptions`](../interfaces/IResolutionOptions.md) | Configuration options for resolution behavior |
 
 ## Returns
 

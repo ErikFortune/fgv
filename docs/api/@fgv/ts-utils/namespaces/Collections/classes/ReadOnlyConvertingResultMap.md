@@ -18,9 +18,9 @@ of source type and returns lazily-converted, cached values of a target type.
 
 | Type Parameter |
 | ------ |
-| `TK` *extends* `string` |
-| `TSRC` |
-| `TTARGET` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` |
+| <a id="type-parameter-tsrc"></a> `TSRC` |
+| <a id="type-parameter-ttarget"></a> `TTARGET` |
 
 ## Implements
 
@@ -48,11 +48,11 @@ Constructs a new ReadOnlyConvertingResultMap.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_cache"></a> `_cache` | `readonly` | `Map`\<`TK`, `TTARGET`\> | Cache of converted target values. |
-| <a id="_converter"></a> `_converter` | `readonly` | [`ConvertingResultMapValueConverter`](../type-aliases/ConvertingResultMapValueConverter.md)\<`TK`, `TSRC`, `TTARGET`\> | The converter function to transform source values to target values. |
-| <a id="_inner"></a> `_inner` | `readonly` | [`IReadOnlyResultMap`](../interfaces/IReadOnlyResultMap.md)\<`TK`, `TSRC`\> | The inner map containing source values. |
-| <a id="_logger"></a> `_logger?` | `readonly` | [`ILogger`](../../Logging/interfaces/ILogger.md) | Optional logger for warnings. |
-| <a id="_onconversionerror"></a> `_onConversionError` | `readonly` | [`ConversionErrorHandling`](../type-aliases/ConversionErrorHandling.md) | Error handling behavior for conversion failures during iteration. |
+| <a id="property-_cache"></a> `_cache` | `protected readonly` | `Map`\<`TK`, `TTARGET`\> | Cache of converted target values. |
+| <a id="property-_converter"></a> `_converter` | `protected readonly` | [`ConvertingResultMapValueConverter`](../type-aliases/ConvertingResultMapValueConverter.md)\<`TK`, `TSRC`, `TTARGET`\> | The converter function to transform source values to target values. |
+| <a id="property-_inner"></a> `_inner` | `protected readonly` | [`IReadOnlyResultMap`](../interfaces/IReadOnlyResultMap.md)\<`TK`, `TSRC`\> | The inner map containing source values. |
+| <a id="property-_logger"></a> `_logger?` | `protected readonly` | [`ILogger`](../../Logging/interfaces/ILogger.md) | Optional logger for warnings. |
+| <a id="property-_onconversionerror"></a> `_onConversionError` | `protected readonly` | [`ConversionErrorHandling`](../type-aliases/ConversionErrorHandling.md) | Error handling behavior for conversion failures during iteration. |
 
 ## Accessors
 
@@ -72,7 +72,7 @@ Returns the number of entries in the map.
 
 #### Implementation of
 
-[`IReadOnlyResultMap`](../interfaces/IReadOnlyResultMap.md).[`size`](../interfaces/IReadOnlyResultMap.md#size)
+[`IReadOnlyResultMap`](../interfaces/IReadOnlyResultMap.md).[`size`](../interfaces/IReadOnlyResultMap.md#property-size)
 
 ## Methods
 
@@ -322,9 +322,9 @@ Creates a new ReadOnlyConvertingResultMap.
 
 | Type Parameter |
 | ------ |
-| `TK` *extends* `string` |
-| `TSRC` |
-| `TTARGET` |
+| <a id="type-parameter-tk-1"></a> `TK` *extends* `string` |
+| <a id="type-parameter-tsrc-1"></a> `TSRC` |
+| <a id="type-parameter-ttarget-1"></a> `TTARGET` |
 
 #### Parameters
 

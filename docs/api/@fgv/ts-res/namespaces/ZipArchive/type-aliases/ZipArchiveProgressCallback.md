@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-res](../../../README.md) / [ZipArchive](../README.md) / ZipArchiveProgressCallback
 
-# Type Alias: ZipArchiveProgressCallback()
+# Type Alias: ZipArchiveProgressCallback
 
 > **ZipArchiveProgressCallback** = (`stage`, `progress`, `details`) => `void`
 

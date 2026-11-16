@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res-browser-cli",
-  "version": "5.1.0-62",
+  "version": "5.1.0-63",
   "description": "Command-line interface to launch ts-res-browser with specified options",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -25,7 +25,7 @@
   "author": "Erik Fortune",
   "license": "MIT",
   "engines": {
-    "node": ">=22.22.0 <23.0.0 || >=24.15.0 <25.0.0"
+    "node": ">=22.22.0"
   },
   "dependencies": {
     "@fgv/ts-res": "workspace:*",

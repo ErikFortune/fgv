@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-utils](../../../README.md) / [Conversion](../README.md) / ConverterFunc
 
-# Type Alias: ConverterFunc()\<T, TC\>
+# Type Alias: ConverterFunc\<T, TC\>
 
 > **ConverterFunc**\<`T`, `TC`\> = (`from`, `self`, `context?`) => [`Result`](../../../type-aliases/Result.md)\<`T`\>
 
@@ -14,8 +14,8 @@ Function signature for a converter function.
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `TC` |
+| <a id="type-parameter-t"></a> `T` |
+| <a id="type-parameter-tc"></a> `TC` |
 
 ## Parameters
 

@@ -79,6 +79,23 @@ string
 </td></tr>
 <tr><td>
 
+[split](./CompositeIdValidatorConstructorParams.split.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+"exact" | "first" | "last"
+
+</td><td>
+
+How to split the composite ID string.
+
+</td></tr>
+<tr><td>
+
 [options](./CompositeIdValidatorConstructorParams.options.md)
 
 </td><td>

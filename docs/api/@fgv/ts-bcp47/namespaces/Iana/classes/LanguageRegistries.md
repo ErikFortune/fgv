@@ -10,8 +10,8 @@
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="extensions"></a> `extensions` | `readonly` | [`LanguageTagExtensionRegistry`](../namespaces/LanguageTagExtensions/classes/LanguageTagExtensionRegistry.md) |
-| <a id="subtags"></a> `subtags` | `readonly` | [`LanguageSubtagRegistry`](../namespaces/LanguageSubtags/classes/LanguageSubtagRegistry.md) |
+| <a id="property-extensions"></a> `extensions` | `public readonly` | [`LanguageTagExtensionRegistry`](../namespaces/LanguageTagExtensions/classes/LanguageTagExtensionRegistry.md) |
+| <a id="property-subtags"></a> `subtags` | `public readonly` | [`LanguageSubtagRegistry`](../namespaces/LanguageSubtags/classes/LanguageSubtagRegistry.md) |
 
 ## Methods
 

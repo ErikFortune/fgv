@@ -14,5 +14,5 @@ A converter which converts a supplied `unknown` value to a valid [JsonCompatible
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |

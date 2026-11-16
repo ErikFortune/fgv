@@ -34,7 +34,7 @@ Description
 
 </td><td>
 
-[AiImageSize](../../type-aliases/AiImageSize.md)
+[GptImageSize](../../type-aliases/GptImageSize.md)
 
 </td><td>
 
@@ -68,7 +68,7 @@ Number of images.
 
 </td><td>
 
-[AiImageQuality](../../type-aliases/AiImageQuality.md)
+[GptImageQuality](../../type-aliases/GptImageQuality.md)
 
 </td><td>
 

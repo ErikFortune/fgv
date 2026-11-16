@@ -10,11 +10,12 @@ Request for path-based operations.
 
 ## Extended by
 
+- [`IStorageReadFileRequest`](IStorageReadFileRequest.md)
 - [`IStorageWriteFileRequest`](IStorageWriteFileRequest.md)
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="namespace"></a> `namespace?` | `readonly` | `string` |
-| <a id="path"></a> `path` | `readonly` | `string` |
+| <a id="property-namespace"></a> `namespace?` | `readonly` | `string` |
+| <a id="property-path"></a> `path` | `readonly` | `string` |

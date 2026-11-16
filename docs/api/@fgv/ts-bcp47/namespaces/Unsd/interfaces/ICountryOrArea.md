@@ -10,12 +10,12 @@
 
 | Property | Type |
 | ------ | ------ |
-| <a id="code"></a> `code` | [`UnM49RegionCode`](../../Iana/namespaces/Model/type-aliases/UnM49RegionCode.md) |
-| <a id="isoalpha2"></a> `isoAlpha2?` | [`IsoAlpha2RegionCode`](../../Iana/namespaces/Model/type-aliases/IsoAlpha2RegionCode.md) |
-| <a id="isoalpha3"></a> `isoAlpha3?` | [`IsoAlpha3RegionCode`](../../Iana/namespaces/Model/type-aliases/IsoAlpha3RegionCode.md) |
-| <a id="landlockeddevelopingcountry"></a> `landlockedDevelopingCountry` | `boolean` |
-| <a id="leastdevelopedcountry"></a> `leastDevelopedCountry` | `boolean` |
-| <a id="name"></a> `name` | `string` |
-| <a id="parent"></a> `parent` | [`Region`](../type-aliases/Region.md) |
-| <a id="smallislanddevelopingstate"></a> `smallIslandDevelopingState` | `boolean` |
-| <a id="tier"></a> `tier` | `"area"` |
+| <a id="property-code"></a> `code` | [`UnM49RegionCode`](../../Iana/namespaces/Model/type-aliases/UnM49RegionCode.md) |
+| <a id="property-isoalpha2"></a> `isoAlpha2?` | [`IsoAlpha2RegionCode`](../../Iana/namespaces/Model/type-aliases/IsoAlpha2RegionCode.md) |
+| <a id="property-isoalpha3"></a> `isoAlpha3?` | [`IsoAlpha3RegionCode`](../../Iana/namespaces/Model/type-aliases/IsoAlpha3RegionCode.md) |
+| <a id="property-landlockeddevelopingcountry"></a> `landlockedDevelopingCountry` | `boolean` |
+| <a id="property-leastdevelopedcountry"></a> `leastDevelopedCountry` | `boolean` |
+| <a id="property-name"></a> `name` | `string` |
+| <a id="property-parent"></a> `parent` | [`Region`](../type-aliases/Region.md) |
+| <a id="property-smallislanddevelopingstate"></a> `smallIslandDevelopingState` | `boolean` |
+| <a id="property-tier"></a> `tier` | `"area"` |

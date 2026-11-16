@@ -12,4 +12,4 @@ Parameters for creating a new [QualifierTypeCollector](../classes/QualifierTypeC
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="qualifiertypes"></a> `qualifierTypes?` | [`QualifierType`](../../../classes/QualifierType.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>[] | Optional list of [QualifierTypes](../../../classes/QualifierType.md) to add to the collector on creation. |
+| <a id="property-qualifiertypes"></a> `qualifierTypes?` | [`QualifierType`](../../../classes/QualifierType.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>[] | Optional list of [QualifierTypes](../../../classes/QualifierType.md) to add to the collector on creation. |

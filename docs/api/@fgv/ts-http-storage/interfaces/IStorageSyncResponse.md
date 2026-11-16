@@ -12,4 +12,4 @@ Sync response metadata.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="synced"></a> `synced` | `readonly` | `number` |
+| <a id="property-synced"></a> `synced` | `readonly` | `number` |

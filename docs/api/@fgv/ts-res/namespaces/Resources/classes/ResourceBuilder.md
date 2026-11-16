@@ -32,13 +32,13 @@ Constructor for a ResourceBuilder object.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_candidates"></a> `_candidates` | `protected` | [`ResultMap`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`, [`ResourceCandidate`](../../../classes/ResourceCandidate.md)\> | Map of [candidates](../../../classes/ResourceCandidate.md) for the resource being built. |
-| <a id="_candidatevalues"></a> `_candidateValues` | `protected` | [`CandidateValueCollector`](CandidateValueCollector.md) | Collector for candidate values. |
-| <a id="_conditionsets"></a> `_conditionSets` | `protected` | [`ConditionSetCollector`](../../Conditions/classes/ConditionSetCollector.md) | Common collector for [condition sets](../../Conditions/classes/ConditionSet.md). |
-| <a id="_decisions"></a> `_decisions` | `protected` | [`AbstractDecisionCollector`](../../Decisions/classes/AbstractDecisionCollector.md) | Collector for [abstract decisions](../../Decisions/classes/AbstractDecision.md). |
-| <a id="_resourcetype"></a> `_resourceType` | `protected` | [`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\> \| `undefined` | The supplied or inferred [type](../../../classes/ResourceType.md) of the resource being built. |
-| <a id="_resourcetypes"></a> `_resourceTypes` | `protected` | [`ReadOnlyResourceTypeCollector`](../../ResourceTypes/type-aliases/ReadOnlyResourceTypeCollector.md) | Map of all known [resource types](../../../classes/ResourceType.md). |
-| <a id="id"></a> `id` | `readonly` | [`ResourceId`](../../../type-aliases/ResourceId.md) | The unique [id](../../../type-aliases/ResourceId.md) of the resource being built. |
+| <a id="property-_candidates"></a> `_candidates` | `protected` | [`ResultMap`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`, [`ResourceCandidate`](../../../classes/ResourceCandidate.md)\> | Map of [candidates](../../../classes/ResourceCandidate.md) for the resource being built. |
+| <a id="property-_candidatevalues"></a> `_candidateValues` | `protected` | [`CandidateValueCollector`](CandidateValueCollector.md) | Collector for candidate values. |
+| <a id="property-_conditionsets"></a> `_conditionSets` | `protected` | [`ConditionSetCollector`](../../Conditions/classes/ConditionSetCollector.md) | Common collector for [condition sets](../../Conditions/classes/ConditionSet.md). |
+| <a id="property-_decisions"></a> `_decisions` | `protected` | [`AbstractDecisionCollector`](../../Decisions/classes/AbstractDecisionCollector.md) | Collector for [abstract decisions](../../Decisions/classes/AbstractDecision.md). |
+| <a id="property-_resourcetype"></a> `_resourceType` | `protected` | [`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\> \| `undefined` | The supplied or inferred [type](../../../classes/ResourceType.md) of the resource being built. |
+| <a id="property-_resourcetypes"></a> `_resourceTypes` | `protected` | [`ReadOnlyResourceTypeCollector`](../../ResourceTypes/type-aliases/ReadOnlyResourceTypeCollector.md) | Map of all known [resource types](../../../classes/ResourceType.md). |
+| <a id="property-id"></a> `id` | `public readonly` | [`ResourceId`](../../../type-aliases/ResourceId.md) | The unique [id](../../../type-aliases/ResourceId.md) of the resource being built. |
 
 ## Accessors
 

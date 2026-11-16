@@ -12,12 +12,12 @@ Details for reporting a message.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TD` | `unknown` |
+| <a id="type-parameter-td"></a> `TD` | `unknown` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="detail"></a> `detail?` | `TD` |
-| <a id="level"></a> `level?` | [`MessageLogLevel`](../type-aliases/MessageLogLevel.md) |
-| <a id="message"></a> `message?` | [`ErrorFormatter`](../type-aliases/ErrorFormatter.md)\<`TD`\> |
+| <a id="property-detail"></a> `detail?` | `TD` |
+| <a id="property-level"></a> `level?` | [`MessageLogLevel`](../type-aliases/MessageLogLevel.md) |
+| <a id="property-message"></a> `message?` | [`ErrorFormatter`](../type-aliases/ErrorFormatter.md)\<`TD`\> |

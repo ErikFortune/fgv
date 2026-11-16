@@ -12,10 +12,10 @@ Interface for initializing a resource tree root with child nodes.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="children"></a> `children` | `readonly` | `Record`\<[`ResourceName`](../../../../../type-aliases/ResourceName.md), [`ResourceTreeNodeInit`](../type-aliases/ResourceTreeNodeInit.md)\<`T`\>\> |
+| <a id="property-children"></a> `children` | `readonly` | `Record`\<[`ResourceName`](../../../../../type-aliases/ResourceName.md), [`ResourceTreeNodeInit`](../type-aliases/ResourceTreeNodeInit.md)\<`T`\>\> |

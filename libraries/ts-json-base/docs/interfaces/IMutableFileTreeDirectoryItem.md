@@ -161,4 +161,18 @@ Deletes this directory from its backing store.
 Gets the children of the directory.
 
 </td></tr>
+<tr><td>
+
+[getStorageIdentity()](./IFileTreeDirectoryItem.getStorageIdentity.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Says what storage this directory names, so a consumer can tell whether two
+directory items reach the same place.
+
+</td></tr>
 </tbody></table>

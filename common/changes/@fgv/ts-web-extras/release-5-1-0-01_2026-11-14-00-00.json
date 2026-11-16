@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "New `CryptoUtils` namespace: `BrowserCryptoProvider`, a Web Crypto implementation of `@fgv/ts-extras`' `ICryptoProvider` that is byte-compatible with `NodeCryptoProvider`, plus `HpkeProvider` and `IdbPrivateKeyStorage`, an IndexedDB private-key backend for `KeyStore`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras",
+  "email": "noreply@anthropic.com"
+}

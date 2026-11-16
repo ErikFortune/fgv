@@ -30,9 +30,9 @@ Constructs an Iana.LanguageTagExtensions.LanguageTagExtensionRegistry.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_all"></a> `_all` | `readonly` | [`ILanguageTagExtension`](../namespaces/Model/interfaces/ILanguageTagExtension.md)[] | **`Internal`** |
-| <a id="extensions"></a> `extensions` | `readonly` | [`TagExtensionsScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
-| <a id="filedate"></a> `fileDate` | `readonly` | [`YearMonthDaySpec`](../../Model/type-aliases/YearMonthDaySpec.md) | - |
+| <a id="property-_all"></a> `_all` | `protected readonly` | [`ILanguageTagExtension`](../namespaces/Model/interfaces/ILanguageTagExtension.md)[] | **`Internal`** |
+| <a id="property-extensions"></a> `extensions` | `public readonly` | [`TagExtensionsScope`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47/docs) | - |
+| <a id="property-filedate"></a> `fileDate` | `public readonly` | [`YearMonthDaySpec`](../../Model/type-aliases/YearMonthDaySpec.md) | - |
 
 ## Methods
 

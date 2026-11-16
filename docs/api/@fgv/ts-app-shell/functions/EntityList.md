@@ -20,8 +20,8 @@ Renders a scrollable list of entities with:
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TEntity` | - |
-| `TId` *extends* `string` | `string` |
+| <a id="type-parameter-tentity"></a> `TEntity` | - |
+| <a id="type-parameter-tid"></a> `TId` *extends* `string` | `string` |
 
 ## Parameters
 

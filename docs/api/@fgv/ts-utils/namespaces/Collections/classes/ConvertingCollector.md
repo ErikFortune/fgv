@@ -22,8 +22,8 @@ supplied at default or at the time of collection.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> | - |
-| `TSRC` | `TITEM` |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> | - |
+| <a id="type-parameter-tsrc"></a> `TSRC` | `TITEM` |
 
 ## Constructors
 
@@ -528,7 +528,7 @@ Creates a new [Collector](Collector.md) instance.
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem-1"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
 
 #### Parameters
 
@@ -559,8 +559,8 @@ Creates a new ConvertingCollector.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> | - |
-| `TSRC` | `TITEM` |
+| <a id="type-parameter-titem-2"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> | - |
+| <a id="type-parameter-tsrc-1"></a> `TSRC` | `TITEM` |
 
 #### Parameters
 

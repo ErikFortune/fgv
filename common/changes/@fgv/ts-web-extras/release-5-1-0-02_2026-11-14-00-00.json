@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "New writable, persistent browser `FileTree` backends: `LocalStorageTreeAccessors`, `HttpTreeAccessors` (the client for `@fgv/ts-http-storage`), and `FileSystemAccessTreeAccessors` with `DirectoryHandleStore`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras",
+  "email": "noreply@anthropic.com"
+}

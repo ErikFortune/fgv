@@ -13,13 +13,13 @@ possible value for some resource, with the conditions under which it is valid.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="type-parameter-tvalue"></a> `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="conditionset"></a> `conditionSet` | `readonly` | [`ConditionSet`](../../Conditions/classes/ConditionSet.md) |
-| <a id="ispartial"></a> `isPartial?` | `readonly` | `boolean` |
-| <a id="mergemethod"></a> `mergeMethod?` | `readonly` | [`ResourceValueMergeMethod`](../../../type-aliases/ResourceValueMergeMethod.md) |
-| <a id="value"></a> `value` | `readonly` | `TVALUE` |
+| <a id="property-conditionset"></a> `conditionSet` | `readonly` | [`ConditionSet`](../../Conditions/classes/ConditionSet.md) |
+| <a id="property-ispartial"></a> `isPartial?` | `readonly` | `boolean` |
+| <a id="property-mergemethod"></a> `mergeMethod?` | `readonly` | [`ResourceValueMergeMethod`](../../../type-aliases/ResourceValueMergeMethod.md) |
+| <a id="property-value"></a> `value` | `readonly` | `TVALUE` |

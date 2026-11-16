@@ -18,7 +18,7 @@ Provides both read and mutation operations.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* [`IMutableContextQualifierProvider`](../interfaces/IMutableContextQualifierProvider.md) | [`IMutableContextQualifierProvider`](../interfaces/IMutableContextQualifierProvider.md) |
+| <a id="type-parameter-t"></a> `T` *extends* [`IMutableContextQualifierProvider`](../interfaces/IMutableContextQualifierProvider.md) | [`IMutableContextQualifierProvider`](../interfaces/IMutableContextQualifierProvider.md) |
 
 ## Implements
 
@@ -50,7 +50,7 @@ Constructs a new MutableContextQualifierProviderValidator.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="provider"></a> `provider` | `readonly` | `T` | The wrapped mutable context qualifier provider. |
+| <a id="property-provider"></a> `provider` | `public readonly` | `T` | The wrapped mutable context qualifier provider. |
 
 ## Accessors
 
@@ -70,7 +70,7 @@ The readonly qualifier collector that defines and validates the qualifiers for t
 
 #### Implementation of
 
-[`IMutableContextQualifierProviderValidator`](../interfaces/IMutableContextQualifierProviderValidator.md).[`qualifiers`](../interfaces/IMutableContextQualifierProviderValidator.md#qualifiers)
+[`IMutableContextQualifierProviderValidator`](../interfaces/IMutableContextQualifierProviderValidator.md).[`qualifiers`](../interfaces/IMutableContextQualifierProviderValidator.md#property-qualifiers)
 
 #### Inherited from
 

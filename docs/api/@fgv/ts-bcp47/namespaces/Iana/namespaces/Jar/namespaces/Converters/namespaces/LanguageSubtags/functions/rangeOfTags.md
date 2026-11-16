@@ -14,7 +14,7 @@
 
 | Type Parameter |
 | ------ |
-| `TTAG` *extends* `string` |
+| <a id="type-parameter-ttag"></a> `TTAG` *extends* `string` |
 
 ## Parameters
 

@@ -10,7 +10,7 @@
 
 | Property | Type |
 | ------ | ------ |
-| <a id="backingfile"></a> `backingFile?` | `string` |
-| <a id="path"></a> `path` | `string` |
-| <a id="payload"></a> `payload?` | `string` |
-| <a id="writable"></a> `writable?` | `boolean` |
+| <a id="property-backingfile"></a> `backingFile?` | `string` |
+| <a id="property-path"></a> `path` | `string` |
+| <a id="property-payload"></a> `payload?` | `string` |
+| <a id="property-writable"></a> `writable?` | `boolean` |

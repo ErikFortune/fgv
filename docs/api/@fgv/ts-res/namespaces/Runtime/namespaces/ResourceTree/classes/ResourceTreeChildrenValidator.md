@@ -22,7 +22,7 @@ error handling throughout the resource tree navigation.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Implements
 
@@ -64,7 +64,7 @@ Returns the number of entries in the map.
 
 #### Implementation of
 
-[`IReadOnlyResourceTreeChildren`](../interfaces/IReadOnlyResourceTreeChildren.md).[`size`](../interfaces/IReadOnlyResourceTreeChildren.md#size)
+[`IReadOnlyResourceTreeChildren`](../interfaces/IReadOnlyResourceTreeChildren.md).[`size`](../interfaces/IReadOnlyResourceTreeChildren.md#property-size)
 
 ## Methods
 

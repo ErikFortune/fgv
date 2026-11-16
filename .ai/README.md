@@ -21,7 +21,6 @@ This is a Rush-based TypeScript monorepo containing libraries for internationali
 | `@fgv/ts-res` | Multidimensional resource management |
 | `@fgv/ts-bcp47` | BCP47 language tag processing |
 | `@fgv/ts-json` | JSON schema validation |
-| `@fgv/ts-sudoku-lib` | Sudoku puzzle library |
 
 ## Critical Rules (All Tools)
 

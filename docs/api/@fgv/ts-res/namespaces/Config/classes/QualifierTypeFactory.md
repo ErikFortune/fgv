@@ -14,6 +14,8 @@ while maintaining support for all built-in types (Language, Territory, Literal).
 
 ## Example
 
+**Creating a factory with custom qualifier types**
+
 ```typescript
 // Define a custom qualifier type
 class CustomQualifierType extends QualifierType {
@@ -51,7 +53,7 @@ const result = qualifierTypeFactory.create(config); // Result<AppQualifierType |
 
 | Type Parameter | Default type | Description |
 | ------ | ------ | ------ |
-| `T` *extends* [`QualifierType`](../../../classes/QualifierType.md) | [`SystemQualifierType`](../../QualifierTypes/type-aliases/SystemQualifierType.md) | The custom qualifier type(s) to support. Defaults to [SystemQualifierType](../../QualifierTypes/type-aliases/SystemQualifierType.md). |
+| <a id="type-parameter-t"></a> `T` *extends* [`QualifierType`](../../../classes/QualifierType.md) | [`SystemQualifierType`](../../QualifierTypes/type-aliases/SystemQualifierType.md) | The custom qualifier type(s) to support. Defaults to [SystemQualifierType](../../QualifierTypes/type-aliases/SystemQualifierType.md). |
 
 ## Constructors
 
@@ -84,7 +86,7 @@ The [built-in factory](BuiltInQualifierTypeFactory.md) is always appended to han
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="factories"></a> `factories` | `readonly` | [`IConfigInitFactory`](../interfaces/IConfigInitFactory.md)\<[`IAnyQualifierTypeConfig`](../../QualifierTypes/namespaces/Config/type-aliases/IAnyQualifierTypeConfig.md), [`SystemQualifierType`](../../QualifierTypes/type-aliases/SystemQualifierType.md) \| `T`\>[] |
+| <a id="property-factories"></a> `factories` | `public readonly` | [`IConfigInitFactory`](../interfaces/IConfigInitFactory.md)\<[`IAnyQualifierTypeConfig`](../../QualifierTypes/namespaces/Config/type-aliases/IAnyQualifierTypeConfig.md), [`SystemQualifierType`](../../QualifierTypes/type-aliases/SystemQualifierType.md) \| `T`\>[] |
 
 ## Methods
 

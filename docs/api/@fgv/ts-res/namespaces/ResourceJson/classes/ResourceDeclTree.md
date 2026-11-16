@@ -33,9 +33,9 @@ Class that extracts resources and candidates from a
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="_candidates"></a> `_candidates` | `protected` | [`ILooseResourceCandidateDecl`](../namespaces/Normalized/interfaces/ILooseResourceCandidateDecl.md)[] | `[]` | - |
-| <a id="_resources"></a> `_resources` | `protected` | [`ILooseResourceDecl`](../namespaces/Normalized/interfaces/ILooseResourceDecl.md)[] | `[]` | - |
-| <a id="tree"></a> `tree` | `readonly` | [`IResourceTreeRootDecl`](../namespaces/Normalized/interfaces/IResourceTreeRootDecl.md) | `undefined` | The [resource tree root declaration](../namespaces/Normalized/interfaces/IResourceTreeRootDecl.md) being processed. |
+| <a id="property-_candidates"></a> `_candidates` | `protected` | [`ILooseResourceCandidateDecl`](../namespaces/Normalized/interfaces/ILooseResourceCandidateDecl.md)[] | `[]` | - |
+| <a id="property-_resources"></a> `_resources` | `protected` | [`ILooseResourceDecl`](../namespaces/Normalized/interfaces/ILooseResourceDecl.md)[] | `[]` | - |
+| <a id="property-tree"></a> `tree` | `public readonly` | [`IResourceTreeRootDecl`](../namespaces/Normalized/interfaces/IResourceTreeRootDecl.md) | `undefined` | The [resource tree root declaration](../namespaces/Normalized/interfaces/IResourceTreeRootDecl.md) being processed. |
 
 ## Accessors
 
@@ -57,7 +57,7 @@ declaration for the container.
 
 #### Implementation of
 
-[`IResourceDeclContainer`](../interfaces/IResourceDeclContainer.md).[`context`](../interfaces/IResourceDeclContainer.md#context)
+[`IResourceDeclContainer`](../interfaces/IResourceDeclContainer.md).[`context`](../interfaces/IResourceDeclContainer.md#property-context)
 
 ## Methods
 

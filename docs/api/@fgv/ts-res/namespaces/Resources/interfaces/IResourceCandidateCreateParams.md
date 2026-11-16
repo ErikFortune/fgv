@@ -12,9 +12,9 @@ Parameters to create a [ResourceCandidate](../../../classes/ResourceCandidate.md
 
 | Property | Type |
 | ------ | ------ |
-| <a id="candidatevalues"></a> `candidateValues` | [`CandidateValueCollector`](../classes/CandidateValueCollector.md) |
-| <a id="conditionsets"></a> `conditionSets` | [`ConditionSetCollector`](../../Conditions/classes/ConditionSetCollector.md) |
-| <a id="decl"></a> `decl` | [`IChildResourceCandidateDecl`](../../ResourceJson/namespaces/Json/interfaces/IChildResourceCandidateDecl.md) |
-| <a id="id"></a> `id` | `string` |
-| <a id="parentconditions"></a> `parentConditions?` | readonly [`Condition`](../../../classes/Condition.md)[] |
-| <a id="resourcetype"></a> `resourceType?` | [`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\> |
+| <a id="property-candidatevalues"></a> `candidateValues` | [`CandidateValueCollector`](../classes/CandidateValueCollector.md) |
+| <a id="property-conditionsets"></a> `conditionSets` | [`ConditionSetCollector`](../../Conditions/classes/ConditionSetCollector.md) |
+| <a id="property-decl"></a> `decl` | [`IChildResourceCandidateDecl`](../../ResourceJson/namespaces/Json/interfaces/IChildResourceCandidateDecl.md) |
+| <a id="property-id"></a> `id` | `string` |
+| <a id="property-parentconditions"></a> `parentConditions?` | readonly [`Condition`](../../../classes/Condition.md)[] |
+| <a id="property-resourcetype"></a> `resourceType?` | [`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\> |

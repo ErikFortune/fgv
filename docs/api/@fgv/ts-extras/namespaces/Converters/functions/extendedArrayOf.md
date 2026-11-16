@@ -6,7 +6,7 @@
 
 # Function: extendedArrayOf()
 
-> **extendedArrayOf**\<`T`, `TC`\>(`label`, `converter`, `onError`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ExtendedArray`](../../Experimental/classes/ExtendedArray.md)\<`T`\>, `TC`\>
+> **extendedArrayOf**\<`T`, `TC`\>(`label`, `converter`, `onError?`): [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ExtendedArray`](../../Experimental/classes/ExtendedArray.md)\<`T`\>, `TC`\>
 
 **`Beta`**
 
@@ -16,8 +16,8 @@ A helper function to create a `Converter` which converts `unknown` to [ExtendedA
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `undefined` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `undefined` |
 
 ## Parameters
 
@@ -25,7 +25,7 @@ A helper function to create a `Converter` which converts `unknown` to [ExtendedA
 | ------ | ------ | ------ | ------ |
 | `label` | `string` | `undefined` | - |
 | `converter` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> | `undefined` | `Converter` used to convert each item in the array |
-| `onError` | [`OnError`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | `'failOnError'` | Specifies treatment of unconvertible elements |
+| `onError?` | [`OnError`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | `'failOnError'` | Specifies treatment of unconvertible elements |
 
 ## Returns
 

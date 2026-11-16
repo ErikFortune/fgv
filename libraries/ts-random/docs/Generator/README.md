@@ -109,6 +109,15 @@ Parameters for generating a sequence of values
 Parameters for generating a sequence of values
 
 </td></tr>
+<tr><td>
+
+[IWeightedCandidate](./interfaces/IWeightedCandidate.md)
+
+</td><td>
+
+One candidate for a weighted pick: an item and its relative weight.
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases
@@ -139,6 +148,30 @@ Function that steps a random number generator state and returns the next value.
 </td><td>
 
 Type representing parameters for generating a sequence of values.
+
+</td></tr>
+</tbody></table>
+
+## Functions
+
+<table><thead><tr><th>
+
+Name
+
+</th><th>
+
+Description
+
+</th></tr></thead>
+<tbody>
+<tr><td>
+
+[pickWeightedAt](./functions/pickWeightedAt.md)
+
+</td><td>
+
+Chooses one candidate with probability proportional to its weight, as a pure
+function of a unit float.
 
 </td></tr>
 </tbody></table>

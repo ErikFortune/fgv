@@ -6,7 +6,7 @@
 
 # Function: createViewStateObservabilityContext()
 
-> **createViewStateObservabilityContext**(`addMessage`, `diagLogLevel`, `userLogLevel`): [`IObservabilityContext`](../interfaces/IObservabilityContext.md)
+> **createViewStateObservabilityContext**(`addMessage`, `diagLogLevel?`, `userLogLevel?`): [`IObservabilityContext`](../interfaces/IObservabilityContext.md)
 
 Creates an observability context that forwards user messages to viewState.addMessage().
 This bridges the observability system with React component state management.
@@ -16,8 +16,8 @@ This bridges the observability system with React component state management.
 | Parameter | Type | Default value | Description |
 | ------ | ------ | ------ | ------ |
 | `addMessage` | (`type`, `message`) => `void` | `undefined` | Function to add messages to viewState (typically viewState.addMessage) |
-| `diagLogLevel` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | `'info'` | Log level for diagnostic messages (defaults to 'info') |
-| `userLogLevel` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | `'info'` | Log level for user messages (defaults to 'info') |
+| `diagLogLevel?` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | `'info'` | Log level for diagnostic messages (defaults to 'info') |
+| `userLogLevel?` | [`ReporterLogLevel`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | `'info'` | Log level for user messages (defaults to 'info') |
 
 ## Returns
 

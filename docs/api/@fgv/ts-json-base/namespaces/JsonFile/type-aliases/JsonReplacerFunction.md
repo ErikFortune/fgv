@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-json-base](../../../README.md) / [JsonFile](../README.md) / JsonReplacerFunction
 
-# Type Alias: JsonReplacerFunction()
+# Type Alias: JsonReplacerFunction
 
 > **JsonReplacerFunction** = (`key`, `value`) => [`JsonValue`](../../../type-aliases/JsonValue.md)
 

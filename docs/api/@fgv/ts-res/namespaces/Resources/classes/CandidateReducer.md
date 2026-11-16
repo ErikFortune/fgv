@@ -52,7 +52,7 @@ Either a reduced candidate declaration or an error if the candidate is not found
 
 ### reduceToChildResourceCandidateDecls()
 
-> `static` **reduceToChildResourceCandidateDecls**(`candidates`, `filterForContext?`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IChildResourceCandidateDecl`](../../ResourceJson/namespaces/Json/interfaces/IChildResourceCandidateDecl.md)[]\>
+> `static` **reduceToChildResourceCandidateDecls**(`candidates`, `filterForContext?`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IChildResourceCandidateDecl`](../../ResourceJson/namespaces/Json/interfaces/IChildResourceCandidateDecl.md)\<`string`\>[]\>
 
 Static convenience method to construct an array of properly reduced
 [child resource candidate declarations](../../ResourceJson/namespaces/Json/interfaces/IChildResourceCandidateDecl.md)
@@ -67,7 +67,7 @@ from a set of [resource candidates](../../../classes/ResourceCandidate.md).
 
 #### Returns
 
-[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IChildResourceCandidateDecl`](../../ResourceJson/namespaces/Json/interfaces/IChildResourceCandidateDecl.md)[]\>
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IChildResourceCandidateDecl`](../../ResourceJson/namespaces/Json/interfaces/IChildResourceCandidateDecl.md)\<`string`\>[]\>
 
 Result with array of reduced candidate declarations, or Failure if reduction fails
 
@@ -75,7 +75,7 @@ Result with array of reduced candidate declarations, or Failure if reduction fai
 
 ### reduceToLooseResourceCandidateDecls()
 
-> `static` **reduceToLooseResourceCandidateDecls**(`id`, `candidates`, `filterForContext?`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`ILooseResourceCandidateDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseResourceCandidateDecl.md)[]\>
+> `static` **reduceToLooseResourceCandidateDecls**(`id`, `candidates`, `filterForContext?`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`ILooseResourceCandidateDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseResourceCandidateDecl.md)\<`string`\>[]\>
 
 Static convenience method to construct an array of properly reduced
 [loose resource candidate declarations](../../ResourceJson/namespaces/Json/interfaces/ILooseResourceCandidateDecl.md)
@@ -91,6 +91,6 @@ from a set of [resource candidates](../../../classes/ResourceCandidate.md).
 
 #### Returns
 
-[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`ILooseResourceCandidateDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseResourceCandidateDecl.md)[]\>
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`ILooseResourceCandidateDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseResourceCandidateDecl.md)\<`string`\>[]\>
 
 Result with array of reduced candidate declarations, or Failure if reduction fails

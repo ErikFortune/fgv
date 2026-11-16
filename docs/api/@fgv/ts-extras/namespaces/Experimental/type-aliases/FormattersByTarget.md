@@ -17,4 +17,4 @@ A collection of [formatters](Formatter.md) indexed by the
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |

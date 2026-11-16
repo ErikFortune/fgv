@@ -13,9 +13,9 @@ to substitute a supplied default value for any errors returned by the inner conv
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TD` | `T` |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-td"></a> `TD` | `T` |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Implements
 
@@ -44,7 +44,7 @@ Constructs a new generic defaulting converter.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="defaultvalue"></a> `defaultValue` | `public` | `TD` | Default value to use if the conversion fails. |
+| <a id="property-defaultvalue"></a> `defaultValue` | `public` | `TD` | Default value to use if the conversion fails. |
 
 ## Accessors
 
@@ -64,7 +64,7 @@ Returns the brand for a branded type.
 
 #### Implementation of
 
-[`DefaultingConverter`](../interfaces/DefaultingConverter.md).[`brand`](../interfaces/DefaultingConverter.md#brand)
+[`DefaultingConverter`](../interfaces/DefaultingConverter.md).[`brand`](../interfaces/DefaultingConverter.md#property-brand)
 
 ***
 
@@ -84,7 +84,7 @@ Indicates whether this element is explicitly optional.
 
 #### Implementation of
 
-[`DefaultingConverter`](../interfaces/DefaultingConverter.md).[`isOptional`](../interfaces/DefaultingConverter.md#isoptional)
+[`DefaultingConverter`](../interfaces/DefaultingConverter.md).[`isOptional`](../interfaces/DefaultingConverter.md#property-isoptional)
 
 ## Methods
 
@@ -162,7 +162,7 @@ the converted value of this [Converter](../interfaces/Converter.md).
 
 | Type Parameter |
 | ------ |
-| `T2` |
+| <a id="type-parameter-t2"></a> `T2` |
 
 #### Parameters
 
@@ -193,7 +193,7 @@ converter to the result of this converter.
 
 | Type Parameter |
 | ------ |
-| `T2` |
+| <a id="type-parameter-t2-1"></a> `T2` |
 
 #### Parameters
 
@@ -224,7 +224,7 @@ resulting from this [Converter](../interfaces/Converter.md) using the supplied [
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti"></a> `TI` |
 
 #### Parameters
 
@@ -259,7 +259,7 @@ resulting from this [Converter](../interfaces/Converter.md) using the supplied m
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-1"></a> `TI` |
 
 #### Parameters
 
@@ -351,7 +351,7 @@ of the base conversion and is allowed to mutate the return type.
 
 | Type Parameter |
 | ------ |
-| `T2` |
+| <a id="type-parameter-t2-2"></a> `T2` |
 
 #### Parameters
 
@@ -380,7 +380,7 @@ of simple types.
 
 | Type Parameter |
 | ------ |
-| `B` *extends* `string` |
+| <a id="type-parameter-b"></a> `B` *extends* `string` |
 
 #### Parameters
 
@@ -443,7 +443,7 @@ Note that the supplied default value *overrides* the default value of this
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TD2` | `T` |
+| <a id="type-parameter-td2"></a> `TD2` | `T` |
 
 #### Parameters
 
@@ -497,7 +497,7 @@ the conversion result from this converter.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-2"></a> `TI` |
 
 #### Parameters
 
@@ -534,7 +534,7 @@ result.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-3"></a> `TI` |
 
 #### Parameters
 

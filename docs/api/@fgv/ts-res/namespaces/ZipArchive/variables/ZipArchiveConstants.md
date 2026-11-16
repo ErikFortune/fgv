@@ -14,7 +14,7 @@ Constants for ZIP archive structure
 
 | Name | Type | Default value | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="config_dir"></a> `CONFIG_DIR` | `"config"` | `'config'` | Configuration files directory |
-| <a id="config_file"></a> `CONFIG_FILE` | `"config.json"` | `'config.json'` | Configuration file name |
-| <a id="input_dir"></a> `INPUT_DIR` | `"input"` | `'input'` | Input files directory |
-| <a id="manifest_file"></a> `MANIFEST_FILE` | `"manifest.json"` | `'manifest.json'` | Manifest file name |
+| <a id="property-config_dir"></a> `CONFIG_DIR` | `"config"` | `'config'` | Configuration files directory |
+| <a id="property-config_file"></a> `CONFIG_FILE` | `"config.json"` | `'config.json'` | Configuration file name |
+| <a id="property-input_dir"></a> `INPUT_DIR` | `"input"` | `'input'` | Input files directory |
+| <a id="property-manifest_file"></a> `MANIFEST_FILE` | `"manifest.json"` | `'manifest.json'` | Manifest file name |

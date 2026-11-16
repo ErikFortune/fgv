@@ -7,5 +7,5 @@ All accepted image size strings across all providers.
 ## Type
 
 ```typescript
-type AiImageSize = DallE2Size | DallE3Size | GptImageSize
+type AiImageSize = GptImageSize
 ```

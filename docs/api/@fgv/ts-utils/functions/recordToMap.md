@@ -14,9 +14,9 @@ Applies a factory method to convert a `Record<TK, TS>` into a `Map<TK, TD>`.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TS` | - |
-| `TD` | - |
-| `TK` *extends* `string` | `string` |
+| <a id="type-parameter-ts"></a> `TS` | - |
+| <a id="type-parameter-td"></a> `TD` | - |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
 
 ## Parameters
 

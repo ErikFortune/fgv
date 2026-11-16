@@ -12,5 +12,5 @@ Props for [ResponsiveProvider](../functions/ResponsiveProvider.md).
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="children"></a> `children` | `readonly` | `ReactNode` | Children |
-| <a id="forcelayoutmode"></a> `forceLayoutMode?` | `readonly` | [`LayoutMode`](../type-aliases/LayoutMode.md) | Optional layout mode override (for testing or storybook). |
+| <a id="property-children"></a> `children` | `readonly` | `ReactNode` | Children |
+| <a id="property-forcelayoutmode"></a> `forceLayoutMode?` | `readonly` | [`LayoutMode`](../type-aliases/LayoutMode.md) | Optional layout mode override (for testing or storybook). |

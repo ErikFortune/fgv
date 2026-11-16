@@ -15,7 +15,7 @@ Provides summary information useful for UI displays.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `pendingResources` | `Map`\<`string`, [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs)\> | Map of pending resources |
+| `pendingResources` | `Map`\<`string`, [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs)\<`string`\>\> | Map of pending resources |
 
 ## Returns
 

@@ -13,12 +13,12 @@ Generic over the value type so apps can use string IDs, enums, etc.
 
 | Type Parameter |
 | ------ |
-| `TValue` |
+| <a id="type-parameter-tvalue"></a> `TValue` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="count"></a> `count?` | `readonly` | `number` | Optional count badge |
-| <a id="label"></a> `label` | `readonly` | `string` | Display label |
-| <a id="value"></a> `value` | `readonly` | `TValue` | Unique value for this option |
+| <a id="property-count"></a> `count?` | `readonly` | `number` | Optional count badge |
+| <a id="property-label"></a> `label` | `readonly` | `string` | Display label |
+| <a id="property-value"></a> `value` | `readonly` | `TValue` | Unique value for this option |

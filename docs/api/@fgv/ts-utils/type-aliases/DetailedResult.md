@@ -8,13 +8,11 @@
 
 > **DetailedResult**\<`T`, `TD`\> = [`DetailedSuccess`](../classes/DetailedSuccess.md)\<`T`, `TD`\> \| [`DetailedFailure`](../classes/DetailedFailure.md)\<`T`, `TD`\>
 
-**`Beta`**
-
 Represents a result with additional detail.
 
 ## Type Parameters
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `TD` |
+| <a id="type-parameter-t"></a> `T` |
+| <a id="type-parameter-td"></a> `TD` |

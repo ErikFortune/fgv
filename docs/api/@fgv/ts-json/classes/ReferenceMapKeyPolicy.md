@@ -13,7 +13,7 @@ keys in a [reference map](../interfaces/IJsonReferenceMap.md).
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Constructors
 
@@ -38,8 +38,8 @@ Constructs a new ReferenceMapKeyPolicy.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_defaultoptions"></a> `_defaultOptions?` | `readonly` | [`IReferenceMapKeyPolicyValidateOptions`](../interfaces/IReferenceMapKeyPolicyValidateOptions.md) | **`Internal`** |
-| <a id="_isvalid"></a> `_isValid` | `readonly` | (`key`, `item?`) => `boolean` | **`Internal`** |
+| <a id="property-_defaultoptions"></a> `_defaultOptions?` | `protected readonly` | [`IReferenceMapKeyPolicyValidateOptions`](../interfaces/IReferenceMapKeyPolicyValidateOptions.md) | **`Internal`** |
+| <a id="property-_isvalid"></a> `_isValid` | `protected readonly` | (`key`, `item?`) => `boolean` | **`Internal`** |
 
 ## Methods
 

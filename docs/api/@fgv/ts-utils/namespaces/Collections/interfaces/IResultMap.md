@@ -16,14 +16,14 @@ Interface for a mutable [ResultMap](../classes/ResultMap.md).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv"></a> `TV` | `unknown` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="size"></a> `size` | `readonly` | `number` | Returns the number of entries in the map. |
+| <a id="property-size"></a> `size` | `readonly` | `number` | Returns the number of entries in the map. |
 
 ## Methods
 

@@ -12,12 +12,12 @@ Callbacks that connect the URL sync hook to the application's state management.
 
 | Type Parameter |
 | ------ |
-| `TMode` *extends* `string` |
-| `TTab` *extends* `string` |
+| <a id="type-parameter-tmode"></a> `TMode` *extends* `string` |
+| <a id="type-parameter-ttab"></a> `TTab` *extends* `string` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="setmode"></a> `setMode` | `readonly` | (`mode`) => `void` | Set the active mode |
-| <a id="settab"></a> `setTab` | `readonly` | (`tab`) => `void` | Set the active tab |
+| <a id="property-setmode"></a> `setMode` | `readonly` | (`mode`) => `void` | Set the active mode |
+| <a id="property-settab"></a> `setTab` | `readonly` | (`tab`) => `void` | Set the active tab |

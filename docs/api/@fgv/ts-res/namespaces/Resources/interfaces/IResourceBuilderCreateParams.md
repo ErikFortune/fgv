@@ -12,9 +12,9 @@ Parameters for creating a [Resources.ResourceBuilder](../classes/ResourceBuilder
 
 | Property | Type |
 | ------ | ------ |
-| <a id="candidatevalues"></a> `candidateValues` | [`CandidateValueCollector`](../classes/CandidateValueCollector.md) |
-| <a id="conditionsets"></a> `conditionSets` | [`ConditionSetCollector`](../../Conditions/classes/ConditionSetCollector.md) |
-| <a id="decisions"></a> `decisions` | [`AbstractDecisionCollector`](../../Decisions/classes/AbstractDecisionCollector.md) |
-| <a id="id"></a> `id` | `string` |
-| <a id="resourcetypes"></a> `resourceTypes` | [`ReadOnlyResourceTypeCollector`](../../ResourceTypes/type-aliases/ReadOnlyResourceTypeCollector.md) |
-| <a id="typename"></a> `typeName?` | `string` |
+| <a id="property-candidatevalues"></a> `candidateValues` | [`CandidateValueCollector`](../classes/CandidateValueCollector.md) |
+| <a id="property-conditionsets"></a> `conditionSets` | [`ConditionSetCollector`](../../Conditions/classes/ConditionSetCollector.md) |
+| <a id="property-decisions"></a> `decisions` | [`AbstractDecisionCollector`](../../Decisions/classes/AbstractDecisionCollector.md) |
+| <a id="property-id"></a> `id` | `string` |
+| <a id="property-resourcetypes"></a> `resourceTypes` | [`ReadOnlyResourceTypeCollector`](../../ResourceTypes/type-aliases/ReadOnlyResourceTypeCollector.md) |
+| <a id="property-typename"></a> `typeName?` | `string` |

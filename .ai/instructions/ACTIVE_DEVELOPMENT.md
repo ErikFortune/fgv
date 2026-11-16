@@ -25,9 +25,9 @@ The active/production split is therefore **per-surface, not per-library**. A lib
 
 Anything not listed above — including production libraries like `ts-utils`, `ts-res`, `ts-bcp47`, `ts-json`, `ts-json-base`, `ts-random`, `ts-utils-jest`, `ts-res-ui-components` — carries stability obligations. See [Compatibility Rules](#compatibility-rules).
 
-## Out-of-scope packages
+## Moved out
 
-The sudoku packages (`ts-sudoku-lib`, `ts-sudoku-ui`) are slated to move to their own monorepo. Don't queue active development against them in this repo's workflow substrate.
+The sudoku packages (`ts-sudoku-lib`, `ts-sudoku-ui`, `apps/sudoku`) moved out of this repo, with their history, before 5.1.0.
 
 ---
 

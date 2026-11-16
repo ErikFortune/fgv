@@ -16,7 +16,7 @@ Mirrors the behavior of `@fgv/ts-utils`.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Parameters
 

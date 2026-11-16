@@ -6,6 +6,6 @@
 
 # Type Alias: KeyDerivationFunction
 
-> **KeyDerivationFunction** = `"pbkdf2"`
+> **KeyDerivationFunction** = `"pbkdf2"` \| `"argon2id"`
 
 Supported key derivation functions.

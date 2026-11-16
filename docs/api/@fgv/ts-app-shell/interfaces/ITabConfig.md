@@ -12,12 +12,12 @@ Configuration for a single tab.
 
 | Type Parameter |
 | ------ |
-| `TTab` *extends* `string` |
+| <a id="type-parameter-ttab"></a> `TTab` *extends* `string` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="badge"></a> `badge?` | `readonly` | [`ITabBadge`](ITabBadge.md) | Optional badge rendered next to the tab label |
-| <a id="id"></a> `id` | `readonly` | `TTab` | Tab identifier |
-| <a id="label"></a> `label` | `readonly` | `string` | Display label |
+| <a id="property-badge"></a> `badge?` | `readonly` | [`ITabBadge`](ITabBadge.md) | Optional badge rendered next to the tab label |
+| <a id="property-id"></a> `id` | `readonly` | `TTab` | Tab identifier |
+| <a id="property-label"></a> `label` | `readonly` | `string` | Display label |

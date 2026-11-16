@@ -6,7 +6,7 @@
 
 # Function: loadLanguageRegistriesFromTree()
 
-> **loadLanguageRegistriesFromTree**(`fileTree`, `subtagsPath`, `extensionsPath`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`LanguageRegistries`](../classes/LanguageRegistries.md)\>
+> **loadLanguageRegistriesFromTree**(`fileTree`, `subtagsPath?`, `extensionsPath?`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`LanguageRegistries`](../classes/LanguageRegistries.md)\>
 
 Loads language registries from a FileTree (web-compatible).
 
@@ -15,8 +15,8 @@ Loads language registries from a FileTree (web-compatible).
 | Parameter | Type | Default value | Description |
 | ------ | ------ | ------ | ------ |
 | `fileTree` | [`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | `undefined` | The FileTree containing the registry JSON files. |
-| `subtagsPath` | `string` | `'language-subtags.json'` | Path to the language-subtags.json file within the tree. |
-| `extensionsPath` | `string` | `'language-tag-extensions.json'` | Path to the language-tag-extensions.json file within the tree. |
+| `subtagsPath?` | `string` | `'language-subtags.json'` | Path to the language-subtags.json file within the tree. |
+| `extensionsPath?` | `string` | `'language-tag-extensions.json'` | Path to the language-tag-extensions.json file within the tree. |
 
 ## Returns
 

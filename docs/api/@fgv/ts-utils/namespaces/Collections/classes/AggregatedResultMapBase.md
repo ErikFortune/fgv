@@ -23,11 +23,11 @@ for fully generic.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCOMPOSITEID` *extends* `string` | - |
-| `TCOLLECTIONID` *extends* `string` | - |
-| `TITEMID` *extends* `string` | - |
-| `TITEM` | - |
-| `TMETADATA` | `unknown` |
+| <a id="type-parameter-tcompositeid"></a> `TCOMPOSITEID` *extends* `string` | - |
+| <a id="type-parameter-tcollectionid"></a> `TCOLLECTIONID` *extends* `string` | - |
+| <a id="type-parameter-titemid"></a> `TITEMID` *extends* `string` | - |
+| <a id="type-parameter-titem"></a> `TITEM` | - |
+| <a id="type-parameter-tmetadata"></a> `TMETADATA` | `unknown` |
 
 ## Implements
 
@@ -104,7 +104,7 @@ Returns the number of entries in the map.
 
 #### Implementation of
 
-[`IReadOnlyValidatingResultMap`](../interfaces/IReadOnlyValidatingResultMap.md).[`size`](../interfaces/IReadOnlyValidatingResultMap.md#size)
+[`IReadOnlyValidatingResultMap`](../interfaces/IReadOnlyValidatingResultMap.md).[`size`](../interfaces/IReadOnlyValidatingResultMap.md#property-size)
 
 ***
 
@@ -125,7 +125,7 @@ before inserting them into this collection.
 
 #### Implementation of
 
-[`IReadOnlyValidatingResultMap`](../interfaces/IReadOnlyValidatingResultMap.md).[`validating`](../interfaces/IReadOnlyValidatingResultMap.md#validating)
+[`IReadOnlyValidatingResultMap`](../interfaces/IReadOnlyValidatingResultMap.md).[`validating`](../interfaces/IReadOnlyValidatingResultMap.md#property-validating)
 
 ## Methods
 

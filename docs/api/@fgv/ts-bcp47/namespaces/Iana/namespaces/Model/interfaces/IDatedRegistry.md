@@ -12,11 +12,11 @@ A dated collection of registry entries of a specified templated type.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="entries"></a> `entries` | `T`[] |
-| <a id="filedate"></a> `fileDate` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
+| <a id="property-entries"></a> `entries` | `T`[] |
+| <a id="property-filedate"></a> `fileDate` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |

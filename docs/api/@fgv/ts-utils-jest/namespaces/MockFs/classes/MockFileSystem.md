@@ -27,11 +27,11 @@
 
 | Property | Modifier | Type | Default value |
 | ------ | ------ | ------ | ------ |
-| <a id="_config"></a> `_config` | `readonly` | `Map`\<`string`, [`IMockFileConfig`](../interfaces/IMockFileConfig.md)\> | `undefined` |
-| <a id="_data"></a> `_data` | `readonly` | `Map`\<`string`, `string`\> | `undefined` |
-| <a id="_extrawrites"></a> `_extraWrites` | `readonly` | `string`[] | `[]` |
-| <a id="_options"></a> `_options?` | `readonly` | [`IMockFileSystemOptions`](../interfaces/IMockFileSystemOptions.md) | `undefined` |
-| <a id="_realreadfilesync"></a> `_realReadFileSync` | `readonly` | `ReadFunc` | `undefined` |
+| <a id="property-_config"></a> `_config` | `protected readonly` | `Map`\<`string`, [`IMockFileConfig`](../interfaces/IMockFileConfig.md)\> | `undefined` |
+| <a id="property-_data"></a> `_data` | `protected readonly` | `Map`\<`string`, `string`\> | `undefined` |
+| <a id="property-_extrawrites"></a> `_extraWrites` | `protected readonly` | `string`[] | `[]` |
+| <a id="property-_options"></a> `_options?` | `protected readonly` | [`IMockFileSystemOptions`](../interfaces/IMockFileSystemOptions.md) | `undefined` |
+| <a id="property-_realreadfilesync"></a> `_realReadFileSync` | `protected readonly` | `ReadFunc` | `undefined` |
 
 ## Methods
 

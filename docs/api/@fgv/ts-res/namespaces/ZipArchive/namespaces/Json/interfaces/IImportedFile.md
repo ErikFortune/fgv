@@ -12,7 +12,7 @@ JSON representation of an imported file
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="content"></a> `content` | `string` | File content as string |
-| <a id="name"></a> `name` | `string` | File name |
-| <a id="path"></a> `path` | `string` | Full path within archive |
-| <a id="type"></a> `type` | `string` | MIME type |
+| <a id="property-content"></a> `content` | `string` | File content as string |
+| <a id="property-name"></a> `name` | `string` | File name |
+| <a id="property-path"></a> `path` | `string` | Full path within archive |
+| <a id="property-type"></a> `type` | `string` | MIME type |

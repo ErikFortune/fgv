@@ -16,7 +16,7 @@ Helper function to process resources from a ZIP load result
 | ------ | ------ | ------ |
 | `zipResult` | \{ `config?`: [`ISystemConfiguration`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs); `fileTree`: [`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs); \} | `undefined` |
 | `zipResult.config?` | [`ISystemConfiguration`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) | `undefined` |
-| `zipResult.fileTree?` | [`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | `undefined` |
+| `zipResult.fileTree` | [`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | `undefined` |
 | `overrideConfig?` | [`ISystemConfiguration`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs) | `undefined` |
 | `o11y?` | [`IObservabilityContext`](../../ObservabilityTools/interfaces/IObservabilityContext.md) | `ObservabilityTools.DefaultObservabilityContext` |
 

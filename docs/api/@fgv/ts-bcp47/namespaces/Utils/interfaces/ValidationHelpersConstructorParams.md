@@ -12,14 +12,14 @@ Initializer for [validation helpers](../classes/ValidationHelpers.md).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* `string` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="description"></a> `description` | `string` |
-| <a id="iscanonical"></a> `isCanonical` | [`TypeGuardWithContext`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> |
-| <a id="iswellformed"></a> `isWellFormed` | [`TypeGuardWithContext`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> |
-| <a id="tocanonical"></a> `toCanonical?` | [`Normalizer`](../type-aliases/Normalizer.md)\<`T`, `TC`\> |
+| <a id="property-description"></a> `description` | `string` |
+| <a id="property-iscanonical"></a> `isCanonical` | [`TypeGuardWithContext`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> |
+| <a id="property-iswellformed"></a> `isWellFormed` | [`TypeGuardWithContext`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> |
+| <a id="property-tocanonical"></a> `toCanonical?` | [`Normalizer`](../type-aliases/Normalizer.md)\<`T`, `TC`\> |

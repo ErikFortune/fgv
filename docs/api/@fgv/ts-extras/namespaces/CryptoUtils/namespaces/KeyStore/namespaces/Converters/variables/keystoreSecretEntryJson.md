@@ -6,7 +6,10 @@
 
 # Variable: keystoreSecretEntryJson
 
-> `const` **keystoreSecretEntryJson**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IKeyStoreSecretEntryJson`](../../../interfaces/IKeyStoreSecretEntryJson.md)\>
+> `const` **keystoreSecretEntryJson**: [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`IKeyStoreEntryJson`](../../../type-aliases/IKeyStoreEntryJson.md)\>
 
-Converter for [key store secret entry](../../../interfaces/IKeyStoreSecretEntryJson.md) in JSON format.
-The `type` field is optional for backwards compatibility — missing means `'encryption-key'`.
+Discriminated-union converter for any [key store entry](../../../type-aliases/IKeyStoreEntryJson.md) in JSON form.
+Routes by the `type` field: `'asymmetric-keypair'` is parsed by
+[keystoreAsymmetricEntryJson](keystoreAsymmetricEntryJson.md),
+anything else (including a missing `type` field for backwards compatibility) by
+[keystoreSymmetricEntryJson](keystoreSymmetricEntryJson.md).

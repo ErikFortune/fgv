@@ -12,6 +12,6 @@ JSON representation of an imported directory structure
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="files"></a> `files` | [`IImportedFile`](IImportedFile.md)[] | Files in this directory |
-| <a id="name"></a> `name` | `string` | Directory name |
-| <a id="subdirectories"></a> `subdirectories` | `IImportedDirectory`[] | Subdirectories |
+| <a id="property-files"></a> `files` | [`IImportedFile`](IImportedFile.md)[] | Files in this directory |
+| <a id="property-name"></a> `name` | `string` | Directory name |
+| <a id="property-subdirectories"></a> `subdirectories` | `IImportedDirectory`[] | Subdirectories |

@@ -30,7 +30,7 @@ Constructs a new ContextTokens instance.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [qualifier collector](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) used to validate qualifier names and values. |
+| <a id="property-qualifiers"></a> `qualifiers` | `public readonly` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [qualifier collector](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) used to validate qualifier names and values. |
 
 ## Methods
 
@@ -80,7 +80,7 @@ Fails if no qualifiers match, or if more than one qualifier matches.
 > **parseContextQualifierToken**(`token`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IValidatedContextQualifierValueDecl`](../interfaces/IValidatedContextQualifierValueDecl.md)\>
 
 Parses a [context qualifier token](../../../type-aliases/ContextQualifierToken.md) string and validates the parts
-against the qualifiers present in the [qualifier collector](#qualifiers).
+against the qualifiers present in the [qualifier collector](#property-qualifiers).
 
 #### Parameters
 
@@ -102,7 +102,7 @@ if successful, `Failure` with an error message if not.
 > **parseContextToken**(`token`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IValidatedContextQualifierValueDecl`](../interfaces/IValidatedContextQualifierValueDecl.md)[]\>
 
 Parses a [context token](../../../type-aliases/ContextToken.md) string and validates the parts
-against the qualifiers present in the [qualifier collector](#qualifiers).
+against the qualifiers present in the [qualifier collector](#property-qualifiers).
 
 #### Parameters
 

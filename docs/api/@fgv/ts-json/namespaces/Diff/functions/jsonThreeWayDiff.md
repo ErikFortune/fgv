@@ -51,6 +51,8 @@ A Result containing the three-way diff with separate objects and metadata
 
 ## Examples
 
+**Basic usage for applying changes**
+
 ```typescript
 const original = { name: "John", age: 30, city: "NYC", active: true };
 const updated = { name: "Jane", age: 30, country: "USA", active: true };
@@ -68,6 +70,8 @@ if (result.success) {
   console.log(reverted); // { age: 30, active: true, name: "John", city: "NYC" }
 }
 ```
+
+**UI-friendly diff display**
 
 ```typescript
 const result = jsonThreeWayDiff(userBefore, userAfter);
@@ -88,6 +92,8 @@ if (result.success) {
 }
 ```
 
+**Nested objects and array handling**
+
 ```typescript
 const config1 = {
   database: { host: "localhost", port: 5432 },
@@ -107,6 +113,8 @@ if (result.success) {
   // result.value.onlyInB = { database: { host: "production.db" }, features: ["auth", "logging", "metrics"], version: "1.1" }
 }
 ```
+
+**Conditional updates based on changes**
 
 ```typescript
 const result = jsonThreeWayDiff(currentState, newState);

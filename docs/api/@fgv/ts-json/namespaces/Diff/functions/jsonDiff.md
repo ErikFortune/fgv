@@ -6,7 +6,7 @@
 
 # Function: jsonDiff()
 
-> **jsonDiff**(`obj1`, `obj2`, `options`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IDiffResult`](../interfaces/IDiffResult.md)\>
+> **jsonDiff**(`obj1`, `obj2`, `options?`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IDiffResult`](../interfaces/IDiffResult.md)\>
 
 Performs a deep diff comparison between two JSON values.
 
@@ -34,7 +34,7 @@ exactly what has changed between two data states.
 | ------ | ------ | ------ |
 | `obj1` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | The first JSON value to compare (often the "before" state) |
 | `obj2` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | The second JSON value to compare (often the "after" state) |
-| `options` | [`IJsonDiffOptions`](../interfaces/IJsonDiffOptions.md) | Optional configuration for customizing diff behavior |
+| `options?` | [`IJsonDiffOptions`](../interfaces/IJsonDiffOptions.md) | Optional configuration for customizing diff behavior |
 
 ## Returns
 
@@ -43,6 +43,8 @@ exactly what has changed between two data states.
 A Result containing the diff result with all detected changes
 
 ## Examples
+
+**Basic usage with objects**
 
 ```typescript
 const before = { name: "John", age: 30, city: "NYC" };
@@ -59,6 +61,8 @@ if (result.success) {
   });
 }
 ```
+
+**With arrays and nested structures**
 
 ```typescript
 const user1 = {
@@ -80,6 +84,8 @@ if (result.success) {
   // ]
 }
 ```
+
+**Using options for custom behavior**
 
 ```typescript
 const options: IJsonDiffOptions = {

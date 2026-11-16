@@ -22,7 +22,7 @@ ZIP archive loader extending ts-extras foundation
 
 ### loadFromBuffer()
 
-> **loadFromBuffer**(`buffer`, `options`, `onProgress?`): `Promise`\<[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IZipArchiveLoadResult`](../interfaces/IZipArchiveLoadResult.md)\>\>
+> **loadFromBuffer**(`buffer`, `options?`, `onProgress?`): `Promise`\<[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IZipArchiveLoadResult`](../interfaces/IZipArchiveLoadResult.md)\>\>
 
 Load ZIP archive from ArrayBuffer (Universal)
 
@@ -31,7 +31,7 @@ Load ZIP archive from ArrayBuffer (Universal)
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `buffer` | `ArrayBuffer` | ZIP data buffer |
-| `options` | [`IZipArchiveLoadOptions`](../interfaces/IZipArchiveLoadOptions.md) | Loading options |
+| `options?` | [`IZipArchiveLoadOptions`](../interfaces/IZipArchiveLoadOptions.md) | Loading options |
 | `onProgress?` | [`ZipArchiveProgressCallback`](../type-aliases/ZipArchiveProgressCallback.md) | Optional progress callback |
 
 #### Returns
@@ -44,7 +44,7 @@ Result containing loaded archive data
 
 ### loadFromFile()
 
-> **loadFromFile**(`file`, `options`, `onProgress?`): `Promise`\<[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IZipArchiveLoadResult`](../interfaces/IZipArchiveLoadResult.md)\>\>
+> **loadFromFile**(`file`, `options?`, `onProgress?`): `Promise`\<[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IZipArchiveLoadResult`](../interfaces/IZipArchiveLoadResult.md)\>\>
 
 Load ZIP archive from File object (Browser)
 
@@ -53,7 +53,7 @@ Load ZIP archive from File object (Browser)
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `file` | `File` | File object from file input |
-| `options` | [`IZipArchiveLoadOptions`](../interfaces/IZipArchiveLoadOptions.md) | Loading options |
+| `options?` | [`IZipArchiveLoadOptions`](../interfaces/IZipArchiveLoadOptions.md) | Loading options |
 | `onProgress?` | [`ZipArchiveProgressCallback`](../type-aliases/ZipArchiveProgressCallback.md) | Optional progress callback |
 
 #### Returns

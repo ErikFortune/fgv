@@ -8,15 +8,27 @@
 
 Class representing a file in a file tree.
 
+## Remarks
+
+Implements the optional binary capability
+([FileTree.IMutableBinaryFileTreeFileItem](../interfaces/IMutableBinaryFileTreeFileItem.md)) and the optional strict-text
+capability ([FileTree.IStrictTextFileTreeFileItem](../interfaces/IStrictTextFileTreeFileItem.md)) by delegating to the
+underlying accessors. As with
+[setRawContents](#setrawcontents) and
+[getIsMutable](#getismutable), the byte methods and
+[getTextStrict](#gettextstrict) report an accessor that
+lacks the capability as a `Failure` rather than by omitting the method.
+
 ## Type Parameters
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |
 
 ## Implements
 
-- [`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md)\<`TCT`\>
+- [`IMutableBinaryFileTreeFileItem`](../interfaces/IMutableBinaryFileTreeFileItem.md)\<`TCT`\>
+- [`IStrictTextFileTreeFileItem`](../interfaces/IStrictTextFileTreeFileItem.md)\<`TCT`\>
 
 ## Constructors
 
@@ -41,10 +53,10 @@ Protected constructor for derived classes.
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="_contenttype"></a> `_contentType` | `public` | `TCT` \| `undefined` | `undefined` | Mutable content type of the file. |
-| <a id="_hal"></a> `_hal` | `readonly` | [`IFileTreeAccessors`](../interfaces/IFileTreeAccessors.md)\<`TCT`\> | `undefined` | The [accessors](../interfaces/IFileTreeAccessors.md) to use for file system operations. |
-| <a id="absolutepath"></a> `absolutePath` | `readonly` | `string` | `undefined` | The absolute path of the file. |
-| <a id="type"></a> `type` | `readonly` | `"file"` | `'file'` | Indicates that this [file tree item](../type-aliases/FileTreeItem.md) is a file. |
+| <a id="property-_contenttype"></a> `_contentType` | `public` | `TCT` \| `undefined` | `undefined` | Mutable content type of the file. |
+| <a id="property-_hal"></a> `_hal` | `public readonly` | [`IFileTreeAccessors`](../interfaces/IFileTreeAccessors.md)\<`TCT`\> | `undefined` | The [accessors](../interfaces/IFileTreeAccessors.md) to use for file system operations. |
+| <a id="property-absolutepath"></a> `absolutePath` | `public readonly` | `string` | `undefined` | The absolute path of the file. |
+| <a id="property-type"></a> `type` | `public readonly` | `"file"` | `'file'` | Indicates that this [file tree item](../type-aliases/FileTreeItem.md) is a file. |
 
 ## Accessors
 
@@ -64,7 +76,7 @@ The base name of the file (without extension)
 
 #### Implementation of
 
-[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`baseName`](../interfaces/IMutableFileTreeFileItem.md#basename)
+[`IStrictTextFileTreeFileItem`](../interfaces/IStrictTextFileTreeFileItem.md).[`baseName`](../interfaces/IStrictTextFileTreeFileItem.md#property-basename)
 
 ***
 
@@ -84,7 +96,7 @@ An optional content type (e.g. mime type) for the file.
 
 #### Implementation of
 
-[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`contentType`](../interfaces/IMutableFileTreeFileItem.md#contenttype)
+[`IStrictTextFileTreeFileItem`](../interfaces/IStrictTextFileTreeFileItem.md).[`contentType`](../interfaces/IStrictTextFileTreeFileItem.md#property-contenttype)
 
 ***
 
@@ -104,7 +116,7 @@ The extension of the file
 
 #### Implementation of
 
-[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`extension`](../interfaces/IMutableFileTreeFileItem.md#extension)
+[`IStrictTextFileTreeFileItem`](../interfaces/IStrictTextFileTreeFileItem.md).[`extension`](../interfaces/IStrictTextFileTreeFileItem.md#property-extension)
 
 ***
 
@@ -124,7 +136,7 @@ The name of the file
 
 #### Implementation of
 
-[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`name`](../interfaces/IMutableFileTreeFileItem.md#name)
+[`IStrictTextFileTreeFileItem`](../interfaces/IStrictTextFileTreeFileItem.md).[`name`](../interfaces/IStrictTextFileTreeFileItem.md#property-name)
 
 ## Methods
 
@@ -142,7 +154,7 @@ Deletes this file from its backing store.
 
 #### Implementation of
 
-[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`delete`](../interfaces/IMutableFileTreeFileItem.md#delete)
+[`IMutableBinaryFileTreeFileItem`](../interfaces/IMutableBinaryFileTreeFileItem.md).[`delete`](../interfaces/IMutableBinaryFileTreeFileItem.md#delete)
 
 ***
 
@@ -163,7 +175,7 @@ Gets the contents of the file as parsed JSON.
 
 ##### Implementation of
 
-[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`getContents`](../interfaces/IMutableFileTreeFileItem.md#getcontents)
+[`IStrictTextFileTreeFileItem`](../interfaces/IStrictTextFileTreeFileItem.md).[`getContents`](../interfaces/IStrictTextFileTreeFileItem.md#getcontents)
 
 #### Call Signature
 
@@ -175,7 +187,7 @@ Gets the contents of the file as parsed JSON, converted to a specific type.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ##### Parameters
 
@@ -192,7 +204,7 @@ Gets the contents of the file as parsed JSON, converted to a specific type.
 
 ##### Implementation of
 
-[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`getContents`](../interfaces/IMutableFileTreeFileItem.md#getcontents)
+[`IStrictTextFileTreeFileItem`](../interfaces/IStrictTextFileTreeFileItem.md).[`getContents`](../interfaces/IStrictTextFileTreeFileItem.md#getcontents)
 
 ***
 
@@ -211,7 +223,31 @@ or `DetailedFailure` with [FileTree.SaveFailureReason](../type-aliases/SaveFailu
 
 #### Implementation of
 
-[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`getIsMutable`](../interfaces/IMutableFileTreeFileItem.md#getismutable)
+[`IMutableBinaryFileTreeFileItem`](../interfaces/IMutableBinaryFileTreeFileItem.md).[`getIsMutable`](../interfaces/IMutableBinaryFileTreeFileItem.md#getismutable)
+
+***
+
+### getRawBytes()
+
+> **getRawBytes**(): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+Gets the raw contents of the file as bytes, with no text decoding applied.
+
+#### Returns
+
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+`Success` with the raw bytes if successful, or `Failure` with an
+error message otherwise.
+
+#### Remarks
+
+The returned array must be treated as read-only — implementations are free to
+return their internal buffer rather than a copy.
+
+#### Implementation of
+
+[`IMutableBinaryFileTreeFileItem`](../interfaces/IMutableBinaryFileTreeFileItem.md).[`getRawBytes`](../interfaces/IMutableBinaryFileTreeFileItem.md#getrawbytes)
 
 ***
 
@@ -228,9 +264,40 @@ Gets the raw contents of the file as a string.
 `Success` with the raw contents if successful, or
 `Failure` with an error message otherwise.
 
+#### Remarks
+
+The bytes are decoded as UTF-8 with the *lenient* WHATWG default, so malformed
+input is silently replaced with U+FFFD rather than reported. Accessors whose
+backing store is byte-native also implement
+[IBinaryFileTreeFileItem](../interfaces/IBinaryFileTreeFileItem.md); narrow with
+[isBinaryFileItem](../functions/isBinaryFileItem.md) and call
+[getRawBytes](../interfaces/IBinaryFileTreeFileItem.md#getrawbytes) to read the
+undecoded bytes — for a strict decode that fails loudly on malformed UTF-8:
+
+```ts
+new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+```
+
 #### Implementation of
 
-[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`getRawContents`](../interfaces/IMutableFileTreeFileItem.md#getrawcontents)
+[`IStrictTextFileTreeFileItem`](../interfaces/IStrictTextFileTreeFileItem.md).[`getRawContents`](../interfaces/IStrictTextFileTreeFileItem.md#getrawcontents)
+
+***
+
+### getTextStrict()
+
+> **getTextStrict**(): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
+
+Gets the file's contents with a strict UTF-8 decode, failing on malformed
+input rather than substituting U+FFFD.
+
+#### Returns
+
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
+
+#### Implementation of
+
+[`IStrictTextFileTreeFileItem`](../interfaces/IStrictTextFileTreeFileItem.md).[`getTextStrict`](../interfaces/IStrictTextFileTreeFileItem.md#gettextstrict)
 
 ***
 
@@ -254,7 +321,7 @@ Sets the contents of the file from a JSON value.
 
 #### Implementation of
 
-[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`setContents`](../interfaces/IMutableFileTreeFileItem.md#setcontents)
+[`IMutableBinaryFileTreeFileItem`](../interfaces/IMutableBinaryFileTreeFileItem.md).[`setContents`](../interfaces/IMutableBinaryFileTreeFileItem.md#setcontents)
 
 ***
 
@@ -273,6 +340,30 @@ Sets the content type of the file.
 #### Returns
 
 `void`
+
+***
+
+### setRawBytes()
+
+> **setRawBytes**(`bytes`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+Sets the raw contents of the file from bytes, with no text encoding applied.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `bytes` | `Uint8Array` | The bytes to save. |
+
+#### Returns
+
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+`Success` with the bytes that were saved, or `Failure` with an error message.
+
+#### Implementation of
+
+[`IMutableBinaryFileTreeFileItem`](../interfaces/IMutableBinaryFileTreeFileItem.md).[`setRawBytes`](../interfaces/IMutableBinaryFileTreeFileItem.md#setrawbytes)
 
 ***
 
@@ -296,7 +387,7 @@ Sets the raw contents of the file.
 
 #### Implementation of
 
-[`IMutableFileTreeFileItem`](../interfaces/IMutableFileTreeFileItem.md).[`setRawContents`](../interfaces/IMutableFileTreeFileItem.md#setrawcontents)
+[`IMutableBinaryFileTreeFileItem`](../interfaces/IMutableBinaryFileTreeFileItem.md).[`setRawContents`](../interfaces/IMutableBinaryFileTreeFileItem.md#setrawcontents)
 
 ***
 
@@ -310,7 +401,7 @@ Creates a new FileTree.FileItem instance.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-1"></a> `TCT` *extends* `string` | `string` |
 
 #### Parameters
 
@@ -335,7 +426,7 @@ Default function to accept the content type of a file.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-2"></a> `TCT` *extends* `string` | `string` |
 
 #### Parameters
 
@@ -367,7 +458,7 @@ Default function to infer the content type of a file.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct-3"></a> `TCT` *extends* `string` | `string` |
 
 #### Parameters
 

@@ -12,6 +12,6 @@ Interface for parameters to create a [CompiledResourceCollection](../classes/Com
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="compiledcollection"></a> `compiledCollection` | [`ICompiledResourceCollection`](../../ResourceJson/namespaces/Compiled/interfaces/ICompiledResourceCollection.md) | The compiled resource collection data. |
-| <a id="qualifiertypes"></a> `qualifierTypes` | [`IReadOnlyResultMap`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`, [`QualifierType`](../../../classes/QualifierType.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>\> | Map of qualifier type names to qualifier type objects. |
-| <a id="resourcetypes"></a> `resourceTypes` | [`IReadOnlyResultMap`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`, [`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\>\> | Map of resource type names to resource type objects. |
+| <a id="property-compiledcollection"></a> `compiledCollection` | [`ICompiledResourceCollection`](../../ResourceJson/namespaces/Compiled/interfaces/ICompiledResourceCollection.md) | The compiled resource collection data. |
+| <a id="property-qualifiertypes"></a> `qualifierTypes` | [`IReadOnlyResultMap`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`, [`QualifierType`](../../../classes/QualifierType.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>\> | Map of qualifier type names to qualifier type objects. |
+| <a id="property-resourcetypes"></a> `resourceTypes` | [`IReadOnlyResultMap`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`string`, [`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\>\> | Map of resource type names to resource type objects. |

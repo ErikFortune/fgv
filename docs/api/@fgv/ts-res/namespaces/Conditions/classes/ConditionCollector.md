@@ -40,9 +40,9 @@ Constructor for a ConditionCollector object.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_converters"></a> `_converters` | `readonly` | [`KeyValueConverters`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ConditionKey`](../../../type-aliases/ConditionKey.md), [`Condition`](../../../classes/Condition.md)\> | - |
-| <a id="qualifiers"></a> `qualifiers` | `public` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [ReadOnlyQualifierCollector](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) used to create conditions in this collector. |
-| <a id="validating"></a> `validating` | `readonly` | [`CollectorValidator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`Condition`](../../../classes/Condition.md)\> | A [CollectorValidator](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) which validates keys and values before inserting them into this collector. |
+| <a id="property-_converters"></a> `_converters` | `protected readonly` | [`KeyValueConverters`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ConditionKey`](../../../type-aliases/ConditionKey.md), [`Condition`](../../../classes/Condition.md)\> | - |
+| <a id="property-qualifiers"></a> `qualifiers` | `public` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [ReadOnlyQualifierCollector](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) used to create conditions in this collector. |
+| <a id="property-validating"></a> `validating` | `readonly` | [`CollectorValidator`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`Condition`](../../../classes/Condition.md)\> | A [CollectorValidator](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) which validates keys and values before inserting them into this collector. |
 
 ## Accessors
 
@@ -403,7 +403,7 @@ Creates a new [Collector](https://github.com/ErikFortune/fgv/tree/main/libraries
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
 
 #### Parameters
 
@@ -435,7 +435,7 @@ the supplied [parameters](https://github.com/ErikFortune/fgv/tree/main/libraries
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
+| <a id="type-parameter-titem-1"></a> `TITEM` *extends* [`ICollectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`any`, `any`\> |
 
 #### Parameters
 

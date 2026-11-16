@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "`captureResult` and the async capture paths never throw while reporting a failure, even when the thrown value's message cannot be read.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

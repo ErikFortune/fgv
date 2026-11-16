@@ -14,8 +14,8 @@ Type-safe(ish) record constructor from an iterable of `[key, value]` tuples.
 
 | Type Parameter |
 | ------ |
-| `TK` *extends* `string` |
-| `TV` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` |
+| <a id="type-parameter-tv"></a> `TV` |
 
 ## Parameters
 

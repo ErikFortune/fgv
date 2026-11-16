@@ -13,4 +13,4 @@ Call `unregister()` to remove the shortcut.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="unregister"></a> `unregister` | `readonly` | () => `void` |
+| <a id="property-unregister"></a> `unregister` | `readonly` | () => `void` |

@@ -16,6 +16,6 @@ Discriminated configuration for [literal qualifier type](../../../classes/Litera
 
 | Property | Type |
 | ------ | ------ |
-| <a id="configuration"></a> `configuration?` | [`ILiteralQualifierTypeConfig`](ILiteralQualifierTypeConfig.md) |
-| <a id="name"></a> `name` | `string` |
-| <a id="systemtype"></a> `systemType` | `"literal"` |
+| <a id="property-configuration"></a> `configuration?` | [`ILiteralQualifierTypeConfig`](ILiteralQualifierTypeConfig.md) |
+| <a id="property-name"></a> `name` | `string` |
+| <a id="property-systemtype"></a> `systemType` | `"literal"` |

@@ -12,7 +12,7 @@ Parameters used to create a [Resource](../../../classes/Resource.md) object.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="candidates"></a> `candidates` | readonly [`ResourceCandidate`](../../../classes/ResourceCandidate.md)[] | Array of [candidates](../../../classes/ResourceCandidate.md) for the resource. |
-| <a id="decisions"></a> `decisions` | [`AbstractDecisionCollector`](../../Decisions/classes/AbstractDecisionCollector.md) | [AbstractDecisionCollector](../../Decisions/classes/AbstractDecisionCollector.md) used to create the optimized decision. |
-| <a id="id"></a> `id?` | `string` | The id of the resource. |
-| <a id="resourcetype"></a> `resourceType?` | [`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\> | Optional [type](../../../classes/ResourceType.md) of the resource. If not specified, the type will be inferred from the candidates. |
+| <a id="property-candidates"></a> `candidates` | readonly [`ResourceCandidate`](../../../classes/ResourceCandidate.md)[] | Array of [candidates](../../../classes/ResourceCandidate.md) for the resource. |
+| <a id="property-decisions"></a> `decisions` | [`AbstractDecisionCollector`](../../Decisions/classes/AbstractDecisionCollector.md) | [AbstractDecisionCollector](../../Decisions/classes/AbstractDecisionCollector.md) used to create the optimized decision. |
+| <a id="property-id"></a> `id?` | `string` | The id of the resource. |
+| <a id="property-resourcetype"></a> `resourceType?` | [`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\> | Optional [type](../../../classes/ResourceType.md) of the resource. If not specified, the type will be inferred from the candidates. |

@@ -49,7 +49,7 @@ Description
 </td></tr>
 <tr><td>
 
-[getFile(path)](./IHttpStorageProvider.getFile.md)
+[getFile(path, encoding)](./IHttpStorageProvider.getFile.md)
 
 </td><td>
 
@@ -57,7 +57,7 @@ Description
 
 </td><td>
 
-
+Reads a file.
 
 </td></tr>
 <tr><td>

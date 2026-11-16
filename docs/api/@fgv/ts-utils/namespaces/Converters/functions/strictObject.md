@@ -24,8 +24,8 @@ conversion behavior.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ### Parameters
 
@@ -64,15 +64,15 @@ conversion behavior.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t-1"></a> `T` | - |
+| <a id="type-parameter-tc-1"></a> `TC` | `unknown` |
 
 ### Parameters
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `properties` | [`FieldConverters`](../../Conversion/type-aliases/FieldConverters.md)\<`T`, `TC`\> | An object containing defining the shape and converters to be applied. |
-| `optional` | keyof `T`[] | An array of `keyof T` containing keys to be considered optional. |
+| `optional` | (keyof `T`)[] | An array of `keyof T` containing keys to be considered optional. |
 
 ### Returns
 

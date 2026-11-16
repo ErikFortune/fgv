@@ -218,6 +218,19 @@ Generates a random item from the given array.
 </td></tr>
 <tr><td>
 
+[pickWeighted(candidates)](./PseudoRandomGenerator.pickWeighted.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Chooses one candidate with probability proportional to its weight, drawing
+
+</td></tr>
+<tr><td>
+
 [pickSequential(params)](./PseudoRandomGenerator.pickSequential.md)
 
 </td><td>

@@ -18,7 +18,7 @@ concatenated list of all error messages.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ### Parameters
 
@@ -44,14 +44,14 @@ concatenated list of all error messages.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-1"></a> `T` |
 
 ### Parameters
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `initializers` | [`FieldInitializers`](../type-aliases/FieldInitializers.md)\<`T`\> | An object with the shape of the target but with initializer functions for each property. |
-| `order` | keyof `T`[] \| `undefined` | Optional order in which keys should be written. |
+| `order` | (keyof `T`)[] \| `undefined` | Optional order in which keys should be written. |
 | `aggregatedErrors?` | [`IMessageAggregator`](../interfaces/IMessageAggregator.md) | Optional string array to which any returned error messages will be appended. Each error is appended as an individual string. |
 
 ### Returns

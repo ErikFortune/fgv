@@ -187,6 +187,19 @@ Gets the value associated with a successful IResult | result,
 </td></tr>
 <tr><td>
 
+[orDefaultWith(cb)](./IResult.orDefaultWith.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the value associated with a successful IResult | result, or a
+
+</td></tr>
+<tr><td>
+
 [onSuccess(cb)](./IResult.onSuccess.md)
 
 </td><td>

@@ -1,0 +1,25 @@
+[**@fgv Monorepo API Documentation**](../../../../../README.md)
+
+***
+
+[@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-extras](../../../README.md) / [AiAssist](../README.md) / IThinkingConfig
+
+# Interface: IThinkingConfig
+
+Thinking/reasoning mode configuration for a completion request.
+
+## Remarks
+
+The generic `effort` field covers the common-subset cross-provider vocabulary.
+For provider-specific precision (Anthropic 'max', OpenAI 'xhigh', Gemini token
+budgets, xAI effort-level tuning), use the `providers` array.
+
+Absence (or undefined) means "no thinking mode" — existing callers are unaffected.
+
+## Properties
+
+| Property | Modifier | Type | Description |
+| ------ | ------ | ------ | ------ |
+| <a id="property-effort"></a> `effort?` | `readonly` | `"none"` \| `"high"` \| `"low"` \| `"medium"` | Cross-provider effort level. Common-subset mapping: - 'none': Anthropic — the model's thinking-off value (see remarks) \| OpenAI effort:none \| Gemini thinkingLevel:minimal or thinkingBudget:0 \| xAI reasoning_effort:none - 'low': Anthropic effort:low \| OpenAI effort:low \| Gemini thinkingLevel:low or thinkingBudget:1024 \| xAI reasoning_effort:low - 'medium': Anthropic effort:medium \| OpenAI effort:medium \| Gemini thinkingLevel:medium or thinkingBudget:4096 \| xAI reasoning_effort:medium - 'high': Anthropic effort:high \| OpenAI effort:high \| Gemini thinkingLevel:high or thinkingBudget:8192 \| xAI reasoning_effort:high Gemini takes `thinkingLevel` on the models in [AiAssist.IAiProviderDescriptor.geminiThinkingLevels](IAiProviderDescriptor.md#property-geminithinkinglevels) (where an effort the model does not list is refused) and `thinkingBudget` on every other model. **Remarks** `'none'` is the one cross-provider spelling for "thinking off". Anthropic has no off value in its own effort vocabulary, so `'none'` maps to a `thinking` value rather than an effort: on an adaptive-thinking model (see [AiAssist.isAdaptiveThinkingModel](../functions/isAdaptiveThinkingModel.md)), where thinking is on by default, it sends the model's off value — `thinking: { type: 'disabled' }`, or the per-model value in [IAiProviderDescriptor.anthropicThinkingOffTypes](IAiProviderDescriptor.md#property-anthropicthinkingofftypes) (for example `{ type: 'between_tools' }` on `claude-sonnet-5-5`); a generic `'none'` never sends an `output_config.effort` beside it (an explicit `'other'` block or caller-built `otherParams` can, and Anthropic rejects `between_tools` and `disabled` above `high`); on an older model, where thinking is off by default, it omits the `thinking` field. On a model that accepts `'none'`, whichever provider is in play, `'none'` also re-enables `temperature` (see `checkTemperatureConflict` in `thinkingOptionsResolver.ts`). On a model listed in [IAiProviderDescriptor.thinkingRequiredModelPrefixes](IAiProviderDescriptor.md#property-thinkingrequiredmodelprefixes) it does not: there `'none'` is sent as `'low'` (or refused), and on OpenAI and xAI that rejects `temperature` (but not a model's accepted default, `IAiProviderDescriptor.samplingParamsAcceptedTemperature`). The mapping is not model-aware, with one exception: `'none'`. Thinking *availability* is still not gated at the call path (see `ModelSpecKey`'s remarks), but some models cannot run with thinking off at all. For example, Gemini Pro rejects `thinkingBudget: 0`, Gemini 4 has no off level, and `gpt-6-astra` and `grok-4.7` reject `reasoning_effort: 'none'`. Each descriptor lists these in [IAiProviderDescriptor.thinkingRequiredModelPrefixes](IAiProviderDescriptor.md#property-thinkingrequiredmodelprefixes), and a `'none'` sent to one of them is handled by [IThinkingConfig.onUnsupported](#property-onunsupported). An explicit `providers` block (e.g. `{ provider: 'google', config: { thinkingBudget: 0 } }`) is still sent verbatim. |
+| <a id="property-onunsupported"></a> `onUnsupported?` | `readonly` | `"fail"` \| `"degrade"` | What to do when `effort` is `'none'` and the resolved model cannot run with thinking off (see [IAiProviderDescriptor.thinkingRequiredModelPrefixes](IAiProviderDescriptor.md#property-thinkingrequiredmodelprefixes)). - `'degrade'` (default): send `'low'`, the least thinking the model accepts. - `'fail'`: refuse the call with a `Result.fail` before anything is sent. **Remarks** Pass `'fail'` when `'none'` is a correctness requirement (for example, a latency budget or a reply that must not carry reasoning tokens), rather than a preference. Has no effect on any other effort, or on a model that accepts `'none'`. A degraded `'none'` is thinking mode, so on OpenAI and xAI it cannot be combined with `temperature`. That call fails with a message saying `'none'` was sent as `'low'`. |
+| <a id="property-providers"></a> `providers?` | `readonly` | readonly [`IThinkingProviderConfig`](../type-aliases/IThinkingProviderConfig.md)[] | Optional per-provider precision blocks. Blocks for providers that don't match the resolved model's provider are silently skipped. |

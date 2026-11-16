@@ -20,7 +20,7 @@
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="_regioncodes"></a> `_regionCodes?` | `static` | [`RegionCodes`](RegionCodes.md) | `undefined` | **`Internal`** |
+| <a id="property-_regioncodes"></a> `_regionCodes?` | `protected static` | [`RegionCodes`](RegionCodes.md) | `undefined` | **`Internal`** |
 
 ## Accessors
 

@@ -18,5 +18,5 @@ context filtering for resource candidates.
 
 | Property | Type | Default value | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="filterforcontext"></a> `filterForContext?` | [`IValidatedContextDecl`](../../Context/type-aliases/IValidatedContextDecl.md) | `undefined` | If provided, filters resource candidates to only include those that can match the specified validated context. This provides strongly-typed context filtering. Use resourceManager.validateContext() to create a validated context from an IContextDecl. |
-| <a id="includemetadata"></a> `includeMetadata?` | `boolean` | `false` | Whether to include metadata in the compiled objects. Metadata includes human-readable information like semantic keys that can be useful for debugging or tooling. |
+| <a id="property-filterforcontext"></a> `filterForContext?` | [`IValidatedContextDecl`](../../Context/type-aliases/IValidatedContextDecl.md) | `undefined` | If provided, filters resource candidates to only include those that can match the specified validated context. This provides strongly-typed context filtering. Use resourceManager.validateContext() to create a validated context from an IContextDecl. |
+| <a id="property-includemetadata"></a> `includeMetadata?` | `boolean` | `false` | Whether to include metadata in the compiled objects. Metadata includes human-readable information like semantic keys that can be useful for debugging or tooling. |

@@ -14,9 +14,9 @@ Determines if a supplied value is an iterable object or some other type.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TE` | `unknown` |
-| `TI` *extends* `Iterable`\<`TE`, `any`, `any`\> | `Iterable`\<`TE`, `any`, `any`\> |
-| `TO` | `unknown` |
+| <a id="type-parameter-te"></a> `TE` | `unknown` |
+| <a id="type-parameter-ti"></a> `TI` *extends* `Iterable`\<`TE`, `any`, `any`\> | `Iterable`\<`TE`, `any`, `any`\> |
+| <a id="type-parameter-to"></a> `TO` | `unknown` |
 
 ## Parameters
 

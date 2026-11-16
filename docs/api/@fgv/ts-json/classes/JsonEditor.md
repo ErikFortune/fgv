@@ -40,9 +40,9 @@ External consumers should instantiate via the [create static method](#create).
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_rules"></a> `_rules` | `protected` | [`IJsonEditorRule`](../interfaces/IJsonEditorRule.md)[] | **`Internal`** The set of [editor rules](../interfaces/IJsonEditorRule.md) applied by this editor. |
-| <a id="options"></a> `options` | `public` | [`IJsonEditorOptions`](../interfaces/IJsonEditorOptions.md) | Full set of [editor options](../interfaces/IJsonEditorOptions.md) in effect for this editor. |
-| <a id="_default"></a> `_default?` | `static` | `JsonEditor` | **`Internal`** Default singleton JsonEditor. |
+| <a id="property-_rules"></a> `_rules` | `protected` | [`IJsonEditorRule`](../interfaces/IJsonEditorRule.md)[] | **`Internal`** The set of [editor rules](../interfaces/IJsonEditorRule.md) applied by this editor. |
+| <a id="property-options"></a> `options` | `public` | [`IJsonEditorOptions`](../interfaces/IJsonEditorOptions.md) | Full set of [editor options](../interfaces/IJsonEditorOptions.md) in effect for this editor. |
+| <a id="property-_default"></a> `_default?` | `protected static` | `JsonEditor` | **`Internal`** Default singleton JsonEditor. |
 
 ## Accessors
 

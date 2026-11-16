@@ -15,7 +15,7 @@ number of related decisions with a single abstract decision and a list of values
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="type-parameter-tvalue"></a> `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
 
 ## Implements
 
@@ -43,9 +43,9 @@ Constructor for a ConcreteDecision object.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="basedecision"></a> `baseDecision` | `readonly` | [`AbstractDecision`](AbstractDecision.md) |
-| <a id="candidates"></a> `candidates` | `readonly` | readonly [`ICandidate`](../interfaces/ICandidate.md)\<`TVALUE`\>[] |
-| <a id="values"></a> `values` | `readonly` | `TVALUE`[] |
+| <a id="property-basedecision"></a> `baseDecision` | `public readonly` | [`AbstractDecision`](AbstractDecision.md) |
+| <a id="property-candidates"></a> `candidates` | `public readonly` | readonly [`ICandidate`](../interfaces/ICandidate.md)\<`TVALUE`\>[] |
+| <a id="property-values"></a> `values` | `public readonly` | `TVALUE`[] |
 
 ## Accessors
 
@@ -63,7 +63,7 @@ Unique global index for this decision.
 
 #### Implementation of
 
-[`IDecision`](../interfaces/IDecision.md).[`index`](../interfaces/IDecision.md#index)
+[`IDecision`](../interfaces/IDecision.md).[`index`](../interfaces/IDecision.md#property-index)
 
 ***
 
@@ -82,7 +82,7 @@ candidate values.
 
 #### Implementation of
 
-[`IDecision`](../interfaces/IDecision.md).[`key`](../interfaces/IDecision.md#key)
+[`IDecision`](../interfaces/IDecision.md).[`key`](../interfaces/IDecision.md#property-key)
 
 ## Methods
 
@@ -116,7 +116,7 @@ Creates a new ConcreteDecision object.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="type-parameter-tvalue-1"></a> `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
 
 #### Parameters
 

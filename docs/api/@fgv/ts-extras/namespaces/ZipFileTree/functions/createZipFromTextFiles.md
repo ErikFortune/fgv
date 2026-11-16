@@ -20,3 +20,8 @@ Creates a zip file from an array of text files.
 ## Returns
 
 [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+## Remarks
+
+Contents are encoded as UTF-8. Use `createZipFromFiles` to write entries whose
+contents are raw bytes.

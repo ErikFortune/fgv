@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-res](../../../README.md) / [Runtime](../README.md) / EmptyBranchHandler
 
-# Type Alias: EmptyBranchHandler()
+# Type Alias: EmptyBranchHandler
 
 > **EmptyBranchHandler** = (`branchNode`, `failedChildNames`, `resolver`) => [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) \| `undefined`\>
 

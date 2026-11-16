@@ -80,7 +80,6 @@ export const jsonObjectOrNullValidator: Validator<JsonObject | null> = Validator
  * would have nowhere to go here. A caller that needs it must use
  * `callProviderCompletion`.
  *
- * @remarks
  * Carries the unified {@link AiAssist.IChatRequest} shape (`system?` + ordered
  * `messages`): the last message is the current user turn and the preceding
  * messages are history, linearized before the current turn (identical to the

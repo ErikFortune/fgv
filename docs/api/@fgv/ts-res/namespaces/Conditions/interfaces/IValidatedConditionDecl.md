@@ -12,9 +12,9 @@ Validated declaration of a [condition](../../../classes/Condition.md) with all d
 
 | Property | Type |
 | ------ | ------ |
-| <a id="index"></a> `index?` | [`ConditionIndex`](../../../type-aliases/ConditionIndex.md) |
-| <a id="operator"></a> `operator` | [`ConditionOperator`](../../../type-aliases/ConditionOperator.md) |
-| <a id="priority"></a> `priority` | [`ConditionPriority`](../../../type-aliases/ConditionPriority.md) |
-| <a id="qualifier"></a> `qualifier` | [`Qualifier`](../../../classes/Qualifier.md) |
-| <a id="scoreasdefault"></a> `scoreAsDefault?` | [`QualifierMatchScore`](../../../type-aliases/QualifierMatchScore.md) |
-| <a id="value"></a> `value` | [`QualifierConditionValue`](../../../type-aliases/QualifierConditionValue.md) |
+| <a id="property-index"></a> `index?` | [`ConditionIndex`](../../../type-aliases/ConditionIndex.md) |
+| <a id="property-operator"></a> `operator` | [`ConditionOperator`](../../../type-aliases/ConditionOperator.md) |
+| <a id="property-priority"></a> `priority` | [`ConditionPriority`](../../../type-aliases/ConditionPriority.md) |
+| <a id="property-qualifier"></a> `qualifier` | [`Qualifier`](../../../classes/Qualifier.md) |
+| <a id="property-scoreasdefault"></a> `scoreAsDefault?` | [`QualifierMatchScore`](../../../type-aliases/QualifierMatchScore.md) |
+| <a id="property-value"></a> `value` | [`QualifierConditionValue`](../../../type-aliases/QualifierConditionValue.md) |

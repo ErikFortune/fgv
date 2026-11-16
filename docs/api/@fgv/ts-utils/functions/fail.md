@@ -14,7 +14,7 @@ Returns [Failure\<T\>](../classes/Failure.md) with the supplied error message.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Parameters
 

@@ -14,7 +14,7 @@ Decrypts an [encrypted file](../interfaces/IEncryptedFile.md) and returns the JS
 
 | Type Parameter | Default type | Description |
 | ------ | ------ | ------ |
-| `TPayload` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | Expected type of decrypted content |
+| <a id="type-parameter-tpayload"></a> `TPayload` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | Expected type of decrypted content |
 
 ## Parameters
 

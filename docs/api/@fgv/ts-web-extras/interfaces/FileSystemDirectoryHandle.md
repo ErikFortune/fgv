@@ -16,8 +16,8 @@ Directory handle interface
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="kind"></a> `kind` | `readonly` | `"directory"` |
-| <a id="name"></a> `name` | `readonly` | `string` |
+| <a id="property-kind"></a> `kind` | `readonly` | `"directory"` |
+| <a id="property-name"></a> `name` | `readonly` | `string` |
 
 ## Methods
 

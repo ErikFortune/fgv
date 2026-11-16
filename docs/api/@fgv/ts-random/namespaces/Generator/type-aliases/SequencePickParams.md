@@ -14,4 +14,4 @@ Type representing parameters for generating a sequence of values.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |

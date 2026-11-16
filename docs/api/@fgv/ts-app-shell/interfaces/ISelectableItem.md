@@ -12,12 +12,12 @@ A single selectable item in the PreferredSelector.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TId` *extends* `string` | `string` |
+| <a id="type-parameter-tid"></a> `TId` *extends* `string` | `string` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="id"></a> `id` | `readonly` | `TId` | Unique identifier |
-| <a id="label"></a> `label` | `readonly` | `string` | Primary display label |
-| <a id="sublabel"></a> `sublabel?` | `readonly` | `string` | Optional secondary label |
+| <a id="property-id"></a> `id` | `readonly` | `TId` | Unique identifier |
+| <a id="property-label"></a> `label` | `readonly` | `string` | Primary display label |
+| <a id="property-sublabel"></a> `sublabel?` | `readonly` | `string` | Optional secondary label |

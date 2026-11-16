@@ -8,5 +8,5 @@ either a string or an object representation.
 ## Signature
 
 ```typescript
-function compositeId(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>
+function compositeId(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>, options: ICompositeIdOptions): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>
 ```

@@ -34,12 +34,12 @@ Constructs a new Condition object.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_collectible"></a> `_collectible` | `protected` | [`Collectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ConditionKey`](../type-aliases/ConditionKey.md), [`ConditionIndex`](../type-aliases/ConditionIndex.md)\> | - |
-| <a id="operator"></a> `operator` | `readonly` | [`ConditionOperator`](../type-aliases/ConditionOperator.md) | The [operator](../type-aliases/ConditionOperator.md) used when matching context value to condition value. |
-| <a id="priority"></a> `priority` | `readonly` | [`ConditionPriority`](../type-aliases/ConditionPriority.md) | The [relative priority](../type-aliases/ConditionPriority.md) of this condition. |
-| <a id="qualifier"></a> `qualifier` | `readonly` | [`Qualifier`](Qualifier.md) | The [qualifier](Qualifier.md) used in this condition. |
-| <a id="scoreasdefault"></a> `scoreAsDefault?` | `readonly` | [`QualifierMatchScore`](../type-aliases/QualifierMatchScore.md) | The [score](../type-aliases/QualifierMatchScore.md) to be used when this condition is the default. |
-| <a id="value"></a> `value` | `readonly` | [`QualifierConditionValue`](../type-aliases/QualifierConditionValue.md) | The value to be matched in this condition. |
+| <a id="property-_collectible"></a> `_collectible` | `protected` | [`Collectible`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<[`ConditionKey`](../type-aliases/ConditionKey.md), [`ConditionIndex`](../type-aliases/ConditionIndex.md)\> | - |
+| <a id="property-operator"></a> `operator` | `public readonly` | [`ConditionOperator`](../type-aliases/ConditionOperator.md) | The [operator](../type-aliases/ConditionOperator.md) used when matching context value to condition value. |
+| <a id="property-priority"></a> `priority` | `public readonly` | [`ConditionPriority`](../type-aliases/ConditionPriority.md) | The [relative priority](../type-aliases/ConditionPriority.md) of this condition. |
+| <a id="property-qualifier"></a> `qualifier` | `public readonly` | [`Qualifier`](Qualifier.md) | The [qualifier](Qualifier.md) used in this condition. |
+| <a id="property-scoreasdefault"></a> `scoreAsDefault?` | `public readonly` | [`QualifierMatchScore`](../type-aliases/QualifierMatchScore.md) | The [score](../type-aliases/QualifierMatchScore.md) to be used when this condition is the default. |
+| <a id="property-value"></a> `value` | `public readonly` | [`QualifierConditionValue`](../type-aliases/QualifierConditionValue.md) | The value to be matched in this condition. |
 
 ## Accessors
 
@@ -55,7 +55,7 @@ Constructs a new Condition object.
 
 #### Implementation of
 
-[`IValidatedConditionDecl`](../namespaces/Conditions/interfaces/IValidatedConditionDecl.md).[`index`](../namespaces/Conditions/interfaces/IValidatedConditionDecl.md#index)
+[`IValidatedConditionDecl`](../namespaces/Conditions/interfaces/IValidatedConditionDecl.md).[`index`](../namespaces/Conditions/interfaces/IValidatedConditionDecl.md#property-index)
 
 ***
 
@@ -121,7 +121,7 @@ in the context to be matched, `undefined` otherwise.
 
 #### Remarks
 
-If [\`options.partialContextMatch\`](../namespaces/Context/interfaces/IContextMatchOptions.md#partialcontextmatch) is `true`, then
+If [\`options.partialContextMatch\`](../namespaces/Context/interfaces/IContextMatchOptions.md#property-partialcontextmatch) is `true`, then
 the method will return `undefined` if the corresponding qualifier is not present in the context.
 
 ***

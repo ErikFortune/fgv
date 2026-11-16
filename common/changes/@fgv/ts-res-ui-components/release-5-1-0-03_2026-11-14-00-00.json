@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-ui-components",
+      "comment": "Packaging: the MIT `LICENSE` file, source maps and `CAPABILITIES.md` now ship in the package.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-res-ui-components",
+  "email": "noreply@anthropic.com"
+}

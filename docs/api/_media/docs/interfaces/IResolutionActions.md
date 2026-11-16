@@ -290,7 +290,7 @@ Update the JSON content for the new resource being created
 
 </td><td>
 
-() =&gt; [Result](../type-aliases/Result.md)&lt;{ pendingResources: Map&lt;string, ILooseResourceDecl&gt;; diagnostics: string[] }&gt;
+() =&gt; [Result](../type-aliases/Result.md)&lt;{ pendingResources: Map&lt;string, ILooseResourceDecl&lt;string&gt;&gt;; diagnostics: string[] }&gt;
 
 </td><td>
 

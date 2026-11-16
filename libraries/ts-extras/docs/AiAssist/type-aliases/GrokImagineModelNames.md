@@ -7,5 +7,5 @@ Model names in the xAI Grok Imagine family.
 ## Type
 
 ```typescript
-type GrokImagineModelNames = "grok-imagine-image" | "grok-imagine-image-quality"
+type GrokImagineModelNames = "grok-imagine-image" | "grok-imagine-image-quality" | "grok-imagine-image-2.0"
 ```

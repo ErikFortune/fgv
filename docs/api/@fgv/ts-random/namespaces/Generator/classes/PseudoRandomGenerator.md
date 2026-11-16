@@ -13,7 +13,7 @@ of various shapes.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="rng"></a> `rng` | `readonly` | [`SeededRandomSource`](SeededRandomSource.md) | The underlying random number generator. |
+| <a id="property-rng"></a> `rng` | `public readonly` | [`SeededRandomSource`](SeededRandomSource.md) | The underlying random number generator. |
 
 ## Methods
 
@@ -53,7 +53,7 @@ A new generator with the given label.
 
 ### nextBoolean()
 
-> **nextBoolean**(`trueProbability`): `boolean`
+> **nextBoolean**(`trueProbability?`): `boolean`
 
 Generates a random boolean value.
 
@@ -61,7 +61,7 @@ Generates a random boolean value.
 
 | Parameter | Type | Default value | Description |
 | ------ | ------ | ------ | ------ |
-| `trueProbability` | `number` | `0.5` | The probability of returning true (default is 0.5). |
+| `trueProbability?` | `number` | `0.5` | The probability of returning true (default is 0.5). |
 
 #### Returns
 
@@ -132,7 +132,7 @@ A random integer between 0 and the specified extent.
 
 ### nextString()
 
-> **nextString**(`length`, `chars`): `string`
+> **nextString**(`length`, `chars?`): `string`
 
 Generates a random string of the specified length using the given characters.
 
@@ -141,7 +141,7 @@ Generates a random string of the specified length using the given characters.
 | Parameter | Type | Default value | Description |
 | ------ | ------ | ------ | ------ |
 | `length` | `number` | `undefined` | The length of the string to generate. |
-| `chars` | `string` | `'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'` | The characters to use for the string (default is alphanumeric). |
+| `chars?` | `string` | `'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'` | The characters to use for the string (default is alphanumeric). |
 
 #### Returns
 
@@ -161,7 +161,7 @@ Generates a random item from the given array.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 #### Parameters
 
@@ -188,7 +188,7 @@ dictionaries in random order.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-1"></a> `T` |
 
 #### Parameters
 
@@ -214,7 +214,7 @@ Generates a sequence of values by randomly selecting from the given candidates.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-2"></a> `T` |
 
 #### Parameters
 
@@ -241,7 +241,7 @@ dictionaries in order.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t-3"></a> `T` |
 
 #### Parameters
 
@@ -257,9 +257,49 @@ A sequence of values.
 
 ***
 
+### pickWeighted()
+
+> **pickWeighted**\<`T`\>(`candidates`): `T` \| `undefined`
+
+Chooses one candidate with probability proportional to its weight, drawing
+the selecting unit float from this generator.
+
+#### Type Parameters
+
+| Type Parameter |
+| ------ |
+| <a id="type-parameter-t-4"></a> `T` |
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `candidates` | readonly [`IWeightedCandidate`](../interfaces/IWeightedCandidate.md)\<`T`\>[] | The weighted candidates, in the order to walk them. |
+
+#### Returns
+
+`T` \| `undefined`
+
+The chosen item, or `undefined` if no candidate is eligible.
+
+#### Remarks
+
+Delegates to [pickWeightedAt](../functions/pickWeightedAt.md) with
+`this.nextFloat()`, so every edge rule is the same:
+- only candidates whose weight is finite and greater than `0` are eligible;
+  zero, negative, `NaN` and `±Infinity` weights are never chosen;
+- with no eligible candidate (including an empty list) it returns `undefined`;
+- eligible candidates are walked in input order with `point < cumulative`, and
+  the last eligible candidate wins by elimination;
+- weights whose sum overflows are rescaled by the largest eligible weight.
+
+It always consumes exactly one draw, even when it returns `undefined`.
+
+***
+
 ### create()
 
-> `static` **create**(`params`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`PseudoRandomGenerator`\>
+> `static` **create**(`params?`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`PseudoRandomGenerator`\>
 
 Creates a new pseudo-random number generator.
 
@@ -267,7 +307,7 @@ Creates a new pseudo-random number generator.
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `params` | [`IPseudoRandomGeneratorCreateParams`](../interfaces/IPseudoRandomGeneratorCreateParams.md) | The parameters for creating the generator. |
+| `params?` | [`IPseudoRandomGeneratorCreateParams`](../interfaces/IPseudoRandomGeneratorCreateParams.md) | The parameters for creating the generator. |
 
 #### Returns
 

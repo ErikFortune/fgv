@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-re2",
+      "comment": "Initial release: `re2PatternValidator`, an RE2 (re2js) validator for JSON Schema `pattern` from sources you do not control, such as an MCP server's tool schema — linear-time matching, ECMA-262 meaning or refusal.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-re2",
+  "email": "noreply@anthropic.com"
+}

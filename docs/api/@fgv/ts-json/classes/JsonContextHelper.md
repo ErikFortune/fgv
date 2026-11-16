@@ -30,7 +30,7 @@ Constructs a new JsonContextHelper.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_context"></a> `_context?` | `protected` | [`IJsonContext`](../interfaces/IJsonContext.md) | **`Internal`** The base [context](../interfaces/IJsonContext.md) on which we are operating. |
+| <a id="property-_context"></a> `_context?` | `protected` | [`IJsonContext`](../interfaces/IJsonContext.md) | **`Internal`** The base [context](../interfaces/IJsonContext.md) on which we are operating. |
 
 ## Methods
 

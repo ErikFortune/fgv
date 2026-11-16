@@ -12,6 +12,6 @@ Parameters used to create a base [qualifier type](../../../classes/QualifierType
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="allowcontextlist"></a> `allowContextList?` | `boolean` | Flag indicating whether this qualifier type allows a list of values in a context. Defaults to `false`. |
-| <a id="index"></a> `index?` | `number` | Global index for this qualifier type. |
-| <a id="name"></a> `name` | `string` | The name of the qualifier type. No default value. |
+| <a id="property-allowcontextlist"></a> `allowContextList?` | `boolean` | Flag indicating whether this qualifier type allows a list of values in a context. Defaults to `false`. |
+| <a id="property-index"></a> `index?` | `number` | Global index for this qualifier type. |
+| <a id="property-name"></a> `name` | `string` | The name of the qualifier type. No default value. |

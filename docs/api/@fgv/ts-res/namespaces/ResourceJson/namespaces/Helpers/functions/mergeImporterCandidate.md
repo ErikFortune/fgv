@@ -17,7 +17,7 @@ This function enables name inheritance for resource candidates, similar to resou
 | ------ | ------ | ------ |
 | `candidate` | [`IImporterResourceCandidateDecl`](../../Normalized/interfaces/IImporterResourceCandidateDecl.md) | The candidate to merge. Can have an optional ID that will be joined with baseName. |
 | `baseName?` | `string` | The base name from import context to merge with the candidate. When provided, this will be used as the parent component of the candidate ID. |
-| `baseConditions?` | readonly [`ILooseConditionDecl`](../../Json/interfaces/ILooseConditionDecl.md)[] | The base conditions from import context to merge with the candidate's conditions. |
+| `baseConditions?` | readonly [`ILooseConditionDecl`](../../Json/interfaces/ILooseConditionDecl.md)\<`string`\>[] | The base conditions from import context to merge with the candidate's conditions. |
 
 ## Returns
 

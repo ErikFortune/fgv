@@ -12,6 +12,19 @@ Browser-compatible cryptographic utilities using the Web Crypto API.
 
 - [BrowserCryptoProvider](classes/BrowserCryptoProvider.md)
 - [BrowserHashProvider](classes/BrowserHashProvider.md)
+- [IdbPrivateKeyStorage](classes/IdbPrivateKeyStorage.md)
+
+## Interfaces
+
+- [IIdbPrivateKeyStorageCreateParams](interfaces/IIdbPrivateKeyStorageCreateParams.md)
+
+## Type Aliases
+
+- [IHpkeSealResult](type-aliases/IHpkeSealResult.md)
+
+## Variables
+
+- [HpkeProvider](variables/HpkeProvider.md)
 
 ## Functions
 

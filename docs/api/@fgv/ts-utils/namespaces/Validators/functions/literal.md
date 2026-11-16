@@ -14,7 +14,7 @@ Helper function to create a [Validation.Validator](../../Validation/interfaces/V
 
 | Type Parameter |
 | ------ |
-| `T` *extends* `string` \| `number` \| `boolean` \| `symbol` \| `null` \| `undefined` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` \| `number` \| `boolean` \| `symbol` \| `null` \| `undefined` |
 
 ## Parameters
 

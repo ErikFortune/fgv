@@ -12,11 +12,11 @@ A validator for weakly-typed access to an [aggregated result map](../../../class
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCOMPOSITEID` *extends* `string` | - |
-| `TCOLLECTIONID` *extends* `string` | - |
-| `TITEMID` *extends* `string` | - |
-| `TITEM` | - |
-| `TMETADATA` | `unknown` |
+| <a id="type-parameter-tcompositeid"></a> `TCOMPOSITEID` *extends* `string` | - |
+| <a id="type-parameter-tcollectionid"></a> `TCOLLECTIONID` *extends* `string` | - |
+| <a id="type-parameter-titemid"></a> `TITEMID` *extends* `string` | - |
+| <a id="type-parameter-titem"></a> `TITEM` | - |
+| <a id="type-parameter-tmetadata"></a> `TMETADATA` | `unknown` |
 
 ## Implements
 
@@ -45,7 +45,7 @@ Constructs a new aggregated result map validator.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="converters"></a> `converters` | `readonly` | [`KeyValueConverters`](KeyValueConverters.md)\<`TCOMPOSITEID`, `TITEM`\> | The key-value converters used for validating weakly-typed access. |
+| <a id="property-converters"></a> `converters` | `public readonly` | [`KeyValueConverters`](KeyValueConverters.md)\<`TCOMPOSITEID`, `TITEM`\> | The key-value converters used for validating weakly-typed access. |
 
 ## Accessors
 
@@ -65,7 +65,7 @@ The underlying map.
 
 #### Implementation of
 
-[`IReadOnlyResultMapValidator`](../interfaces/IReadOnlyResultMapValidator.md).[`map`](../interfaces/IReadOnlyResultMapValidator.md#map)
+[`IReadOnlyResultMapValidator`](../interfaces/IReadOnlyResultMapValidator.md).[`map`](../interfaces/IReadOnlyResultMapValidator.md#property-map)
 
 ## Methods
 

@@ -36,10 +36,10 @@ Constructor for a ResourceResolver object.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="contextqualifierprovider"></a> `contextQualifierProvider` | `readonly` | [`IContextQualifierProvider`](../namespaces/Runtime/namespaces/Context/type-aliases/IContextQualifierProvider.md) | The context qualifier provider that resolves qualifier values. |
-| <a id="options"></a> `options` | `readonly` | [`IResourceResolverOptions`](../namespaces/Runtime/interfaces/IResourceResolverOptions.md) | The configuration options for this resource resolver. |
-| <a id="qualifiertypes"></a> `qualifierTypes` | `readonly` | [`ReadOnlyQualifierTypeCollector`](../namespaces/QualifierTypes/type-aliases/ReadOnlyQualifierTypeCollector.md) | The readonly qualifier type collector that provides qualifier implementations. |
-| <a id="resourcemanager"></a> `resourceManager` | `readonly` | [`IResourceManager`](../interfaces/IResourceManager.md) | The resource manager that defines available resources and provides condition access. |
+| <a id="property-contextqualifierprovider"></a> `contextQualifierProvider` | `public readonly` | [`IContextQualifierProvider`](../namespaces/Runtime/namespaces/Context/type-aliases/IContextQualifierProvider.md) | The context qualifier provider that resolves qualifier values. |
+| <a id="property-options"></a> `options` | `public readonly` | [`IResourceResolverOptions`](../namespaces/Runtime/interfaces/IResourceResolverOptions.md) | The configuration options for this resource resolver. |
+| <a id="property-qualifiertypes"></a> `qualifierTypes` | `public readonly` | [`ReadOnlyQualifierTypeCollector`](../namespaces/QualifierTypes/type-aliases/ReadOnlyQualifierTypeCollector.md) | The readonly qualifier type collector that provides qualifier implementations. |
+| <a id="property-resourcemanager"></a> `resourceManager` | `public readonly` | [`IResourceManager`](../interfaces/IResourceManager.md) | The resource manager that defines available resources and provides condition access. |
 
 ## Accessors
 
@@ -167,7 +167,7 @@ The resource IDs that this resolver can resolve.
 
 #### Implementation of
 
-[`IResourceResolver`](../interfaces/IResourceResolver.md).[`resourceIds`](../interfaces/IResourceResolver.md#resourceids)
+[`IResourceResolver`](../interfaces/IResourceResolver.md).[`resourceIds`](../interfaces/IResourceResolver.md#property-resourceids)
 
 ## Methods
 

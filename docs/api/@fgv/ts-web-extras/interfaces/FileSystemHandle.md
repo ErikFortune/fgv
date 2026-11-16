@@ -17,8 +17,8 @@ Base interface for file system handles
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="kind"></a> `kind` | `readonly` | `"file"` \| `"directory"` |
-| <a id="name"></a> `name` | `readonly` | `string` |
+| <a id="property-kind"></a> `kind` | `readonly` | `"file"` \| `"directory"` |
+| <a id="property-name"></a> `name` | `readonly` | `string` |
 
 ## Methods
 

@@ -31,7 +31,7 @@ Construct a new JsonFsHelper.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="config"></a> `config` | `readonly` | [`IJsonFsHelperConfig`](../interfaces/IJsonFsHelperConfig.md) | Configuration for this JsonFsHelper. |
+| <a id="property-config"></a> `config` | `public readonly` | [`IJsonFsHelperConfig`](../interfaces/IJsonFsHelperConfig.md) | Configuration for this JsonFsHelper. |
 
 ## Methods
 
@@ -43,8 +43,8 @@ Construct a new JsonFsHelper.
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `TC` |
+| <a id="type-parameter-t"></a> `T` |
+| <a id="type-parameter-tc"></a> `TC` |
 
 #### Parameters
 
@@ -69,8 +69,8 @@ Reads all JSON files from a directory and apply a supplied converter or validato
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t-1"></a> `T` | - |
+| <a id="type-parameter-tc-1"></a> `TC` | `unknown` |
 
 #### Parameters
 
@@ -98,8 +98,8 @@ with an optional name transformation applied if present.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t-2"></a> `T` | - |
+| <a id="type-parameter-tc-2"></a> `TC` | `unknown` |
 
 #### Parameters
 
@@ -125,8 +125,8 @@ Read a JSON file and apply a supplied converter or validator.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t-3"></a> `T` | - |
+| <a id="type-parameter-tc-3"></a> `TC` | `unknown` |
 
 #### Parameters
 

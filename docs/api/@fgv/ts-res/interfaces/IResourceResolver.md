@@ -12,7 +12,7 @@ Minimal resource resolver
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="resourceids"></a> `resourceIds` | `readonly` | readonly [`ResourceId`](../type-aliases/ResourceId.md)[] | The resource IDs that this resolver can resolve. |
+| <a id="property-resourceids"></a> `resourceIds` | `readonly` | readonly [`ResourceId`](../type-aliases/ResourceId.md)[] | The resource IDs that this resolver can resolve. |
 
 ## Methods
 

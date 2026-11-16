@@ -16,7 +16,7 @@ Simple collectible implementation of [IDecision](../namespaces/Decisions/interfa
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TVALUE` *extends* [`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="type-parameter-tvalue"></a> `TVALUE` *extends* [`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md) |
 
 ## Implements
 
@@ -44,9 +44,9 @@ Constructor for a Decision object.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="candidates"></a> `candidates` | `readonly` | readonly [`Candidate`](../namespaces/Decisions/classes/Candidate.md)\<`TVALUE`\>[] | The sorted [ConditionSets](../namespaces/Conditions/classes/ConditionSet.md) that make up this decision. |
-| <a id="defaultonlydecisionkey"></a> `DefaultOnlyDecisionKey` | `readonly` | [`DecisionKey`](../type-aliases/DecisionKey.md) | Key for the default-only decision (single condition set with no conditions). |
-| <a id="emptydecisionkey"></a> `EmptyDecisionKey` | `readonly` | [`DecisionKey`](../type-aliases/DecisionKey.md) | Key for the empty decision (no condition sets). |
+| <a id="property-candidates"></a> `candidates` | `public readonly` | readonly [`Candidate`](../namespaces/Decisions/classes/Candidate.md)\<`TVALUE`\>[] | The sorted [ConditionSets](../namespaces/Conditions/classes/ConditionSet.md) that make up this decision. |
+| <a id="property-defaultonlydecisionkey"></a> `DefaultOnlyDecisionKey` | `public static readonly` | [`DecisionKey`](../type-aliases/DecisionKey.md) | Key for the default-only decision (single condition set with no conditions). |
+| <a id="property-emptydecisionkey"></a> `EmptyDecisionKey` | `public static readonly` | [`DecisionKey`](../type-aliases/DecisionKey.md) | Key for the empty decision (no condition sets). |
 
 ## Accessors
 
@@ -64,7 +64,7 @@ Unique global index for this decision.
 
 #### Implementation of
 
-[`IDecision`](../namespaces/Decisions/interfaces/IDecision.md).[`index`](../namespaces/Decisions/interfaces/IDecision.md#index)
+[`IDecision`](../namespaces/Decisions/interfaces/IDecision.md).[`index`](../namespaces/Decisions/interfaces/IDecision.md#property-index)
 
 ***
 
@@ -83,7 +83,7 @@ of the decision.
 
 #### Implementation of
 
-[`IDecision`](../namespaces/Decisions/interfaces/IDecision.md).[`key`](../namespaces/Decisions/interfaces/IDecision.md#key)
+[`IDecision`](../namespaces/Decisions/interfaces/IDecision.md).[`key`](../namespaces/Decisions/interfaces/IDecision.md#property-key)
 
 ## Methods
 
@@ -160,7 +160,7 @@ Helper function to return a stable key for a set of condition sets.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TVALUE` *extends* [`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="type-parameter-tvalue-1"></a> `TVALUE` *extends* [`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../ts-res-ui-components/type-aliases/JsonValue.md) |
 
 #### Parameters
 

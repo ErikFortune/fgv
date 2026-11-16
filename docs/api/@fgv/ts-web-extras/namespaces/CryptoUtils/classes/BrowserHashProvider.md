@@ -23,7 +23,7 @@ Supports common hash algorithms available in browsers.
 
 ### hashParts()
 
-> `static` **hashParts**(`parts`, `algorithm`, `separator`): `Promise`\<[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>\>
+> `static` **hashParts**(`parts`, `algorithm?`, `separator?`): `Promise`\<[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>\>
 
 Hash multiple strings concatenated with a separator.
 
@@ -32,8 +32,8 @@ Hash multiple strings concatenated with a separator.
 | Parameter | Type | Default value | Description |
 | ------ | ------ | ------ | ------ |
 | `parts` | `string`[] | `undefined` | Array of strings to concatenate and hash |
-| `algorithm` | `string` | `'SHA-256'` | The hash algorithm to use |
-| `separator` | `string` | '\|' | Separator to use between parts (default: '|') |
+| `algorithm?` | `string` | `'SHA-256'` | The hash algorithm to use |
+| `separator?` | `string` | '\|' | Separator to use between parts (default: '\|') |
 
 #### Returns
 
@@ -45,7 +45,7 @@ Promise resolving to the hex-encoded hash
 
 ### hashString()
 
-> `static` **hashString**(`data`, `algorithm`): `Promise`\<[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>\>
+> `static` **hashString**(`data`, `algorithm?`): `Promise`\<[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>\>
 
 Hash a string using the specified algorithm.
 
@@ -54,7 +54,7 @@ Hash a string using the specified algorithm.
 | Parameter | Type | Default value | Description |
 | ------ | ------ | ------ | ------ |
 | `data` | `string` | `undefined` | The string to hash |
-| `algorithm` | `string` | `'SHA-256'` | The hash algorithm to use |
+| `algorithm?` | `string` | `'SHA-256'` | The hash algorithm to use |
 
 #### Returns
 

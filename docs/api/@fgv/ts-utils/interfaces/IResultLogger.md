@@ -12,7 +12,7 @@ Simple logger interface used by [orThrow(logger)](IResult.md#orthrow) and [orThr
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TD` | `unknown` |
+| <a id="type-parameter-td"></a> `TD` | `unknown` |
 
 ## Methods
 

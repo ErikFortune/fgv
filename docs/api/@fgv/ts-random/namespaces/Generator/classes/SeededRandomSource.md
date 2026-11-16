@@ -30,8 +30,8 @@ Creates a new seeded random source.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="lineage"></a> `lineage` | `readonly` | readonly `string`[] |
-| <a id="seed"></a> `seed` | `readonly` | `string` |
+| <a id="property-lineage"></a> `lineage` | `public readonly` | readonly `string`[] |
+| <a id="property-seed"></a> `seed` | `public readonly` | `string` |
 
 ## Accessors
 

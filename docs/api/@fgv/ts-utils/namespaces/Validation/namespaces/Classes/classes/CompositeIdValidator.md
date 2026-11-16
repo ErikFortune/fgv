@@ -16,10 +16,10 @@ An in-place [Validator](../../../interfaces/Validator.md) for a strongly-typed c
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* `string` | `string` |
-| `TCOLLECTIONID` *extends* `string` | `string` |
-| `TITEMID` *extends* `string` | `string` |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` | `string` |
+| <a id="type-parameter-tcollectionid"></a> `TCOLLECTIONID` *extends* `string` | `string` |
+| <a id="type-parameter-titemid"></a> `TITEMID` *extends* `string` | `string` |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Constructors
 
@@ -47,12 +47,13 @@ Constructs a new [StringValidator](StringValidator.md).
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_collectionidvalidator"></a> `_collectionIdValidator` | `readonly` | [`Validator`](../../../interfaces/Validator.md)\<`TCOLLECTIONID`, `TC`\> | - |
-| <a id="_itemidvalidator"></a> `_itemIdValidator` | `readonly` | [`Validator`](../../../interfaces/Validator.md)\<`TITEMID`, `TC`\> | - |
-| <a id="_options"></a> `_options` | `readonly` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> | **`Internal`** |
-| <a id="_separator"></a> `_separator` | `readonly` | `string` | - |
-| <a id="_validator"></a> `_validator` | `readonly` | [`ValidatorFunc`](../../../type-aliases/ValidatorFunc.md)\<`T`, `TC`\> | **`Internal`** |
-| <a id="traits"></a> `traits` | `readonly` | [`ValidatorTraits`](../../../classes/ValidatorTraits.md) | [Traits](../../../classes/ValidatorTraits.md) describing this validation. |
+| <a id="property-_collectionidvalidator"></a> `_collectionIdValidator` | `protected readonly` | [`Validator`](../../../interfaces/Validator.md)\<`TCOLLECTIONID`, `TC`\> | - |
+| <a id="property-_itemidvalidator"></a> `_itemIdValidator` | `protected readonly` | [`Validator`](../../../interfaces/Validator.md)\<`TITEMID`, `TC`\> | - |
+| <a id="property-_options"></a> `_options` | `protected readonly` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> | **`Internal`** |
+| <a id="property-_separator"></a> `_separator` | `protected readonly` | `string` | - |
+| <a id="property-_split"></a> `_split` | `protected readonly` | `"exact"` \| `"first"` \| `"last"` | - |
+| <a id="property-_validator"></a> `_validator` | `protected readonly` | [`ValidatorFunc`](../../../type-aliases/ValidatorFunc.md)\<`T`, `TC`\> | **`Internal`** |
+| <a id="property-traits"></a> `traits` | `public readonly` | [`ValidatorTraits`](../../../classes/ValidatorTraits.md) | [Traits](../../../classes/ValidatorTraits.md) describing this validation. |
 
 ## Accessors
 
@@ -301,7 +302,7 @@ The brand for a branded type.
 
 | Type Parameter |
 | ------ |
-| `B` *extends* `string` |
+| <a id="type-parameter-b"></a> `B` *extends* `string` |
 
 #### Parameters
 

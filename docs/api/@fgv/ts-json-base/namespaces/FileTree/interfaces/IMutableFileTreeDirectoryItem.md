@@ -13,19 +13,24 @@ Use [isMutableDirectoryItem](../functions/isMutableDirectoryItem.md) type guard 
 
 - [`IFileTreeDirectoryItem`](IFileTreeDirectoryItem.md)\<`TCT`\>
 
+## Extended by
+
+- [`IMutableBinaryFileTreeDirectoryItem`](IMutableBinaryFileTreeDirectoryItem.md)
+- [`IAtomicFileTreeDirectoryItem`](IAtomicFileTreeDirectoryItem.md)
+
 ## Type Parameters
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="absolutepath"></a> `absolutePath` | `readonly` | `string` | The absolute path of the directory. |
-| <a id="name"></a> `name` | `readonly` | `string` | The name of the directory |
-| <a id="type"></a> `type` | `readonly` | `"directory"` | Indicates that this [file tree item](../type-aliases/FileTreeItem.md) is a directory |
+| <a id="property-absolutepath"></a> `absolutePath` | `readonly` | `string` | The absolute path of the directory. |
+| <a id="property-name"></a> `name` | `readonly` | `string` | The name of the directory |
+| <a id="property-type"></a> `type` | `readonly` | `"directory"` | Indicates that this [file tree item](../type-aliases/FileTreeItem.md) is a directory |
 
 ## Methods
 
@@ -122,3 +127,21 @@ or `Failure` with an error message otherwise.
 #### Inherited from
 
 [`IFileTreeDirectoryItem`](IFileTreeDirectoryItem.md).[`getChildren`](IFileTreeDirectoryItem.md#getchildren)
+
+***
+
+### getStorageIdentity()?
+
+> `optional` **getStorageIdentity**(): [`IFileTreeStorageIdentity`](IFileTreeStorageIdentity.md)\<`TCT`\>
+
+Says what storage this directory names, so a consumer can tell whether two
+directory items reach the same place. Optional: an item that cannot say
+leaves it absent. See [FileTree.IFileTreeStorageIdentity](IFileTreeStorageIdentity.md).
+
+#### Returns
+
+[`IFileTreeStorageIdentity`](IFileTreeStorageIdentity.md)\<`TCT`\>
+
+#### Inherited from
+
+[`IFileTreeDirectoryItem`](IFileTreeDirectoryItem.md).[`getStorageIdentity`](IFileTreeDirectoryItem.md#getstorageidentity)

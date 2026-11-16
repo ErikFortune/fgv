@@ -12,7 +12,7 @@ Configuration for [literal qualifier type](../../../classes/LiteralQualifierType
 
 | Property | Type |
 | ------ | ------ |
-| <a id="allowcontextlist"></a> `allowContextList?` | `boolean` |
-| <a id="casesensitive"></a> `caseSensitive?` | `boolean` |
-| <a id="enumeratedvalues"></a> `enumeratedValues?` | `string`[] |
-| <a id="hierarchy"></a> `hierarchy?` | [`LiteralValueHierarchyDecl`](../type-aliases/LiteralValueHierarchyDecl.md)\<`string`\> |
+| <a id="property-allowcontextlist"></a> `allowContextList?` | `boolean` |
+| <a id="property-casesensitive"></a> `caseSensitive?` | `boolean` |
+| <a id="property-enumeratedvalues"></a> `enumeratedValues?` | `string`[] |
+| <a id="property-hierarchy"></a> `hierarchy?` | [`LiteralValueHierarchyDecl`](../type-aliases/LiteralValueHierarchyDecl.md)\<`string`\> |

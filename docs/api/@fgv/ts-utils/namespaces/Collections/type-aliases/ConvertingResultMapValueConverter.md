@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-utils](../../../README.md) / [Collections](../README.md) / ConvertingResultMapValueConverter
 
-# Type Alias: ConvertingResultMapValueConverter()\<TK, TSRC, TTARGET\>
+# Type Alias: ConvertingResultMapValueConverter\<TK, TSRC, TTARGET\>
 
 > **ConvertingResultMapValueConverter**\<`TK`, `TSRC`, `TTARGET`\> = (`src`, `key`) => [`Result`](../../../type-aliases/Result.md)\<`TTARGET`\>
 
@@ -14,9 +14,9 @@ A function that converts a source value to a target value.
 
 | Type Parameter |
 | ------ |
-| `TK` *extends* `string` |
-| `TSRC` |
-| `TTARGET` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` |
+| <a id="type-parameter-tsrc"></a> `TSRC` |
+| <a id="type-parameter-ttarget"></a> `TTARGET` |
 
 ## Parameters
 

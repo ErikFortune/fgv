@@ -36,6 +36,8 @@ const contextWithMessages = new ObservabilityTools.ObservabilityContext(
 
 ## Param
 
+**props**
+
 Provider configuration
 
 ## Returns

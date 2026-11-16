@@ -7,5 +7,5 @@ Converts a composite ID string into a strongly-typed Converters.ICompositeId | C
 ## Signature
 
 ```typescript
-function compositeIdFromString(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>
+function compositeIdFromString(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>, options: ICompositeIdOptions): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>
 ```

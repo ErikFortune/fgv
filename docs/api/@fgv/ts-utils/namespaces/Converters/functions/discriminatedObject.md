@@ -14,9 +14,9 @@ Helper to create a [Converter](../../Conversion/interfaces/Converter.md) which c
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TD` *extends* `string` | `string` |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-td"></a> `TD` *extends* `string` | `string` |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Parameters
 
@@ -40,3 +40,6 @@ the discriminator property in the source object.
 
 If the source is not an object, the discriminator property is missing, or the discriminator has
 a value not present in the converters, conversion fails and returns [Failure](../../../classes/Failure.md) with more information.
+
+The `self` reference of the outer converter is threaded through to per-arm converter invocations,
+enabling recursive discriminated-union parsers where arms recurse via `self`.

@@ -10,4 +10,4 @@
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="tags"></a> `tags` | `readonly` | readonly `string`[] |
+| <a id="property-tags"></a> `tags` | `readonly` | readonly `string`[] |

@@ -12,12 +12,12 @@ Cache metrics interface for tracking cache performance.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="clears"></a> `clears` | `number` |
-| <a id="errors"></a> `errors` | `number` |
-| <a id="hitrate"></a> `hitRate` | `number` |
-| <a id="hits"></a> `hits` | `number` |
-| <a id="misses"></a> `misses` | `number` |
-| <a id="totalaccesses"></a> `totalAccesses` | `number` |
+| <a id="property-clears"></a> `clears` | `number` |
+| <a id="property-errors"></a> `errors` | `number` |
+| <a id="property-hitrate"></a> `hitRate` | `number` |
+| <a id="property-hits"></a> `hits` | `number` |
+| <a id="property-misses"></a> `misses` | `number` |
+| <a id="property-totalaccesses"></a> `totalAccesses` | `number` |
 
 ## Methods
 

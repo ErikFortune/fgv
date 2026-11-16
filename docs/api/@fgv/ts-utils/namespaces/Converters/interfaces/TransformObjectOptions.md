@@ -12,12 +12,12 @@ Options for a [Converters.transformObject](../functions/transformObject.md) call
 
 | Type Parameter |
 | ------ |
-| `TSRC` |
+| <a id="type-parameter-tsrc"></a> `TSRC` |
 
 ## Properties
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="description"></a> `description?` | `string` | An optional description of this transform to be used for error messages. |
-| <a id="ignore"></a> `ignore?` | keyof `TSRC`[] | An optional list of source properties to be ignored when strict mode is enabled. |
-| <a id="strict"></a> `strict` | `true` | If `strict` is `true` then unused properties in the source object cause an error, otherwise they are ignored. |
+| <a id="property-description"></a> `description?` | `string` | An optional description of this transform to be used for error messages. |
+| <a id="property-ignore"></a> `ignore?` | (keyof `TSRC`)[] | An optional list of source properties to be ignored when strict mode is enabled. |
+| <a id="property-strict"></a> `strict` | `true` | If `strict` is `true` then unused properties in the source object cause an error, otherwise they are ignored. |

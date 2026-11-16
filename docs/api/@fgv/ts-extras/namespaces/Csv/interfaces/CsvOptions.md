@@ -14,4 +14,4 @@ Options for [readCsvFileSync](../functions/readCsvFileSync.md)
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="delimiter"></a> `delimiter?` | `string` | **`Beta`** |
+| <a id="property-delimiter"></a> `delimiter?` | `string` | **`Beta`** |

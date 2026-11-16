@@ -17,7 +17,7 @@ Helper method to merge a child resource with a parent name and conditions.
 | `resource` | [`IChildResourceDecl`](../../Normalized/interfaces/IChildResourceDecl.md) | The resource to merge. |
 | `name` | `string` | The name of the resource. |
 | `parentName?` | `string` | The name of the parent resource. |
-| `parentConditions?` | readonly [`ILooseConditionDecl`](../../Json/interfaces/ILooseConditionDecl.md)[] | The conditions of the parent resource. |
+| `parentConditions?` | readonly [`ILooseConditionDecl`](../../Json/interfaces/ILooseConditionDecl.md)\<`string`\>[] | The conditions of the parent resource. |
 
 ## Returns
 

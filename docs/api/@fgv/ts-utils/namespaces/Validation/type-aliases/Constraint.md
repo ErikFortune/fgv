@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-utils](../../../README.md) / [Validation](../README.md) / Constraint
 
-# Type Alias: Constraint()\<T\>
+# Type Alias: Constraint\<T\>
 
 > **Constraint**\<`T`\> = (`val`) => `boolean` \| [`Failure`](../../../classes/Failure.md)\<`T`\>
 
@@ -17,7 +17,7 @@ for a default message.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Parameters
 

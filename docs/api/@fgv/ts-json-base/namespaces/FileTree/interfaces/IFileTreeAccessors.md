@@ -12,12 +12,14 @@ Common abstraction layer interface for a tree of files
 ## Extended by
 
 - [`IMutableFileTreeAccessors`](IMutableFileTreeAccessors.md)
+- [`IBinaryFileTreeAccessors`](IBinaryFileTreeAccessors.md)
+- [`IStrictTextFileTreeAccessors`](IStrictTextFileTreeAccessors.md)
 
 ## Type Parameters
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |
 
 ## Methods
 
@@ -100,6 +102,20 @@ Gets the contents of a file in the file tree.
 
 The contents of the file.
 
+#### Remarks
+
+The bytes are decoded as UTF-8 with the *lenient* WHATWG default, so malformed
+input is silently replaced with U+FFFD rather than reported. Accessors whose
+backing store is byte-native also implement
+[IBinaryFileTreeAccessors](IBinaryFileTreeAccessors.md); narrow with
+[isBinaryAccessors](../functions/isBinaryAccessors.md) and call
+[getFileBytes](IBinaryFileTreeAccessors.md#getfilebytes) to read the
+undecoded bytes — for a strict decode that fails loudly on malformed UTF-8:
+
+```ts
+new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+```
+
 ***
 
 ### getFileContentType()
@@ -180,3 +196,26 @@ Resolves paths to an absolute path.
 `string`
 
 The resolved absolute path.
+
+***
+
+### resolveRealPath()?
+
+> `optional` **resolveRealPath**(`path`): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
+
+Resolves a path to its canonical real path, with every symbolic link
+resolved. Optional: only storage that has symbolic links (a filesystem)
+implements it.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | The path to resolve. |
+
+#### Returns
+
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
+
+`Success` with the real path, or `Failure` if it cannot be
+resolved (for example, it does not exist).

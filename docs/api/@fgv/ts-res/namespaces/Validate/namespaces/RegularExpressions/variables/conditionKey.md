@@ -11,5 +11,5 @@
 **`Internal`**
 
 The format of a [condition key](../../../../../type-aliases/ConditionKey.md) is:
-<qualifierName>-[<value>][@<priority>](<scoreAsDefault>) where operator is `matches`, or
-<qualifierName>-<operator>-[<value>][@<priority>](<scoreAsDefault>)
+\<qualifierName\>-\[<value>\]\[@<priority>\]\(\<scoreAsDefault\>\) where operator is `matches`, or
+\<qualifierName\>-\<operator\>-\[<value>\]\[@<priority>\]\(\<scoreAsDefault\>\)

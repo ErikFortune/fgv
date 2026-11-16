@@ -61,13 +61,16 @@ All methods are async to support both filesystem and database backends.
 
 ### getFile()
 
-> **getFile**(`path`): `Promise`\<[`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<[`IStorageFileResponse`](IStorageFileResponse.md)\>\>
+> **getFile**(`path`, `encoding?`): `Promise`\<[`Result`](../../ts-res-ui-components/type-aliases/Result.md)\<[`IStorageFileResponse`](IStorageFileResponse.md)\>\>
+
+Reads a file.
 
 #### Parameters
 
-| Parameter | Type |
-| ------ | ------ |
-| `path` | `string` |
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `path` | `string` | Path of the file to read. |
+| `encoding?` | [`StorageContentEncoding`](../type-aliases/StorageContentEncoding.md) | Preferred wire encoding for the returned `contents`. A provider that does not implement the requested encoding MUST answer in `'utf8'` and report that on the response, rather than failing — the field is a preference and the response is the authority. |
 
 #### Returns
 

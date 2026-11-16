@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../README.md) / [@fgv/ts-utils](../README.md) / DetailedSuccessContinuation
 
-# Type Alias: DetailedSuccessContinuation()\<T, TD, TN\>
+# Type Alias: DetailedSuccessContinuation\<T, TD, TN\>
 
 > **DetailedSuccessContinuation**\<`T`, `TD`, `TN`\> = (`value`, `detail?`) => [`DetailedResult`](DetailedResult.md)\<`TN`, `TD`\>
 
@@ -14,9 +14,9 @@ Callback to be called when a [DetailedResult](DetailedResult.md) encounters succ
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `TD` |
-| `TN` |
+| <a id="type-parameter-t"></a> `T` |
+| <a id="type-parameter-td"></a> `TD` |
+| <a id="type-parameter-tn"></a> `TN` |
 
 ## Parameters
 

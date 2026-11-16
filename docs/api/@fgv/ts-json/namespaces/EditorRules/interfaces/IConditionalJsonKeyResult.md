@@ -19,10 +19,10 @@ to indicate whether a successful match was due to a matching condition or a defa
 
 ## Indexable
 
-\[`key`: `string`\]: [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md)
+> \[`key`: `string`\]: [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md)
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="matchtype"></a> `matchType` | `"match"` \| `"default"` \| `"unconditional"` |
+| <a id="property-matchtype"></a> `matchType` | `"match"` \| `"default"` \| `"unconditional"` |

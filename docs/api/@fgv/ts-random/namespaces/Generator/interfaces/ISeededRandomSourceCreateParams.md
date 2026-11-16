@@ -12,5 +12,5 @@ Static create parameters for a [SeededRandomSource](../classes/SeededRandomSourc
 
 | Property | Type |
 | ------ | ------ |
-| <a id="seed"></a> `seed?` | `string` \| `number` |
-| <a id="step"></a> `step?` | [`RandomStepFunction`](../type-aliases/RandomStepFunction.md) |
+| <a id="property-seed"></a> `seed?` | `string` \| `number` |
+| <a id="property-step"></a> `step?` | [`RandomStepFunction`](../type-aliases/RandomStepFunction.md) |

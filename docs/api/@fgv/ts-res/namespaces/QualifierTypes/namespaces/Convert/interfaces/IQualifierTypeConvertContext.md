@@ -13,4 +13,4 @@ Context necessary to convert a qualifier name or number to an instantiated
 
 | Property | Type |
 | ------ | ------ |
-| <a id="qualifiertypes"></a> `qualifierTypes` | [`ReadOnlyQualifierTypeCollector`](../../../type-aliases/ReadOnlyQualifierTypeCollector.md) |
+| <a id="property-qualifiertypes"></a> `qualifierTypes` | [`ReadOnlyQualifierTypeCollector`](../../../type-aliases/ReadOnlyQualifierTypeCollector.md) |

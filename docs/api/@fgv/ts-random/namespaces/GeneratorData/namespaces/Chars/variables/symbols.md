@@ -6,6 +6,6 @@
 
 # Variable: symbols
 
-> `const` **symbols**: `string` = `'!@#$%^&*()_+-=[]{}|;:,.<>?'`
+> `const` **symbols**: `string` = '!@#$%^&\*()\_+-=\[\]\{\}\|;:,.\<\>?'
 
 Symbols

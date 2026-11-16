@@ -13,7 +13,7 @@ declarations.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="context"></a> `context?` | `readonly` | [`IContainerContextDecl`](../namespaces/Normalized/interfaces/IContainerContextDecl.md) | Optional initial [resource context](../namespaces/Normalized/interfaces/IContainerContextDecl.md) declaration for the container. |
+| <a id="property-context"></a> `context?` | `readonly` | [`IContainerContextDecl`](../namespaces/Normalized/interfaces/IContainerContextDecl.md) | Optional initial [resource context](../namespaces/Normalized/interfaces/IContainerContextDecl.md) declaration for the container. |
 
 ## Methods
 

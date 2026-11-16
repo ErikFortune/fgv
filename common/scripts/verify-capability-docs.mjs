@@ -88,9 +88,9 @@ const ROUTER_MAX_CHARS = 24000;
 const MAX_ENTRY_CHARS = 240;
 const PACKAGE_DIRS = ['libraries'];
 
-// Slated to move to their own monorepo; `.ai/instructions/ACTIVE_DEVELOPMENT.md` says not to
-// queue work against them. Exempt rather than forcing docs onto packages that are leaving.
-const EXEMPT = new Set(['ts-sudoku-lib', 'ts-sudoku-ui']);
+// Package directories that are deliberately without a `CAPABILITIES.md`. Each entry needs a reason
+// beside it; the set is empty because every package under `libraries/` carries one.
+const EXEMPT = new Set([]);
 
 // The reflexes that must remain reachable without opening anything. Generated from the pre-split
 // file and checked in deliberately: this list is the contract, not a cache of it. Adding a reflex

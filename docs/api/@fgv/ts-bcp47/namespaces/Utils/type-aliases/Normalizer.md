@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-bcp47](../../../README.md) / [Utils](../README.md) / Normalizer
 
-# Type Alias: Normalizer()\<T, TC\>
+# Type Alias: Normalizer\<T, TC\>
 
 > **Normalizer**\<`T`, `TC`\> = (`val`, `context?`) => [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`T`\>
 
@@ -15,8 +15,8 @@ the canonical presentation form.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* `string` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Parameters
 

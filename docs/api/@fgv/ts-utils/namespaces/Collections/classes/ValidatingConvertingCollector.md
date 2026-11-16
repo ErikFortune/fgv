@@ -18,8 +18,8 @@ property that enables validated use of the underlying map with weakly-typed keys
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> | - |
-| `TSRC` | `TITEM` |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> | - |
+| <a id="type-parameter-tsrc"></a> `TSRC` | `TITEM` |
 
 ## Constructors
 
@@ -48,8 +48,8 @@ from the supplied [parameters](../interfaces/IValidatingConvertingCollectorConst
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_converters"></a> `_converters` | `readonly` | [`KeyValueConverters`](KeyValueConverters.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TSRC`\> | - |
-| <a id="validating"></a> `validating` | `readonly` | [`ConvertingCollectorValidator`](ConvertingCollectorValidator.md)\<`TITEM`, `TSRC`\> | A [ConvertingCollectorValidator](ConvertingCollectorValidator.md) which validates keys and values before inserting them into this collector. |
+| <a id="property-_converters"></a> `_converters` | `protected readonly` | [`KeyValueConverters`](KeyValueConverters.md)\<[`CollectibleKey`](../type-aliases/CollectibleKey.md)\<`TITEM`\>, `TSRC`\> | - |
+| <a id="property-validating"></a> `validating` | `public readonly` | [`ConvertingCollectorValidator`](ConvertingCollectorValidator.md)\<`TITEM`, `TSRC`\> | A [ConvertingCollectorValidator](ConvertingCollectorValidator.md) which validates keys and values before inserting them into this collector. |
 
 ## Accessors
 
@@ -545,7 +545,7 @@ Creates a new [Collector](Collector.md) instance.
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem-1"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> |
 
 #### Parameters
 
@@ -576,8 +576,8 @@ Creates a new [ConvertingCollector](ConvertingCollector.md).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> | - |
-| `TSRC` | `TITEM` |
+| <a id="type-parameter-titem-2"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> | - |
+| <a id="type-parameter-tsrc-1"></a> `TSRC` | `TITEM` |
 
 #### Parameters
 
@@ -609,8 +609,8 @@ the supplied [parameters](../interfaces/IValidatingConvertingCollectorConstructo
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> | - |
-| `TSRC` | `TITEM` |
+| <a id="type-parameter-titem-3"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md)\<`any`, `any`\> | - |
+| <a id="type-parameter-tsrc-2"></a> `TSRC` | `TITEM` |
 
 #### Parameters
 

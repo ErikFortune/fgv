@@ -12,6 +12,6 @@ Props for the ToastContainer.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="maxvisible"></a> `maxVisible?` | `readonly` | `number` | Maximum number of toasts to show simultaneously |
-| <a id="ondismiss"></a> `onDismiss` | `readonly` | (`id`) => `void` | - |
-| <a id="toasts"></a> `toasts` | `readonly` | readonly [`IMessage`](IMessage.md)[] | - |
+| <a id="property-maxvisible"></a> `maxVisible?` | `readonly` | `number` | Maximum number of toasts to show simultaneously |
+| <a id="property-ondismiss"></a> `onDismiss` | `readonly` | (`id`) => `void` | - |
+| <a id="property-toasts"></a> `toasts` | `readonly` | readonly [`IMessage`](IMessage.md)[] | - |

@@ -20,7 +20,7 @@ with "Compare All" and "Compare Selected" actions.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TId` *extends* `string` | `string` |
+| <a id="type-parameter-tid"></a> `TId` *extends* `string` | `string` |
 
 ## Parameters
 

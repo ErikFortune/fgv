@@ -12,5 +12,5 @@ Parameters for creating a [ConditionSetCollector](../classes/ConditionSetCollect
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="conditions"></a> `conditions` | [`ConditionCollector`](../classes/ConditionCollector.md) | The [ConditionCollector](../classes/ConditionCollector.md) used to create conditions for conditions in this collector. |
-| <a id="conditionsets"></a> `conditionSets?` | [`IConditionSetDecl`](IConditionSetDecl.md)[] | Optional array of [condition set declarations](IConditionSetDecl.md) to add to the collector. |
+| <a id="property-conditions"></a> `conditions` | [`ConditionCollector`](../classes/ConditionCollector.md) | The [ConditionCollector](../classes/ConditionCollector.md) used to create conditions for conditions in this collector. |
+| <a id="property-conditionsets"></a> `conditionSets?` | [`IConditionSetDecl`](IConditionSetDecl.md)\<`string`\>[] | Optional array of [condition set declarations](IConditionSetDecl.md) to add to the collector. |

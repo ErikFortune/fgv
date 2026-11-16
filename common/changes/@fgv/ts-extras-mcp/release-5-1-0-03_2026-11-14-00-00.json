@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-mcp",
+      "comment": "`adaptMcpTools` converts each tool's input schema through `JsonSchema.fromJson`, and reports every tool it cannot adapt instead of failing the whole list.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-mcp",
+  "email": "noreply@anthropic.com"
+}

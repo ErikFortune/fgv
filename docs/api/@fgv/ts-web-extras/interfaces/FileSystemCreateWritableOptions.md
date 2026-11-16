@@ -12,4 +12,4 @@ Options for creating writable file streams
 
 | Property | Type |
 | ------ | ------ |
-| <a id="keepexistingdata"></a> `keepExistingData?` | `boolean` |
+| <a id="property-keepexistingdata"></a> `keepExistingData?` | `boolean` |

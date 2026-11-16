@@ -39,7 +39,7 @@ Creates a new TemplatedJsonEditorRule.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_options"></a> `_options?` | `public` | [`ITemplatedJsonRuleOptions`](../interfaces/ITemplatedJsonRuleOptions.md) | Fully-resolved [configuration options](../interfaces/ITemplatedJsonRuleOptions.md) for this rule. |
+| <a id="property-_options"></a> `_options?` | `public` | [`ITemplatedJsonRuleOptions`](../interfaces/ITemplatedJsonRuleOptions.md) | Fully-resolved [configuration options](../interfaces/ITemplatedJsonRuleOptions.md) for this rule. |
 
 ## Methods
 

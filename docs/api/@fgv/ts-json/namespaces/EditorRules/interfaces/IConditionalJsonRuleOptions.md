@@ -16,7 +16,7 @@ Configuration options for the [ConditionalJsonEditorRule](../classes/Conditional
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="context"></a> `context?` | [`IJsonContext`](../../../interfaces/IJsonContext.md) | - |
-| <a id="flattenunconditionalvalues"></a> `flattenUnconditionalValues?` | `boolean` | If true (default) then properties with unconditional names (which start with !) are flattened. |
-| <a id="merge"></a> `merge?` | [`IJsonEditorMergeOptions`](../../../interfaces/IJsonEditorMergeOptions.md) | - |
-| <a id="validation"></a> `validation?` | [`IJsonEditorValidationOptions`](../../../interfaces/IJsonEditorValidationOptions.md) | - |
+| <a id="property-context"></a> `context?` | [`IJsonContext`](../../../interfaces/IJsonContext.md) | - |
+| <a id="property-flattenunconditionalvalues"></a> `flattenUnconditionalValues?` | `boolean` | If true (default) then properties with unconditional names (which start with !) are flattened. |
+| <a id="property-merge"></a> `merge?` | [`IJsonEditorMergeOptions`](../../../interfaces/IJsonEditorMergeOptions.md) | - |
+| <a id="property-validation"></a> `validation?` | [`IJsonEditorValidationOptions`](../../../interfaces/IJsonEditorValidationOptions.md) | - |

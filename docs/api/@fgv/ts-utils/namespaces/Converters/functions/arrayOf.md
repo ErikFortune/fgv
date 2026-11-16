@@ -6,7 +6,7 @@
 
 # Function: arrayOf()
 
-> **arrayOf**\<`T`, `TC`\>(`converter`, `onError`): [`Converter`](../../Conversion/interfaces/Converter.md)\<`T`[], `TC`\>
+> **arrayOf**\<`T`, `TC`\>(`converter`, `onError?`): [`Converter`](../../Conversion/interfaces/Converter.md)\<`T`[], `TC`\>
 
 A helper function to create a [Converter](../../Conversion/interfaces/Converter.md) which converts `unknown` to an array of `<T>`.
 
@@ -14,15 +14,15 @@ A helper function to create a [Converter](../../Conversion/interfaces/Converter.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Parameters
 
 | Parameter | Type | Default value | Description |
 | ------ | ------ | ------ | ------ |
 | `converter` | [`Converter`](../../Conversion/interfaces/Converter.md)\<`T`, `TC`\> \| [`Validator`](../../Validation/interfaces/Validator.md)\<`T`, `TC`\> | `undefined` | [Converter](../../Conversion/interfaces/Converter.md) or [Validator](../../Validation/interfaces/Validator.md) used to convert each item in the array. |
-| `onError` | [`OnError`](../../Conversion/type-aliases/OnError.md) | `'failOnError'` | Specifies treatment of unconvertible elements. |
+| `onError?` | [`OnError`](../../Conversion/type-aliases/OnError.md) | `'failOnError'` | Specifies treatment of unconvertible elements. |
 
 ## Returns
 

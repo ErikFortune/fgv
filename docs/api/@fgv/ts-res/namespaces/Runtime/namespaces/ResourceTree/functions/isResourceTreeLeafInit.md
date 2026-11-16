@@ -14,7 +14,7 @@ Type guard to determine if an init object represents a leaf node with a resource
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Parameters
 

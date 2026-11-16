@@ -12,4 +12,4 @@ Configuration for [language qualifier type](../../../classes/LanguageQualifierTy
 
 | Property | Type |
 | ------ | ------ |
-| <a id="allowcontextlist"></a> `allowContextList?` | `boolean` |
+| <a id="property-allowcontextlist"></a> `allowContextList?` | `boolean` |

@@ -109,41 +109,41 @@ await actions.importDirectoryWithConfig(directory, customConfig);
 
 | Property | Type |
 | ------ | ------ |
-| <a id="addmessage"></a> `addMessage` | (`type`, `message`) => `void` |
-| <a id="applyconfiguration"></a> `applyConfiguration` | (`config`) => `void` |
-| <a id="applyfilter"></a> `applyFilter` | () => `Promise`\<[`IFilterResult`](../namespaces/FilterTools/interfaces/IFilterResult.md) \| `null`\> |
-| <a id="applypendingresources"></a> `applyPendingResources` | () => `Promise`\<[`Result`](../type-aliases/Result.md)\<\{ `appliedCount`: `number`; `deletionCount`: `number`; `existingResourceEditCount`: `number`; `newResourceCount`: `number`; `pendingResourceEditCount`: `number`; \}\>\> |
-| <a id="applyresolutioncontext"></a> `applyResolutionContext` | (`hostManagedValues?`) => [`Result`](../type-aliases/Result.md)\<`void`\> |
-| <a id="cancelnewresource"></a> `cancelNewResource` | () => `void` |
-| <a id="clearmessages"></a> `clearMessages` | () => `void` |
-| <a id="clearresourceedits"></a> `clearResourceEdits` | () => [`Result`](../type-aliases/Result.md)\<\{ `clearedCount`: `number`; \}\> |
-| <a id="clearresources"></a> `clearResources` | () => `void` |
-| <a id="creatependingresource"></a> `createPendingResource` | (`params`) => [`Result`](../type-aliases/Result.md)\<`void`\> |
-| <a id="discardpendingresources"></a> `discardPendingResources` | () => `void` |
-| <a id="discardresourceedits"></a> `discardResourceEdits` | () => [`Result`](../type-aliases/Result.md)\<\{ `discardedCount`: `number`; \}\> |
-| <a id="exportbundle"></a> `exportBundle` | () => `void` |
-| <a id="exportcompiled"></a> `exportCompiled` | () => `void` |
-| <a id="exportsource"></a> `exportSource` | () => `void` |
-| <a id="geteditedvalue"></a> `getEditedValue` | (`resourceId`) => [`JsonValue`](../type-aliases/JsonValue.md) \| `undefined` |
-| <a id="hasresourceedit"></a> `hasResourceEdit` | (`resourceId`) => `boolean` |
-| <a id="importbundle"></a> `importBundle` | (`bundle`) => `Promise`\<`void`\> |
-| <a id="importfiletree"></a> `importFileTree` | (`fileTree`) => `Promise`\<`void`\> |
-| <a id="importfiletreewithconfig"></a> `importFileTreeWithConfig` | (`fileTree`, `config`) => `Promise`\<`void`\> |
-| <a id="markresourcefordeletion"></a> `markResourceForDeletion` | (`resourceId`) => `void` |
-| <a id="o11y"></a> `o11y` | [`IObservabilityContext`](../namespaces/ObservabilityTools/interfaces/IObservabilityContext.md) |
-| <a id="removependingresource"></a> `removePendingResource` | (`resourceId`) => [`Result`](../type-aliases/Result.md)\<`void`\> |
-| <a id="resetfilter"></a> `resetFilter` | () => `void` |
-| <a id="resetresolutioncache"></a> `resetResolutionCache` | () => [`Result`](../type-aliases/Result.md)\<`void`\> |
-| <a id="resolveresource"></a> `resolveResource` | (`resourceId`, `context?`) => [`Result`](../type-aliases/Result.md)\<[`JsonValue`](../type-aliases/JsonValue.md)\> |
-| <a id="savenewresourceaspending"></a> `saveNewResourceAsPending` | () => [`Result`](../type-aliases/Result.md)\<\{ `diagnostics`: `string`[]; `pendingResources`: `Map`\<`string`, [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs)\>; \}\> |
-| <a id="saveresourceedit"></a> `saveResourceEdit` | (`resourceId`, `editedValue`, `originalValue?`) => [`Result`](../type-aliases/Result.md)\<`void`\> |
-| <a id="selectresource"></a> `selectResource` | (`resourceId`) => `void` |
-| <a id="selectresourceforresolution"></a> `selectResourceForResolution` | (`resourceId`) => [`Result`](../type-aliases/Result.md)\<`void`\> |
-| <a id="selectresourcetype"></a> `selectResourceType` | (`type`) => [`Result`](../type-aliases/Result.md)\<\{ `diagnostics`: `string`[]; `draft`: \{ `isValid`: `boolean`; `resourceId`: `string`; `resourceType`: `string`; `template`: [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs); \} \| `undefined`; \}\> |
-| <a id="setresolutionviewmode"></a> `setResolutionViewMode` | (`mode`) => `void` |
-| <a id="startnewresource"></a> `startNewResource` | (`params?`) => [`Result`](../type-aliases/Result.md)\<\{ `diagnostics`: `string`[]; `draft`: \{ `isValid`: `boolean`; `resourceId`: `string`; `resourceType`: `string`; `template`: [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs); \} \| `undefined`; \}\> |
-| <a id="updateconfiguration"></a> `updateConfiguration` | (`config`) => `void` |
-| <a id="updatefilterstate"></a> `updateFilterState` | (`state`) => `void` |
-| <a id="updatenewresourceid"></a> `updateNewResourceId` | (`id`) => [`Result`](../type-aliases/Result.md)\<\{ `diagnostics`: `string`[]; `draft`: \{ `isValid`: `boolean`; `resourceId`: `string`; `resourceType`: `string`; `template`: [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs); \} \| `undefined`; \}\> |
-| <a id="updatenewresourcejson"></a> `updateNewResourceJson` | (`json`) => [`Result`](../type-aliases/Result.md)\<\{ `diagnostics`: `string`[]; `draft`: \{ `isValid`: `boolean`; `resourceId`: `string`; `resourceType`: `string`; `template`: [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs); \} \| `undefined`; \}\> |
-| <a id="updateresolutioncontext"></a> `updateResolutionContext` | (`qualifierName`, `value`) => [`Result`](../type-aliases/Result.md)\<`void`\> |
+| <a id="property-addmessage"></a> `addMessage` | (`type`, `message`) => `void` |
+| <a id="property-applyconfiguration"></a> `applyConfiguration` | (`config`) => `void` |
+| <a id="property-applyfilter"></a> `applyFilter` | () => `Promise`\<[`IFilterResult`](../namespaces/FilterTools/interfaces/IFilterResult.md) \| `null`\> |
+| <a id="property-applypendingresources"></a> `applyPendingResources` | () => `Promise`\<[`Result`](../type-aliases/Result.md)\<\{ `appliedCount`: `number`; `deletionCount`: `number`; `existingResourceEditCount`: `number`; `newResourceCount`: `number`; `pendingResourceEditCount`: `number`; \}\>\> |
+| <a id="property-applyresolutioncontext"></a> `applyResolutionContext` | (`hostManagedValues?`) => [`Result`](../type-aliases/Result.md)\<`void`\> |
+| <a id="property-cancelnewresource"></a> `cancelNewResource` | () => `void` |
+| <a id="property-clearmessages"></a> `clearMessages` | () => `void` |
+| <a id="property-clearresourceedits"></a> `clearResourceEdits` | () => [`Result`](../type-aliases/Result.md)\<\{ `clearedCount`: `number`; \}\> |
+| <a id="property-clearresources"></a> `clearResources` | () => `void` |
+| <a id="property-creatependingresource"></a> `createPendingResource` | (`params`) => [`Result`](../type-aliases/Result.md)\<`void`\> |
+| <a id="property-discardpendingresources"></a> `discardPendingResources` | () => `void` |
+| <a id="property-discardresourceedits"></a> `discardResourceEdits` | () => [`Result`](../type-aliases/Result.md)\<\{ `discardedCount`: `number`; \}\> |
+| <a id="property-exportbundle"></a> `exportBundle` | () => `void` |
+| <a id="property-exportcompiled"></a> `exportCompiled` | () => `void` |
+| <a id="property-exportsource"></a> `exportSource` | () => `void` |
+| <a id="property-geteditedvalue"></a> `getEditedValue` | (`resourceId`) => [`JsonValue`](../type-aliases/JsonValue.md) \| `undefined` |
+| <a id="property-hasresourceedit"></a> `hasResourceEdit` | (`resourceId`) => `boolean` |
+| <a id="property-importbundle"></a> `importBundle` | (`bundle`) => `Promise`\<`void`\> |
+| <a id="property-importfiletree"></a> `importFileTree` | (`fileTree`) => `Promise`\<`void`\> |
+| <a id="property-importfiletreewithconfig"></a> `importFileTreeWithConfig` | (`fileTree`, `config`) => `Promise`\<`void`\> |
+| <a id="property-markresourcefordeletion"></a> `markResourceForDeletion` | (`resourceId`) => `void` |
+| <a id="property-o11y"></a> `o11y` | [`IObservabilityContext`](../namespaces/ObservabilityTools/interfaces/IObservabilityContext.md) |
+| <a id="property-removependingresource"></a> `removePendingResource` | (`resourceId`) => [`Result`](../type-aliases/Result.md)\<`void`\> |
+| <a id="property-resetfilter"></a> `resetFilter` | () => `void` |
+| <a id="property-resetresolutioncache"></a> `resetResolutionCache` | () => [`Result`](../type-aliases/Result.md)\<`void`\> |
+| <a id="property-resolveresource"></a> `resolveResource` | (`resourceId`, `context?`) => [`Result`](../type-aliases/Result.md)\<[`JsonValue`](../type-aliases/JsonValue.md)\> |
+| <a id="property-savenewresourceaspending"></a> `saveNewResourceAsPending` | () => [`Result`](../type-aliases/Result.md)\<\{ `diagnostics`: `string`[]; `pendingResources`: `Map`\<`string`, [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs)\<`string`\>\>; \}\> |
+| <a id="property-saveresourceedit"></a> `saveResourceEdit` | (`resourceId`, `editedValue`, `originalValue?`) => [`Result`](../type-aliases/Result.md)\<`void`\> |
+| <a id="property-selectresource"></a> `selectResource` | (`resourceId`) => `void` |
+| <a id="property-selectresourceforresolution"></a> `selectResourceForResolution` | (`resourceId`) => [`Result`](../type-aliases/Result.md)\<`void`\> |
+| <a id="property-selectresourcetype"></a> `selectResourceType` | (`type`) => [`Result`](../type-aliases/Result.md)\<\{ `diagnostics`: `string`[]; `draft`: \{ `isValid`: `boolean`; `resourceId`: `string`; `resourceType`: `string`; `template`: [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs); \} \| `undefined`; \}\> |
+| <a id="property-setresolutionviewmode"></a> `setResolutionViewMode` | (`mode`) => `void` |
+| <a id="property-startnewresource"></a> `startNewResource` | (`params?`) => [`Result`](../type-aliases/Result.md)\<\{ `diagnostics`: `string`[]; `draft`: \{ `isValid`: `boolean`; `resourceId`: `string`; `resourceType`: `string`; `template`: [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs); \} \| `undefined`; \}\> |
+| <a id="property-updateconfiguration"></a> `updateConfiguration` | (`config`) => `void` |
+| <a id="property-updatefilterstate"></a> `updateFilterState` | (`state`) => `void` |
+| <a id="property-updatenewresourceid"></a> `updateNewResourceId` | (`id`) => [`Result`](../type-aliases/Result.md)\<\{ `diagnostics`: `string`[]; `draft`: \{ `isValid`: `boolean`; `resourceId`: `string`; `resourceType`: `string`; `template`: [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs); \} \| `undefined`; \}\> |
+| <a id="property-updatenewresourcejson"></a> `updateNewResourceJson` | (`json`) => [`Result`](../type-aliases/Result.md)\<\{ `diagnostics`: `string`[]; `draft`: \{ `isValid`: `boolean`; `resourceId`: `string`; `resourceType`: `string`; `template`: [`ILooseResourceDecl`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/docs); \} \| `undefined`; \}\> |
+| <a id="property-updateresolutioncontext"></a> `updateResolutionContext` | (`qualifierName`, `value`) => [`Result`](../type-aliases/Result.md)\<`void`\> |

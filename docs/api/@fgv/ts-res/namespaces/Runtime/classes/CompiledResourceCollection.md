@@ -38,10 +38,10 @@ Constructor for a CompiledResourceCollection object.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_numcandidates"></a> `_numCandidates?` | `protected` | `number` | - |
-| <a id="conditions"></a> `conditions` | `readonly` | [`ReadOnlyConditionCollector`](../../Conditions/type-aliases/ReadOnlyConditionCollector.md) | A [ReadOnlyConditionCollector](../../Conditions/type-aliases/ReadOnlyConditionCollector.md) which contains the [conditions](../../../classes/Condition.md) used by resource candidates. |
-| <a id="conditionsets"></a> `conditionSets` | `readonly` | [`ReadOnlyConditionSetCollector`](../../Conditions/type-aliases/ReadOnlyConditionSetCollector.md) | A [ReadOnlyConditionSetCollector](../../Conditions/type-aliases/ReadOnlyConditionSetCollector.md) which contains the [condition sets](../../Conditions/classes/ConditionSet.md) used by resource candidates. |
-| <a id="decisions"></a> `decisions` | `readonly` | [`ReadOnlyAbstractDecisionCollector`](../../Decisions/type-aliases/ReadOnlyAbstractDecisionCollector.md) | A [ReadOnlyAbstractDecisionCollector](../../Decisions/type-aliases/ReadOnlyAbstractDecisionCollector.md) which contains the [abstract decisions](../../../classes/Decision.md) used by resource candidates. |
+| <a id="property-_numcandidates"></a> `_numCandidates?` | `protected` | `number` | - |
+| <a id="property-conditions"></a> `conditions` | `public readonly` | [`ReadOnlyConditionCollector`](../../Conditions/type-aliases/ReadOnlyConditionCollector.md) | A [ReadOnlyConditionCollector](../../Conditions/type-aliases/ReadOnlyConditionCollector.md) which contains the [conditions](../../../classes/Condition.md) used by resource candidates. |
+| <a id="property-conditionsets"></a> `conditionSets` | `public readonly` | [`ReadOnlyConditionSetCollector`](../../Conditions/type-aliases/ReadOnlyConditionSetCollector.md) | A [ReadOnlyConditionSetCollector](../../Conditions/type-aliases/ReadOnlyConditionSetCollector.md) which contains the [condition sets](../../Conditions/classes/ConditionSet.md) used by resource candidates. |
+| <a id="property-decisions"></a> `decisions` | `public readonly` | [`ReadOnlyAbstractDecisionCollector`](../../Decisions/type-aliases/ReadOnlyAbstractDecisionCollector.md) | A [ReadOnlyAbstractDecisionCollector](../../Decisions/type-aliases/ReadOnlyAbstractDecisionCollector.md) which contains the [abstract decisions](../../../classes/Decision.md) used by resource candidates. |
 
 ## Accessors
 
@@ -63,7 +63,7 @@ Resources are built on-demand when accessed and returns Results for error handli
 
 #### Implementation of
 
-[`IResourceManager`](../../../interfaces/IResourceManager.md).[`builtResources`](../../../interfaces/IResourceManager.md#builtresources)
+[`IResourceManager`](../../../interfaces/IResourceManager.md).[`builtResources`](../../../interfaces/IResourceManager.md#property-builtresources)
 
 ***
 
@@ -97,7 +97,7 @@ The number of candidates in this resource manager.
 
 #### Implementation of
 
-[`IResourceManager`](../../../interfaces/IResourceManager.md).[`numCandidates`](../../../interfaces/IResourceManager.md#numcandidates)
+[`IResourceManager`](../../../interfaces/IResourceManager.md).[`numCandidates`](../../../interfaces/IResourceManager.md#property-numcandidates)
 
 ***
 
@@ -117,7 +117,7 @@ The number of resources in this resource manager.
 
 #### Implementation of
 
-[`IResourceManager`](../../../interfaces/IResourceManager.md).[`numResources`](../../../interfaces/IResourceManager.md#numresources)
+[`IResourceManager`](../../../interfaces/IResourceManager.md).[`numResources`](../../../interfaces/IResourceManager.md#property-numresources)
 
 ***
 
@@ -167,7 +167,7 @@ The resource IDs that this resource manager can resolve.
 
 #### Implementation of
 
-[`IResourceManager`](../../../interfaces/IResourceManager.md).[`resourceIds`](../../../interfaces/IResourceManager.md#resourceids)
+[`IResourceManager`](../../../interfaces/IResourceManager.md).[`resourceIds`](../../../interfaces/IResourceManager.md#property-resourceids)
 
 ***
 

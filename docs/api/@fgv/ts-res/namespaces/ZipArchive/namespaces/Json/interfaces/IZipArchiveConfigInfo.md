@@ -12,6 +12,6 @@ JSON representation of ZIP archive config information
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="archivepath"></a> `archivePath` | `string` | Path within the archive (e.g., "config.json") |
-| <a id="originalpath"></a> `originalPath` | `string` | Original config file path |
-| <a id="type"></a> `type` | `"file"` | Type of config (always 'file') |
+| <a id="property-archivepath"></a> `archivePath` | `string` | Path within the archive (e.g., "config.json") |
+| <a id="property-originalpath"></a> `originalPath` | `string` | Original config file path |
+| <a id="property-type"></a> `type` | `"file"` | Type of config (always 'file') |

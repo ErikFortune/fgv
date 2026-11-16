@@ -21,6 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { AiAssist } from '@fgv/ts-extras';
 import * as mcp from '../../index';
 
 describe('@fgv/ts-extras-mcp package barrel', () => {
@@ -40,5 +41,16 @@ describe('@fgv/ts-extras-mcp package barrel', () => {
     // this way. (The synchronous transport factories validate without touching the SDK/network.)
     expect(mcp.createStdioTransport({ command: '' })).toFailWith(/command must be a non-empty string/);
     expect(mcp.createHttpTransport({ url: 'not a url' })).toFailWith(/invalid url/);
+  });
+
+  test('MCP_TASK_SUPPORT_VALUES is the @fgv/ts-extras declaration itself, not a copy', () => {
+    // Identity, not deep equality: the vocabulary has one declaration, and a copy — even an equal
+    // one today — is a second source that could drift from it.
+    expect(mcp.MCP_TASK_SUPPORT_VALUES).toBe(AiAssist.MCP_TASK_SUPPORT_VALUES);
+    // Compile-time: the two type names are interchangeable in both directions.
+    const declared: AiAssist.McpTaskSupport = 'optional';
+    const bound: mcp.McpTaskSupport = declared;
+    const back: AiAssist.McpTaskSupport = bound;
+    expect(back).toBe('optional');
   });
 });

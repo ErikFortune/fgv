@@ -16,14 +16,14 @@ A read-only interface for accessing resource tree children using weakly-typed st
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="size"></a> `size` | `readonly` | `number` | Returns the number of entries in the map. |
-| <a id="validating"></a> `validating` | `readonly` | [`IReadOnlyResourceTreeChildren`](IReadOnlyResourceTreeChildren.md)\<`T`, `string`, `string`\> | - |
+| <a id="property-size"></a> `size` | `readonly` | `number` | Returns the number of entries in the map. |
+| <a id="property-validating"></a> `validating` | `readonly` | [`IReadOnlyResourceTreeChildren`](IReadOnlyResourceTreeChildren.md)\<`T`, `string`, `string`\> | - |
 
 ## Methods
 

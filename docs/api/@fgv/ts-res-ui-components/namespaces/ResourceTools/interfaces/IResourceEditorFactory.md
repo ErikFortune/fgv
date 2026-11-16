@@ -13,8 +13,8 @@ Allows ResolutionView to provide custom editing experiences for different resour
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | `unknown` |
-| `TV` *extends* [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> | [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> |
+| <a id="type-parameter-t"></a> `T` | `unknown` |
+| <a id="type-parameter-tv"></a> `TV` *extends* [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> | [`JsonCompatibleType`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`T`\> |
 
 ## Methods
 

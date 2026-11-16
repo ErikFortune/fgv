@@ -14,8 +14,8 @@ Encodes mode + tab into a URL hash string.
 
 | Type Parameter |
 | ------ |
-| `TMode` *extends* `string` |
-| `TTab` *extends* `string` |
+| <a id="type-parameter-tmode"></a> `TMode` *extends* `string` |
+| <a id="type-parameter-ttab"></a> `TTab` *extends* `string` |
 
 ## Parameters
 

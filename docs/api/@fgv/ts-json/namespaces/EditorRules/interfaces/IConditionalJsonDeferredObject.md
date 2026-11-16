@@ -16,11 +16,11 @@ matching result, to be resolved at finalization time.
 
 ## Indexable
 
-\[`key`: `string`\]: [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md)
+> \[`key`: `string`\]: [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md)
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="matchtype"></a> `matchType` | `"match"` \| `"default"` \| `"unconditional"` |
-| <a id="value"></a> `value` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="property-matchtype"></a> `matchType` | `"match"` \| `"default"` \| `"unconditional"` |
+| <a id="property-value"></a> `value` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |

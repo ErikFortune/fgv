@@ -13,21 +13,21 @@ context keys to nested model specs.
 
 A bare string is equivalent to `{ base: string }`. This keeps the simple
 case simple while allowing context-aware model selection (e.g. different
-models for tool-augmented vs. base completions).
+models for different quality tiers).
 
 ## Example
 
 ```typescript
 // Simple — same model for all contexts:
-const simple: ModelSpec = 'grok-4-1-fast';
+const simple: ModelSpec = 'grok-4.3';
 
-// Context-aware — reasoning model when tools are active:
-const split: ModelSpec = { base: 'grok-4-1-fast', tools: 'grok-4-1-fast-reasoning' };
+// Context-aware — different model per quality tier:
+const split: ModelSpec = { base: 'gpt-5.6-luna', advanced: 'gpt-5.6-terra', frontier: 'gpt-5.6-sol' };
 
-// Future nested — per-tool model selection:
-const nested: ModelSpec = { base: 'grok-fast', tools: { base: 'grok-r', image: 'grok-v' } };
+// Nested — a tier branch is itself a spec:
+const nested: ModelSpec = { base: 'grok-fast', advanced: { base: 'grok-r', image: 'grok-v' } };
 ```
 
 ## Indexable
 
-\[`key`: `string`\]: [`ModelSpec`](../type-aliases/ModelSpec.md)
+> \[`key`: `string`\]: [`ModelSpec`](../type-aliases/ModelSpec.md)

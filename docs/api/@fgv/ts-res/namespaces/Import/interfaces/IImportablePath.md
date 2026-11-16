@@ -16,6 +16,6 @@ Represents a filesystem path to be imported.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="context"></a> `context?` | [`ImportContext`](../classes/ImportContext.md) |
-| <a id="path"></a> `path` | `string` |
-| <a id="type"></a> `type` | `"path"` |
+| <a id="property-context"></a> `context?` | [`ImportContext`](../classes/ImportContext.md) |
+| <a id="property-path"></a> `path` | `string` |
+| <a id="property-type"></a> `type` | `"path"` |

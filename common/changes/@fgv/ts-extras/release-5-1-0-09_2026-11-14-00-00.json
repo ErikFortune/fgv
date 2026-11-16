@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Upgrading from 5.0.2: new runtime dependencies `js-yaml` and `@types/luxon` (the published typings reference luxon's `DateTime`). The packlets that shipped in 5.0.2 — conversion, csv, experimental, hash, record-jar, zip-file-tree — changed only additively.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

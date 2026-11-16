@@ -12,4 +12,4 @@ Options for getting file handles
 
 | Property | Type |
 | ------ | ------ |
-| <a id="create"></a> `create?` | `boolean` |
+| <a id="property-create"></a> `create?` | `boolean` |

@@ -43,7 +43,7 @@ The [built-in factory](BuiltInResourceTypeFactory.md) is always added to the end
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="factories"></a> `factories` | `readonly` | [`IConfigInitFactory`](../interfaces/IConfigInitFactory.md)\<[`IResourceTypeConfig`](../../ResourceTypes/namespaces/Config/interfaces/IResourceTypeConfig.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>, [`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\>\>[] |
+| <a id="property-factories"></a> `factories` | `public readonly` | [`IConfigInitFactory`](../interfaces/IConfigInitFactory.md)\<[`IResourceTypeConfig`](../../ResourceTypes/namespaces/Config/interfaces/IResourceTypeConfig.md)\<[`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\>, [`ResourceType`](../../../classes/ResourceType.md)\<`unknown`\>\>[] |
 
 ## Methods
 

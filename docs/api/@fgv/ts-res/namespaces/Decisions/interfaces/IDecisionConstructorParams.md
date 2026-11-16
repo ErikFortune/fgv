@@ -17,12 +17,12 @@ the protected constructor.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="type-parameter-tvalue"></a> `TVALUE` *extends* [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="candidates"></a> `candidates` | readonly [`ICandidate`](ICandidate.md)\<`TVALUE`\>[] |
-| <a id="index"></a> `index?` | `number` |
-| <a id="isabstract"></a> `isAbstract` | `boolean` |
+| <a id="property-candidates"></a> `candidates` | readonly [`ICandidate`](ICandidate.md)\<`TVALUE`\>[] |
+| <a id="property-index"></a> `index?` | `number` |
+| <a id="property-isabstract"></a> `isAbstract` | `boolean` |

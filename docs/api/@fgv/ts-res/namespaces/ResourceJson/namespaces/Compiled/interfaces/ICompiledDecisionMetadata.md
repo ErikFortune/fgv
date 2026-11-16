@@ -12,4 +12,4 @@ Metadata for a compiled decision, containing human-readable information.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="key"></a> `key` | [`DecisionKey`](../../../../../type-aliases/DecisionKey.md) | The semantic key of the decision (e.g., "language=en-US,territory=US OR language=fr,territory=CA"). |
+| <a id="property-key"></a> `key` | [`DecisionKey`](../../../../../type-aliases/DecisionKey.md) | The semantic key of the decision (e.g., "language=en-US,territory=US OR language=fr,territory=CA"). |

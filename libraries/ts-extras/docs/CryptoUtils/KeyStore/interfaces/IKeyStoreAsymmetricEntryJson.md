@@ -113,6 +113,23 @@ The public key as a JSON Web Key.
 </td></tr>
 <tr><td>
 
+[escrowedPrivateKeyJwk](./IKeyStoreAsymmetricEntryJson.escrowedPrivateKeyJwk.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+JsonWebKey
+
+</td><td>
+
+Optional escrowed copy of the private key, as a JSON Web Key.
+
+</td></tr>
+<tr><td>
+
 [description](./IKeyStoreAsymmetricEntryJson.description.md)
 
 </td><td>

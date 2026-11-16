@@ -23,6 +23,8 @@ Features:
 
 ## Param
 
+**props**
+
 ResourceOrchestrator configuration
 
 ## Returns

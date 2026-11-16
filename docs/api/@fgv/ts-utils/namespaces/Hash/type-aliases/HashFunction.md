@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-utils](../../../README.md) / [Hash](../README.md) / HashFunction
 
-# Type Alias: HashFunction()
+# Type Alias: HashFunction
 
 > **HashFunction** = (`parts`) => `string`
 

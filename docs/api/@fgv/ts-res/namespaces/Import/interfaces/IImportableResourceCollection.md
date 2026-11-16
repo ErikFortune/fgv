@@ -16,6 +16,6 @@ Represents a resource collection to be imported.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="collection"></a> `collection` | [`ResourceDeclCollection`](../../ResourceJson/classes/ResourceDeclCollection.md) |
-| <a id="context"></a> `context?` | [`ImportContext`](../classes/ImportContext.md) |
-| <a id="type"></a> `type` | `"resourceCollection"` |
+| <a id="property-collection"></a> `collection` | [`ResourceDeclCollection`](../../ResourceJson/classes/ResourceDeclCollection.md) |
+| <a id="property-context"></a> `context?` | [`ImportContext`](../classes/ImportContext.md) |
+| <a id="property-type"></a> `type` | `"resourceCollection"` |

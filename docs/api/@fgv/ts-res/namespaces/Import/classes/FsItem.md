@@ -35,10 +35,10 @@ Protected constructor creates a new FsItem.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="basename"></a> `baseName` | `readonly` | `string` | The base name of the file system item, once any conditions set tokens have been removed. |
-| <a id="conditions"></a> `conditions` | `readonly` | [`IValidatedConditionDecl`](../../Conditions/interfaces/IValidatedConditionDecl.md)[] | [Conditions](../../Conditions/interfaces/IValidatedConditionDecl.md) extracted from the base name of the FsItem. |
-| <a id="item"></a> `item` | `readonly` | [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | The underlying `FileTreeItem` for this item. |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [qualifiers](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) to use for this item. |
+| <a id="property-basename"></a> `baseName` | `public readonly` | `string` | The base name of the file system item, once any conditions set tokens have been removed. |
+| <a id="property-conditions"></a> `conditions` | `public readonly` | [`IValidatedConditionDecl`](../../Conditions/interfaces/IValidatedConditionDecl.md)[] | [Conditions](../../Conditions/interfaces/IValidatedConditionDecl.md) extracted from the base name of the FsItem. |
+| <a id="property-item"></a> `item` | `public readonly` | [`FileTreeItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | The underlying `FileTreeItem` for this item. |
+| <a id="property-qualifiers"></a> `qualifiers` | `public readonly` | [`IReadOnlyQualifierCollector`](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [qualifiers](../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) to use for this item. |
 
 ## Methods
 

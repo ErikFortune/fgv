@@ -6,7 +6,7 @@ Implementation of `FileTree.IFileTreeFileItem` for files in a ZIP archive.
 ZIP files are read-only, so this item does not support mutation.
 Use FileTree.isMutableFileItem | isMutableFileItem to check before attempting mutations.
 
-**Implements:** `IFileTreeFileItem<TCT>`
+**Implements:** `IBinaryFileTreeFileItem<TCT>`, `IStrictTextFileTreeFileItem<TCT>`
 
 ## Constructors
 
@@ -216,6 +216,32 @@ Gets the contents of the file as parsed JSON.
 </td><td>
 
 Gets the raw contents of the file as a string.
+
+</td></tr>
+<tr><td>
+
+[getRawBytes()](./ZipFileItem.getRawBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the raw bytes of the ZIP entry, with no text decoding applied.
+
+</td></tr>
+<tr><td>
+
+[getTextStrict()](./ZipFileItem.getTextStrict.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Gets the file's contents, decoding UTF-8 strictly.
 
 </td></tr>
 </tbody></table>

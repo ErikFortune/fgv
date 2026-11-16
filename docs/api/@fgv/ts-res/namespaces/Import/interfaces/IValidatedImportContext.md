@@ -12,5 +12,5 @@ Accumulated context of a resource import operation.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="baseid"></a> `baseId?` | `readonly` | [`ResourceId`](../../../type-aliases/ResourceId.md) | Base ID for the import context for resources imported in this context. |
-| <a id="conditions"></a> `conditions` | `readonly` | readonly [`ILooseConditionDecl`](../../ResourceJson/namespaces/Json/interfaces/ILooseConditionDecl.md)[] | Conditions to be applied to resources imported in this context. |
+| <a id="property-baseid"></a> `baseId?` | `readonly` | [`ResourceId`](../../../type-aliases/ResourceId.md) | Base ID for the import context for resources imported in this context. |
+| <a id="property-conditions"></a> `conditions` | `readonly` | readonly [`IConditionDecl`](../../Conditions/type-aliases/IConditionDecl.md)[] | Conditions to be applied to resources imported in this context. |

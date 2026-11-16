@@ -26,6 +26,7 @@
 - [ReadOnlyResultMapValidator](classes/ReadOnlyResultMapValidator.md)
 - [ResultMap](classes/ResultMap.md)
 - [ResultMapValidator](classes/ResultMapValidator.md)
+- [RetainingRingBuffer](classes/RetainingRingBuffer.md)
 - [ValidatingCollector](classes/ValidatingCollector.md)
 - [ValidatingConvertingCollector](classes/ValidatingConvertingCollector.md)
 - [ValidatingConvertingResultMap](classes/ValidatingConvertingResultMap.md)
@@ -59,6 +60,9 @@
 - [IResultMap](interfaces/IResultMap.md)
 - [IResultMapConstructorParams](interfaces/IResultMapConstructorParams.md)
 - [IResultMapValidatorCreateParams](interfaces/IResultMapValidatorCreateParams.md)
+- [IRetainedRecord](interfaces/IRetainedRecord.md)
+- [IRetainingRingBufferCreateParams](interfaces/IRetainingRingBufferCreateParams.md)
+- [IRetainingRingBufferQuery](interfaces/IRetainingRingBufferQuery.md)
 - [IValidatingCollectorConstructorParams](interfaces/IValidatingCollectorConstructorParams.md)
 - [IValidatingConvertingCollectorConstructorParams](interfaces/IValidatingConvertingCollectorConstructorParams.md)
 - [IValidatingConvertingResultMapConstructorParams](interfaces/IValidatingConvertingResultMapConstructorParams.md)
@@ -82,6 +86,11 @@
 - [ResultMapForEachCb](type-aliases/ResultMapForEachCb.md)
 - [ResultMapResultDetail](type-aliases/ResultMapResultDetail.md)
 - [ResultMapValueFactory](type-aliases/ResultMapValueFactory.md)
+
+## Variables
+
+- [allConversionErrorHandling](variables/allConversionErrorHandling.md)
+- [conversionErrorHandling](variables/conversionErrorHandling.md)
 
 ## References
 

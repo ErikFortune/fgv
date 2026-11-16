@@ -36,6 +36,20 @@ Resolves paths to an absolute path.
 </td></tr>
 <tr><td>
 
+[resolveRealPath(path)](./IFileTreeAccessors.resolveRealPath.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Resolves a path to its canonical real path, with every symbolic link
+resolved.
+
+</td></tr>
+<tr><td>
+
 [getExtension(path)](./IFileTreeAccessors.getExtension.md)
 
 </td><td>

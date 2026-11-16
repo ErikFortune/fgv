@@ -75,4 +75,21 @@ string
 
 
 </td></tr>
+<tr><td>
+
+[encoding](./IStorageFileResponse.encoding.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[StorageContentEncoding](../type-aliases/StorageContentEncoding.md)
+
+</td><td>
+
+How `contents` is encoded.
+
+</td></tr>
 </tbody></table>

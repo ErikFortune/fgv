@@ -16,7 +16,7 @@ Helper method to merge a loose candidate with a base name and conditions.
 | ------ | ------ | ------ |
 | `candidate` | [`IImporterResourceCandidateDecl`](../../Normalized/interfaces/IImporterResourceCandidateDecl.md) | The candidate to merge. |
 | `baseName?` | `string` | The base name to merge with the candidate. |
-| `baseConditions?` | readonly [`ILooseConditionDecl`](../../Json/interfaces/ILooseConditionDecl.md)[] | The base conditions to merge with the candidate. |
+| `baseConditions?` | readonly [`ILooseConditionDecl`](../../Json/interfaces/ILooseConditionDecl.md)\<`string`\>[] | The base conditions to merge with the candidate. |
 
 ## Returns
 

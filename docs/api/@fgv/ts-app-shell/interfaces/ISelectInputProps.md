@@ -12,12 +12,12 @@ Props for the SelectInput component.
 
 | Type Parameter |
 | ------ |
-| `T` *extends* `string` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="onchange"></a> `onChange` | `readonly` | (`value`) => `void` | Called when selection changes |
-| <a id="options"></a> `options` | `readonly` | readonly `T`[] | Available options |
-| <a id="value"></a> `value` | `readonly` | `T` | Currently selected value |
+| <a id="property-onchange"></a> `onChange` | `readonly` | (`value`) => `void` | Called when selection changes |
+| <a id="property-options"></a> `options` | `readonly` | readonly `T`[] | Available options |
+| <a id="property-value"></a> `value` | `readonly` | `T` | Currently selected value |

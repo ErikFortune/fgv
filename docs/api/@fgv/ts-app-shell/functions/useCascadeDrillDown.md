@@ -23,17 +23,4 @@ back to `depth`. Otherwise, it appends a new view entry at `depth + 1`.
 
 ## Returns
 
-> (`depth`, `entityType`, `entityId`, `extra?`): `void`
-
-### Parameters
-
-| Parameter | Type |
-| ------ | ------ |
-| `depth` | `number` |
-| `entityType` | `string` |
-| `entityId` | `string` |
-| `extra?` | `Partial`\<[`ICascadeEntryBase`](../interfaces/ICascadeEntryBase.md)\> |
-
-### Returns
-
-`void`
+(`depth`, `entityType`, `entityId`, `extra?`) => `void`

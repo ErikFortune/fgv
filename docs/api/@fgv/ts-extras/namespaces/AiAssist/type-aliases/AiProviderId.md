@@ -6,6 +6,6 @@
 
 # Type Alias: AiProviderId
 
-> **AiProviderId** = `"copy-paste"` \| `"xai-grok"` \| `"openai"` \| `"anthropic"` \| `"google-gemini"` \| `"groq"` \| `"mistral"`
+> **AiProviderId** = `"copy-paste"` \| `"xai-grok"` \| `"openai"` \| `"openai-compat"` \| `"anthropic"` \| `"google-gemini"` \| `"groq"` \| `"mistral"` \| `"ollama"`
 
 All known AI provider identifiers.

@@ -17,12 +17,12 @@ Displays and manages the source resource collection.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="classname"></a> `className?` | `string` | Additional CSS class names for styling |
-| <a id="filterresult"></a> `filterResult?` | [`IFilterResult`](../../FilterTools/interfaces/IFilterResult.md) \| `null` | Result of filtering if applied |
-| <a id="filterstate"></a> `filterState?` | [`IFilterState`](../../FilterTools/interfaces/IFilterState.md) | Optional filter state for filtered views |
-| <a id="onexport"></a> `onExport?` | (`data`, `type`) => `void` | Callback when exporting resource collection data |
-| <a id="onresourceselect"></a> `onResourceSelect?` | (`resourceId`) => `void` | Callback when a resource is selected |
-| <a id="pickeroptions"></a> `pickerOptions?` | [`IResourcePickerOptions`](../../PickerTools/interfaces/IResourcePickerOptions.md) | Optional configuration for the ResourcePicker behavior |
-| <a id="pickeroptionspanelpresentation"></a> `pickerOptionsPanelPresentation?` | `"inline"` \| `"hidden"` \| `"popover"` \| `"popup"` \| `"collapsible"` | How to present the ResourcePicker options control panel (default: 'hidden' for production use) |
-| <a id="resources"></a> `resources?` | [`IExtendedProcessedResources`](../../ResourceTools/interfaces/IExtendedProcessedResources.md) \| `null` | The processed resource system to display |
-| <a id="selectedresourceid"></a> `selectedResourceId?` | `string` \| `null` | Currently selected resource ID for detailed view |
+| <a id="property-classname"></a> `className?` | `string` | Additional CSS class names for styling |
+| <a id="property-filterresult"></a> `filterResult?` | [`IFilterResult`](../../FilterTools/interfaces/IFilterResult.md) \| `null` | Result of filtering if applied |
+| <a id="property-filterstate"></a> `filterState?` | [`IFilterState`](../../FilterTools/interfaces/IFilterState.md) | Optional filter state for filtered views |
+| <a id="property-onexport"></a> `onExport?` | (`data`, `type`) => `void` | Callback when exporting resource collection data |
+| <a id="property-onresourceselect"></a> `onResourceSelect?` | (`resourceId`) => `void` | Callback when a resource is selected |
+| <a id="property-pickeroptions"></a> `pickerOptions?` | [`IResourcePickerOptions`](../../PickerTools/interfaces/IResourcePickerOptions.md) | Optional configuration for the ResourcePicker behavior |
+| <a id="property-pickeroptionspanelpresentation"></a> `pickerOptionsPanelPresentation?` | `"inline"` \| `"hidden"` \| `"popover"` \| `"popup"` \| `"collapsible"` | How to present the ResourcePicker options control panel (default: 'hidden' for production use) |
+| <a id="property-resources"></a> `resources?` | [`IExtendedProcessedResources`](../../ResourceTools/interfaces/IExtendedProcessedResources.md) \| `null` | The processed resource system to display |
+| <a id="property-selectedresourceid"></a> `selectedResourceId?` | `string` \| `null` | Currently selected resource ID for detailed view |

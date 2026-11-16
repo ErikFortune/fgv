@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Conversion: `or()` alternation on `Converter` and `Validator`, `Converters.tuple`, `Converters.compositeId` / `compositeIdFromString` / `compositeIdFromObject` (with a `split` mode), and `StringConverter.singleLine()`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

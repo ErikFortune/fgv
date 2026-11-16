@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-res](../../../README.md) / [Config](../README.md) / QualifierTypeFactoryFunction
 
-# Type Alias: QualifierTypeFactoryFunction()\<T\>
+# Type Alias: QualifierTypeFactoryFunction\<T\>
 
 > **QualifierTypeFactoryFunction**\<`T`\> = (`config`) => [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`T`\>
 
@@ -14,7 +14,7 @@ Function signature for creating a qualifier type from configuration.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* [`QualifierType`](../../../classes/QualifierType.md) | [`QualifierType`](../../../classes/QualifierType.md) |
+| <a id="type-parameter-t"></a> `T` *extends* [`QualifierType`](../../../classes/QualifierType.md) | [`QualifierType`](../../../classes/QualifierType.md) |
 
 ## Parameters
 

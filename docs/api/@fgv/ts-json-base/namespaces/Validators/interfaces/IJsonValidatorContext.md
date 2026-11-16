@@ -12,4 +12,4 @@ Validation context for in-place JSON validators.
 
 | Property | Type |
 | ------ | ------ |
-| <a id="ignoreundefinedproperties"></a> `ignoreUndefinedProperties?` | `boolean` |
+| <a id="property-ignoreundefinedproperties"></a> `ignoreUndefinedProperties?` | `boolean` |

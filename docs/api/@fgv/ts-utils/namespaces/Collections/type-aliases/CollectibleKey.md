@@ -14,4 +14,4 @@ Infer the key type from an [ICollectible](../interfaces/ICollectible.md) type.
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md) |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](../interfaces/ICollectible.md) |

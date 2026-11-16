@@ -1,0 +1,35 @@
+[**@fgv Monorepo API Documentation**](../../../../../README.md)
+
+***
+
+[@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-extras](../../../README.md) / [SaferFetch](../README.md) / ISaferFetchOptions
+
+# Interface: ISaferFetchOptions
+
+Options common to every safer-fetch entry point.
+
+## Extended by
+
+- [`ISaferFetchJsonOptions`](ISaferFetchJsonOptions.md)
+
+## Properties
+
+| Property | Modifier | Type | Description |
+| ------ | ------ | ------ | ------ |
+| <a id="property-addressguard"></a> `addressGuard` | `readonly` | [`IAddressGuard`](IAddressGuard.md) | **Required, with no default.** A passthrough default here would be exactly the failure this primitive exists to avoid — advertising a guarantee it does not have. Requiring it makes omission a *compile* error rather than a runtime surprise or a lint rule, and makes every call site's posture greppable in one search with no ambient default to overlook. Use a named factory. `allowAnyAddress()` is the explicit, deliberately uncomfortable opt-out, and is the only correct choice in a browser, where neither DNS resolution nor redirect interposition exists. |
+| <a id="property-body"></a> `body?` | `readonly` | `string` \| `Uint8Array`\<`ArrayBufferLike`\> | Request body. Not permitted with `'GET'` or `'HEAD'`. |
+| <a id="property-headers"></a> `headers?` | `readonly` | `Readonly`\<`Record`\<`string`, `string`\>\> | Request headers. Names are lowercased before the request guard sees them. |
+| <a id="property-headerstimeoutms"></a> `headersTimeoutMs?` | `readonly` | `number` | Deadline to first response headers, in milliseconds. Default [SaferFetch.DEFAULT\_HEADERS\_TIMEOUT\_MS](../variables/DEFAULT_HEADERS_TIMEOUT_MS.md). Distinguishes "the host is not answering" from "the host is answering slowly", which the failure taxonomy then reports as `timeout.phase`. **Remarks** Measured from the start of the attempt, which includes guard evaluation — an address guard that resolves DNS spends this budget too. That is deliberate: the deadline bounds the time a caller waits for a usable response, not the time one layer of the implementation spends. |
+| <a id="property-logger"></a> `logger?` | `readonly` | [`ILogger`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) | Diagnostics sink. Defaults to a no-op logger. |
+| <a id="property-maxredirects"></a> `maxRedirects?` | `readonly` | `number` | Cap on redirect hops followed under `'validate-each-hop'`. Default [SaferFetch.DEFAULT\_MAX\_REDIRECTS](../variables/DEFAULT_MAX_REDIRECTS.md) (5). Must be a non-negative integer; `0` refuses to follow any redirect. |
+| <a id="property-maxresponsebytes"></a> `maxResponseBytes?` | `readonly` | `number` | Cap on decoded response bytes. Default [SaferFetch.DEFAULT\_MAX\_RESPONSE\_BYTES](../variables/DEFAULT_MAX_RESPONSE_BYTES.md) (5 MiB). **Remarks** **This knob is meant to be reached for.** 5 MiB is roughly an order of magnitude above a realistic JSON API response and is generous for text, but real documents clear it — raise it per call for the calls that need it rather than treating the default as a ceiling. The cap is enforced by counting decoded bytes during the read, so raising it raises the buffer the process may be asked to hold; size it against the heap you are willing to spend, not against the largest document you can imagine. |
+| <a id="property-method"></a> `method?` | `readonly` | `"POST"` \| `"GET"` \| `"HEAD"` \| `"PUT"` \| `"DELETE"` \| `"PATCH"` | Defaults to `'GET'`. |
+| <a id="property-redirectpolicy"></a> `redirectPolicy?` | `readonly` | [`SaferFetchRedirectPolicy`](../type-aliases/SaferFetchRedirectPolicy.md) | How redirects are handled. Defaults to `'reject'`. **Remarks** The conservative default is deliberate, and is the same polarity as `addressGuard` having no default: one core serves both runtimes, `'reject'` is the only mode whose guarantee is identical on each, and following a redirect chain into hosts the caller never named is a posture worth spelling at the call site. Callers ingesting real-world URLs want `'validate-each-hop'`. |
+| <a id="property-requestguard"></a> `requestGuard?` | `readonly` | [`IRequestGuard`](IRequestGuard.md) | Policy guard over the outbound request. Optional here and non-optional once resolved — it defaults to silent passthrough, applied once at the boundary, so no downstream code path branches on a guard's absence. |
+| <a id="property-responsebodyguard"></a> `responseBodyGuard?` | `readonly` | [`IResponseBodyGuard`](IResponseBodyGuard.md) | Policy guard over the buffered body. Defaults to silent passthrough. |
+| <a id="property-responseheadersguard"></a> `responseHeadersGuard?` | `readonly` | [`IResponseHeadersGuard`](IResponseHeadersGuard.md) | Policy guard over the response head. Defaults to silent passthrough. Content-type gating lives here — see [SaferFetch.allowContentTypes](../functions/allowContentTypes.md); it is deliberately not a separate option, which would be a second mechanism for one job. |
+| <a id="property-retry"></a> `retry?` | `readonly` | [`IRetryPolicy`](IRetryPolicy.md) | Opt-in retry. **Off by default** — a primitive that silently retries changes the semantics of every call site and amplifies load against a service that is already struggling. **Remarks** Retries consume `timeoutMs` and never reset it, so enabling retry does not extend the deadline; and every attempt re-runs the address guard from hop 0 as a full re-walk, never a resume and never a cached verdict. Both rules are load-bearing rather than incidental — see [SaferFetch.IRetryPolicy](IRetryPolicy.md), which states why. |
+| <a id="property-sensitiveheaders"></a> `sensitiveHeaders?` | `readonly` | readonly `string`[] | Additional header names to drop on a cross-origin redirect hop, on top of the always-dropped `authorization`, `cookie` and `proxy-authorization` ([SaferFetch.ALWAYS\_STRIPPED\_HEADERS](../variables/ALWAYS_STRIPPED_HEADERS.md)). **Remarks** Matching is case-insensitive. Use this for bearer-equivalent headers a deployment invented — `x-api-key`, `x-auth-token`, a signed-request header. Stripping is **monotonic**: once a hop has left an origin the headers are gone for the rest of the chain, so an `A` → `B` → `A` chain does not hand the credential back to `A` after `B` has watched it leave. |
+| <a id="property-signal"></a> `signal?` | `readonly` | `AbortSignal` | Caller's cancellation signal. Reported as `'aborted'`, never as `'timeout'`. |
+| <a id="property-timeoutms"></a> `timeoutMs?` | `readonly` | `number` | Overall deadline in milliseconds, covering the connect, the response headers, and the body read. Default [SaferFetch.DEFAULT\_TIMEOUT\_MS](../variables/DEFAULT_TIMEOUT_MS.md). This is the deadline that stops a response dribbling one byte every 25 seconds, which passes every per-read check. |
+| <a id="property-transport"></a> `transport?` | `readonly` | [`IFetchTransport`](IFetchTransport.md) | Defaults to [SaferFetch.platformFetchTransport](../variables/platformFetchTransport.md). |

@@ -35,10 +35,10 @@ Protected constructor for the PathImporter.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="ignorefiletypes"></a> `ignoreFileTypes` | `readonly` | `string`[] | The types of files to ignore when importing. Any file not ignored is converted to an [IImportableFsItem](../../../interfaces/IImportableFsItem.md). |
-| <a id="qualifiers"></a> `qualifiers` | `readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [qualifier collector](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) to use for this importer. |
-| <a id="tree"></a> `tree` | `readonly` | [`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | The `FileTree` from which resources will be imported. |
-| <a id="types"></a> `types` | `readonly` | readonly `string`[] | The types of [importables](../../../interfaces/IImportable.md) that this importer can handle. |
+| <a id="property-ignorefiletypes"></a> `ignoreFileTypes` | `public readonly` | `string`[] | The types of files to ignore when importing. Any file not ignored is converted to an [IImportableFsItem](../../../interfaces/IImportableFsItem.md). |
+| <a id="property-qualifiers"></a> `qualifiers` | `public readonly` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) | The [qualifier collector](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) to use for this importer. |
+| <a id="property-tree"></a> `tree` | `public readonly` | [`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) | The `FileTree` from which resources will be imported. |
+| <a id="property-types"></a> `types` | `public readonly` | readonly `string`[] | The types of [importables](../../../interfaces/IImportable.md) that this importer can handle. |
 
 ## Methods
 

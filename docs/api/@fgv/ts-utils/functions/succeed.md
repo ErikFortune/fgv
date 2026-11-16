@@ -14,7 +14,7 @@ Returns [Success\<T\>](../classes/Success.md) with the supplied result value.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Parameters
 

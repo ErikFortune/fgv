@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-utils](../../../README.md) / [Logging](../README.md) / LogMessageFormatter
 
-# Type Alias: LogMessageFormatter()\<TD\>
+# Type Alias: LogMessageFormatter\<TD\>
 
 > **LogMessageFormatter**\<`TD`\> = (`message`, `detail?`) => `string`
 
@@ -14,7 +14,7 @@ A function that formats a message for logging.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TD` | `unknown` |
+| <a id="type-parameter-td"></a> `TD` | `unknown` |
 
 ## Parameters
 

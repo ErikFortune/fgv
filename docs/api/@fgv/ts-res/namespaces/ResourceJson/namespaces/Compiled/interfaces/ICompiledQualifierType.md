@@ -12,4 +12,4 @@ Represents a compiled qualifier type with a name.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="name"></a> `name` | [`QualifierTypeName`](../../../../../type-aliases/QualifierTypeName.md) | The name of the qualifier type. |
+| <a id="property-name"></a> `name` | [`QualifierTypeName`](../../../../../type-aliases/QualifierTypeName.md) | The name of the qualifier type. |

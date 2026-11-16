@@ -16,8 +16,8 @@ An in-place [Validator](../../../interfaces/Validator.md) for `string` values.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* `string` | `string` |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` | `string` |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Constructors
 
@@ -45,9 +45,9 @@ Constructs a new StringValidator.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_options"></a> `_options` | `readonly` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> | **`Internal`** |
-| <a id="_validator"></a> `_validator` | `readonly` | [`ValidatorFunc`](../../../type-aliases/ValidatorFunc.md)\<`T`, `TC`\> | **`Internal`** |
-| <a id="traits"></a> `traits` | `readonly` | [`ValidatorTraits`](../../../classes/ValidatorTraits.md) | [Traits](../../../classes/ValidatorTraits.md) describing this validation. |
+| <a id="property-_options"></a> `_options` | `protected readonly` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> | **`Internal`** |
+| <a id="property-_validator"></a> `_validator` | `protected readonly` | [`ValidatorFunc`](../../../type-aliases/ValidatorFunc.md)\<`T`, `TC`\> | **`Internal`** |
+| <a id="property-traits"></a> `traits` | `public readonly` | [`ValidatorTraits`](../../../classes/ValidatorTraits.md) | [Traits](../../../classes/ValidatorTraits.md) describing this validation. |
 
 ## Accessors
 
@@ -272,7 +272,7 @@ The brand for a branded type.
 
 | Type Parameter |
 | ------ |
-| `B` *extends* `string` |
+| <a id="type-parameter-b"></a> `B` *extends* `string` |
 
 #### Parameters
 
@@ -352,7 +352,7 @@ Static method which validates that a supplied `unknown` value is a `string`.
 
 | Type Parameter |
 | ------ |
-| `T` *extends* `string` |
+| <a id="type-parameter-t-1"></a> `T` *extends* `string` |
 
 #### Parameters
 

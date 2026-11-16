@@ -1,0 +1,43 @@
+id: sudoku-extraction
+status: shipped
+packages: ['@fgv/ts-sudoku-lib', '@fgv/ts-sudoku-ui', '@fgv/sudoku-app', '@fgv/ts-res-browser']
+prs: [786]
+openPrs: []
+opened: 2026-11-14
+closed: 2026-11-14
+summary:
+  intended: >
+    Release prep for 5.1.0: move ts-sudoku-lib, ts-sudoku-ui and apps/sudoku out of fgv with their
+    git history. Part 1 — extract the three folders (plus any former paths) with git filter-repo on
+    a fresh scratch clone and push the result as extract/sudoku-history, with no scaffolding, and
+    list what the new repo needs from fgv's root. Part 2 — remove the projects, their rush.json
+    entries and pending change files, regenerate the lockfile with rush update, and sweep
+    references repo-wide, leaving historical records alone.
+  shipped: >
+    extract/sudoku-history @ 13772cfca: 60 commits, the three folders only, trees byte-identical
+    to 8b6f1252d. On sudoku-extraction: 1,006 files removed (834 project files, 35 change files,
+    137 generated docs/api pages), three rush.json entries, lockfile -104 entries / +0, and
+    references swept in CLAUDE.md, .ai/README.md, MONOREPO_GUIDE, ACTIVE_DEVELOPMENT (one-line
+    moved-out note), LIBRARY_CAPABILITIES, WORKSTREAMS, TECH_DEBT, FUTURE, the ux-designer agent,
+    three common/scripts verifiers and two tool tsconfig comments (one none change file for
+    @fgv/ts-res-browser). result.md lists the new repo's needs from the fgv root.
+  diverged: >
+    No former paths were passed to filter-repo: git log --follow reached other packages only
+    through copy matches of a templated package.json, and the folder was created fresh by #18. The
+    local clone was shallow, so the scratch clone was unshallowed from GitHub first. The generated
+    docs/api pages for the two libraries were removed as well, which the brief did not name.
+  sourceLine: '**Shipped:** the three sudoku projects left fgv with their full history — 60 commits extracted to `extract/sudoku-history` @ `13772cfca65d1516ace11428cf6be814a14aeb96` — and were removed from fgv on `sudoku-extraction`, with the lockfile regenerated and live references swept.'
+  headline: '' # opted out: a removal adds no capability a consumer would look up
+keywords:
+  - repository split
+  - git filter-repo
+  - history extraction
+  - standalone repository
+  - package removal
+  - rush update lockfile
+  - reference sweep
+  - shallow clone unshallow
+  - copy detection false rename
+  - ts-sudoku-ui
+  - apps/sudoku
+sourceHash: sha256:35dfd9b319e751e8 # over brief.md + state.md + result.md

@@ -2,7 +2,7 @@
 
 # Function: stringifyLogValue
 
-Stringifies an arbitrary value for logging.
+Stringifies an arbitrary value for logging. Never throws.
 
 ## Signature
 

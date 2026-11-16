@@ -11,3 +11,9 @@
 Converter which constructs a [validated condition declaration](../../../interfaces/IValidatedConditionDecl.md)
 from a [condition declaration](../../../type-aliases/IConditionDecl.md), instantiating qualifiers by name
 from a supplied [conversion context](../interfaces/IConditionDeclConvertContext.md).
+
+## Remarks
+
+Accepts any string as the `qualifierName`; the collector membership check still rejects unknown
+names. Use `typedValidatedConditionDecl` to layer literal-string narrowing on top of the
+collector check.

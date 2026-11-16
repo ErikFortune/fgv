@@ -10,13 +10,13 @@
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | `unknown` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="confirmnavigation"></a> `confirmNavigation` | () => `T` \| `null` |
-| <a id="hidewarning"></a> `hideWarning` | () => `void` |
-| <a id="sethasunsavedchanges"></a> `setHasUnsavedChanges` | (`hasChanges`) => `void` |
-| <a id="showwarning"></a> `showWarning` | (`pendingTool`) => `void` |
+| <a id="property-confirmnavigation"></a> `confirmNavigation` | () => `T` \| `null` |
+| <a id="property-hidewarning"></a> `hideWarning` | () => `void` |
+| <a id="property-sethasunsavedchanges"></a> `setHasUnsavedChanges` | (`hasChanges`) => `void` |
+| <a id="property-showwarning"></a> `showWarning` | (`pendingTool`) => `void` |

@@ -12,10 +12,10 @@ Parameters for constructing a [ICollector](../classes/Collector.md).
 
 | Type Parameter |
 | ------ |
-| `TITEM` *extends* [`ICollectible`](ICollectible.md)\<`any`, `any`\> |
+| <a id="type-parameter-titem"></a> `TITEM` *extends* [`ICollectible`](ICollectible.md)\<`any`, `any`\> |
 
 ## Properties
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="items"></a> `items?` | `TITEM`[] | Optional initial items to populate the collector. |
+| <a id="property-items"></a> `items?` | `TITEM`[] | Optional initial items to populate the collector. |

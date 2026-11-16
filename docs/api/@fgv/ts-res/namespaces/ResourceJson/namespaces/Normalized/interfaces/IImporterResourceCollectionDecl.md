@@ -13,8 +13,8 @@ This allows for a mix of loose and child resource declarations.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="candidates"></a> `candidates?` | `readonly` | readonly [`IImporterResourceCandidateDecl`](IImporterResourceCandidateDecl.md)[] |
-| <a id="collections"></a> `collections?` | `readonly` | readonly `IImporterResourceCollectionDecl`[] |
-| <a id="context"></a> `context?` | `readonly` | [`IContainerContextDecl`](IContainerContextDecl.md) |
-| <a id="metadata"></a> `metadata?` | `readonly` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
-| <a id="resources"></a> `resources?` | `readonly` | readonly [`IImporterResourceDecl`](../type-aliases/IImporterResourceDecl.md)[] |
+| <a id="property-candidates"></a> `candidates?` | `readonly` | readonly [`IImporterResourceCandidateDecl`](IImporterResourceCandidateDecl.md)[] |
+| <a id="property-collections"></a> `collections?` | `readonly` | readonly `IImporterResourceCollectionDecl`[] |
+| <a id="property-context"></a> `context?` | `readonly` | [`IContainerContextDecl`](IContainerContextDecl.md) |
+| <a id="property-metadata"></a> `metadata?` | `readonly` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
+| <a id="property-resources"></a> `resources?` | `readonly` | readonly [`IImporterResourceDecl`](../type-aliases/IImporterResourceDecl.md)[] |

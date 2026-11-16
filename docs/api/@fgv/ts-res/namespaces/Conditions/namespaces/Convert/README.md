@@ -17,3 +17,10 @@
 - [conditionSetDecl](variables/conditionSetDecl.md)
 - [validatedConditionDecl](variables/validatedConditionDecl.md)
 - [validatedConditionSetDecl](variables/validatedConditionSetDecl.md)
+
+## Functions
+
+- [typedConditionDecl](functions/typedConditionDecl.md)
+- [typedConditionSetDecl](functions/typedConditionSetDecl.md)
+- [typedValidatedConditionDecl](functions/typedValidatedConditionDecl.md)
+- [typedValidatedConditionSetDecl](functions/typedValidatedConditionSetDecl.md)

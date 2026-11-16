@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-random",
+      "comment": "`GeneratorData` corpora: character classes (`Chars`) and word lists (`Words`) for readable identifiers and fixtures.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-random",
+  "email": "noreply@anthropic.com"
+}

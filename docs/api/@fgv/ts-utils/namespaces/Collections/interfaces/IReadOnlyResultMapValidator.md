@@ -16,14 +16,14 @@ A read-only interface exposing non-mutating methods of a [ResultMapValidator](..
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv"></a> `TV` | `unknown` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="map"></a> `map` | `readonly` | [`IReadOnlyResultMap`](IReadOnlyResultMap.md)\<`TK`, `TV`\> | The underlying map. |
+| <a id="property-map"></a> `map` | `readonly` | [`IReadOnlyResultMap`](IReadOnlyResultMap.md)\<`TK`, `TV`\> | The underlying map. |
 
 ## Methods
 

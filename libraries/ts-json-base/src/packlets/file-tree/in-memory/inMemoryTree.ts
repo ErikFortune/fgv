@@ -339,7 +339,14 @@ export class InMemoryTreeAccessors<TCT extends string = string>
   }
 
   /**
-   * {@inheritDoc FileTree.IBinaryFileTreeAccessors.getFileBytes}
+   * Gets the contents of a file in the file tree as bytes, with no text decoding applied.
+   *
+   * @remarks
+   * The returned array must be treated as read-only — implementations are free to
+   * return their internal buffer rather than a copy.
+   *
+   * @param path - Absolute path of the file.
+   * @returns `Success` with the raw bytes of the file, or `Failure` with an error message.
    */
   public getFileBytes(path: string): Result<Uint8Array> {
     // Mirrors `getFileContents`' three-way shape over the file already in hand,
@@ -691,7 +698,12 @@ export class InMemoryTreeAccessors<TCT extends string = string>
   }
 
   /**
-   * {@inheritDoc FileTree.IAtomicFileTreeAccessors.getAtomicWriteCapabilities}
+   * Reports what atomic replacement this store can offer for writes into the
+   * given directory.
+   * @param directory - Absolute path of the containing directory.
+   * @returns `Success` with the store's {@link FileTree.IAtomicWriteCapabilities
+   * | capabilities}, or `Failure` if the directory does not exist or the path
+   * names a file rather than a directory.
    */
   public getAtomicWriteCapabilities(directory: string): Result<IAtomicWriteCapabilities> {
     const absolutePath = this.resolveAbsolutePath(directory);

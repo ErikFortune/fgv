@@ -3,6 +3,8 @@
 ## IAiWebSearchToolConfig.blockedDomains property
 
 Optional: exclude these domains from search.
+Same reach as AiAssist.IAiWebSearchToolConfig.allowedDomains:
+Anthropic and OpenAI/xAI, ignored on Gemini.
 
 **Signature:**
 

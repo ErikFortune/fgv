@@ -6,7 +6,7 @@
 
 # Function: oneOf()
 
-> **oneOf**\<`T`, `TC`\>(`converters`, `onError`): [`Converter`](../../Conversion/interfaces/Converter.md)\<`T`, `TC`\>
+> **oneOf**\<`T`, `TC`\>(`converters`, `onError?`): [`Converter`](../../Conversion/interfaces/Converter.md)\<`T`, `TC`\>
 
 A helper function to create a [Converter](../../Conversion/interfaces/Converter.md) for polymorphic values.
 Returns a converter which invokes the wrapped converters in sequence, returning the
@@ -17,15 +17,15 @@ convert the value.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Parameters
 
 | Parameter | Type | Default value | Description |
 | ------ | ------ | ------ | ------ |
 | `converters` | ([`Converter`](../../Conversion/interfaces/Converter.md)\<`T`, `TC`\> \| [`Validator`](../../Validation/interfaces/Validator.md)\<`T`, `TC`\>)[] | `undefined` | An ordered list of [converters](../../Conversion/interfaces/Converter.md) or [validators](../../Validation/interfaces/Validator.md) to be considered. |
-| `onError` | [`OnError`](../../Conversion/type-aliases/OnError.md) | `'ignoreErrors'` | Specifies treatment of unconvertible elements. |
+| `onError?` | [`OnError`](../../Conversion/type-aliases/OnError.md) | `'ignoreErrors'` | Specifies treatment of unconvertible elements. |
 
 ## Returns
 

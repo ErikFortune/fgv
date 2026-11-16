@@ -15,8 +15,8 @@ optionally ignoring certain error details.
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `TD` |
+| <a id="type-parameter-t"></a> `T` |
+| <a id="type-parameter-td"></a> `TD` |
 
 ## Parameters
 

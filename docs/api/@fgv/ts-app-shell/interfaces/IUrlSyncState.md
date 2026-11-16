@@ -12,12 +12,12 @@ Current navigation state to sync to the URL.
 
 | Type Parameter |
 | ------ |
-| `TMode` *extends* `string` |
-| `TTab` *extends* `string` |
+| <a id="type-parameter-tmode"></a> `TMode` *extends* `string` |
+| <a id="type-parameter-ttab"></a> `TTab` *extends* `string` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="activetab"></a> `activeTab` | `readonly` | `TTab` | Current active tab |
-| <a id="mode"></a> `mode` | `readonly` | `TMode` | Current mode |
+| <a id="property-activetab"></a> `activeTab` | `readonly` | `TTab` | Current active tab |
+| <a id="property-mode"></a> `mode` | `readonly` | `TMode` | Current mode |

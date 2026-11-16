@@ -12,6 +12,6 @@ Parameters for creating a [PathImporter](../classes/PathImporter.md).
 
 | Property | Type |
 | ------ | ------ |
-| <a id="ignorefiletypes"></a> `ignoreFileTypes?` | `string`[] |
-| <a id="qualifiers"></a> `qualifiers` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) |
-| <a id="tree"></a> `tree?` | [`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`string`\> |
+| <a id="property-ignorefiletypes"></a> `ignoreFileTypes?` | `string`[] |
+| <a id="property-qualifiers"></a> `qualifiers` | [`IReadOnlyQualifierCollector`](../../../../Qualifiers/interfaces/IReadOnlyQualifierCollector.md) |
+| <a id="property-tree"></a> `tree?` | [`FileTree_2`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`string`\> |

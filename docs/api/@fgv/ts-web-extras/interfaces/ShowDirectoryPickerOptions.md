@@ -12,6 +12,6 @@ Directory picker options
 
 | Property | Type |
 | ------ | ------ |
-| <a id="id"></a> `id?` | `string` |
-| <a id="mode"></a> `mode?` | `"readwrite"` \| `"read"` |
-| <a id="startin"></a> `startIn?` | [`FileSystemHandle`](FileSystemHandle.md) \| [`WellKnownDirectory`](../type-aliases/WellKnownDirectory.md) |
+| <a id="property-id"></a> `id?` | `string` |
+| <a id="property-mode"></a> `mode?` | `"readwrite"` \| `"read"` |
+| <a id="property-startin"></a> `startIn?` | [`FileSystemHandle`](FileSystemHandle.md) \| [`WellKnownDirectory`](../type-aliases/WellKnownDirectory.md) |

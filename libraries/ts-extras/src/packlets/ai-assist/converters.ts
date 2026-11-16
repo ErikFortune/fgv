@@ -39,6 +39,8 @@ import {
   type IAiToolAnnotations,
   type IAiToolEnablement,
   type IAiWebSearchToolConfig,
+  type McpTaskSupport,
+  MCP_TASK_SUPPORT_VALUES,
   type ModelSpec,
   type ModelSpecKey,
   allModelSpecKeys
@@ -139,6 +141,19 @@ export const aiToolAnnotations: Converter<IAiToolAnnotations> = Converters.stric
   idempotentHint: Converters.boolean.optional(),
   openWorldHint: Converters.boolean.optional()
 });
+
+/**
+ * Converter for `McpTaskSupport` — accepts exactly one of
+ * `MCP_TASK_SUPPORT_VALUES` and refuses anything else.
+ *
+ * @remarks
+ * Converts a **present** value only. An absent `taskSupport` means `'forbidden'` per the MCP spec,
+ * but whether to apply that default is the caller's decision, so `undefined` fails here like any
+ * other value outside the vocabulary.
+ * @public
+ */
+export const mcpTaskSupport: Converter<McpTaskSupport> =
+  Converters.enumeratedValue<McpTaskSupport>(MCP_TASK_SUPPORT_VALUES);
 
 /**
  * Converter for {@link AiAssist.IAiClientToolConfig}. Validates the wrapper shape: `type`,

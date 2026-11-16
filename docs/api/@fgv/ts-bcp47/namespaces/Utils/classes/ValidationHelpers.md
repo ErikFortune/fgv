@@ -18,8 +18,8 @@ types.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` *extends* `string` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` *extends* `string` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Constructors
 
@@ -44,11 +44,11 @@ from supplied initializers.
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="_tocanonical"></a> `_toCanonical?` | `readonly` | [`Normalizer`](../type-aliases/Normalizer.md)\<`T`, `TC`\> | **`Internal`** |
-| <a id="converter"></a> `converter` | `readonly` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> | A `Converter` which converts `unknown` to the tag type validated by these helpers, if possible. |
-| <a id="description"></a> `description` | `readonly` | `string` | Describes the group of tags validated by these helpers. |
-| <a id="iscanonical"></a> `isCanonical` | `readonly` | [`TypeGuardWithContext`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> | Determines is a supplied tag is well-formed and uses canonical formatting, according to the lexical rules defined for the tag validated by these helpers. |
-| <a id="iswellformed"></a> `isWellFormed` | `readonly` | [`TypeGuardWithContext`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> | Determines is a supplied tag is well-formed according to the lexical rules defined for the tag validated by these helpers. |
+| <a id="property-_tocanonical"></a> `_toCanonical?` | `protected readonly` | [`Normalizer`](../type-aliases/Normalizer.md)\<`T`, `TC`\> | **`Internal`** |
+| <a id="property-converter"></a> `converter` | `public readonly` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> | A `Converter` which converts `unknown` to the tag type validated by these helpers, if possible. |
+| <a id="property-description"></a> `description` | `public readonly` | `string` | Describes the group of tags validated by these helpers. |
+| <a id="property-iscanonical"></a> `isCanonical` | `public readonly` | [`TypeGuardWithContext`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> | Determines is a supplied tag is well-formed and uses canonical formatting, according to the lexical rules defined for the tag validated by these helpers. |
+| <a id="property-iswellformed"></a> `isWellFormed` | `public readonly` | [`TypeGuardWithContext`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`, `TC`\> | Determines is a supplied tag is well-formed according to the lexical rules defined for the tag validated by these helpers. |
 
 ## Methods
 

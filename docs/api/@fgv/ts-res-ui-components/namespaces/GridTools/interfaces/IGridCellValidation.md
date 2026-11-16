@@ -12,8 +12,8 @@ Validation configuration for grid cells.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="custom"></a> `custom?` | (`value`) => `string` \| `null` | Custom validation function that returns error message or null |
-| <a id="maxlength"></a> `maxLength?` | `number` | Maximum length for string values |
-| <a id="minlength"></a> `minLength?` | `number` | Minimum length for string values |
-| <a id="pattern"></a> `pattern?` | `RegExp` | Regex pattern for validation |
-| <a id="required"></a> `required?` | `boolean` | Whether the field is required |
+| <a id="property-custom"></a> `custom?` | (`value`) => `string` \| `null` | Custom validation function that returns error message or null |
+| <a id="property-maxlength"></a> `maxLength?` | `number` | Maximum length for string values |
+| <a id="property-minlength"></a> `minLength?` | `number` | Minimum length for string values |
+| <a id="property-pattern"></a> `pattern?` | `RegExp` | Regex pattern for validation |
+| <a id="property-required"></a> `required?` | `boolean` | Whether the field is required |

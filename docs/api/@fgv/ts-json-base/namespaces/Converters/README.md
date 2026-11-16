@@ -25,3 +25,4 @@
 - [enumeratedValue](functions/enumeratedValue.md)
 - [jsonConverter](functions/jsonConverter.md)
 - [literal](functions/literal.md)
+- [stringifiedJson](functions/stringifiedJson.md)

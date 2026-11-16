@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "Initial release: a FileTree-backed storage and retrieval substrate for agent memory and knowledge — a vault of markdown records with YAML front matter that git can track.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

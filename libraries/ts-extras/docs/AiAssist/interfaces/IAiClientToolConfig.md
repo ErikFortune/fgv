@@ -92,4 +92,22 @@ ISchemaValidator&lt;TParams&gt;
 JSON Schema validator for the tool's parameters.
 
 </td></tr>
+<tr><td>
+
+[annotations](./IAiClientToolConfig.annotations.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[IAiToolAnnotations](../../interfaces/IAiToolAnnotations.md)
+
+</td><td>
+
+Optional host-advisory behavior annotations (read-only / destructive /
+idempotent / open-world hints + display title).
+
+</td></tr>
 </tbody></table>

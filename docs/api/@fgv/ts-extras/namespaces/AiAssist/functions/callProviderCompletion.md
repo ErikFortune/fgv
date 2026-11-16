@@ -8,26 +8,16 @@
 
 > **callProviderCompletion**(`params`): `Promise`\<[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAiCompletionResponse`](../interfaces/IAiCompletionResponse.md)\>\>
 
-Calls the appropriate chat completion API for a given provider.
-
-Routes based on the provider descriptor's `apiFormat` field:
-- `'openai'` for xAI, OpenAI, Groq, Mistral
-- `'anthropic'` for Anthropic Claude
-- `'gemini'` for Google Gemini
-
-When tools are provided and the provider supports them:
-- OpenAI-format providers switch to the Responses API
-- Anthropic includes tools in the Messages API request
-- Gemini includes Google Search grounding
+Calls the appropriate chat completion API for a given provider. Routes by
+`apiFormat`: `'openai'` (xAI/OpenAI/Groq/Mistral — switches to Responses API
+when tools are set), `'anthropic'`, or `'gemini'`.
 
 ## Parameters
 
-| Parameter | Type | Description |
-| ------ | ------ | ------ |
-| `params` | [`IProviderCompletionParams`](../interfaces/IProviderCompletionParams.md) | Request parameters including descriptor, API key, prompt, and optional tools |
+| Parameter | Type |
+| ------ | ------ |
+| `params` | [`IProviderCompletionParams`](../interfaces/IProviderCompletionParams.md) |
 
 ## Returns
 
 `Promise`\<[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<[`IAiCompletionResponse`](../interfaces/IAiCompletionResponse.md)\>\>
-
-The completion response with content and truncation status, or a failure

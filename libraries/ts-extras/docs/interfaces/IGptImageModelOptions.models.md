@@ -5,5 +5,5 @@
 **Signature:**
 
 ```typescript
-readonly models: "gpt-image-1"[];
+readonly models: GptImageModelNames[];
 ```

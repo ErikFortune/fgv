@@ -12,11 +12,11 @@ Options for [addCollectionWithItems](../classes/AggregatedResultMapBase.md#addco
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TMETADATA` | `unknown` |
+| <a id="type-parameter-tmetadata"></a> `TMETADATA` | `unknown` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="isimmutable"></a> `isImmutable?` | `readonly` | `boolean` | If true, the collection will be immutable (read-only). Defaults to false (mutable). |
-| <a id="metadata"></a> `metadata?` | `readonly` | `TMETADATA` | Optional metadata to attach to the collection. |
+| <a id="property-isimmutable"></a> `isImmutable?` | `readonly` | `boolean` | If true, the collection will be immutable (read-only). Defaults to false (mutable). |
+| <a id="property-metadata"></a> `metadata?` | `readonly` | `TMETADATA` | Optional metadata to attach to the collection. |

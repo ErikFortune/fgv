@@ -30,6 +30,15 @@ Browser-compatible cryptographic utilities using the Web Crypto API.
 </td></tr>
 <tr><td>
 
+[SaferFetch](./SaferFetch/README.md)
+
+</td><td>
+
+The browser entry points for `@fgv/ts-extras`'s safer-fetch primitive.
+
+</td></tr>
+<tr><td>
+
 [FileTreeHelpers](./FileTreeHelpers/README.md)
 
 </td><td>
@@ -329,6 +338,15 @@ Description
 </td><td>
 
 Union type for all supported tree initializers.
+
+</td></tr>
+<tr><td>
+
+[HttpContentEncoding](./type-aliases/HttpContentEncoding.md)
+
+</td><td>
+
+How a file's bytes are represented in the storage API's `contents` field.
 
 </td></tr>
 <tr><td>

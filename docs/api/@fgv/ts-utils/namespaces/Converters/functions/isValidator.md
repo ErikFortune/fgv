@@ -15,8 +15,8 @@ a [Validator](../../Validation/interfaces/Validator.md).
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `TC` |
+| <a id="type-parameter-t"></a> `T` |
+| <a id="type-parameter-tc"></a> `TC` |
 
 ## Parameters
 

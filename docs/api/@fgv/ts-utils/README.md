@@ -239,6 +239,7 @@ Extracted API documentation is [here](./docs/ts-utils.md).
 ## Classes
 
 - [AggregatedResultMap](classes/AggregatedResultMap.md)
+- [AsyncDetailedResult](classes/AsyncDetailedResult.md)
 - [AsyncResult](classes/AsyncResult.md)
 - [DetailedFailure](classes/DetailedFailure.md)
 - [DetailedSuccess](classes/DetailedSuccess.md)
@@ -249,8 +250,12 @@ Extracted API documentation is [here](./docs/ts-utils.md).
 
 ## Interfaces
 
+- [\_IShouldNotFailFrame](interfaces/IShouldNotFailFrame.md)
+- [IAsyncResultOptions](interfaces/IAsyncResultOptions.md)
+- [IFormatValueForMessageOptions](interfaces/IFormatValueForMessageOptions.md)
 - [IMessageAggregator](interfaces/IMessageAggregator.md)
 - [IMessageReportDetail](interfaces/IMessageReportDetail.md)
+- [IRawJsonSupport](interfaces/IRawJsonSupport.md)
 - [IResult](interfaces/IResult.md)
 - [IResultLogger](interfaces/IResultLogger.md)
 - [IResultReporter](interfaces/IResultReporter.md)
@@ -259,7 +264,11 @@ Extracted API documentation is [here](./docs/ts-utils.md).
 
 ## Type Aliases
 
+- [AsyncDeferredResult](type-aliases/AsyncDeferredResult.md)
+- [AsyncDetailedFailureContinuation](type-aliases/AsyncDetailedFailureContinuation.md)
+- [AsyncDetailedSuccessContinuation](type-aliases/AsyncDetailedSuccessContinuation.md)
 - [AsyncFailureContinuation](type-aliases/AsyncFailureContinuation.md)
+- [AsyncFieldInitializers](type-aliases/AsyncFieldInitializers.md)
 - [AsyncSuccessContinuation](type-aliases/AsyncSuccessContinuation.md)
 - [Brand](type-aliases/Brand.md)
 - [DeferredResult](type-aliases/DeferredResult.md)
@@ -273,16 +282,36 @@ Extracted API documentation is [here](./docs/ts-utils.md).
 - [FieldInitializers](type-aliases/FieldInitializers.md)
 - [IResultValueType](type-aliases/IResultValueType.md)
 - [MessageLogLevel](type-aliases/MessageLogLevel.md)
+- [OneOf](type-aliases/OneOf.md)
 - [Result](type-aliases/Result.md)
 - [ResultDetailType](type-aliases/ResultDetailType.md)
 - [ResultMapValueType](type-aliases/ResultMapValueType.md)
 - [ResultValueType](type-aliases/ResultValueType.md)
+- [StringOneOf](type-aliases/StringOneOf.md)
 - [SuccessContinuation](type-aliases/SuccessContinuation.md)
+- [Uuid](type-aliases/Uuid.md)
+
+## Variables
+
+- [\_resultBoundary](variables/resultBoundary.md)
+- [\_resultBoundaryKey](variables/resultBoundaryKey.md)
+- [allMessageLogLevels](variables/allMessageLogLevels.md)
+- [DEFAULT\_FORMAT\_VALUE\_MAX\_LENGTH](variables/DEFAULT_FORMAT_VALUE_MAX_LENGTH.md)
+- [DEFAULT\_FORMAT\_VALUE\_STRING\_MAX\_LENGTH](variables/DEFAULT_FORMAT_VALUE_STRING_MAX_LENGTH.md)
+- [DEFAULT\_RESULT\_CONCURRENCY](variables/DEFAULT_RESULT_CONCURRENCY.md)
 
 ## Functions
 
 - [\_errorMessage](functions/errorMessage.md)
+- [\_findShouldNotFailFrame](functions/findShouldNotFailFrame.md)
+- [\_formatShouldNotFailMessage](functions/formatShouldNotFailMessage.md)
+- [\_isStackExhaustion](functions/isStackExhaustion.md)
+- [\_normalizeShouldNotFailFnName](functions/normalizeShouldNotFailFnName.md)
+- [\_parseStackFrame](functions/parseStackFrame.md)
+- [\_rawJsonText](functions/rawJsonText.md)
+- [\_resolveResultBoundary](functions/resolveResultBoundary.md)
 - [allSucceed](functions/allSucceed.md)
+- [allSucceedAsync](functions/allSucceedAsync.md)
 - [captureAsyncResult](functions/captureAsyncResult.md)
 - [captureResult](functions/captureResult.md)
 - [ensureArray](functions/ensureArray.md)
@@ -292,15 +321,23 @@ Extracted API documentation is [here](./docs/ts-utils.md).
 - [failsWithDetail](functions/failsWithDetail.md)
 - [failWithDetail](functions/failWithDetail.md)
 - [firstSuccess](functions/firstSuccess.md)
+- [firstSuccessAsync](functions/firstSuccessAsync.md)
+- [formatValueForMessage](functions/formatValueForMessage.md)
+- [generateUuid](functions/generateUuid.md)
 - [getTypeOfProperty](functions/getTypeOfProperty.md)
 - [getValueOfPropertyOrDefault](functions/getValueOfPropertyOrDefault.md)
 - [isDeferredResult](functions/isDeferredResult.md)
 - [isKeyOf](functions/isKeyOf.md)
+- [isValidUuid](functions/isValidUuid.md)
 - [keysForRecord](functions/keysForRecord.md)
 - [mapDetailedResults](functions/mapDetailedResults.md)
+- [mapDetailedResultsAsync](functions/mapDetailedResultsAsync.md)
 - [mapFailures](functions/mapFailures.md)
+- [mapFailuresAsync](functions/mapFailuresAsync.md)
 - [mapResults](functions/mapResults.md)
+- [mapResultsAsync](functions/mapResultsAsync.md)
 - [mapSuccess](functions/mapSuccess.md)
+- [mapSuccessAsync](functions/mapSuccessAsync.md)
 - [mapToRecord](functions/mapToRecord.md)
 - [omit](functions/omit.md)
 - [optionalMapToPossiblyEmptyRecord](functions/optionalMapToPossiblyEmptyRecord.md)
@@ -309,6 +346,7 @@ Extracted API documentation is [here](./docs/ts-utils.md).
 - [optionalRecordToPossiblyEmptyMap](functions/optionalRecordToPossiblyEmptyMap.md)
 - [pick](functions/pick.md)
 - [populateObject](functions/populateObject.md)
+- [populateObjectAsync](functions/populateObjectAsync.md)
 - [propagateWithDetail](functions/propagateWithDetail.md)
 - [recordFromEntries](functions/recordFromEntries.md)
 - [recordToMap](functions/recordToMap.md)
@@ -351,6 +389,24 @@ Re-exports [IReadOnlyResultMap](namespaces/Collections/interfaces/IReadOnlyResul
 
 ***
 
+### IRetainedRecord
+
+Re-exports [IRetainedRecord](namespaces/Collections/interfaces/IRetainedRecord.md)
+
+***
+
+### IRetainingRingBufferCreateParams
+
+Re-exports [IRetainingRingBufferCreateParams](namespaces/Collections/interfaces/IRetainingRingBufferCreateParams.md)
+
+***
+
+### IRetainingRingBufferQuery
+
+Re-exports [IRetainingRingBufferQuery](namespaces/Collections/interfaces/IRetainingRingBufferQuery.md)
+
+***
+
 ### ObjectConverter
 
 Re-exports [ObjectConverter](namespaces/Conversion/classes/ObjectConverter.md)
@@ -360,6 +416,12 @@ Re-exports [ObjectConverter](namespaces/Conversion/classes/ObjectConverter.md)
 ### ResultMap
 
 Re-exports [ResultMap](namespaces/Collections/classes/ResultMap.md)
+
+***
+
+### RetainingRingBuffer
+
+Re-exports [RetainingRingBuffer](namespaces/Collections/classes/RetainingRingBuffer.md)
 
 ***
 

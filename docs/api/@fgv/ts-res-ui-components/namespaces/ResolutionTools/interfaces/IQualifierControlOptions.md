@@ -29,9 +29,9 @@ const languageOptions: IQualifierControlOptions = {
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="classname"></a> `className?` | `string` | Custom CSS classes for this qualifier control |
-| <a id="editable"></a> `editable?` | `boolean` | Whether this qualifier is editable by the user |
-| <a id="hostvalue"></a> `hostValue?` | `string` | External/host-managed value that overrides user input |
-| <a id="placeholder"></a> `placeholder?` | `string` | Custom placeholder text for this qualifier |
-| <a id="showhostvalue"></a> `showHostValue?` | `boolean` | Whether to show host-managed values in the display |
-| <a id="visible"></a> `visible?` | `boolean` | Whether this qualifier should be visible at all |
+| <a id="property-classname"></a> `className?` | `string` | Custom CSS classes for this qualifier control |
+| <a id="property-editable"></a> `editable?` | `boolean` | Whether this qualifier is editable by the user |
+| <a id="property-hostvalue"></a> `hostValue?` | `string` | External/host-managed value that overrides user input |
+| <a id="property-placeholder"></a> `placeholder?` | `string` | Custom placeholder text for this qualifier |
+| <a id="property-showhostvalue"></a> `showHostValue?` | `boolean` | Whether to show host-managed values in the display |
+| <a id="property-visible"></a> `visible?` | `boolean` | Whether this qualifier should be visible at all |

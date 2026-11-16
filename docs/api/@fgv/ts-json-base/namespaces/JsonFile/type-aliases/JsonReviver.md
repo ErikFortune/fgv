@@ -4,7 +4,7 @@
 
 [@fgv Monorepo API Documentation](../../../../../README.md) / [@fgv/ts-json-base](../../../README.md) / [JsonFile](../README.md) / JsonReviver
 
-# Type Alias: JsonReviver()
+# Type Alias: JsonReviver
 
 > **JsonReviver** = (`key`, `value`) => [`JsonValue`](../../../type-aliases/JsonValue.md)
 

@@ -12,5 +12,5 @@ Options for creating storage routes.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="logger"></a> `logger?` | `readonly` | [`ILogger`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) |
-| <a id="providers"></a> `providers` | `readonly` | [`IHttpStorageProviderFactory`](IHttpStorageProviderFactory.md) |
+| <a id="property-logger"></a> `logger?` | `readonly` | [`ILogger`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs) |
+| <a id="property-providers"></a> `providers` | `readonly` | [`IHttpStorageProviderFactory`](IHttpStorageProviderFactory.md) |

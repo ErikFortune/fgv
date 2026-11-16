@@ -28,12 +28,12 @@ const pickerOptions: IResourcePickerOptions = {
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="defaultview"></a> `defaultView?` | `"list"` \| `"tree"` | Default view mode to use on initial render |
-| <a id="emptymessage"></a> `emptyMessage?` | `string` | Message to display when no resources are available |
-| <a id="enablesearch"></a> `enableSearch?` | `boolean` | Whether to enable the search input |
-| <a id="height"></a> `height?` | `string` \| `number` | Height of the picker component |
-| <a id="hiderootnode"></a> `hideRootNode?` | `boolean` | Hide the root node itself, showing only its children |
-| <a id="rootpath"></a> `rootPath?` | `string` | Path to treat as root for tree branch isolation (e.g., "platform/territories") |
-| <a id="searchplaceholder"></a> `searchPlaceholder?` | `string` | Placeholder text for the search input |
-| <a id="searchscope"></a> `searchScope?` | `"all"` \| `"current-branch"` | Scope of search - entire tree or just the currently visible branch |
-| <a id="showviewtoggle"></a> `showViewToggle?` | `boolean` | Whether to show the list/tree view toggle buttons |
+| <a id="property-defaultview"></a> `defaultView?` | `"list"` \| `"tree"` | Default view mode to use on initial render |
+| <a id="property-emptymessage"></a> `emptyMessage?` | `string` | Message to display when no resources are available |
+| <a id="property-enablesearch"></a> `enableSearch?` | `boolean` | Whether to enable the search input |
+| <a id="property-height"></a> `height?` | `string` \| `number` | Height of the picker component |
+| <a id="property-hiderootnode"></a> `hideRootNode?` | `boolean` | Hide the root node itself, showing only its children |
+| <a id="property-rootpath"></a> `rootPath?` | `string` | Path to treat as root for tree branch isolation (e.g., "platform/territories") |
+| <a id="property-searchplaceholder"></a> `searchPlaceholder?` | `string` | Placeholder text for the search input |
+| <a id="property-searchscope"></a> `searchScope?` | `"all"` \| `"current-branch"` | Scope of search - entire tree or just the currently visible branch |
+| <a id="property-showviewtoggle"></a> `showViewToggle?` | `boolean` | Whether to show the list/tree view toggle buttons |

@@ -49,6 +49,35 @@ Decrypts ciphertext using AES-256-GCM.
 </td></tr>
 <tr><td>
 
+[encryptBytes(key, nonce, plaintext, aad)](./ICryptoProvider.encryptBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Encrypts raw bytes using AES-256-GCM with a **caller-supplied nonce** and
+optional additional authenticated data (AAD).
+
+</td></tr>
+<tr><td>
+
+[decryptBytes(key, nonce, ciphertext, authTag, aad)](./ICryptoProvider.decryptBytes.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Decrypts raw bytes produced by
+CryptoUtils.ICryptoProvider.encryptBytes | encryptBytes using
+AES-256-GCM.
+
+</td></tr>
+<tr><td>
+
 [generateKey()](./ICryptoProvider.generateKey.md)
 
 </td><td>
@@ -150,6 +179,19 @@ Decodes base64 string to binary data.
 </td><td>
 
 Generates a new asymmetric keypair for the requested algorithm.
+
+</td></tr>
+<tr><td>
+
+[importKeyPairFromSeed(algorithm, seed, extractable)](./ICryptoProvider.importKeyPairFromSeed.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Derives an asymmetric keypair *deterministically* from a fixed secret seed.
 
 </td></tr>
 <tr><td>
@@ -268,6 +310,32 @@ Verifies a signature produced by ICryptoProvider.sign.
 </td><td>
 
 Compares two byte arrays in constant time.
+
+</td></tr>
+<tr><td>
+
+[generateHmacKey(options)](./ICryptoProvider.generateHmacKey.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Generates a fresh random HMAC-SHA256 key.
+
+</td></tr>
+<tr><td>
+
+[importHmacKey(raw, options)](./ICryptoProvider.importHmacKey.md)
+
+</td><td>
+
+
+
+</td><td>
+
+Imports raw key bytes as an HMAC-SHA256 key.
 
 </td></tr>
 <tr><td>

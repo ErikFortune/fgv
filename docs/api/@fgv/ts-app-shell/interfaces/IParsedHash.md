@@ -12,12 +12,12 @@ Result of parsing a URL hash.
 
 | Type Parameter |
 | ------ |
-| `TMode` *extends* `string` |
-| `TTab` *extends* `string` |
+| <a id="type-parameter-tmode"></a> `TMode` *extends* `string` |
+| <a id="type-parameter-ttab"></a> `TTab` *extends* `string` |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="mode"></a> `mode` | `readonly` | `TMode` |
-| <a id="tab"></a> `tab` | `readonly` | `TTab` |
+| <a id="property-mode"></a> `mode` | `readonly` | `TMode` |
+| <a id="property-tab"></a> `tab` | `readonly` | `TTab` |

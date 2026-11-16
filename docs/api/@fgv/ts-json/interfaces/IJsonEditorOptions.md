@@ -12,6 +12,6 @@ Initialization options for a [JsonEditor](../classes/JsonEditor.md).
 
 | Property | Type |
 | ------ | ------ |
-| <a id="context"></a> `context?` | [`IJsonContext`](IJsonContext.md) |
-| <a id="merge"></a> `merge?` | [`IJsonEditorMergeOptions`](IJsonEditorMergeOptions.md) |
-| <a id="validation"></a> `validation` | [`IJsonEditorValidationOptions`](IJsonEditorValidationOptions.md) |
+| <a id="property-context"></a> `context?` | [`IJsonContext`](IJsonContext.md) |
+| <a id="property-merge"></a> `merge?` | [`IJsonEditorMergeOptions`](IJsonEditorMergeOptions.md) |
+| <a id="property-validation"></a> `validation` | [`IJsonEditorValidationOptions`](IJsonEditorValidationOptions.md) |

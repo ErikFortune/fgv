@@ -17,5 +17,5 @@ different format methods per output target.
 
 | Type Parameter |
 | ------ |
-| `TFT` *extends* [`FormatTargets`](FormatTargets.md) |
-| `T` |
+| <a id="type-parameter-tft"></a> `TFT` *extends* [`FormatTargets`](FormatTargets.md) |
+| <a id="type-parameter-t"></a> `T` |

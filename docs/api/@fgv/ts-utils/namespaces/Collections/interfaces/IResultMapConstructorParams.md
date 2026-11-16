@@ -12,11 +12,11 @@ Parameters for constructing a [ResultMap](../classes/ResultMap.md).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TK` *extends* `string` | `string` |
-| `TV` | `unknown` |
+| <a id="type-parameter-tk"></a> `TK` *extends* `string` | `string` |
+| <a id="type-parameter-tv"></a> `TV` | `unknown` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="entries"></a> `entries?` | `Iterable`\<[`KeyValueEntry`](../type-aliases/KeyValueEntry.md)\<`TK`, `TV`\>, `any`, `any`\> |
+| <a id="property-entries"></a> `entries?` | `Iterable`\<[`KeyValueEntry`](../type-aliases/KeyValueEntry.md)\<`TK`, `TV`\>, `any`, `any`\> |

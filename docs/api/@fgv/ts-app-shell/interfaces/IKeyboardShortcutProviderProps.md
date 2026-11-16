@@ -12,4 +12,4 @@ Props for the KeyboardShortcutProvider.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="children"></a> `children` | `readonly` | `ReactNode` |
+| <a id="property-children"></a> `children` | `readonly` | `ReactNode` |

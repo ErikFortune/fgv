@@ -12,8 +12,8 @@ Represents a reduced candidate after applying reduction logic.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="candidate"></a> `candidate` | `readonly` | [`ResourceCandidate`](../../../classes/ResourceCandidate.md) |
-| <a id="conditions"></a> `conditions` | `readonly` | [`ConditionSetDecl`](../../ResourceJson/namespaces/Json/type-aliases/ConditionSetDecl.md) |
-| <a id="ispartial"></a> `isPartial?` | `readonly` | `boolean` |
-| <a id="json"></a> `json?` | `readonly` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
-| <a id="mergemethod"></a> `mergeMethod?` | `readonly` | [`ResourceValueMergeMethod`](../../../type-aliases/ResourceValueMergeMethod.md) |
+| <a id="property-candidate"></a> `candidate` | `readonly` | [`ResourceCandidate`](../../../classes/ResourceCandidate.md) |
+| <a id="property-conditions"></a> `conditions` | `readonly` | [`ConditionSetDecl`](../../ResourceJson/namespaces/Json/type-aliases/ConditionSetDecl.md) |
+| <a id="property-ispartial"></a> `isPartial?` | `readonly` | `boolean` |
+| <a id="property-json"></a> `json?` | `readonly` | [`JsonObject`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) |
+| <a id="property-mergemethod"></a> `mergeMethod?` | `readonly` | [`ResourceValueMergeMethod`](../../../type-aliases/ResourceValueMergeMethod.md) |

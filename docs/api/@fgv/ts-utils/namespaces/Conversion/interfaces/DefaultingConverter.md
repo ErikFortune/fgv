@@ -18,17 +18,17 @@ of optional templated type `<TC>` (default `undefined`).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TD` | `T` |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-td"></a> `TD` | `T` |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="brand"></a> `brand?` | `readonly` | `string` | Returns the brand for a branded type. |
-| <a id="defaultvalue"></a> `defaultValue` | `readonly` | `TD` | Default value to use if the conversion fails. |
-| <a id="isoptional"></a> `isOptional` | `readonly` | `boolean` | Indicates whether this element is explicitly optional. |
+| <a id="property-brand"></a> `brand?` | `readonly` | `string` | Returns the brand for a branded type. |
+| <a id="property-defaultvalue"></a> `defaultValue` | `readonly` | `TD` | Default value to use if the conversion fails. |
+| <a id="property-isoptional"></a> `isOptional` | `readonly` | `boolean` | Indicates whether this element is explicitly optional. |
 
 ## Methods
 
@@ -103,7 +103,7 @@ the converted value of this [Converter](Converter.md).
 
 | Type Parameter |
 | ------ |
-| `T2` |
+| <a id="type-parameter-t2"></a> `T2` |
 
 #### Parameters
 
@@ -134,7 +134,7 @@ converter to the result of this converter.
 
 | Type Parameter |
 | ------ |
-| `T2` |
+| <a id="type-parameter-t2-1"></a> `T2` |
 
 #### Parameters
 
@@ -165,7 +165,7 @@ resulting from this [Converter](Converter.md) using the supplied [Converter](Con
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti"></a> `TI` |
 
 #### Parameters
 
@@ -200,7 +200,7 @@ resulting from this [Converter](Converter.md) using the supplied map function.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-1"></a> `TI` |
 
 #### Parameters
 
@@ -292,7 +292,7 @@ of the base conversion and is allowed to mutate the return type.
 
 | Type Parameter |
 | ------ |
-| `T2` |
+| <a id="type-parameter-t2-2"></a> `T2` |
 
 #### Parameters
 
@@ -321,7 +321,7 @@ of simple types.
 
 | Type Parameter |
 | ------ |
-| `B` *extends* `string` |
+| <a id="type-parameter-b"></a> `B` *extends* `string` |
 
 #### Parameters
 
@@ -380,7 +380,7 @@ Returns a Converter which always succeeds with a default value rather than faili
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TD` | `T` \| `TD` |
+| <a id="type-parameter-td-1"></a> `TD` | `T` \| `TD` |
 
 #### Parameters
 
@@ -434,7 +434,7 @@ the conversion result from this converter.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-2"></a> `TI` |
 
 #### Parameters
 
@@ -471,7 +471,7 @@ result.
 
 | Type Parameter |
 | ------ |
-| `TI` |
+| <a id="type-parameter-ti-3"></a> `TI` |
 
 #### Parameters
 

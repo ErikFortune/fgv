@@ -130,6 +130,23 @@ LogReporter&lt;unknown, unknown&gt;
 </td></tr>
 <tr><td>
 
+[contentEncoding](./IHttpTreeParams.contentEncoding.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+[HttpContentEncoding](../type-aliases/HttpContentEncoding.md)
+
+</td><td>
+
+Wire encoding to request for file contents.
+
+</td></tr>
+<tr><td>
+
 [prefix](./IHttpTreeParams.prefix.md)
 
 </td><td>

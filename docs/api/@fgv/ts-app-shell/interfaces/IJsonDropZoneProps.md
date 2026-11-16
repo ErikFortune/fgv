@@ -12,15 +12,15 @@ Props for the JsonDropZone component.
 
 | Type Parameter | Description |
 | ------ | ------ |
-| `T` | The expected validated type |
+| <a id="type-parameter-t"></a> `T` | The expected validated type |
 
 ## Properties
 
 | Property | Modifier | Type | Description |
 | ------ | ------ | ------ | ------ |
-| <a id="classname"></a> `className?` | `readonly` | `string` | Additional CSS class names |
-| <a id="converter"></a> `converter` | `readonly` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`\> | Converter to validate parsed JSON against |
-| <a id="error"></a> `error?` | `readonly` | `string` | Externally-controlled error message to display |
-| <a id="hint"></a> `hint?` | `readonly` | `string` | Placeholder hint text |
-| <a id="onerror"></a> `onError?` | `readonly` | (`message`) => `void` | Called with an error message on parse/validation failure |
-| <a id="onvaluereceived"></a> `onValueReceived` | `readonly` | (`value`) => `void` | Called with the validated value on successful drop/paste |
+| <a id="property-classname"></a> `className?` | `readonly` | `string` | Additional CSS class names |
+| <a id="property-converter"></a> `converter` | `readonly` | [`Converter`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils/docs)\<`T`\> | Converter to validate parsed JSON against |
+| <a id="property-error"></a> `error?` | `readonly` | `string` | Externally-controlled error message to display |
+| <a id="property-hint"></a> `hint?` | `readonly` | `string` | Placeholder hint text |
+| <a id="property-onerror"></a> `onError?` | `readonly` | (`message`) => `void` | Called with an error message on parse/validation failure |
+| <a id="property-onvaluereceived"></a> `onValueReceived` | `readonly` | (`value`) => `void` | Called with the validated value on successful drop/paste |

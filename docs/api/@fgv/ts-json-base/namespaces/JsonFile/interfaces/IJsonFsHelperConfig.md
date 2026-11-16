@@ -12,6 +12,6 @@ Configuration for [JsonFsHelper](../classes/JsonFsHelper.md).
 
 | Property | Type |
 | ------ | ------ |
-| <a id="allowundefinedwrite"></a> `allowUndefinedWrite` | `boolean` |
-| <a id="defaultfiles"></a> `defaultFiles` | `RegExp`[] |
-| <a id="json"></a> `json` | [`IJsonLike`](IJsonLike.md) |
+| <a id="property-allowundefinedwrite"></a> `allowUndefinedWrite` | `boolean` |
+| <a id="property-defaultfiles"></a> `defaultFiles` | `RegExp`[] |
+| <a id="property-json"></a> `json` | [`IJsonLike`](IJsonLike.md) |

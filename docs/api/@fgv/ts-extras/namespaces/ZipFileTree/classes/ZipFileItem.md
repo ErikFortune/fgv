@@ -10,15 +10,23 @@ Implementation of `FileTree.IFileTreeFileItem` for files in a ZIP archive.
 ZIP files are read-only, so this item does not support mutation.
 Use [isMutableFileItem](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs) to check before attempting mutations.
 
+## Remarks
+
+ZIP entries are byte-native, so this item also implements the read half of the
+optional binary capability (`FileTree.IBinaryFileTreeFileItem`) — use
+`FileTree.isBinaryFileItem` to narrow and `getRawBytes()` to read the entry's
+undecoded bytes.
+
 ## Type Parameters
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TCT` *extends* `string` | `string` |
+| <a id="type-parameter-tct"></a> `TCT` *extends* `string` | `string` |
 
 ## Implements
 
-- [`IFileTreeFileItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
+- [`IBinaryFileTreeFileItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
+- [`IStrictTextFileTreeFileItem`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base/docs)\<`TCT`\>
 
 ## Constructors
 
@@ -33,7 +41,7 @@ Constructor for ZipFileItem.
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
 | `zipFilePath` | `string` | The path of the file within the ZIP. |
-| `contents` | `string` | The pre-loaded contents of the file. |
+| `contents` | `string` \| `Uint8Array`\<`ArrayBufferLike`\> | The pre-loaded contents of the entry, either as raw bytes or as already-decoded text. Text is encoded as UTF-8 for the byte accessor and is also retained verbatim, so supplying text never round-trips through a decode. |
 | `accessors` | [`ZipFileTreeAccessors`](ZipFileTreeAccessors.md)\<`TCT`\> | The ZIP file tree accessors. |
 
 #### Returns
@@ -44,11 +52,11 @@ Constructor for ZipFileItem.
 
 | Property | Modifier | Type | Default value | Description |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="absolutepath"></a> `absolutePath` | `readonly` | `string` | `undefined` | The absolute path of the file within the ZIP archive. |
-| <a id="basename"></a> `baseName` | `readonly` | `string` | `undefined` | The base name of the file (without extension) |
-| <a id="extension"></a> `extension` | `readonly` | `string` | `undefined` | The extension of the file |
-| <a id="name"></a> `name` | `readonly` | `string` | `undefined` | The name of the file |
-| <a id="type"></a> `type` | `readonly` | `"file"` | `'file'` | Indicates that this `FileTree.FileTreeItem` is a file. |
+| <a id="property-absolutepath"></a> `absolutePath` | `public readonly` | `string` | `undefined` | The absolute path of the file within the ZIP archive. |
+| <a id="property-basename"></a> `baseName` | `public readonly` | `string` | `undefined` | The base name of the file (without extension) |
+| <a id="property-extension"></a> `extension` | `public readonly` | `string` | `undefined` | The extension of the file |
+| <a id="property-name"></a> `name` | `public readonly` | `string` | `undefined` | The name of the file |
+| <a id="property-type"></a> `type` | `public readonly` | `"file"` | `'file'` | Indicates that this `FileTree.FileTreeItem` is a file. |
 
 ## Accessors
 
@@ -66,7 +74,7 @@ The content type of the file.
 
 #### Implementation of
 
-`FileTree.IFileTreeFileItem.contentType`
+`FileTree.IBinaryFileTreeFileItem.contentType`
 
 ## Methods
 
@@ -84,7 +92,7 @@ Gets the contents of the file as parsed JSON.
 
 ##### Implementation of
 
-`FileTree.IFileTreeFileItem.getContents`
+`FileTree.IBinaryFileTreeFileItem.getContents`
 
 #### Call Signature
 
@@ -96,7 +104,7 @@ Gets the contents of the file as parsed JSON, converted to a specific type.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ##### Parameters
 
@@ -113,7 +121,27 @@ Gets the contents of the file as parsed JSON, converted to a specific type.
 
 ##### Implementation of
 
-`FileTree.IFileTreeFileItem.getContents`
+`FileTree.IBinaryFileTreeFileItem.getContents`
+
+***
+
+### getRawBytes()
+
+> **getRawBytes**(): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+Gets the raw bytes of the ZIP entry, with no text decoding applied.
+
+#### Returns
+
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+#### Remarks
+
+The returned array is the item's internal buffer and must not be modified.
+
+#### Implementation of
+
+`FileTree.IBinaryFileTreeFileItem.getRawBytes`
 
 ***
 
@@ -127,9 +155,42 @@ Gets the raw contents of the file as a string.
 
 [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
 
+#### Remarks
+
+The entry's bytes are decoded as UTF-8 with the lenient WHATWG default, so
+malformed input is silently replaced with U+FFFD. Use `getRawBytes()` for the
+undecoded bytes — and `new TextDecoder('utf-8', { fatal: true }).decode(bytes)`
+for a decode that fails loudly instead.
+
 #### Implementation of
 
-`FileTree.IFileTreeFileItem.getRawContents`
+`FileTree.IBinaryFileTreeFileItem.getRawContents`
+
+***
+
+### getTextStrict()
+
+> **getTextStrict**(): [`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
+
+Gets the file's contents, decoding UTF-8 strictly.
+
+#### Returns
+
+[`Result`](../../../../ts-res-ui-components/type-aliases/Result.md)\<`string`\>
+
+`Success` with the decoded text; `Failure` if the entry's bytes are
+not valid UTF-8, or if this item never held the original bytes.
+
+#### Remarks
+
+Decidable for an entry read out of the archive, which is byte-native: this
+item holds exactly the bytes the archive carried. An item constructed from
+already-decoded text fails instead — its bytes are a re-encode, so they are
+well-formed UTF-8 by construction and a success would say nothing.
+
+#### Implementation of
+
+`FileTree.IStrictTextFileTreeFileItem.getTextStrict`
 
 ***
 

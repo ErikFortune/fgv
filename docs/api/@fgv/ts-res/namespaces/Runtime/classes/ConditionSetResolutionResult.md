@@ -13,8 +13,8 @@ Contains either a failure indicator or a list of condition priority/score tuples
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="matches"></a> `matches` | `readonly` | readonly [`IConditionMatchResult`](../interfaces/IConditionMatchResult.md)[] |
-| <a id="matchtype"></a> `matchType` | `readonly` | [`ConditionMatchType`](../type-aliases/ConditionMatchType.md) |
+| <a id="property-matches"></a> `matches` | `public readonly` | readonly [`IConditionMatchResult`](../interfaces/IConditionMatchResult.md)[] |
+| <a id="property-matchtype"></a> `matchType` | `public readonly` | [`ConditionMatchType`](../type-aliases/ConditionMatchType.md) |
 
 ## Accessors
 

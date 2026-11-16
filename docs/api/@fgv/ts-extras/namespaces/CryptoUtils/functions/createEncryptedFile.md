@@ -14,7 +14,7 @@ Creates an [encrypted file](../interfaces/IEncryptedFile.md) from JSON content.
 
 | Type Parameter | Default type | Description |
 | ------ | ------ | ------ |
-| `TMetadata` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | Type of optional unencrypted metadata |
+| <a id="type-parameter-tmetadata"></a> `TMetadata` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) | Type of optional unencrypted metadata |
 
 ## Parameters
 

@@ -12,6 +12,6 @@ Initialization options for parsing or creation of [language tag](../classes/Lang
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="iana"></a> `iana?` | [`LanguageRegistries`](../../Iana/classes/LanguageRegistries.md) | The [IANA language subtag and extension registries](../../Iana/classes/LanguageRegistries.md) to be used for the request (optional). |
-| <a id="normalization"></a> `normalization?` | [`TagNormalization`](../type-aliases/TagNormalization.md) | Desired [normalization level](../type-aliases/TagNormalization.md) (optional). |
-| <a id="validity"></a> `validity?` | [`TagValidity`](../type-aliases/TagValidity.md) | Desired [validity level](../type-aliases/TagValidity.md) (optional). |
+| <a id="property-iana"></a> `iana?` | [`LanguageRegistries`](../../Iana/classes/LanguageRegistries.md) | The [IANA language subtag and extension registries](../../Iana/classes/LanguageRegistries.md) to be used for the request (optional). |
+| <a id="property-normalization"></a> `normalization?` | [`TagNormalization`](../type-aliases/TagNormalization.md) | Desired [normalization level](../type-aliases/TagNormalization.md) (optional). |
+| <a id="property-validity"></a> `validity?` | [`TagValidity`](../type-aliases/TagValidity.md) | Desired [validity level](../type-aliases/TagValidity.md) (optional). |

@@ -14,15 +14,15 @@ If a path has child resources, it must be a branch and cannot itself be a resour
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |
 
 ## Properties
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="children"></a> `children` | `readonly` | [`IReadOnlyValidatingResourceTreeChildren`](IReadOnlyValidatingResourceTreeChildren.md)\<`T`\> |
-| <a id="id"></a> `id` | `readonly` | [`ResourceId`](../../../../../type-aliases/ResourceId.md) |
-| <a id="isbranch"></a> `isBranch` | `readonly` | `true` |
-| <a id="isleaf"></a> `isLeaf` | `readonly` | `false` |
-| <a id="isroot"></a> `isRoot` | `readonly` | `false` |
-| <a id="name"></a> `name` | `readonly` | [`ResourceName`](../../../../../type-aliases/ResourceName.md) |
+| <a id="property-children"></a> `children` | `readonly` | [`IReadOnlyValidatingResourceTreeChildren`](IReadOnlyValidatingResourceTreeChildren.md)\<`T`\> |
+| <a id="property-id"></a> `id` | `readonly` | [`ResourceId`](../../../../../type-aliases/ResourceId.md) |
+| <a id="property-isbranch"></a> `isBranch` | `readonly` | `true` |
+| <a id="property-isleaf"></a> `isLeaf` | `readonly` | `false` |
+| <a id="property-isroot"></a> `isRoot` | `readonly` | `false` |
+| <a id="property-name"></a> `name` | `readonly` | [`ResourceName`](../../../../../type-aliases/ResourceName.md) |

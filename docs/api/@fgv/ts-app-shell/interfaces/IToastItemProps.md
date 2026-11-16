@@ -12,5 +12,5 @@ Props for a single Toast item.
 
 | Property | Modifier | Type |
 | ------ | ------ | ------ |
-| <a id="message"></a> `message` | `readonly` | [`IMessage`](IMessage.md) |
-| <a id="ondismiss"></a> `onDismiss` | `readonly` | (`id`) => `void` |
+| <a id="property-message"></a> `message` | `readonly` | [`IMessage`](IMessage.md) |
+| <a id="property-ondismiss"></a> `onDismiss` | `readonly` | (`id`) => `void` |

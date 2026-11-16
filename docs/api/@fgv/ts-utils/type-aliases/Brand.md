@@ -10,15 +10,15 @@
 
 Helper type to brand a simple type to prevent inappropriate use
 
+## Type Parameters
+
+| Type Parameter |
+| ------ |
+| <a id="type-parameter-t"></a> `T` |
+| <a id="type-parameter-b"></a> `B` |
+
 ## Type Declaration
 
 | Name | Type |
 | ------ | ------ |
 | `__brand` | `B` |
-
-## Type Parameters
-
-| Type Parameter |
-| ------ |
-| `T` |
-| `B` |

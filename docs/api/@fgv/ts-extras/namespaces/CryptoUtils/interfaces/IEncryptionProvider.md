@@ -28,7 +28,7 @@ Encrypts JSON content under a named secret.
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `TMetadata` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
+| <a id="type-parameter-tmetadata"></a> `TMetadata` | [`JsonValue`](../../../../ts-res-ui-components/type-aliases/JsonValue.md) |
 
 #### Parameters
 

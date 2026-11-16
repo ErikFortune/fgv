@@ -14,4 +14,4 @@ Union type representing any node in a read-only resource tree.
 
 | Type Parameter |
 | ------ |
-| `T` |
+| <a id="type-parameter-t"></a> `T` |

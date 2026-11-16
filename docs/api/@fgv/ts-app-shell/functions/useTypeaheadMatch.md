@@ -18,7 +18,7 @@ Hook that provides typeahead matching and filtering with tiered priority support
 
 | Type Parameter |
 | ------ |
-| `TId` *extends* `string` |
+| <a id="type-parameter-tid"></a> `TId` *extends* `string` |
 
 ## Parameters
 

@@ -16,13 +16,13 @@ Parameters used to construct a [ArrayValidator](../classes/ArrayValidator.md).
 
 | Type Parameter | Default type |
 | ------ | ------ |
-| `T` | - |
-| `TC` | `unknown` |
+| <a id="type-parameter-t"></a> `T` | - |
+| <a id="type-parameter-tc"></a> `TC` | `unknown` |
 
 ## Properties
 
 | Property | Type |
 | ------ | ------ |
-| <a id="options"></a> `options?` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> |
-| <a id="traits"></a> `traits?` | `Partial`\<[`ValidatorTraits`](../../../classes/ValidatorTraits.md)\> |
-| <a id="validateelement"></a> `validateElement` | [`Validator`](../../../interfaces/Validator.md)\<`T`, `TC`\> |
+| <a id="property-options"></a> `options?` | [`ValidatorOptions`](../../../interfaces/ValidatorOptions.md)\<`TC`\> |
+| <a id="property-traits"></a> `traits?` | `Partial`\<[`ValidatorTraits`](../../../classes/ValidatorTraits.md)\> |
+| <a id="property-validateelement"></a> `validateElement` | [`Validator`](../../../interfaces/Validator.md)\<`T`, `TC`\> |

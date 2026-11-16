@@ -16,13 +16,13 @@ Options for an [ObjectValidator](../classes/ObjectValidator.md).
 
 | Type Parameter |
 | ------ |
-| `T` |
-| `TC` |
+| <a id="type-parameter-t"></a> `T` |
+| <a id="type-parameter-tc"></a> `TC` |
 
 ## Properties
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="defaultcontext"></a> `defaultContext?` | `TC` | - |
-| <a id="optionalfields"></a> `optionalFields?` | keyof `T`[] | If present, lists optional fields. Missing non-optional fields cause an error. |
-| <a id="strict"></a> `strict?` | `boolean` | If true, unrecognized fields yield an error. If false or undefined (default), unrecognized fields are ignored. |
+| <a id="property-defaultcontext"></a> `defaultContext?` | `TC` | - |
+| <a id="property-optionalfields"></a> `optionalFields?` | (keyof `T`)[] | If present, lists optional fields. Missing non-optional fields cause an error. |
+| <a id="property-strict"></a> `strict?` | `boolean` | If true, unrecognized fields yield an error. If false or undefined (default), unrecognized fields are ignored. |
