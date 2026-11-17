@@ -2,6 +2,17 @@
   "name": "@fgv/ts-res-browser-cli",
   "version": "5.1.0",
   "description": "Command-line interface to launch ts-res-browser with specified options",
+  "files": [
+    "bin",
+    "lib",
+    "CHANGELOG.json",
+    "CHANGELOG.md",
+    "README.md",
+    "CAPABILITIES.md",
+    "LICENSE",
+    "!lib/test",
+    "!**/*.test.*"
+  ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "bin": {

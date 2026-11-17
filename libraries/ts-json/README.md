@@ -388,7 +388,7 @@ A convenience set of [ts-utils *Converters*](https://github.com/DidjaRedo/ts-uti
 
 Use the *json* converter to convert unknown to type-safe JSON. Fails if the value to be converted is not valid JSON.
 ```ts
-    import * as JsonConverters from '@fgv/ts-json/converters';
+    import { Converters as JsonConverters } from '@fgv/ts-json';
 
     const result = JsonConverters.json.convert(someUnknown);
     if (result.isSuccess()) {

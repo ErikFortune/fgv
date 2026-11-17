@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json",
+      "comment": "Corrected the import paths documented in README.md and CAPABILITIES.md: converters, editor and diff are imported from `@fgv/ts-json` itself, not from subpaths. No API change.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-json"
+}

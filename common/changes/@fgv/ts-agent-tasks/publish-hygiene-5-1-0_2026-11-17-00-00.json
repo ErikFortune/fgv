@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks"
+}

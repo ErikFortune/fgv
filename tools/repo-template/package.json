@@ -2,6 +2,19 @@
   "name": "@fgv/repo-template",
   "version": "5.1.0-6",
   "description": "CLI tool for creating and maintaining fgv-derived Rush monorepos",
+  "files": [
+    "bin",
+    "lib",
+    "templates",
+    "sync-manifest.json",
+    "CHANGELOG.json",
+    "CHANGELOG.md",
+    "README.md",
+    "CAPABILITIES.md",
+    "LICENSE",
+    "!lib/test",
+    "!**/*.test.*"
+  ],
   "license": "MIT",
   "main": "lib/index.js",
   "bin": {

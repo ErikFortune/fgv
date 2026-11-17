@@ -2,10 +2,23 @@
   "name": "@fgv/ts-extras",
   "version": "5.1.0",
   "description": "Assorted Typescript Utilities",
+  "files": [
+    "lib",
+    "dist",
+    "CHANGELOG.json",
+    "CHANGELOG.md",
+    "README.md",
+    "CAPABILITIES.md",
+    "LICENSE",
+    "!lib/test",
+    "!dist/test",
+    "!**/*.test.*"
+  ],
   "main": "lib/index.js",
   "types": "dist/ts-extras.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/ts-extras.d.ts",
       "node": {
         "import": "./lib/index.js",
         "require": "./lib/index.js"
@@ -13,8 +26,7 @@
       "default": {
         "import": "./lib/index.browser.js",
         "require": "./lib/index.browser.js"
-      },
-      "types": "./dist/ts-extras.d.ts"
+      }
     },
     "./crypto": {
       "node": {
