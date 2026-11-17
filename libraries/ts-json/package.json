@@ -2,6 +2,18 @@
   "name": "@fgv/ts-json",
   "version": "5.1.0-63",
   "description": "Typescript utilities for working with JSON",
+  "files": [
+    "lib",
+    "dist",
+    "CHANGELOG.json",
+    "CHANGELOG.md",
+    "README.md",
+    "CAPABILITIES.md",
+    "LICENSE",
+    "!lib/test",
+    "!dist/test",
+    "!**/*.test.*"
+  ],
   "main": "lib/index.js",
   "types": "dist/ts-json.d.ts",
   "scripts": {
@@ -68,6 +80,7 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/ts-json.d.ts",
       "node": {
         "import": "./lib/index.js",
         "require": "./lib/index.js"
@@ -75,8 +88,7 @@
       "default": {
         "import": "./lib/index.browser.js",
         "require": "./lib/index.browser.js"
-      },
-      "types": "dist/ts-json.d.ts"
+      }
     }
   },
   "repository": {

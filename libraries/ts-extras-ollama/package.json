@@ -6,6 +6,7 @@
   "types": "dist/ts-extras-ollama.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/ts-extras-ollama.d.ts",
       "node": {
         "import": "./lib/index.js",
         "require": "./lib/index.js"
@@ -13,14 +14,14 @@
       "default": {
         "import": "./lib/index.js",
         "require": "./lib/index.js"
-      },
-      "types": "./dist/ts-extras-ollama.d.ts"
+      }
     }
   },
   "files": [
     "lib",
     "dist",
     "CHANGELOG.json",
+    "CHANGELOG.md",
     "README.md",
     "CAPABILITIES.md",
     "LICENSE",

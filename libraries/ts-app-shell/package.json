@@ -2,6 +2,19 @@
   "name": "@fgv/ts-app-shell",
   "version": "5.1.0-63",
   "description": "Shared React UI primitives for application shells: column cascade, sidebar, toast/log messages, command palette, keybinding registry",
+  "files": [
+    "lib",
+    "dist",
+    "tailwind-preset.cjs",
+    "CHANGELOG.json",
+    "CHANGELOG.md",
+    "README.md",
+    "CAPABILITIES.md",
+    "LICENSE",
+    "!lib/test",
+    "!dist/test",
+    "!**/*.test.*"
+  ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
@@ -66,6 +79,7 @@
   },
   "exports": {
     ".": {
+      "types": "./lib/index.d.ts",
       "node": {
         "import": "./lib/index.js",
         "require": "./lib/index.js"
@@ -73,8 +87,7 @@
       "default": {
         "import": "./lib/index.browser.js",
         "require": "./lib/index.browser.js"
-      },
-      "types": "lib/index.d.ts"
+      }
     },
     "./tailwind-preset": "./tailwind-preset.cjs",
     "./theme.css": "./lib/styles/theme.css"

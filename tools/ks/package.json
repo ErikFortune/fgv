@@ -6,6 +6,7 @@
     "bin",
     "lib",
     "CHANGELOG.json",
+    "CHANGELOG.md",
     "README.md",
     "CAPABILITIES.md",
     "LICENSE",

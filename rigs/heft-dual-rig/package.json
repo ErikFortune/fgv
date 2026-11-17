@@ -2,6 +2,14 @@
   "name": "@fgv/heft-dual-rig",
   "version": "5.1.0-63",
   "description": "Heft rig configuration to dual-emit CJS (lib) and ESM (dist)",
+  "files": [
+    "profiles",
+    "CHANGELOG.json",
+    "CHANGELOG.md",
+    "README.md",
+    "CAPABILITIES.md",
+    "LICENSE"
+  ],
   "license": "MIT",
   "keywords": [
     "heft",
