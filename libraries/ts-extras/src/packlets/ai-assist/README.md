@@ -5,7 +5,7 @@
 LLM provider client + JSON-tolerant response handling. Provides `callProviderCompletion` /
 `callProviderCompletionStream` (OpenAI, xAI, Anthropic, Gemini), image generation, embeddings,
 harness-side client tools (`executeClientToolTurn` for one round, `runClientToolLoop` for a bounded
-multi-round loop), a provider/model registry, and the `AiPrompt` class. See the [`@fgv/ts-extras/ai-assist` entry in `LIBRARY_CAPABILITIES.md`](../../../../../.ai/instructions/LIBRARY_CAPABILITIES.md)
+multi-round loop), a provider/model registry, and the `AiPrompt` class. See the [`ts-extras` `AiAssist` entry in `LIBRARY_CAPABILITIES.md`](../../../../../.ai/instructions/LIBRARY_CAPABILITIES.md)
 for the full capability surface.
 
 ## Model Aliases (`@<provider>:<role>`)

@@ -2,6 +2,18 @@
   "name": "@fgv/ts-web-extras",
   "version": "5.1.0",
   "description": "Browser-compatible utilities and FileTree implementations",
+  "files": [
+    "lib",
+    "dist",
+    "CHANGELOG.json",
+    "CHANGELOG.md",
+    "README.md",
+    "CAPABILITIES.md",
+    "LICENSE",
+    "!lib/test",
+    "!dist/test",
+    "!**/*.test.*"
+  ],
   "main": "lib/index.js",
   "types": "dist/ts-web-extras.d.ts",
   "scripts": {
@@ -75,6 +87,7 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/ts-web-extras.d.ts",
       "node": {
         "import": "./lib/index.js",
         "require": "./lib/index.js"
@@ -82,8 +95,7 @@
       "default": {
         "import": "./lib/index.browser.js",
         "require": "./lib/index.browser.js"
-      },
-      "types": "dist/ts-web-extras.d.ts"
+      }
     }
   },
   "repository": {

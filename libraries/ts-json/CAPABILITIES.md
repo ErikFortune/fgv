@@ -23,9 +23,9 @@
 
 ## Decision shortcuts
 
-- **JSON templating or conditional inclusion?** → `JsonConverter` from `@fgv/ts-json/converters`.
-- **Deep-merging JSON?** → `JsonEditor.mergeObjectInPlace` from `@fgv/ts-json/editor`.
-- **Diffing JSON?** → `@fgv/ts-json/diff`.
+- **JSON templating or conditional inclusion?** → `JsonConverter` from `@fgv/ts-json`.
+- **Deep-merging JSON?** → `JsonEditor.mergeObjectInPlace` from `@fgv/ts-json`.
+- **Diffing JSON?** → `Diff.detailedDiff` / `Diff.threeWayDiff` from `@fgv/ts-json`.
 
 ---
 

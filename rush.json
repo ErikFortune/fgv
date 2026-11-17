@@ -524,7 +524,8 @@
     {
       "packageName": "@fgv/ks",
       "projectFolder": "tools/ks",
-      "shouldPublish": false,
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
       "tags": ["tools", "cli"]
     },
     {

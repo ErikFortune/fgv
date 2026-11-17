@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell"
+}
