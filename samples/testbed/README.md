@@ -62,10 +62,11 @@ diagnostics go to stderr.
 `--all` runs the scenarios one after another under a `=== <id>` header each, carries on past a
 failure (a scenario that throws counts as failed too), and ends with a summary: passed, failed
 and skipped counts, each failed id with its message, and the skipped ids — web-only scenarios
-and any named in `--skip`. It exits `1` if any scenario failed, otherwise `0`. Scenarios that need
-something unconfigured — a provider key, an `MCP_PROBE_*` server — succeed and say they skipped,
-so a bare `--all` is meaningful offline; scenarios that need the network (model downloads) fail
-where it is blocked.
+and any named in `--skip`. It exits `1` if any scenario failed, otherwise `0`. What an unconfigured
+run reports varies by scenario: some succeed and say what they skipped (`wire-probe`, the
+`*-model-tiers` canaries, `mcp-probe` with no `MCP_PROBE_*` server), others fail for want of a
+provider key, and the `local-*` and `sqlite-vec-*` scenarios fail where the model download is
+blocked — so read the summary's failed list rather than the exit code alone.
 
 ### Web
 

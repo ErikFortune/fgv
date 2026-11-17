@@ -307,7 +307,7 @@ describe('runTestbedCli --all', () => {
     const out = streams.stdout.output.join('');
     expect(out.indexOf('=== first\nfirst summary')).toBeGreaterThanOrEqual(0);
     expect(out.indexOf('=== second\nsecond summary')).toBeGreaterThan(out.indexOf('=== first'));
-    expect(out).toContain('=== summary\npassed 2 · failed 0 · skipped 0\n');
+    expect(out).toContain('=== testbed --all summary\npassed 2 · failed 0 · skipped 0\n');
     expect(out).not.toContain('failed:');
     expect(out).not.toContain('skipped:');
   });

@@ -198,7 +198,7 @@ async function runAllScenarios(
   );
   const passed = outcomes.length - failed.length - skipped.length;
   const lines: string[] = [
-    '=== summary',
+    '=== testbed --all summary',
     `passed ${passed} · failed ${failed.length} · skipped ${skipped.length}`,
     ...(failed.length > 0
       ? ['failed:', ...failed.map((o) => `  ${o.id}: ${indentContinuation(o.message)}`)]
