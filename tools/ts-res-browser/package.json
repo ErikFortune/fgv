@@ -9,11 +9,15 @@
   },
   "files": [
     "cli.js",
-    "dist/**/*",
-    "lib/**/*",
+    "dist",
+    "lib",
+    "CHANGELOG.json",
+    "CHANGELOG.md",
     "README.md",
     "CAPABILITIES.md",
-    "package.json"
+    "LICENSE",
+    "!lib/test",
+    "!**/*.test.*"
   ],
   "scripts": {
     "build": "webpack --mode production",

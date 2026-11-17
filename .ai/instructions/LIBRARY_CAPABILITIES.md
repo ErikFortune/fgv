@@ -114,7 +114,7 @@ detail. `· pkg` names the owning package.*
 - **Placing an explicit prompt-cache breakpoint on an Anthropic/OpenAI request?** → `IAiCacheRequest` `validateAiCacheRequest` · `ts-extras`
 - **Prefix-sharing requests missing xAI's cache because they land on different servers?** → `IAiCacheRequest` `supportsPromptCacheRouting` · `ts-extras`
 - **Deriving a cache-breakpoint plan from a resolved prompt's composition?** → `toCacheRequest` · `ts-prompt-assist`
-- **Alerting on provider-API evolution affecting `@fgv/ts-extras/ai-assist`?** → `ILogger` `IStreamApiConfig` · `ts-extras`
+- **Alerting on provider-API evolution affecting ts-extras `AiAssist`?** → `ILogger` `IStreamApiConfig` · `ts-extras`
 - **Stripping LLM Markdown fences from raw text?** → `extractJsonText` `fencedStringifiedJson` · `ts-extras`
 - **Diagnosing *why* an LLM's JSON response failed to parse?** → `classifyJsonParseFailure` · `ts-extras`
 - **Generating images from an LLM provider?** → `size` `quality` · `ts-extras`

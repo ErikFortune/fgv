@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/typedoc-compact-theme",
+      "comment": "The package now contains only the built theme; it no longer ships `src/`, `tsconfig.json` or build logs.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/typedoc-compact-theme"
+}

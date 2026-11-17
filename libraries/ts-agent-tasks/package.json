@@ -6,18 +6,19 @@
   "types": "dist/ts-agent-tasks.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/ts-agent-tasks.d.ts",
       "node": {
         "import": "./lib/index.js",
         "require": "./lib/index.js"
       },
-      "default": "./lib/index.js",
-      "types": "./dist/ts-agent-tasks.d.ts"
+      "default": "./lib/index.js"
     }
   },
   "files": [
     "lib",
     "dist",
     "CHANGELOG.json",
+    "CHANGELOG.md",
     "README.md",
     "CAPABILITIES.md",
     "LICENSE",
