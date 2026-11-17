@@ -85,8 +85,8 @@ const cliImpl: ICliScenarioImpl = {
       close: (session) => mcp.closeMcpSession(session)
     };
     return runMcpProbe(spec, deps, context.logger);
-    /* c8 ignore stop */
   }
+  /* c8 ignore stop */
 };
 
 /**
