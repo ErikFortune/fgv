@@ -1,0 +1,75 @@
+id: publish-hygiene-5-1-0
+status: shipped
+packages:
+  [
+    '@fgv/heft-dual-rig',
+    '@fgv/ks',
+    '@fgv/repo-template',
+    '@fgv/ts-agent-memory',
+    '@fgv/ts-agent-memory-sqlite-vec',
+    '@fgv/ts-agent-tasks',
+    '@fgv/ts-app-shell',
+    '@fgv/ts-bcp47',
+    '@fgv/ts-extras',
+    '@fgv/ts-extras-argon2',
+    '@fgv/ts-extras-mcp',
+    '@fgv/ts-extras-ollama',
+    '@fgv/ts-extras-re2',
+    '@fgv/ts-extras-system-one',
+    '@fgv/ts-extras-transformers',
+    '@fgv/ts-extras-webauthn',
+    '@fgv/ts-http-storage',
+    '@fgv/ts-json',
+    '@fgv/ts-json-base',
+    '@fgv/ts-prompt-assist',
+    '@fgv/ts-random',
+    '@fgv/ts-res',
+    '@fgv/ts-res-browser',
+    '@fgv/ts-res-browser-cli',
+    '@fgv/ts-res-cli',
+    '@fgv/ts-res-ui-components',
+    '@fgv/ts-utils',
+    '@fgv/ts-utils-jest',
+    '@fgv/ts-web-extras',
+    '@fgv/ts-web-extras-argon2',
+    '@fgv/ts-web-extras-transformers',
+    '@fgv/ts-web-extras-webauthn',
+    '@fgv/typedoc-compact-theme'
+  ]
+prs: [] # #TBD
+openPrs: []
+opened: 2026-11-17
+closed: 2026-11-17
+summary:
+  intended: >
+    Release prep for 5.1.0 from a consumer's validation of 5.1.0-63: rewrite documented subpath
+    imports that are not in a package's exports to forms that resolve (no new exports); put types
+    first and ./-prefix every exports target; give every published package an allowlist so perf/,
+    scripts/, test data, eslint config, build logs and stray sources stop shipping; make
+    CHANGELOG.md ship everywhere; record the ts-utils dependency-vs-peer inconsistency as tech
+    debt. Scope addition: publish @fgv/ks on the base-utils policy.
+  shipped: >
+    Docs in six packages and the router now name root imports and namespaces (AiAssist,
+    CryptoUtils, Experimental, Hash, FileTree, JsonFile, Diff) instead of non-existent subpaths.
+    22 exports maps reordered and prefixed; a packed consumer compiles under bundler and node16
+    with every package resolving its declared types target. Every package has a files allowlist
+    and the 16 .npmignore files are gone; lib/ and dist/ contents are unchanged, CHANGELOG.md is
+    in 33 of 33 tarballs. @fgv/ks joins base-utils and runs from its tarball. P2 tech-debt entry
+    added. 33 change files, four curated.
+  diverged: >
+    The premise that the old exports order made TypeScript read sibling lib/*.d.ts did not
+    reproduce: TypeScript 5.0, 5.4 and 5.9 resolve the types condition wherever it sits, so the
+    reorder is spec conformance. The ts-utils hard-dependency list was longer than the brief's
+    (also ts-res-ui-components, ts-http-storage and four tools).
+  sourceLine: '**Shipped:** documented imports that do not resolve are corrected, `exports` maps put `types` first, every published package ships from a `files` allowlist with `CHANGELOG.md`, and `@fgv/ks` publishes with 5.1.0.'
+  headline: '' # opted out: packaging and doc corrections add no capability
+keywords:
+  - npm packaging
+  - files allowlist
+  - npmignore
+  - exports types condition order
+  - ERR_PACKAGE_PATH_NOT_EXPORTED
+  - CHANGELOG.md in tarball
+  - documented subpath imports
+  - release prep 5.1.0
+  - '@fgv/ks publish'

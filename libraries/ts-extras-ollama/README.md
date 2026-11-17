@@ -18,7 +18,7 @@ A thin facade that wraps the `ollama` client's native-API calls in `Result<T>` f
 `captureResult` wrappers around upstream primitives with **no opinionated orchestration** above the
 boundary. Consumers compose the primitives themselves.
 
-The text-completion / streaming / tool-use path is **not** here — `@fgv/ts-extras/ai-assist` owns it
+The text-completion / streaming / tool-use path is **not** here — `AiAssist` in `@fgv/ts-extras` owns it
 via the `/v1` compat layer (point a provider descriptor's `endpoint` at `http://localhost:11434/v1`
 and call `callProviderCompletion` / `callProviderCompletionStream` / `executeClientToolTurn`).
 
@@ -75,7 +75,7 @@ if (structured.isSuccess()) {
 ```
 
 For **text completion / streaming / tool-use** against the same daemon, use
-`@fgv/ts-extras/ai-assist` (`callProviderCompletion` / `callProviderCompletionStream` /
+`AiAssist` from `@fgv/ts-extras` (`callProviderCompletion` / `callProviderCompletionStream` /
 `executeClientToolTurn`) with a provider `endpoint` of `http://localhost:11434/v1` — that path is
 not duplicated here.
 

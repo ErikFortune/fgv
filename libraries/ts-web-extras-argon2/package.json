@@ -6,15 +6,16 @@
   "types": "dist/ts-web-extras-argon2.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/ts-web-extras-argon2.d.ts",
       "import": "./lib/index.js",
-      "require": "./lib/index.js",
-      "types": "./dist/ts-web-extras-argon2.d.ts"
+      "require": "./lib/index.js"
     }
   },
   "files": [
     "lib",
     "dist",
     "CHANGELOG.json",
+    "CHANGELOG.md",
     "README.md",
     "CAPABILITIES.md",
     "LICENSE",

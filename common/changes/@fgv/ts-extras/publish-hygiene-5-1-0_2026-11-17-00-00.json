@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Corrected the import paths documented in README.md and CAPABILITIES.md: `ai-assist`, `crypto-utils` and `experimental` are reached through the `AiAssist`, `CryptoUtils` and `Experimental` namespaces of `@fgv/ts-extras`, not as subpaths. No API change. The package no longer ships the `perf/` live-provider probe scripts.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}

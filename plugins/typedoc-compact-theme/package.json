@@ -2,6 +2,14 @@
   "name": "@fgv/typedoc-compact-theme",
   "version": "5.1.0",
   "description": "A compact TypeDoc theme that renders API docs in table format similar to api-documenter",
+  "files": [
+    "lib",
+    "CHANGELOG.json",
+    "CHANGELOG.md",
+    "README.md",
+    "CAPABILITIES.md",
+    "LICENSE"
+  ],
   "type": "module",
   "main": "lib/index.js",
   "scripts": {
