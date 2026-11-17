@@ -234,3 +234,26 @@ entry lists all of them.
 
 ## Gates
 
+Run from the repo root on the committed tree (`f2e732526`), foreground, one at a time. Logs graded
+by grep, not exit code.
+
+| gate | result | `not met\|Operations failed\|error TS\|Jest tests? failed\|ERR_PNPM` | `-i warning` | NUL check |
+|---|---|---|---|---|
+| `rush change --verify --target-branch origin/integration/asks` | exit 0, 33 change files found | — | — | — |
+| `install-run-rush.js install` | exit 0 | 0 | 0 | 1402/1402 |
+| `install-run-rush.js rebuild` | `SUCCESS: 36 operations` | 0 | 1 † | 7710/7710 |
+| `install-run-rush.js lint` | `SUCCESS: 32 operations` | 0 | 1 † | 7613/7613 |
+| `install-run-rush.js test` (full repo) | `SUCCESS: 35 operations` | 0 | 1 † | 7866/7866 |
+
+† The tracked-symlink notice (`Detected 1 Git-tracked symlinks in the repository`), the only warning
+line in each log.
+
+Also run: `verify-tarball-exports.mjs` (26 packages, 204 paths, 0 failed),
+`verify-esm-entrypoints.mjs` (25 checked, 0 failed), `verify-bundler-resolution.mjs` (20 checked, 0
+failed), `verify-capability-docs.mjs` (router 23,838/24,000 chars, 0 failed),
+`generate-capability-feed.mjs --check` (0 stale), `prettier@2.8.8 --check` on every changed file
+(clean after formatting `meta.yaml`).
+
+Self-review against `CODE_REVIEW_CHECKLIST.md`: no TypeScript changed; the diff is manifests, docs,
+change files and the ledger. Every rewritten import was checked against the package's `src/index.ts`,
+and the six packages imported by the scratch consumer compile with `skipLibCheck: false`.

@@ -73,3 +73,4 @@ keywords:
   - documented subpath imports
   - release prep 5.1.0
   - '@fgv/ks publish'
+sourceHash: sha256:eb235e7ae3b50fd9 # over brief.md + result.md
