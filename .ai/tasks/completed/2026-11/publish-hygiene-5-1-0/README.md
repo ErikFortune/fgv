@@ -1,6 +1,6 @@
 # publish-hygiene-5-1-0 — packaging and documented-import fixes for 5.1.0
 
-**Shipped**: 2026-11-17 into `integration/asks` via #TBD.
+**Shipped**: 2026-11-17 into `integration/asks` via #792.
 
 ## Summary
 
