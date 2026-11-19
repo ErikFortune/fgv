@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-http-storage",
-  "version": "5.1.0-63",
+  "version": "5.1.0-64",
   "description": "Reusable HTTP storage services for FileTree-style backends",
   "files": [
     "lib",
