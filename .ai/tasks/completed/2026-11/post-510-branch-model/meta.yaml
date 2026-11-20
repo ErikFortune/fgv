@@ -54,4 +54,4 @@ relatedStreams:
       id: publish-workflow-rework,
       relationship: 'changes its guard from branch-equals-policy to branch-newer-than-policy; keeps every protection its two security reviews added'
     }
-sourceHash: sha256:aaf2d4d44f26d11f # over brief.md + result.md
+sourceHash: sha256:8805af801551a375 # over brief.md + result.md

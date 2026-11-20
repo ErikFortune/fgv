@@ -221,14 +221,17 @@ proof.
   `none` with an empty comment, except `@fgv/ts-app-shell` (`patch`, the URL constant).
 - `rush change --verify --target-branch origin/main` after the commit: every touched package has
   its change file (the verify found all 25 and passed).
-- **`rush install` / `rush rebuild`: blocked, not run to completion.** Both install attempts from
-  the repo root failed with `ERR_PNPM_ENOSPC` / an `onnxruntime-node` postinstall `copyfile` failure:
-  the shared disk had 99 MB, then 262 MB, free (the other `/home/user/fgv-*` worktrees hold it). The
-  partial `common/temp/node_modules` and `pnpm-store` of this worktree were removed afterwards to
-  give the space back. Nothing else was deleted. So **the rebuild gate and the `ts-app-shell` test
-  run for the one code change (a string constant and the test that pins it) are owed** — the
-  coordinator's gate, or CI on the PR, is the first run. Risk is low: the constant is `@internal`
-  and its test was updated to the same string.
+- **`rush install` / `rush rebuild`: first blocked, then run.** The first two installs failed
+  with `ERR_PNPM_ENOSPC` (99 MB, then 262 MB free on the shared disk); the partial
+  `common/temp/node_modules` and `pnpm-store` were removed to give the space back. After the
+  coordinator freed the disk, at `354949ab3` (security-review fixes included), from the repo root
+  in the foreground, logs under the scratchpad's `bm/`:
+
+  | step | exit | `not met\|Operations failed\|error TS\|Jest tests? failed\|ERR_PNPM` | warnings | result |
+  |---|---|---|---|---|
+  | `install` | 0 | 0 | — | *Rush install finished successfully* |
+  | `rebuild` | 0 | 0 | only the tracked-symlink notice | `SUCCESS: 36 operations`; log has no NUL padding |
+  | `test --to @fgv/ts-app-shell` | 0 | 0 | only the tracked-symlink notice | `SUCCESS: 6 operations`, `@fgv/ts-app-shell` completed (covers the URL constant and its test) |
 
 ## Left alone, and why
 
