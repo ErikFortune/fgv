@@ -1,7 +1,7 @@
 # post-510-branch-model — the release flow after 5.1.0, and the docs that describe it
 
 **Shipped**: 2026-11-20 on branch `post-510-branch-model` (based on `main` `3a541a89f`, carried
-forward to `b91d01d39`), PR #TBD. Workflows, docs, 25 change files, and one URL constant in
+forward to `b91d01d39`), PR #802. Workflows, docs, 25 change files, and one URL constant in
 `ts-app-shell`.
 
 ## Summary
