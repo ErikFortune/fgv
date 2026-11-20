@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/heft-dual-rig",
+      "comment": "Added a README.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/heft-dual-rig"
+}

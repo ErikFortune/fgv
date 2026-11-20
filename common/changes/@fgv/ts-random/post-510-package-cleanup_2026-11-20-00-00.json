@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-random",
+      "comment": "Added a README and a package description.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-random"
+}
