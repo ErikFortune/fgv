@@ -1,0 +1,40 @@
+id: testbed-run-fixes
+status: shipped
+packages: ['@fgv/testbed']
+prs: [] # #TBD — the PR is opened after this branch is pushed
+openPrs: []
+opened: 2026-11-16
+closed: 2026-11-20
+summary:
+  intended: >
+    Fix what the maintainer's full testbed run turned up: the safer-fetch size-cap step that could
+    never trip, wire-probe calling an output-limit 400 a schema rejection, mcp-probe failing when
+    unconfigured; add --all to run every CLI scenario with a summary. A follow-up asked keyless
+    scenarios to skip instead of fail, network-dependent ones to fail readably, and the README to
+    say what an unkeyed --all reports.
+  shipped: >
+    /big is served chunked with no Content-Length; wire-probe classifies output-budget 400s as
+    inconclusive and its raw budget rose from 16 to 256 tokens. --all [--skip] runs every CLI
+    scenario with a passed/failed/skipped summary. ICliScenarioImpl gained a skipReason
+    precondition backed by shared skipWithoutSecret/skipWithoutProviderKey helpers, wired to the
+    eleven key-gated scenarios and mcp-probe; model-load failures name the model and host. An
+    unkeyed --all: 9 passed, 14 skipped, 5 failed (the huggingface.co downloads).
+  diverged: >
+    The raw-probe token budget was raised, which the brief left to the implementer's judgment.
+    mcp-probe's round-1 skip (a success string) became a skipReason hook in round 2 so --all counts
+    it as skipped. --scenario now also catches a throwing scenario, since both paths share one runner.
+  sourceLine: '**Shipped:** the testbed CLI gains `--all`, and a scenario that cannot run without a key or server is reported as skipped with the variable to set, so an unkeyed run fails only on real environmental problems.'
+  headline: '' # opted out: a sample, not a capability
+keywords:
+  - testbed --all
+  - keyless skip
+  - skipReason precondition
+  - safer-fetch size cap
+  - chunked transfer
+  - wire-probe output limit
+  - max_tokens 400
+  - mcp-probe unconfigured
+  - model download failure
+relatedStreams:
+  - { id: testbed-model-probes, relationship: 'its keyless canaries are the skip precedent followed here' }
+sourceHash: sha256:f9d03d613296ef46 # over brief.md + result.md
