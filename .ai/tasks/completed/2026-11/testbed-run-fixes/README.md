@@ -1,6 +1,6 @@
 # testbed-run-fixes — fixes from the maintainer's full testbed run, plus `--all`
 
-**Shipped**: 2026-11-20 via #TBD.
+**Shipped**: 2026-11-20 via #801.
 Package: `@fgv/testbed` (`samples/testbed`, private). No change file needed.
 
 ## Summary
