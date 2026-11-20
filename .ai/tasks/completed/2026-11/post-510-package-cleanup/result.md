@@ -70,9 +70,18 @@ README and a package description." for `ts-random`.
 
 ## 6. Gates
 
-See the stream README and the hand-off report for the recorded results of `rush change --verify
---target-branch origin/main`, `rush install`, `rush rebuild`, `generate-capability-feed.mjs
---check`, `verify-capability-docs.mjs` and `prettier@2.8.8 --check`.
+Run from the repo root, in the foreground, on commit `66037ca40`.
+
+| gate | result |
+|---|---|
+| `rush change --verify --target-branch origin/main` | exit 0; 8 change files found |
+| `rush install` | exit 0; 0 hits for `not met\|Operations failed\|error TS\|Jest tests? failed\|ERR_PNPM`, 0 warnings |
+| `rush rebuild` | exit 0; `SUCCESS: 36 operations`; 0 hits for the same pattern; the only warning is the standing "1 Git-tracked symlink" notice; log has no NUL padding |
+| `generate-capability-feed.mjs --check` | exit 0, 0 stale (this stream opts out of the feed with `headline: ''`) |
+| `verify-capability-docs.mjs` | exit 0, 26/26 libraries documented, 0 failed |
+| `npx -y prettier@2.8.8 --check` on every changed file | all formatted (prettier has no parser for `LICENSE`) |
+
+Not run: `rush test` and `rushx lint` — no source, test or lint-visible file changed.
 
 ## Follow-ups
 
