@@ -1,0 +1,46 @@
+id: post-510-package-cleanup
+status: shipped
+packages:
+  [
+    '@fgv/heft-dual-rig',
+    '@fgv/ts-extras-argon2',
+    '@fgv/ts-extras-webauthn',
+    '@fgv/ts-http-storage',
+    '@fgv/ts-random',
+    '@fgv/ts-web-extras-argon2',
+    '@fgv/ts-web-extras-webauthn',
+    '@fgv/typedoc-compact-theme'
+  ]
+prs: [] # #TBD
+openPrs: []
+opened: 2026-11-20
+closed: 2026-11-20
+summary:
+  intended: >
+    Post-5.1.0 packaging cleanup: write a README for the eight published packages that shipped
+    without one (ts-extras-argon2, ts-web-extras-argon2, ts-http-storage, heft-dual-rig,
+    typedoc-compact-theme, ts-random, ts-extras-webauthn, ts-web-extras-webauthn), each with an
+    accurate usage example from the package's real exports; add the missing LICENSE to
+    typedoc-compact-theme; give ts-random a description and fix any other empty or placeholder
+    description; verify by packing; patch change files.
+  shipped: >
+    Eight READMEs, each with an example built from the package's root export, typechecked against
+    the built packages (and run, for ts-random and both argon2 providers). The rig and theme
+    READMEs document how the repo itself uses them, including that the theme deletes its out
+    directory and exits before TypeDoc renders. typedoc-compact-theme ships the siblings' MIT
+    LICENSE; ts-random's description is set. All eight packed tarballs carry README.md and
+    LICENSE. Eight patch change files.
+  diverged: >
+    No other package had an empty or placeholder description; ts-utils and ts-extras share a
+    generic one, which was left.
+  sourceLine: '**Shipped:** the eight published packages that had no `README.md` now have one, `@fgv/typedoc-compact-theme` ships a `LICENSE`, and `@fgv/ts-random` has a package description.'
+  headline: '' # opted out: READMEs and a LICENSE add no capability
+keywords:
+  - README
+  - LICENSE
+  - npm packaging
+  - package description
+  - heft rig
+  - typedoc plugin
+  - post-release cleanup 5.1.0
+sourceHash: sha256:263ac622cd8a08c9 # over brief.md + result.md
