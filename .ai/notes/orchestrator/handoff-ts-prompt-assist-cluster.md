@@ -1,5 +1,11 @@
 # Handoff: ts-prompt-assist cluster (mid-cluster orchestrator transition)
 
+> **Branch-model note (2026-11-20).** Written under the pre-5.1.0 model, where `release` was the
+> branch every PR targeted and `main` the promoted line. Since 5.1.0 the trunk is `main`, trains are
+> `release/<major>`, and the old `release` branch is deleted
+> (`.ai/conventions/workflow/branch-buffer-and-promotion.md`). Read "`release`" below as history;
+> for any instruction it gives, the branch today is `main`.
+
 **Date:** 2026-05-18
 **Cluster:** `ts-prompt-assist v0.1`
 **Integration branch:** `claude/ts-prompt-assist-features` (off `release`)

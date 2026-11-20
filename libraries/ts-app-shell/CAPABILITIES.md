@@ -8,7 +8,7 @@
 
 ---
 
-[libraries/ts-app-shell](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-app-shell)
+[libraries/ts-app-shell](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-app-shell)
 
 Reusable React shell components: top bar, sidebar, column cascade, modal, keyboard registry, responsive layout, theme, drop-zone, and the **`messages` packlet** (toast + collapsible log panel + observability bridge).
 

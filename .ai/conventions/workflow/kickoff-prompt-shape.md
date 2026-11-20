@@ -121,14 +121,14 @@ The interleaved shape:
     `TESTING_GUIDELINES.md` § "Coverage Gap Resolution" for the
     full sequence.
 - **PR base for multi-phase streams targets an integration branch,
-  not `release`.** Stream kickoffs for design-triage-implement
+  not `main`.** Stream kickoffs for design-triage-implement
   workflows should instruct the implementing agent to base their
   PR on the stream's integration branch (`<stream-id>`, off
-  `release` HEAD). Phase A design, Phase B triage, Phase C
+  `main` HEAD). Phase A design, Phase B triage, Phase C
   implementation all merge onto the same integration branch; the
-  orchestrator opens the cluster-close PR (integration → release)
+  orchestrator opens the cluster-close PR (integration → main)
   when implementation completes. Phase A design does NOT land on
-  `release` as its own commit. See orchestrator agent prompt §
+  `main` as its own commit. See orchestrator agent prompt §
   "Design triage cycle" for the integration-branch posture.
 
 ## Anti-patterns

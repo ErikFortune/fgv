@@ -1,5 +1,11 @@
 # Handoff: `@fgv/ts-agent-memory` fragment-retrieval cycle (N-Ask5) — clean close
 
+> **Branch-model note (2026-11-20).** Written under the pre-5.1.0 model, where `release` was the
+> branch every PR targeted and `main` the promoted line. Since 5.1.0 the trunk is `main`, trains are
+> `release/<major>`, and the old `release` branch is deleted
+> (`.ai/conventions/workflow/branch-buffer-and-promotion.md`). Read "`release`" below as history;
+> for any instruction it gives, the branch today is `main`.
+
 **Date:** 2026-07-20. **State:** clean — nothing in flight, all four PRs merged to `release`.
 This documents a *completed* cycle plus the horizon items that were surfaced but never
 formally requested, so a successor can pick up cold.

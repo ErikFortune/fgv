@@ -1,0 +1,45 @@
+name: Release source
+
+# A release train (release/<major>) takes promotions from main and merges of a publish/<version>
+# child, nothing else. Make the `release-source` check required on release/*: on every other base
+# it passes, so requiring it blocks nothing there.
+#
+# Its own workflow so it can listen for `edited`: retargeting a PR's base fires only `edited`, and
+# without it a PR opened against main (check green) and then retargeted to release/<major> would
+# keep its green check on the same commit. Plain pull_request, never pull_request_target: nothing
+# here needs the base repository's credentials, and no code from the PR is checked out or run.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions: {}
+
+jobs:
+  release-source:
+    name: release-source
+    runs-on: ubuntu-latest
+    steps:
+      - name: A release train accepts only main or publish/<version>
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          case "$BASE_REF" in
+            release/*) ;;
+            *) echo "Base $BASE_REF is not a release train; nothing to check."; exit 0 ;;
+          esac
+          if [ "$HEAD_REPO" != "$GITHUB_REPOSITORY" ]; then
+            echo "::error title=Release train source::a PR into $BASE_REF must come from a branch of $GITHUB_REPOSITORY, not $HEAD_REPO"
+            exit 1
+          fi
+          case "$HEAD_REF" in
+            main | publish/[0-9]*)
+              echo "PR into $BASE_REF from $HEAD_REF: allowed."
+              ;;
+            *)
+              echo "::error title=Release train source::a PR into $BASE_REF must come from main (a promotion) or publish/<version> (a publish child); this one comes from $HEAD_REF"
+              exit 1
+              ;;
+          esac

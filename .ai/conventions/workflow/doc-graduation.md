@@ -4,7 +4,7 @@
 > Cross-repo consistency intentional: both orchestrators follow the same model so
 > the user only has one mental model to reason about across the two repos.
 
-A discipline for which orchestrator-authored docs graduate to `release` and which stay on a working branch. The goal is to reduce `release` history noise (every cluster shouldn't bring along every Q&A note the orchestrator produced) while keeping load-bearing artifacts findable on `release` for future readers.
+A discipline for which orchestrator-authored docs graduate to `main` and which stay on a working branch. The goal is to reduce `main` history noise (every cluster shouldn't bring along every Q&A note the orchestrator produced) while keeping load-bearing artifacts findable on `main` for future readers.
 
 ---
 
@@ -12,7 +12,7 @@ A discipline for which orchestrator-authored docs graduate to `release` and whic
 
 | fgv | personaility | Role |
 |---|---|---|
-| `release` | `working` | The shared canonical line. Buffer for clusters before promotion to `main`. |
+| `main` | `working` | The trunk. Every feature PR and integration branch targets it. (fgv's stable publishes come from `release/<major>` trains promoted from `main`; docs never graduate there directly.) |
 | `claude/orchestrator-session` | session branch | Long-lived working branch where orchestrator-authored docs accumulate before graduating (if they graduate at all). |
 | `claude/<stream>-substrate-prep` | `chore/stream-<id>-prep` | Per-stream prep branch that cherry-picks the docs the implementing agent needs. |
 | `claude/<cluster>-features` | (none — finer grain) | Cluster integration branch absorbing multiple streams' substrate before cluster-level promotion. |
@@ -23,23 +23,23 @@ A discipline for which orchestrator-authored docs graduate to `release` and whic
 
 ## Default: docs stay where they're authored
 
-The orchestrator writes lots of docs in the course of a session: decision-tracks, pre-spec scoping notes, Q&A logs, lessons-codification candidates, intermediate research. **Most of these don't need to live on `release`.** They serve the current session and the next orchestrator who picks up cold; they don't need a stable URL for any downstream consumer.
+The orchestrator writes lots of docs in the course of a session: decision-tracks, pre-spec scoping notes, Q&A logs, lessons-codification candidates, intermediate research. **Most of these don't need to live on `main`.** They serve the current session and the next orchestrator who picks up cold; they don't need a stable URL for any downstream consumer.
 
 The defaults:
 
-- **Cross-cutting decision-tracks, Q&A logs, lessons-codification candidates** → live on `claude/orchestrator-session` under `.ai/notes/orchestrator/`. Sweep to `release` periodically (see below).
+- **Cross-cutting decision-tracks, Q&A logs, lessons-codification candidates** → live on `claude/orchestrator-session` under `.ai/notes/orchestrator/`. Sweep to `main` periodically (see below).
 - **Per-stream substrate** (`brief.md`, `state.md`) → live on the cluster integration branch (`claude/<cluster>-features`) via a substrate-prep PR. This IS graduation — the implementing agent reads from there.
 - **Cross-repo handoff content the other side authored** → live at `.ai/notes/cross-repo-handoffs/<topic>.md` on the integration branch where the relevant cluster lives. Graduates with the cluster.
 
 ---
 
-## When a doc SHOULD graduate to `release`
+## When a doc SHOULD graduate to `main`
 
 Three triggers:
 
-1. **A named downstream consumer needs a stable URL.** The implementing agent kicking off a stream is the canonical example — they read `brief.md` from the integration branch. Cross-repo orchestrators (when the other repo can reach this one) also count. Future-orchestrator-reading-the-substrate is a weaker case; usually they read from `release` (and may not be able to reach a working branch).
+1. **A named downstream consumer needs a stable URL.** The implementing agent kicking off a stream is the canonical example — they read `brief.md` from the integration branch. Cross-repo orchestrators (when the other repo can reach this one) also count. Future-orchestrator-reading-the-substrate is a weaker case; usually they read from `main` (and may not be able to reach a working branch).
 2. **Long-term canonical architectural reference.** Load-bearing design docs future readers will need (e.g. `LIBRARY_CAPABILITIES.md`, the workflow conventions themselves). These are part of the project's public-ish surface.
-3. **Cluster close.** When a cluster's integration branch merges to `release`, all the cluster's substrate graduates with it. This is the bulk-graduation event.
+3. **Cluster close.** When a cluster's integration branch merges to `main`, all the cluster's substrate graduates with it. This is the bulk-graduation event.
 
 ---
 
@@ -59,9 +59,9 @@ Three triggers:
 This is the main graduation path for stream kickoff docs.
 
 1. **Identify the docs the implementing agent actually needs.** Spec, stream plan, kickoff brief, any referenced design artifacts. Be precise — only what the stream consumes. Other orchestrator-side artifacts stay where they are.
-2. **Create `claude/<stream>-substrate-prep` off the cluster integration branch.** (Or `claude/<stream>-substrate-prep` off `release` if there's no cluster.)
+2. **Create `claude/<stream>-substrate-prep` off the cluster integration branch.** (Or `claude/<stream>-substrate-prep` off `main` if there's no cluster.)
 3. **Cherry-pick or copy the specific files / commits** for the chosen docs from the orchestrator session branch (or write them fresh on the prep branch).
-4. **Open a PR** `claude/<stream>-substrate-prep` → integration branch (or `release`). Docs-only. Merge.
+4. **Open a PR** `claude/<stream>-substrate-prep` → integration branch (or `main`). Docs-only. Merge.
 5. **The implementing agent forks their work branch** off the integration branch (now with the seeded substrate).
 6. **Once the prep PR merges, freeze the session-branch copies** if any existed. Treat the working copy as canonical. Amendments go through a follow-up PR, not edits to the session-branch copy.
 
@@ -71,15 +71,15 @@ This pattern is already in place under the existing integration-branch model. Th
 
 ## Background-doc sweep pattern
 
-Docs that accumulate on `claude/orchestrator-session` with no specific consumer but represent a coherent durable record get periodic batched sweeps to `release`.
+Docs that accumulate on `claude/orchestrator-session` with no specific consumer but represent a coherent durable record get periodic batched sweeps to `main`.
 
 Mechanic:
 
 1. Identify the set of session-branch docs that deserve graduation (lessons-codification candidates that have been codified into stable form; decision-tracks for shipped clusters; cross-stream rationale that future orchestrators will need).
-2. Create `chore/orchestrator-sweep-<date>` off `release`.
+2. Create `chore/orchestrator-sweep-<date>` off `main`.
 3. Cherry-pick / copy the chosen docs onto the chore branch.
-4. Open PR `chore/orchestrator-sweep-<date>` → `release`. Squash-merge (the goal is one logical commit on release, not the per-doc commit history).
-5. Document on the session branch which docs swept and when (so future orchestrators can find what's already on release).
+4. Open PR `chore/orchestrator-sweep-<date>` → `main`. Squash-merge (the goal is one logical commit on main, not the per-doc commit history).
+5. Document on the session branch which docs swept and when (so future orchestrators can find what's already on main).
 
 **Sweep frequency:** at natural moments. Cluster closes; quarter ends; orchestrator hands off; convention-codification batch completes. Not on a schedule.
 
@@ -116,22 +116,22 @@ Either direction: the doc is committed and durable; cross-repo orchestrators ref
 |---|---|
 | Per-stream `brief.md`, `state.md` | Cluster integration branch (graduated via substrate-prep PR) |
 | `design.md` produced by phase-A agent | Cluster integration branch (graduated when phase-A PR merges) |
-| `WORKSTREAMS.md` entries | Cluster integration branch (or `release` for non-cluster streams) |
+| `WORKSTREAMS.md` entries | Cluster integration branch (or `main` for non-cluster streams) |
 | Cross-repo handoff received | Cluster integration branch under `.ai/notes/cross-repo-handoffs/` |
 | Orchestrator session-state, decision-tracks | `claude/orchestrator-session` under `.ai/notes/orchestrator/` |
 | Lessons-codification candidates (pre-codification) | `claude/orchestrator-session` |
-| Convention docs (codified) | `release` (via `chore/` PR) |
-| Skill definitions (codified) | `release` (via `chore/` PR) |
-| Orchestrator agent prompt (`.claude/agents/orchestrator.md`) | `release` |
-| Completed-stream archive (`.ai/tasks/completed/`) | `release` (graduated with the cluster's integration-branch merge) |
+| Convention docs (codified) | `main` (via `chore/` PR) |
+| Skill definitions (codified) | `main` (via `chore/` PR) |
+| Orchestrator agent prompt (`.claude/agents/orchestrator.md`) | `main` |
+| Completed-stream archive (`.ai/tasks/completed/`) | `main` (graduated with the cluster's integration-branch merge) |
 
 ---
 
 ## Anti-patterns
 
-- **Graduating every orchestrator doc.** `release` history balloons; future readers can't tell which docs were load-bearing vs scratch.
+- **Graduating every orchestrator doc.** `main` history balloons; future readers can't tell which docs were load-bearing vs scratch.
 - **Editing session-branch copies after their integration-branch graduation.** Silent drift; edits don't reach the consumer.
-- **Sweeping research scratch to release.** Use the sweep pattern only for durable artifacts that future orchestrators will benefit from. Scratch stays on session branch until aged out.
+- **Sweeping research scratch to main.** Use the sweep pattern only for durable artifacts that future orchestrators will benefit from. Scratch stays on session branch until aged out.
 - **Skipping the cross-repo-handoffs/ archive.** Inbound handoffs that aren't archived become unrecoverable when the originating cluster closes.
 
 ---

@@ -3,10 +3,12 @@ name: Publish Release (Implementation)
 # Stable and major publishes. Called only from publish.yml (npm trusted publishing is bound to that
 # file). Dispatched on refs/heads/publish/<version>, a child of release/<major> cut at its tip.
 #
-#   guard   no secrets, read-only. Refuses the wrong ref, a policy that does not name the branch's
-#           version, a HEAD that is not exactly origin/release/<major>, and a version already on npm
-#           unless this is a resume of our own partial run. Chooses the npm dist-tag and fixes the
-#           package list the publish job holds the build to.
+#   guard   no secrets, read-only. Takes the version from the branch name (publish/<X.Y.Z>) and
+#           refuses the wrong ref, a version that is not newer than the one the branch's policy
+#           says was last published (or that skips a major), a HEAD that is not exactly
+#           origin/release/<the version's major>, and a version already on npm unless this is a
+#           resume of our own partial run. Chooses the npm dist-tag and fixes the package list the
+#           publish job holds the build to.
 #   build   read-only token, no npm credentials. Installs, versions and writes CHANGELOGs, commits
 #           the bump locally, rebuilds, tests, and packs one tarball per package. Uploads the
 #           tarballs and a git bundle of the bump commit. All third-party install/build/test code
@@ -16,12 +18,19 @@ name: Publish Release (Implementation)
 #           commit against a path allowlist, pushes the bump commit first, then publishes each
 #           tarball with the pinned npm and pushes its tag, then opens the follow-up PRs.
 #
-# The version policy names the version this run publishes. `rush version --bump` always increments,
-# so the build job parks the policy on `<version>-0` and bumps `patch`, which semver resolves to
-# exactly `<version>`; that sequence also writes every CHANGELOG from common/changes and deletes the
-# consumed change files. The experiment that established it, and the recovery procedure, are in
-# .ai/tasks/completed/2026-11/publish-workflow-rework/result.md and
+# The branch name is the version this run publishes; the version policy on main and on every train
+# names the last version published, so no PR has to move it before a release. `rush version --bump`
+# always increments, so the build job parks the policy on `<version>-0` and bumps `patch`, which
+# semver resolves to exactly `<version>` (from 5.1.0: 5.2.0-0 -> 5.2.0, 5.1.1-0 -> 5.1.1); that
+# sequence also writes the policy, every CHANGELOG from common/changes and deletes the consumed
+# change files. The experiments that established it, and the recovery procedure, are in
+# .ai/tasks/completed/2026-11/publish-workflow-rework/result.md,
+# .ai/tasks/completed/2026-11/post-510-branch-model/result.md and
 # .ai/notes/orchestrator/branch-migration-checklist.md.
+#
+# Every setup-node step sets `package-manager-cache: false`: setup-node v7 restores a package-manager
+# cache automatically when the root package.json names a `packageManager`, and a cache restored into
+# a job holding OIDC or a write token is a path for repository-controlled content into that job.
 
 on:
   workflow_call:
@@ -58,6 +67,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.15.0
+          package-manager-cache: false
 
       - name: Guard (ref, version policy, release train, npm)
         id: check
@@ -71,11 +81,19 @@ jobs:
             refs/heads/publish/*) ;;
             *) fail "a $RELEASE_KIND publish runs only on refs/heads/publish/<version>; this run is on $GITHUB_REF" ;;
           esac
-          BRANCH_VERSION="${GITHUB_REF#refs/heads/publish/}"
 
+          # The branch name is the version this run publishes: strict X.Y.Z, no prerelease or build
+          # suffix, no leading zeros.
+          VERSION="${GITHUB_REF#refs/heads/publish/}"
+          [[ "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] \
+            || fail "publish/$VERSION does not name a plain X.Y.Z version; a stable publish branch is publish/<major>.<minor>.<patch>"
+          MAJOR="${VERSION%%.*}"
+
+          # The train's policy names the last stable version it published (main's and every train's
+          # policy stay honest between releases); this run publishes a newer one.
           # version-policies.json carries // and /* */ comments and trailing commas.
           # shellcheck disable=SC2016 # single quotes: the argument is JavaScript, not shell
-          VERSION=$(node -e '
+          POLICY_VERSION=$(node -e '
             const fs = require("fs");
             const text = fs.readFileSync("common/config/rush/version-policies.json", "utf8")
               .replace(/^\s*\/\/.*$/gm, "")
@@ -86,22 +104,34 @@ jobs:
             console.log(policy.version);
           ') || fail "could not read the base-utils version policy from common/config/rush/version-policies.json"
 
-          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
-            || fail "a stable publish needs a plain X.Y.Z version policy; base-utils says '$VERSION'"
-          [ "$BRANCH_VERSION" = "$VERSION" ] \
-            || fail "branch publish/$BRANCH_VERSION names $BRANCH_VERSION but the base-utils version policy says $VERSION"
-          MAJOR="${VERSION%%.*}"
+          [[ "$POLICY_VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] \
+            || fail "the train's base-utils version policy should name the last stable X.Y.Z it published; it says '$POLICY_VERSION' (a prerelease policy belongs on prerelease, never on a train)"
+          # shellcheck disable=SC2016 # single quotes: the argument is JavaScript, not shell
+          NEWER=$(node -e '
+            const core = (v) => v.split(".").map(Number);
+            const [a, b] = [core(process.argv[1]), core(process.argv[2])];
+            console.log((a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) > 0 ? "yes" : "no");
+          ' "$VERSION" "$POLICY_VERSION")
+          [ "$NEWER" = "yes" ] \
+            || fail "publish/$VERSION is not newer than $POLICY_VERSION, the version the base-utils policy on this branch says was last published"
+          POLICY_MAJOR="${POLICY_VERSION%%.*}"
+          if [ "$MAJOR" != "$POLICY_MAJOR" ]; then
+            [ "$MAJOR" = "$((POLICY_MAJOR + 1))" ] && [ "$VERSION" = "$MAJOR.0.0" ] \
+              || fail "publish/$VERSION changes major from $POLICY_MAJOR; the next major starts at $((POLICY_MAJOR + 1)).0.0"
+          fi
 
           if [ "$RELEASE_KIND" = "major" ]; then
-            [ "$VERSION" = "$MAJOR.0.0" ] || fail "release_type major publishes only $MAJOR.0.0; the policy says $VERSION (use release_type release)"
+            [ "$VERSION" = "$MAJOR.0.0" ] || fail "release_type major publishes only $MAJOR.0.0; the branch names $VERSION (use release_type release)"
           else
             [ "$VERSION" != "$MAJOR.0.0" ] || fail "$VERSION is a new major; dispatch with release_type major"
           fi
 
           # The publish child is cut from the train's tip and dispatched straight away, so what is
           # published is exactly what was promoted. Touch-ups go on the child after the run.
+          # The train is the one for the branch's major, so a publish/<V> cut from another train's tip
+          # is refused here.
           TRAIN_SHA=$(git rev-parse --verify -q "refs/remotes/origin/release/$MAJOR") \
-            || fail "the policy major is $MAJOR, but origin/release/$MAJOR does not exist"
+            || fail "publish/$VERSION belongs to the release/$MAJOR train, but origin/release/$MAJOR does not exist"
           HEAD_SHA=$(git rev-parse HEAD)
           [ "$HEAD_SHA" = "$TRAIN_SHA" ] \
             || fail "publish/$VERSION must be exactly origin/release/$MAJOR ($TRAIN_SHA) when dispatched; it is $HEAD_SHA. Reset the branch to the train and dispatch again; commit touch-ups after the publish."
@@ -121,9 +151,12 @@ jobs:
           # already on npm must also have its <pkg>_v<VERSION> tag on origin. Anything else (all
           # published, or published by someone else) is refused.
           TOTAL=0; DONE=0; UNTAGGED=""
+          : > "$RUNNER_TEMP/npm-versions.jsonl"
           while read -r NAME; do
             TOTAL=$((TOTAL + 1))
             if OUT=$(npm view "$NAME" versions --json 2>&1); then
+              printf '%s\n' "$OUT" | tr -d '\n' >> "$RUNNER_TEMP/npm-versions.jsonl"
+              echo >> "$RUNNER_TEMP/npm-versions.jsonl"
               if OUT="$OUT" node -e 'process.exit([].concat(JSON.parse(process.env.OUT)).includes(process.argv[1]) ? 0 : 1)' "$VERSION"; then
                 DONE=$((DONE + 1))
                 git ls-remote --exit-code --tags origin "refs/tags/${NAME}_v$VERSION" >/dev/null || UNTAGGED="$UNTAGGED $NAME"
@@ -136,6 +169,33 @@ jobs:
           [ -z "$UNTAGGED" ] || fail "already on npm at $VERSION without a ${VERSION} tag on origin (not a resume of this workflow):$UNTAGGED"
           if [ "$DONE" -gt 0 ]; then
             echo "::warning title=Resuming a partial publish::$DONE of $TOTAL packages are already on npm at $VERSION and tagged; this run publishes the rest"
+          fi
+
+          # The policy on the train is the last version *merged* into it, which lags npm between a
+          # publish run and its publish PR merging. npm is the ledger: VERSION must be at least the
+          # highest stable version any base-utils package has on npm in VERSION's major (in any
+          # major, for a new major). Equal is a resume, which the checks above already bounded.
+          # shellcheck disable=SC2016 # single quotes: the argument is JavaScript, not shell
+          HIGHEST=$(node -e '
+            const fs = require("fs");
+            const [file, major, kind] = process.argv.slice(1);
+            const core = (v) => v.split(".").map(Number);
+            const cmp = (a, b) => { const [x, y] = [core(a), core(b)]; return x[0] - y[0] || x[1] - y[1] || x[2] - y[2]; };
+            const all = fs.readFileSync(file, "utf8").split("\n").filter(Boolean).flatMap((l) => [].concat(JSON.parse(l)));
+            const stable = all.filter((v) => /^\d+\.\d+\.\d+$/.test(v))
+              .filter((v) => kind === "major" || core(v)[0] === Number(major));
+            console.log(stable.sort(cmp).pop() ?? "");
+          ' "$RUNNER_TEMP/npm-versions.jsonl" "$MAJOR" "$RELEASE_KIND") \
+            || fail "could not read the stable versions on npm"
+          if [ -n "$HIGHEST" ]; then
+            # shellcheck disable=SC2016 # single quotes: the argument is JavaScript, not shell
+            BEHIND=$(node -e '
+              const core = (v) => v.split(".").map(Number);
+              const [a, b] = [core(process.argv[1]), core(process.argv[2])];
+              console.log((a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) < 0 ? "yes" : "no");
+            ' "$VERSION" "$HIGHEST")
+            [ "$BEHIND" = "no" ] \
+              || fail "publish/$VERSION is older than $HIGHEST, already on npm; the train's policy ($POLICY_VERSION) lags npm until a publish PR merges. Merge the open publish PR into release/$MAJOR and cut a newer publish/<version>"
           fi
 
           # A maintenance-train release older than npm's latest must not move `latest` backwards.
@@ -184,6 +244,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.15.0
+          package-manager-cache: false
 
       # No `rush change --verify` here: the guard has already required HEAD to be exactly the
       # train's tip, so it would compare the branch with itself; PR CI verifies change files on the
@@ -193,7 +254,8 @@ jobs:
         run: node common/scripts/install-run-rush.js install
 
       # Writes the version policy, every package.json, CHANGELOG.json and CHANGELOG.md, and deletes
-      # the consumed change files. Leaves the policy at $VERSION with nextBump unchanged.
+      # the consumed change files. $VERSION is the guard's, taken from the branch name. Leaves the
+      # policy at $VERSION with nextBump unchanged.
       - name: Version and changelogs
         run: |
           set -euo pipefail
@@ -319,6 +381,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.15.0
+          package-manager-cache: false
           registry-url: 'https://registry.npmjs.org'
 
       - name: Upgrade npm for OIDC support

@@ -192,12 +192,12 @@ consolidated `followups.md` periodically. See
 
 ## Durable-doc references
 
-Release-durable docs (`docs/FUTURE.md`, `LIBRARY_CAPABILITIES.md`,
-conventions, completed-task `README.md`s) **cite PRs or on-release
+Durable docs (`docs/FUTURE.md`, `LIBRARY_CAPABILITIES.md`,
+conventions, completed-task `README.md`s) **cite PRs or on-`main`
 artifacts — never active-branch task files**. A transient firm-up or
 analysis artifact that lives only on a feature branch (e.g.
 `.ai/tasks/active/<id>/open-questions.md` on an unmerged branch) is a
-dangling reference the moment the durable doc lands on `release`
+dangling reference the moment the durable doc lands on `main`
 without it. If the artifact itself won't graduate, cite the **PR that
 consumed it** (PR numbers are GitHub-durable) or restate the needed
 content in the durable doc's own entry.
@@ -212,8 +212,8 @@ at the shipped PRs.)
 - **Migration as follow-up after merge.** Splits the coherent unit;
   risks losing context.
 - **Durable doc cites an active-branch task file.** The reference
-  dangles once the doc is on `release`. Cite the consuming PR or an
-  on-release artifact instead (see "Durable-doc references").
+  dangles once the doc is on `main`. Cite the consuming PR or an
+  on-`main` artifact instead (see "Durable-doc references").
 - **`state.md` written only at exit.** Defeats the resume protocol.
 - **`result.md` written before phase completion.** Mid-flight
   result.md content masks not-yet-shipped work as shipped.

@@ -8,7 +8,7 @@
 
 ---
 
-[libraries/ts-web-extras-argon2](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras-argon2)
+[libraries/ts-web-extras-argon2](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-web-extras-argon2)
 
 `BrowserArgon2Provider` — pure-WASM implementation of `IArgon2idProvider` backed by `hash-wasm`. No Web Crypto dependency; runs identically in browsers and Node.js. The WASM engine does not spawn threads — `parallelism` affects the hash value but execution is always sequential; recommend `parallelism: 1` for browser use unless you need server/client key-derivation agreement with a server that uses a different parallelism. **Output is byte-identical to `NodeArgon2Provider` for the same inputs and parameters**, verified by the cross-runtime test suite in `ts-extras-argon2`.
 

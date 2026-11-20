@@ -3,11 +3,11 @@ on:
   push:
     branches: ['main']
   pull_request:
-    # 'integration/**' covers multi-version stream branches that collect several PRs and land as
-    # one. 'release/**' is the release trains, 'publish/**' the publish children PR'd back into
-    # them. 'release' stays until the drain into 'main' is done; it is removed in the docs-sweep
-    # phase of .ai/notes/orchestrator/branch-migration-checklist.md.
-    branches: ['main', 'release', 'release/**', 'publish/**', 'prerelease', 'integration/**']
+    # 'main' is the trunk. 'integration/**' covers multi-version stream branches (based on main)
+    # that collect several PRs and land as one. 'release/**' is the release trains, 'publish/**'
+    # the publish children PR'd back into them. See
+    # .ai/notes/orchestrator/branch-migration-checklist.md.
+    branches: ['main', 'release/**', 'publish/**', 'prerelease', 'integration/**']
 
 permissions:
   contents: read
@@ -44,6 +44,9 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.15.0
+      # Compares against the PR's own base (main, release/*, publish/*, prerelease or
+      # integration/*); fetch-depth 0 fetched every branch, so origin/<base> exists. A push to main
+      # compares main with itself, which checks nothing; the PR into main already did.
       - name: Verify Change Logs
         env:
           EVENT_NAME: ${{ github.event_name }}

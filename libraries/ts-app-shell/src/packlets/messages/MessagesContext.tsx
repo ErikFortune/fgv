@@ -100,7 +100,7 @@ export const TAILWIND_PROBE_HEIGHT_PX: number = 7.3215;
  * @internal
  */
 export const TAILWIND_SETUP_DOCS_URL: string =
-  'https://github.com/ErikFortune/fgv/tree/release/libraries/ts-app-shell#setup';
+  'https://github.com/ErikFortune/fgv/tree/main/libraries/ts-app-shell#setup';
 
 /**
  * Text of the diagnostic message emitted by the Tailwind-content-path probe.

@@ -8,8 +8,8 @@
 
 ---
 
-[libraries/ts-extras-webauthn](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras-webauthn)
-[libraries/ts-web-extras-webauthn](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras-webauthn)
+[libraries/ts-extras-webauthn](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras-webauthn)
+[libraries/ts-web-extras-webauthn](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-web-extras-webauthn)
 
 **These packages are a Result-integration boundary over `@simplewebauthn/server` and `@simplewebauthn/browser` — not an opinionated WebAuthn helper.** The upstream libraries are excellent; these packages add exactly one thing: converting `@simplewebauthn`'s throw-on-failure interface into `Promise<Result<T>>`.
 

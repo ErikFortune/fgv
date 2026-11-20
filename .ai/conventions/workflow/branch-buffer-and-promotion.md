@@ -4,11 +4,45 @@
 > § Buffer-and-main model` in the source corpus.
 
 A branch-topology pattern for separating in-flight agent work from
-canonical release state. Deliberately abstract — branch topology is
+released state. The pattern itself is abstract — branch topology is
 team / project convention and the orchestrator workflow family
-works against several topologies. This convention names the pattern
-the source corpus used and gestures at alternatives without
-prescribing.
+works against several topologies. **This repo's concrete form** is
+spelled out first, below; the abstract pattern and its alternatives
+follow.
+
+---
+
+## In this repo: trunk `main`, trains `release/<major>`
+
+Since the 5.1.0 publish (2026-11-20) fgv runs the model in
+`.ai/notes/orchestrator/branch-migration-checklist.md`:
+
+```
+agent feature branches ─PR─▶ main ──promote (PR, merge commit)──▶ release/<major> ──▶ publish/<version> ──npm──▶ stable
+integration/<x> (off main) ─PR─▶ main          │                         │
+                                               │                         └─merge back (merge commit)─▶ release/<major> ─▶ main
+main ──sync──▶ prerelease ──npm──▶ alpha
+```
+
+| branch | role in the pattern |
+|---|---|
+| `main` | **The buffer, and the trunk.** Every feature PR and every integration branch targets it; streams branch from its HEAD; CI's push gate runs on it. Never published from. |
+| `release/<major>` | **The canonical line** for one live major (`release/5`, …). Always equals what is on npm for that major, plus anything promoted and awaiting publish. Takes only promotions from `main` and merges of a `publish/*` child — CI's `release-source` check refuses any other head. |
+| `publish/<version>` | Short-lived child of the train, cut at its tip; the stable publish runs on it and it merges back into the train. |
+| `prerelease` | Synced from `main`; alphas for the next minor publish from it. |
+| `integration/<x>` | Multi-PR stream branches, **based on `main`**, landing on `main` as one. |
+
+**The promotion is the PR `main` → `release/<major>`**, gated as
+described under *The promotion gate* below. The publish itself is
+the one-dispatch flow in the checklist; after it, `release/<major>`
+merges back into `main` so the trunk drops the consumed change files
+and its version policy names the version just published.
+
+The old single `release` branch (the buffer of the pre-5.1.0 model,
+with `main` as the canonical line) is deleted. Older docs that say
+"branch from / PR to `release`" mean `main` today.
+
+---
 
 ---
 
@@ -21,10 +55,10 @@ agent feature branches  ─PR─▶  buffer line  ─promote─▶  canonical li
                 ←──base from────                    ←──base periodic──
 ```
 
-- **Canonical line** — main / release. Always coherent, always
-  green, never receives agent merges directly. Promoted to
+- **Canonical line** — here `release/<major>`. Always coherent,
+  always green, never receives agent merges directly. Promoted to
   explicitly via orchestrator-driven operations.
-- **Buffer line** — agent feature branches PR into here; iterative
+- **Buffer line** — here `main`. Agent feature branches PR into here; iterative
   review cycles play out here; followups land here. Slips and
   in-flight churn are absorbed here, not on the canonical line.
 - **Agent feature branches** — base off the buffer's latest. Open
@@ -66,19 +100,22 @@ code review:
      security, recovery-path-broken) get inline fixes before merge.
    - Everything else routes to followups — TECH_DEBT, FUTURE, or
      the next chore batch.
-5. Open a PR `<buffer> → <canonical>`. Merge with **merge-commit**
+5. Open a PR `<buffer> → <canonical>` — here `main` →
+   `release/<major>`. Merge with **merge-commit**
    method (preserves the constituent PRs' history; squash would
    collapse the audit trail; rebase would rewrite SHAs that other
    docs reference).
-6. Bump the pinned baseline file to capture the new canonical head.
-   Include the lockstep version this promotion will publish (or
-   "pre-publish" if the promotion precedes the next publish event).
+6. Publish from a `publish/<version>` child of the train, merge it
+   back into the train and the train back into `main`, then bump the
+   pinned baseline file (`.ai/BASELINE.md`) to the published commit
+   and version.
 
 Promotion frequency in this repo is **release-event-driven, not
 continuous** — production publish only when stability-via-
 consumption is established (at least one consumer has applied
-recent features end-to-end). Alpha publishes from the prerelease
-mirror happen independently and don't gate or require promotion.
+recent features end-to-end). Alpha publishes from `prerelease`
+(synced from `main`) happen independently and don't gate or require
+promotion.
 
 ## Why the sibling-sweep, not a unified code review
 
@@ -102,9 +139,10 @@ varies by team. Other compatible topologies:
   not branch state. The orchestrator workflow's coordination
   through the streams ledger still applies; only the merge
   mechanics differ.
-- **Release-branch model.** Canonical line is `release`; the buffer
-  is `develop` or `next`. Promotion is a release event rather than
-  a continuous operation.
+- **Release-branch model.** Canonical line is a release branch; the
+  buffer is `main`, `develop` or `next`. Promotion is a release event
+  rather than a continuous operation. This is fgv's model, with one
+  release branch per live major (see the top of this file).
 - **Single-branch with rebase discipline.** Small projects often
   skip the buffer entirely; agent branches PR directly into main.
   The orchestrator workflow runs without modification; the
@@ -127,6 +165,9 @@ Regardless of topology:
 
 ## Naming gotchas
 
+fgv's buffer is `main` and its canonical lines are
+`release/<major>`; before 5.1.0 the buffer was `release` and the
+canonical line `main` — read older docs with that swap in mind.
 The source corpus uses `exploration-1` as the buffer line name —
 vestigial from an era when there were multiple parallel
 explorations. The role (buffer) is what matters; the name is

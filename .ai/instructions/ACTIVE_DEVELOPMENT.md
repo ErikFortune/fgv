@@ -21,7 +21,7 @@ The active/production split is therefore **per-surface, not per-library**. A lib
 | `ts-agent-memory-sqlite-vec` | All | Companion to `ts-agent-memory`; carries the same pre-1.0 posture and moves in lockstep with its seams (it implements `IVectorIndex` / `IFragmentVectorIndex`, so a contract change there lands here in the same PR) |
 | `ts-extras-re2` | All | New library, never on `main`; pins `re2js` exactly, and each bump is reviewed against the README's dialect table |
 | `ts-extras-system-one` | All | New library, never on `main`; a Result boundary over a young 0.x SDK (`@typesafe-ai/sdk` `~0.6.0`), so every SDK minor is a wire change reviewed against the behaviours its README lists |
-| `ts-agent-tasks` | All | New library, **not yet on `release`** — being built slice by slice on `integration/agent-tasks-v1` per `docs/design/agent-tasks/implementation-plan.md`. T1 shipped ~101 union members across 15 closed sets with roughly half *choice*-unexercised, so each later slice is the first to exercise part of that vocabulary and **holds explicit licence to revise it**; the slice that revises also updates T1's declared-vs-exercised table. Breaking changes land freely with no shim |
+| `ts-agent-tasks` | All | New library, **not yet on `main`** — being built slice by slice on `integration/agent-tasks-v1` per `docs/design/agent-tasks/implementation-plan.md`. T1 shipped ~101 union members across 15 closed sets with roughly half *choice*-unexercised, so each later slice is the first to exercise part of that vocabulary and **holds explicit licence to revise it**; the slice that revises also updates T1's declared-vs-exercised table. Breaking changes land freely with no shim |
 
 Anything not listed above — including production libraries like `ts-utils`, `ts-res`, `ts-bcp47`, `ts-json`, `ts-json-base`, `ts-random`, `ts-utils-jest`, `ts-res-ui-components` — carries stability obligations. See [Compatibility Rules](#compatibility-rules).
 
@@ -61,10 +61,12 @@ Because we publish everything together, a breaking change on an established surf
 A change file's `type` is a claim about **what the change breaks for someone who consumes a published
 package**. It is not a measure of how big or how breaking the diff is.
 
-**The test: did the code this change breaks ever ship in a non-alpha release?** Check `main` — the
-published non-alpha line — not `release`. If the surface has only ever reached consumers in alphas
-(`5.1.0-NN`), the answer is no, and the change is **`minor`** however thoroughly it breaks. Only a
-surface present on `main` can take `major`.
+**The test: did the code this change breaks ever ship in a non-alpha release?** Check the release
+train — `release/<major>`, which always equals what is on npm for that major (or the
+`<package>_v<version>` tag of the last stable publish) — not `main`, the trunk, which carries
+everything merged since. If the surface has only ever reached consumers in alphas (`5.2.0-NN`), the
+answer is no, and the change is **`minor`** however thoroughly it breaks. Only a surface present in
+a stable publish can take `major`.
 
 Type it `minor` and keep the `BREAKING:` prefix on the comment. That prefix is the part alpha
 consumers actually need — it tells them what to fix — and it is the established form here: as of
@@ -72,7 +74,9 @@ consumers actually need — it tells them what to fix — and it is the establis
 plain prefix, ten of them on `ts-agent-memory`. Use `BREAKING (implementers only):` when widening an
 interface breaks implementations but not callers.
 
-**Worked check, 2026-09-25.** Five pending change files claimed `major`. Every one failed the test:
+**Worked check, 2026-09-25.** Five pending change files claimed `major`. Every one failed the test
+(at the time `main` was the published non-alpha line; under the current branch model that role is
+`release/<major>`'s):
 
 | package | what `main` holds | verdict |
 |---|---|---|
@@ -85,23 +89,39 @@ Four independent streams reached for `major` between 2026-03 and 2026-09 because
 unwritten, and the most recent cited an earlier one as precedent — a miscategorisation citing a
 miscategorisation. That is the cost of leaving it implicit, which is why it is here.
 
-**What the `type` actually does in this repo — and does not.** All 31 publishable projects are on the
-`base-utils` lockstep policy, which declares `nextBump`. Rush treats such projects as *manually
-versioned*: `VersionManager` passes them to `ChangeManager` as `projectsToExclude`, and
-`PublishUtilities._addChange` then forces `currentChange.changeType = ChangeType.none` for every one
-of them. So the `type` drives **neither the version number** (that comes from the policy's `version`
-+ `nextBump`) **nor the CHANGELOG section** (lockstep entries all render under `### Updates`).
+**What the `type` actually does in this repo — and does not.** Every publishable project is on the
+`base-utils` lockstep policy, so the `type` drives **neither the version number** — that is the
+policy's: a stable publish takes it from the `publish/<version>` branch name and writes it with
+`rush version --ensure-version-policy --override-version <version>-0` then `rush version --bump
+--override-bump patch` (see `.github/workflows/publish-release-impl.yml`) — **nor anything about
+other packages**. It **does** decide which section of the package's CHANGELOG the entry renders
+under, and that CHANGELOG ships to consumers:
 
-The `### Breaking changes` heading is unreachable under this config, and the two `CHANGELOG.md` files
-that carry one — `ts-utils` and `ts-utils-jest`, both at 2.0.0, 2023-04-10 — predate
-`version-policies.json`, which did not exist in the repo until 2023-07-31. Under individual
-versioning the `type` did drive both the version and the section; do not read those entries as
-evidence that it still does.
+| change file `type` | `CHANGELOG.json` bucket | `CHANGELOG.md` heading |
+|---|---|---|
+| `major` | `major` | `### Breaking changes` |
+| `minor` | `minor` | `### Minor changes` |
+| `patch` | `patch` | `### Patches` |
+| `none` | `none` | `### Updates` |
 
-The field is therefore inert at publish time. Type it correctly anyway: `common/changes/` is read as
-precedent by the next stream, and a wrong `major` is a false statement about what we shipped. Do not
-reach for it expecting a version consequence — there isn't one, and a design argument that assumes
-otherwise is arguing from a mechanism this repo doesn't have.
+**The evidence is the 5.1.0 publish** (`d198bfda6`, "Publish 5.1.0", on `release/5` and merged back
+to `main` by #799). Every `base-utils` package went to exactly 5.1.0, yet the sections differ by
+type: `ts-utils`' 5.1.0 entry carries `major` 1 / `minor` 8 / `patch` 4 in `CHANGELOG.json` and renders
+`### Breaking changes`, `### Minor changes` and `### Patches`; `ts-web-extras` adds `### Updates`;
+across the repo the 5.1.0 sections show `### Breaking changes` in five packages. A `major` typed
+change file is therefore a visible claim to consumers, under a heading that says so.
+
+**Why an earlier version of this section said the opposite.** It reasoned from rush's source that
+lockstep projects are treated as manually versioned and their change type forced to `none`, so
+everything renders under `### Updates`. That is how the pre-5.1.0 stable sections look (5.0.x shows
+only `### Updates`), because those sections were written through `rush publish`, not `rush version
+--bump`; the 5.1.0 workflow runs `--bump`, and `--bump` renders by type. Do not reason about this
+from rush's source again — read the published CHANGELOG.
+
+Type it correctly, then, for two reasons: `common/changes/` is read as precedent by the next stream,
+and the type is the heading a consumer reads. A wrong `major` puts a non-breaking change under
+"Breaking changes" in a shipped CHANGELOG. It still has no version consequence — a design argument
+that expects one is arguing from a mechanism this repo doesn't have.
 
 ---
 

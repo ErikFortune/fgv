@@ -650,8 +650,8 @@ red", verify it by running `rush rebuild` (or reading the PR's check) before bel
 
 ### Every touched package needs a change file — CI's first gate, before any build
 
-CI's `build` job runs `rush change --verify --target-branch origin/release` **before it compiles
-anything**. Touch a file in a package and ship no `common/changes/@fgv/<pkg>/*.json` entry for it and
+CI's `build` job runs `rush change --verify --target-branch origin/<the PR's base>` — `origin/main`
+for an ordinary PR — **before it compiles anything**. Touch a file in a package and ship no `common/changes/@fgv/<pkg>/*.json` entry for it and
 the job fails in ~30 seconds, having built nothing. The failure names only the package, so it reads
 like an infrastructure problem rather than a missing artifact.
 
@@ -665,9 +665,9 @@ Observed 2026-08-13, three PRs at once: #619 (an internal ai-assist refactor, `@
 #617 (a docstring correction, `@fgv/ts-web-extras`) both red on this and nothing else, and #620 was
 carrying the same latent defect behind a branch base that suppressed its checks.
 
-**Rule:** the last step before opening a PR is `git diff --name-only origin/release... | cut -d/ -f2`
+**Rule:** the last step before opening a PR is `git diff --name-only origin/main... | cut -d/ -f2`
 against the change files you are shipping — or just run `rush change --verify --target-branch
-origin/release` locally, which is the same check CI runs and takes about a second. A PR whose only
+origin/main` (or your PR's base, e.g. `origin/integration/<x>`) locally, which is the same check CI runs and takes about a second. A PR whose only
 red check is `rush change` has not been reviewed for anything yet; fix it before reading further.
 
 ### A dependency bump can be green locally and rejected by CI, because `update` resolves and `install` verifies
@@ -775,7 +775,7 @@ Every stream's acceptance criteria list must include:
 - [ ] **`rushx lint` passes in every modified package** *(load-bearing — not transitively run by build)*
 - [ ] `rushx test` passes with 100% coverage in every modified package
 - [ ] **`rushx fixlint` was run before the final commit** *(catches the mechanical class)*
-- [ ] **Every package the branch touches has a change file** — verify with `rush change --verify --target-branch origin/release` *(CI's first gate, and invisible to the entire local build/test suite)*
+- [ ] **Every package the branch touches has a change file** — verify with `rush change --verify --target-branch origin/main` (or the PR's base) *(CI's first gate, and invisible to the entire local build/test suite)*
 - [ ] **If the stream changes a shared contract (an interface others implement), `node common/scripts/install-run-rush.js rebuild` passes** *(not a remembered practice — a checked box; see below)*
 - [ ] **If the stream widens or narrows what a function accepts / returns / classifies — as opposed to how it is typed — `node common/scripts/install-run-rush.js test` passes** *(a rebuild is a compiler and cannot see this class; see below)*
 - [ ] No `any` types; all fallible operations return `Result<T>`
@@ -792,7 +792,7 @@ a public surface **adds its `LIBRARY_CAPABILITIES.md` entry in its own PR**. Nev
 never as a separate docs PR.
 
 **Why this is load-bearing.** The failure is not that the doc is briefly stale — it is that the
-correction becomes its own commit on `release`, and the repo accumulates doc-only commits that
+correction becomes its own commit on `main`, and the repo accumulates doc-only commits that
 carry no code. Worse, the stale doc is *read as input by the next stream*: the safer-fetch threat
 model still opened with "design only — no implementation" while S1, S2a and S2b had shipped, and
 that same file was on the next stream's required-reading list. A fresh agent would have started
@@ -818,7 +818,7 @@ merge"*.
 
 ### Why this gate is load-bearing
 
-Lint errors break CI. When a cluster integration branch tries to merge to `release`, a single per-stream lint failure blocks the whole cluster. The cost compounds: the cluster-close prep PR can't merge, the integration-to-release PR can't merge, and any downstream consumer waiting for the alpha gets delayed.
+Lint errors break CI. When a cluster integration branch tries to merge to `main`, a single per-stream lint failure blocks the whole cluster. The cost compounds: the cluster-close prep PR can't merge, the integration-to-main PR can't merge, and any downstream consumer waiting for the alpha gets delayed.
 
 The local cost of running lint is ~5-10 seconds per package. The downstream cost of skipping it is potentially hours of orchestrator + agent time unwinding a blocked merge.
 
