@@ -8,7 +8,7 @@
 
 ---
 
-[libraries/ts-extras-argon2](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras-argon2)
+[libraries/ts-extras-argon2](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras-argon2)
 
 `NodeArgon2Provider` — Node.js implementation of `IArgon2idProvider` backed by the `argon2` (kelektiv) native binding. Use `NodeArgon2Provider.create()` and pass the instance to `KeyStore.addSecretFromPasswordArgon2id` / `verifySecretFromPasswordArgon2id`. Also re-exports `CryptoUtils` from `@fgv/ts-extras` for consumer convenience. **Node-only; for browser use `@fgv/ts-web-extras-argon2` instead.**
 

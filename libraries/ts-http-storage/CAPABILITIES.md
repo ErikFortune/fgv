@@ -8,7 +8,7 @@
 
 ---
 
-[libraries/ts-http-storage](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-http-storage)
+[libraries/ts-http-storage](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-http-storage)
 
 Defines the storage REST contract that `@fgv/ts-web-extras`' `HttpTreeAccessors` is the client for — `IHttpStorageProvider` (backend contract), `IStorageFileResponse` / `IStorageReadFileRequest` (wire shapes), `createStorageRoutes` (Hono routes: `GET /tree/item`, `GET /tree/children`, `GET /file`, `PUT /file`, `DELETE /file`, `POST /directories`, `POST /sync`), and `FsStorageProvider` (filesystem-backed implementation). **We own both ends of this wire**, so a representation gap here is a design decision, not an external constraint.
 

@@ -183,7 +183,7 @@ describe('MessagesContext', () => {
         expect(msg.level).toBe('warning');
         expect(msg.text).toMatch(/styles are not fully loaded/i);
         expect(msg.action?.href).toBe(
-          'https://github.com/ErikFortune/fgv/tree/release/libraries/ts-app-shell#setup'
+          'https://github.com/ErikFortune/fgv/tree/main/libraries/ts-app-shell#setup'
         );
         expect(msg.action?.label).toBe('Open setup docs');
       } finally {

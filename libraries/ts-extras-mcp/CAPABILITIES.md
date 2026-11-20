@@ -8,7 +8,7 @@
 
 ---
 
-[libraries/ts-extras-mcp](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras-mcp)
+[libraries/ts-extras-mcp](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras-mcp)
 
 A Result-integration boundary over [`@modelcontextprotocol/sdk`](https://github.com/modelcontextprotocol/typescript-sdk) (`^1.29.0`, a direct dependency) that connects to an MCP (Model Context Protocol) server, discovers its tools, and **adapts each into an `AiAssist.IAiClientTool`** (from `@fgv/ts-extras`) so it drops directly into `AiAssist.executeClientToolTurn` — making any MCP server's tools callable across all four cloud providers with no per-provider work. All SDK imports are isolated to one file so the announced SDK v2 rename is a one-file change.
 

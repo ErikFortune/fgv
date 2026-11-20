@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-app-shell",
+      "comment": "TAILWIND_SETUP_DOCS_URL now points at the main branch; the release branch it named no longer exists.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-app-shell"
+}

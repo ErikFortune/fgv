@@ -8,7 +8,7 @@
 
 ---
 
-[libraries/ts-extras-ollama](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras-ollama)
+[libraries/ts-extras-ollama](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras-ollama)
 
 **A Result-integration boundary over the official [`ollama`](https://github.com/ollama/ollama-js) JS library — owning ONLY the native-API surface the OpenAI-compat `/v1` endpoint cannot express.** Node-only at v0.1. The text-completion / streaming / tool-use path is **NOT** here — `AiAssist` in `@fgv/ts-extras` owns it via the `/v1` compat layer (point a provider descriptor's `endpoint` at `http://localhost:11434/v1` and call `callProviderCompletion` / `callProviderCompletionStream` / `executeClientToolTurn`). This package is the *native-only* complement: model management, streamed pulls, and grammar-constrained structured output.
 

@@ -30,14 +30,14 @@ A chore batch needs a concrete transition trigger. Recognized
 triggers in this repo:
 
 - **Post-feature followup batch.** A feature stream just shipped
-  to `release` and left N small followups on its surface (test-only
+  to `main` and left N small followups on its surface (test-only
   paths, deferred coverage closures, TODO-marked cleanups).
 - **Adjacent-feature prep.** Another stream is about to start on a
   surface adjacent to one that's been accumulating debt — clean it
   up before the new stream touches it, so the new stream isn't
   fighting old smells.
-- **Pre-alpha tidy.** Before cutting an alpha (i.e. before mirroring
-  `release` → `prerelease` for a publish), sweep for changelog
+- **Pre-alpha tidy.** Before cutting an alpha (i.e. before syncing
+  `main` → `prerelease` for a publish), sweep for changelog
   rot, doc-rot, and obvious cross-package inconsistencies that the
   alpha would otherwise carry.
 - **Post-consumer-integration sweep.** After a consumer applies a

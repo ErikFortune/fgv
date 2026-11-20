@@ -1,0 +1,57 @@
+id: post-510-branch-model
+status: shipped
+packages: []
+prs: [802]
+openPrs: []
+opened: 2026-11-20
+closed: 2026-11-20
+summary:
+  intended: >
+    Finish the branch migration after the 5.1.0 publish: sweep every instruction that names the
+    deleted release branch over to main (CLAUDE.md, .ai instructions and workflow conventions, the
+    orchestrator agent, skills, handoff notes, CAPABILITIES links, the router's Repository line),
+    rewrite the branch-buffer convention for trunk main and release/<major> trains, correct
+    ACTIVE_DEVELOPMENT's claim that change-file type is inert, drop release from ci.yml and add a
+    release-source check, make the stable publish take its version from the publish/<V> branch name
+    instead of requiring a policy-moving PR, bump BASELINE, close out the checklist.
+  shipped: >
+    All of it. The guard takes V from publish/<V> (strict X.Y.Z), requires V newer than the branch's
+    plain-X.Y.Z policy, a major change only to the next X.0.0, and HEAD equal to origin/release/<V's
+    major>; every earlier guard, the npm rules, dist-tag, bump allowlist and tarball checks are
+    unchanged. A scratch clone with a scratch origin proved 5.2.0, 5.1.1 and 6.0.0 from a 5.1.0
+    policy and seventeen refusals. ci.yml drops release and documents base_ref change-verify; a
+    separate release-source.yml workflow (also on edited, so retargeting re-runs it) fails PRs into
+    release/* unless the head is main or publish/<digit> from this repo. After an independent
+    security review the guard also requires V to be at least the highest stable npm version in its
+    major, and stable dispatches share one publish-stable concurrency group.
+    The docs sweep covers the listed files plus the WORKSTREAMS preamble and CHORES triggers; the
+    type section now cites the 5.1.0 CHANGELOGs. BASELINE pins d198bfda6 with the train, promotion
+    and back-merge commits. Mid-flight: merged main's setup-node v7 pins, set package-manager-cache
+    false on every publish setup-node step, and checked that the missing NODE_AUTH_TOKEN dummy is
+    harmless for reads. actionlint 1.7.12 with ShellCheck clean.
+  diverged: >
+    release-source also requires the head repository to be this one, so a fork's branch named main
+    cannot pass. ts-app-shell's TAILWIND_SETUP_DOCS_URL pointed at tree/release and was fixed, so
+    that package's change file is patch with a comment rather than none. The guard also refuses a
+    prerelease policy on a train and a skipped major, which the brief did not name. Historical
+    handoff and lesson notes got a reading note instead of a rewrite.
+  sourceLine: '**Shipped:** a stable publish now takes its version from the `publish/<version>` branch name, so no PR has to move `main`''s version policy before a release; CI refuses a PR into a release train from anything but `main` or `publish/*`; and every instruction that said "branch from / PR to `release`" now says `main`.'
+  headline: '' # release infrastructure and docs; no library capability to announce
+keywords:
+  - branch model
+  - trunk main
+  - release train
+  - publish branch version
+  - version policy
+  - release-source check
+  - change file type changelog heading
+  - setup-node v7
+  - package-manager-cache
+  - BASELINE
+  - actionlint
+relatedStreams:
+  - {
+      id: publish-workflow-rework,
+      relationship: 'changes its guard from branch-equals-policy to branch-newer-than-policy; keeps every protection its two security reviews added'
+    }
+sourceHash: sha256:8805af801551a375 # over brief.md + result.md

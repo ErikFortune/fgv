@@ -8,8 +8,8 @@
 
 ---
 
-[libraries/ts-extras-transformers](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras-transformers)
-[libraries/ts-web-extras-transformers](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-web-extras-transformers)
+[libraries/ts-extras-transformers](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras-transformers)
+[libraries/ts-web-extras-transformers](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-web-extras-transformers)
 
 **A Result-integration boundary over `@huggingface/transformers` (transformers.js) for running models locally — not an opinionated ML helper.** Like the WebAuthn pair, these add exactly one thing: thin `captureAsyncResult` wrappers that convert the upstream throw-on-failure calls into `Promise<Result<T>>`, with **no opinionated orchestration** (no pipeline cache, no model-download management, no device/quantization policy). The two packages expose an **identical surface**; pick the package at the composition root — Node uses the native ONNX backend, browser uses the WASM/WebGPU backend.
 

@@ -8,7 +8,7 @@
 
 ---
 
-[libraries/ts-extras-system-one](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras-system-one)
+[libraries/ts-extras-system-one](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras-system-one)
 
 **A Result-integration boundary over [`@typesafe-ai/sdk`](https://www.npmjs.com/package/@typesafe-ai/sdk)
 for `POST /v1/systemone`**, the wire spoken by CLM (`clm-serve`), openjev and TypeSafe's hosted Jev.

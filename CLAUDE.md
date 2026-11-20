@@ -14,6 +14,10 @@ rushx build/test      # Build/test current project (from project dir)
 rushx coverage        # Run with coverage
 ```
 
+**Branches:** branch from and PR to `main`, the trunk (integration branches are based on `main` too).
+`release/<major>` trains, `publish/<version>` children and `prerelease` are release machinery, never a
+feature PR's base — see `.ai/conventions/workflow/branch-buffer-and-promotion.md`.
+
 ## Core Instructions
 
 All coding standards, testing guidelines, and review checklists are defined in the shared `.ai/` directory. These guidelines apply to all AI assistants and are the authoritative source:
@@ -109,7 +113,7 @@ Artifact substrate (maintained by the orchestrator):
 - `docs/CHORES.md` — cleanup batches
 - `docs/TECH_DEBT.md` + `docs/FUTURE.md` — deferred work
 - `.ai/tasks/active/<id>/` → `.ai/tasks/completed/<YYYY-MM>/<id>/` — per-stream artifacts
-- `.ai/BASELINE.md` — last `release` → `main` promotion (blast-radius sizing referent, not a stream-start gate)
+- `.ai/BASELINE.md` — last stable publish from a `release/<major>` train (blast-radius sizing referent, not a stream-start gate)
 
 Workflow conventions are in `.ai/conventions/workflow/`.
 

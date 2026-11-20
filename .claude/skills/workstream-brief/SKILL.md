@@ -203,7 +203,7 @@ go back to the source doc and refine.
   `LIBRARY_CAPABILITIES.md` entry, and the stream's own
   `docs/WORKSTREAMS.md` entry. Omit them and the correction becomes a
   standalone docs PR later, which is both a doc-only commit on
-  `release` and a stale document sitting on the *next* stream's
+  `main` and a stale document sitting on the *next* stream's
   required-reading list. Check the stream's own reading list: if the
   stream will make one of those files wrong, it must also make it
   right.

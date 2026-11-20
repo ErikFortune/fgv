@@ -8,7 +8,7 @@
 
 ---
 
-[libraries/ts-utils-jest](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-utils-jest)
+[libraries/ts-utils-jest](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils-jest)
 
 `toSucceed`, `toFail`, `toSucceedWith`, `toFailWith`, `toSucceedAndSatisfy`, `toFailWithDetail`, `toSucceedAndMatchSnapshot`, plus `toFailTest*` for testing custom matchers. **Always use these in tests instead of `.orThrow()` + assertions.** Includes ANSI color stripping for stable cross-env snapshots.
 

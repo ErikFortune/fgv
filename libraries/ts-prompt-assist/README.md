@@ -5,7 +5,7 @@
 `@fgv/ts-prompt-assist` is a TypeScript library for authoring, organising, and
 resolving LLM prompts as conditional resources. It pairs a YAML-on-disk schema
 with a `Mustache`-based body renderer and the conditional-resource machinery
-from [`@fgv/ts-res`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-res),
+from [`@fgv/ts-res`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res),
 so a single prompt id can shadow per-tenant overrides, vary on
 language / tone / region, compose partial fragments over a base body, and
 recursively bind slots to other prompts — all with a typed `Result<T>` surface
@@ -834,18 +834,18 @@ pressure-test settles:
 
 ## Related libraries
 
-- **[`@fgv/ts-res`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-res)** —
+- **[`@fgv/ts-res`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res)** —
   conditional-resource runtime; supplies the qualifier types, condition
   sets, and decision resolver that drive candidate selection.
-- **[`@fgv/ts-extras`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras)** —
+- **[`@fgv/ts-extras`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras)** —
   `MustacheTemplate.create(template, { escape })` for the verbatim
   renderer; `Yaml.yamlConverter` for descriptor / bindings / qualifier
   loading; `AiAssist.extractJsonText` for fence-tolerant JSON output
   parsing.
-- **[`@fgv/ts-utils`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-utils)** —
+- **[`@fgv/ts-utils`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils)** —
   `Result<T>`, `Converters`, `Logging`, `Normalizer.canonicalize` for
   RFC 8785 canonical JSON.
-- **[`@fgv/ts-utils-jest`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-utils-jest)** —
+- **[`@fgv/ts-utils-jest`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils-jest)** —
   Result-aware Jest matchers (`toSucceed`, `toSucceedWith`, `toFailWith`,
   `toSucceedAndSatisfy`).
 

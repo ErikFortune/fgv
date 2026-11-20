@@ -8,7 +8,7 @@
 
 ---
 
-[libraries/ts-agent-memory](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-agent-memory)
+[libraries/ts-agent-memory](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-agent-memory)
 
 App-agnostic **storage + retrieval substrate** for agent memory and knowledge — a FileTree-backed markdown + YAML-frontmatter vault (git-trackable, cross-runtime via `@fgv/ts-json-base` `FileTree`). The consumer owns its curation / processing / composition; this package owns persistence, identity, typed bodies, attributed edges, dedup, write policy, retrieval, and the optional-layer seams. **Small invariant core + optional present-when-wired layers.**
 
