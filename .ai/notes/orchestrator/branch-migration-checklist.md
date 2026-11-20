@@ -262,8 +262,8 @@ every `uses:` floats — `actions/checkout@v5`, `actions/setup-node@v5`, third-p
       #793 `050d8245a`.)
 - [x] PR `release` → `main`, **merge commit**. Close #154 and #256 as obsolete. (#791 →
       `34396526c`; #154 and #256 closed.)
-- [x] CI green on `main`; `rush install && rush rebuild` clean. (Re-run on `main` + this stream's
-      branch, 2026-11-20: see the stream's result.md.)
+- [x] CI green on `main`; `rush install && rush rebuild` clean. (CI `build` — install, rebuild,
+      test — succeeded on `main` at `3a541a89f`.)
 
 ## Phase 3 — Create the train, publish 5.1.0
 

@@ -215,8 +215,16 @@ proof.
 - `npx -y prettier@2.8.8 --check` on every changed and new file: clean.
 - Change files: 25 packages (every library whose `CAPABILITIES.md`, README or source changed), type
   `none` with an empty comment, except `@fgv/ts-app-shell` (`patch`, the URL constant).
-- `rush install` / `rush rebuild` / `ts-app-shell` test: recorded in the next section after the
-  commit, per the brief's order.
+- `rush change --verify --target-branch origin/main` after the commit: every touched package has
+  its change file (the verify found all 25 and passed).
+- **`rush install` / `rush rebuild`: blocked, not run to completion.** Both install attempts from
+  the repo root failed with `ERR_PNPM_ENOSPC` / an `onnxruntime-node` postinstall `copyfile` failure:
+  the shared disk had 99 MB, then 262 MB, free (the other `/home/user/fgv-*` worktrees hold it). The
+  partial `common/temp/node_modules` and `pnpm-store` of this worktree were removed afterwards to
+  give the space back. Nothing else was deleted. So **the rebuild gate and the `ts-app-shell` test
+  run for the one code change (a string constant and the test that pins it) are owed** — the
+  coordinator's gate, or CI on the PR, is the first run. Risk is low: the constant is `@internal`
+  and its test was updated to the same string.
 
 ## Left alone, and why
 
