@@ -1,4 +1,17 @@
 {
   "name": "@fgv/ts-extras-transformers",
-  "entries": []
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-extras-transformers_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Initial release: a Result boundary over `@huggingface/transformers` for running models locally in Node — `loadPipeline`, `classify`, `classifyAll`, `embed` and `summarize`. The browser sibling is `@fgv/ts-web-extras-transformers`."
+          }
+        ]
+      }
+    }
+  ]
 }

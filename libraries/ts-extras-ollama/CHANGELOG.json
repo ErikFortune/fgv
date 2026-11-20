@@ -1,4 +1,23 @@
 {
   "name": "@fgv/ts-extras-ollama",
-  "entries": []
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-extras-ollama_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Initial release: a Result boundary over the `ollama` JS library for the native Ollama API that its OpenAI-compatible endpoint cannot express. Node only; completion and tool use stay in `@fgv/ts-extras` ai-assist."
+          },
+          {
+            "comment": "Model management: `listModels`, `listRunning`, `showModel`, `deleteModel`, and `pullModel` with streamed progress."
+          },
+          {
+            "comment": "`chatStructured`: grammar-constrained structured output validated against a JSON schema."
+          }
+        ]
+      }
+    }
+  ]
 }

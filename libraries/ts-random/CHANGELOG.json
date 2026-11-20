@@ -1,0 +1,26 @@
+{
+  "name": "@fgv/ts-random",
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-random_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Initial release: seeded, reproducible pseudo-random generation for test data, sampling, shuffles and procedural content. Not cryptographically secure — use `ICryptoProvider.generateRandomBytes` from `@fgv/ts-extras` for tokens, salts or keys."
+          },
+          {
+            "comment": "`Generator.PseudoRandomGenerator`: floats, integers, inclusive ranges, weighted booleans, strings and picks from candidate pools, reproducible from a string or numeric seed."
+          },
+          {
+            "comment": "Weighted choice: `pickWeighted` on the generator, and the pure `pickWeightedAt(unit, candidates)` for the same choice from a hash or stored draw."
+          },
+          {
+            "comment": "`GeneratorData` corpora: character classes (`Chars`) and word lists (`Words`) for readable identifiers and fixtures."
+          }
+        ]
+      }
+    }
+  ]
+}

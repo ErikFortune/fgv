@@ -2,6 +2,22 @@
   "name": "@fgv/ts-bcp47",
   "version": "5.1.0",
   "description": "BCP-47 Tag Utilities",
+  "files": [
+    "lib",
+    "dist",
+    "CHANGELOG.json",
+    "CHANGELOG.md",
+    "README.md",
+    "CAPABILITIES.md",
+    "LICENSE",
+    "!lib/test",
+    "!dist/test",
+    "!**/*.test.*",
+    "!lib/data/iana/language-subtags.json",
+    "!lib/data/iana/language-tag-extensions.json",
+    "!lib/data/iana/iana-data.zip",
+    "!lib/data/iana/iana-data.base64"
+  ],
   "main": "lib/index.js",
   "browser": {
     "./lib/index.js": "./lib/index.browser.js",

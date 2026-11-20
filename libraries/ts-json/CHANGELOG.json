@@ -2,6 +2,24 @@
   "name": "@fgv/ts-json",
   "entries": [
     {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-json_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Corrected the import paths documented in README.md and CAPABILITIES.md: converters, editor and diff are imported from `@fgv/ts-json` itself, not from subpaths. No API change."
+          },
+          {
+            "comment": "Fix: `JsonEditor.mergeObjectInPlace`, converter-option merging and `JsonContextHelper.mergeContext` no longer throw on null-prototype objects."
+          },
+          {
+            "comment": "Packaging: source maps and `CAPABILITIES.md` now ship in the package."
+          }
+        ]
+      }
+    },
+    {
       "version": "5.0.2",
       "tag": "@fgv/ts-json_v5.0.2",
       "date": "Wed, 17 Dec 2025 18:08:09 GMT",

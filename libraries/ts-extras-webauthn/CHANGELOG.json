@@ -1,4 +1,17 @@
 {
   "name": "@fgv/ts-extras-webauthn",
-  "entries": []
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-extras-webauthn_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Initial release: a Result boundary over `@simplewebauthn/server` — `generateRegistrationOptions`, `verifyRegistrationResponse`, `generateAuthenticationOptions` and `verifyAuthenticationResponse` return `Result`s instead of throwing. The browser half is `@fgv/ts-web-extras-webauthn`."
+          }
+        ]
+      }
+    }
+  ]
 }

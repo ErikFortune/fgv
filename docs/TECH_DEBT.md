@@ -67,6 +67,32 @@ fix is not to restate it but to **replace recall with a mechanical gate** — se
 
 ## P2 — Fix before next major feature in affected area
 
+- **[P2] `@fgv/ts-utils` is a hard dependency of some published packages and a peer of others,
+  and every intra-repo range is an exact pin.** `workspace:*` publishes as the exact version, so
+  `@fgv/ts-extras@5.1.0` asks for `@fgv/ts-utils@5.1.0` and nothing else. Hard-depending
+  (`dependencies`): `ts-agent-memory`, `ts-agent-tasks`, `ts-prompt-assist`, `ts-random`, `ts-res`,
+  `ts-res-ui-components`, `ts-http-storage`, `ts-app-shell`, and the tools `ks`, `ts-res-cli`,
+  `ts-res-browser-cli`, `ts-res-browser`. Every other published package peers it. Lockstep publishing
+  hides the combination today, because every package moves to the same version at once. The first
+  release that is **not** lockstep — a patch to one package — breaks it: a consumer holding
+  `ts-res@5.1.0` (hard pin `ts-utils@5.1.0`) and `ts-extras@5.1.1` (peer pin `ts-utils@5.1.1`) gets
+  two copies of `ts-utils`, so `instanceof` checks and branded `Result` objects stop being shared
+  across the boundary.
+
+  **Trigger**: before the first non-lockstep publish, or the first consumer report of a duplicate
+  `@fgv/ts-utils` in a lockfile.
+
+  **Scope sketch**: choose one rule and apply it everywhere. Either publish ranges with
+  `workspace:^` (caret on publish) so compatible versions dedupe, or make `@fgv/ts-utils` a peer of
+  every library (tools may keep a hard dependency, since they are leaves). The two compose; the
+  peer rule is the one that guarantees a single instance.
+
+  **Not a P3**: it is invisible until it is not, and it surfaces in consumers' installs, where it is
+  expensive to diagnose.
+
+  **Reference**: consumer validation of `5.1.0-63`; recorded out of scope by
+  `publish-hygiene-5-1-0` (`.ai/tasks/completed/2026-11/publish-hygiene-5-1-0/`).
+
 - **[P2] ~~`ts-agent-tasks` `TaskBroker.bindDelivery` lets any principal drain any subscription
   whose `consumerId` it can name.~~ Resolved by #781 (`agent-tasks-drain-principals`): `subscribe`
   records the principals allowed to drain (default the registrant), and `bindDelivery`, every bound

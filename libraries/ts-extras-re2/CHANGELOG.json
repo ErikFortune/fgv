@@ -1,4 +1,20 @@
 {
   "name": "@fgv/ts-extras-re2",
-  "entries": []
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-extras-re2_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Initial release: `re2PatternValidator`, an RE2 (re2js) validator for JSON Schema `pattern` from sources you do not control, such as an MCP server's tool schema — linear-time matching, ECMA-262 meaning or refusal."
+          },
+          {
+            "comment": "Pass it as `patternValidator` to `JsonSchema.fromJson` or `adaptMcpTools`; `createRe2PatternValidator` sets the source-length and program-size limits."
+          }
+        ]
+      }
+    }
+  ]
 }

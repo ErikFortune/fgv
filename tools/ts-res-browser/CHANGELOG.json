@@ -2,6 +2,31 @@
   "name": "@fgv/ts-res-browser",
   "entries": [
     {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-res-browser_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Dependency updates: React and React DOM ~19.3.1, `core-js` ~3.51.0, `json-edit-react` ~1.30.2, `serve-handler` ~6.1.7; the unused `crypto-browserify` dependency is removed."
+          },
+          {
+            "comment": "Packaging: the MIT `LICENSE` file now ships in the package."
+          }
+        ],
+        "major": [
+          {
+            "comment": "Upgrading from 5.0.2: Node.js 22.22.0 or later is required (`engines.node` was `>=20.0.0`; Node 20 is no longer supported)."
+          }
+        ],
+        "none": [
+          {
+            "comment": "tsconfig comment: name tools/ts-res-ui-playground as the other webpack app now that apps/sudoku has left the repo"
+          }
+        ]
+      }
+    },
+    {
       "version": "5.0.2",
       "tag": "@fgv/ts-res-browser_v5.0.2",
       "date": "Wed, 17 Dec 2025 18:08:09 GMT",

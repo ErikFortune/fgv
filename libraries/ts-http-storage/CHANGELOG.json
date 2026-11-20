@@ -1,0 +1,23 @@
+{
+  "name": "@fgv/ts-http-storage",
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-http-storage_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Initial release: the server side of the HTTP `FileTree` backend whose client is `@fgv/ts-web-extras`' `HttpTreeAccessors`."
+          },
+          {
+            "comment": "`createStorageRoutes` serves the storage REST contract as Hono routes over any `IHttpStorageProvider`; `FsStorageProvider` is the filesystem-backed provider."
+          },
+          {
+            "comment": "Wire converters for every request and response, and an opt-in `base64` content encoding for byte-faithful file contents."
+          }
+        ]
+      }
+    }
+  ]
+}
