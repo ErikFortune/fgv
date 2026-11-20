@@ -71,11 +71,17 @@ Point `package.json` at both outputs, for example:
 | `typedoc.base.json` | a TypeDoc base config for `typedoc-plugin-markdown` output |
 | `typedoc.compact-base.json` | a TypeDoc base config for [`@fgv/typedoc-compact-theme`](../../plugins/typedoc-compact-theme) |
 
-The TypeDoc configs are opt-in; extend one from your own `typedoc.json`:
+The TypeDoc configs are opt-in; extend one from your own `typedoc.json`. The compact base sets
+options only, so register the theme plugin yourself:
+
+```sh
+npm install --save-dev typedoc typedoc-plugin-markdown @fgv/typedoc-compact-theme
+```
 
 ```json
 {
   "extends": ["@fgv/heft-dual-rig/profiles/default/config/typedoc.compact-base.json"],
+  "plugin": ["@fgv/typedoc-compact-theme"],
   "entryPoints": ["../src/index.ts"],
   "out": "../docs"
 }
