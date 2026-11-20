@@ -1,5 +1,11 @@
 # Lessons pending — orchestrator-session inbox
 
+> **Branch-model note (2026-11-20).** Written under the pre-5.1.0 model, where `release` was the
+> branch every PR targeted and `main` the promoted line. Since 5.1.0 the trunk is `main`, trains are
+> `release/<major>`, and the old `release` branch is deleted
+> (`.ai/conventions/workflow/branch-buffer-and-promotion.md`). Read "`release`" below as history;
+> for any instruction it gives, the branch today is `main`.
+
 Cross-cutting lessons surfaced during orchestrator sessions, parked here until either codified (into a convention / skill / agent-prompt update — graduating to `release` via a `chore/` PR) or aged out. Per `.ai/conventions/workflow/doc-graduation.md`, this file lives on `claude/orchestrator-session` and is swept to release at natural moments (cluster close; orchestrator handoff; codification batch).
 
 ---

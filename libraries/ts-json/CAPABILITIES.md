@@ -8,14 +8,14 @@
 
 ---
 
-[libraries/ts-json](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json)
+[libraries/ts-json](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json)
 
 | Packlet | Use for |
 |---|---|
-| [`editor`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json/src/packlets/editor) | `JsonEditor` — deep merge JSON objects in-place, clone, with rule plugins. |
-| [`converters`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json/src/packlets/converters) | `JsonConverter` with mustache templating + conditional property syntax (`?key`, `?[match]`, `?default`) and multi-value expansion. |
-| [`context`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json/src/packlets/context) | `JsonContext`, `CompositeJsonMap` — context objects fed into the templating converter. |
-| [`diff`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-json/src/packlets/diff) | `detailedDiff`, `threeWayDiff` — structural JSON diffs. |
+| [`editor`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json/src/packlets/editor) | `JsonEditor` — deep merge JSON objects in-place, clone, with rule plugins. |
+| [`converters`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json/src/packlets/converters) | `JsonConverter` with mustache templating + conditional property syntax (`?key`, `?[match]`, `?default`) and multi-value expansion. |
+| [`context`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json/src/packlets/context) | `JsonContext`, `CompositeJsonMap` — context objects fed into the templating converter. |
+| [`diff`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json/src/packlets/diff) | `detailedDiff`, `threeWayDiff` — structural JSON diffs. |
 
 ---
 

@@ -4,7 +4,7 @@
 library rather than reimplementing it. This file is the **index**; the detail lives in each
 package's `CAPABILITIES.md`, linked below.
 
-**Repository:** https://github.com/ErikFortune/fgv (release branch)
+**Repository:** https://github.com/ErikFortune/fgv (`main`, the trunk; what is on npm is on `release/<major>`)
 
 ## How to use this
 

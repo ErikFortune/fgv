@@ -1,6 +1,10 @@
 # Branch-migration checklist — `main` as trunk, `release/<major>` trains, publish from a child
 
-**Status: Phase 0 (orchestrator) and Phase 1 done on `publish-workflow-rework`; Phases 2–4 pending.** Target model locked with Erik 2026-11-14. This replaces the
+**Status (2026-11-20): the model is live.** Phase 1 shipped on `publish-workflow-rework`; the drain
+(Phase 2, #791 → `34396526c`) and the 5.1.0 publish (Phase 3, #798 → `19aa60ccf` on `release/5`, back-merged
+by #799 → `3a541a89f`) are done; Phase 4's docs sweep and the version-from-branch-name guard shipped on
+`post-510-branch-model`. What remains is GitHub settings only Erik can change, marked below with
+their owner. Target model locked with Erik 2026-11-14. This replaces the
 2026-07-20 plan (PR #566), which had `main` publishing stable releases and a `published` pointer
 branch. That plan was never executed. The rework is a prerequisite for the 5.1.0 non-alpha
 publish: the first stable publish runs under the new model.
@@ -33,7 +37,9 @@ own prefix (`publish/*`), never `release/5/...`.
    promoted state on `release/<major>` (testbed run) before going further.
 2. **Branch** `publish/<version>` off the tip of `release/<major>` and push nothing else to it.
 3. **Dispatch** the stable publish on `publish/<version>` straight away (see *Automated publish*
-   below); the guard requires `HEAD` to equal `origin/release/<major>`. One run does
+   below). The branch name **is** the version: the guard requires a plain `X.Y.Z`, newer than the
+   version the train's policy names, of the train's major, and `HEAD` equal to
+   `origin/release/<major>`. No PR moving the policy is needed first. One run does
    install, verify, build, version bump, changelog generation, commit, tag, publish, and opens both
    follow-up PRs.
 4. **Merge** `publish/<version>` → `release/<major>` with a **merge commit, never squash**, so the
@@ -42,6 +48,12 @@ own prefix (`publish/*`), never `release/5/...`.
    files (they would reappear in the next release's changelog) and its version policy would still name
    the old version. The publish workflow opens this PR automatically.
 6. Bump `.ai/BASELINE.md` to the published commit and version.
+
+**Who may PR into a train.** CI's `release-source` job (in `ci.yml`) fails a PR into `release/*`
+unless its head is `main` (a promotion) or `publish/*` (a publish child) from this repository; on
+every other base it passes. Make it a required check on `release/*` (Erik, branch protection).
+Once it is required, the publish PR the workflow opens with `GITHUB_TOKEN` gets no CI run on its
+own (see Phase 0); close and reopen it, or push to it, so the check reports.
 
 ### Alphas
 
@@ -52,8 +64,11 @@ alphas). It stays a single branch tracking `main`; alphas are always for the nex
 
 ### Multiple trains
 
-When `main` moves to 6.x, `release/5` keeps living. A 5.x hotfix: branch from `release/5`, PR into
-`release/5`, publish through a `publish/5.x.y` child. The back-merge to `main` then becomes a
+When `main` moves to 6.x, `release/5` keeps living. A 5.x hotfix: while `main` and the train
+have not diverged, land the fix on `main` and promote. Once they have, the fix goes into
+`release/5` from a branch named `publish/5.x.y` (the only non-`main` head the `release-source`
+check admits): branch it from `release/5`, commit the fix, PR it into `release/5` (merge commit),
+then reset `publish/5.x.y` to the new `release/5` tip and dispatch. The back-merge to `main` then becomes a
 **cherry-pick of the fix** (or a forward-port PR), not a merge, because the version policies have
 diverged. Write the fix-forward PR in the same session as the hotfix so it is not forgotten.
 
@@ -64,8 +79,11 @@ Today the publish step is dispatched and then fixed up by hand — changelogs es
 
 1. **Guards** (fail loudly, before anything else):
    - stable and major run only on `refs/heads/publish/*`; alpha only on `refs/heads/prerelease`;
-   - the `publish/*` branch must **equal** `origin/release/<n>` (not merely descend from it), the
-     version policy's major must equal `<n>`, and the branch name must equal the policy version;
+   - the branch name `publish/<V>` is the version: `V` must be a plain `X.Y.Z` (no prerelease, no
+     leading zeros) and **newer** than the version the branch's policy names (the last one
+     published); a change of major must be exactly `<policy major + 1>.0.0`;
+   - the `publish/*` branch must **equal** `origin/release/<n>` (not merely descend from it), where
+     `<n>` is `V`'s major — a `publish/6.0.0` cut from `release/5` is refused;
    - not every package may already be at the version on npm — a run that stopped part-way can be
      finished, and the publish job skips what npm already has;
    - if the version is older than npm's `latest` (a maintenance train), the run publishes under the
@@ -111,10 +129,22 @@ Today the publish step is dispatched and then fixed up by hand — changelogs es
    Result on the 5.1.0 tree: policy and all 34 `base-utils` `package.json`s at 5.1.0, every
    `CHANGELOG.json`/`.md` gains a populated 5.1.0 section (32 CHANGELOG files created where none existed),
    771 change files deleted (the 20 left belong to projects with no version policy), policy
-   `nextBump` unchanged. `--override-bump major` is no longer used: a major is a policy that says
-   `<n>.0.0`. **Consequence:** the next stable publish needs a PR that moves the policy to the next
-   version (`rush version --ensure-version-policy --version-policy base-utils --override-version
-   <next>`); the npm guard refuses a forgotten one.
+   `nextBump` unchanged. `--override-bump major` is no longer used: a major is a branch named
+   `publish/<n>.0.0` dispatched as `major`.
+
+   **Version from the branch name (2026-11-20, `post-510-branch-model`).** As first built the guard
+   required the policy to *equal* the branch's version, so every stable publish needed a PR moving
+   `main`'s policy to the next version first — a policy that then claimed a version nobody had
+   published. The guard now takes `V` from `publish/<V>` and requires `V` to be newer than the
+   policy, which stays honest: it names the last version published until the publish's own bump
+   commit moves it. Proven on a scratch clone with a scratch origin (`release/5` tip plus two
+   change files, policy 5.1.0): `publish/5.2.0` → policy and 33 packages at 5.2.0, CHANGELOGs with
+   `## 5.2.0`, change files consumed, bump commit inside the publish job's path allowlist;
+   `publish/5.1.1` → 5.1.1, same; `publish/6.0.0` (major) → 6.0.0. Refused: `publish/5.1.0` and
+   `publish/5.0.9` (not newer than 5.1.0), `publish/5.2.0-1`, `publish/5.2`, `publish/05.2.0`,
+   `publish/v5.2.0`, `publish/6.0.0` on `release/5`, `publish/6.1.0` and `publish/7.0.0` (major
+   skip), a train whose policy says `5.2.0-0`. Details:
+   `.ai/tasks/completed/2026-11/post-510-branch-model/result.md`.
 4. Commit the bump on `publish/<version>` and push it; publish; push per-package tags.
 5. Open the PR `publish/<version>` → `release/<major>`, and once that merges, the back-merge PR
    `release/<major>` → `main` (or open both, the second drafted, if sequencing in one run is awkward).
@@ -182,11 +212,13 @@ every `uses:` floats — `actions/checkout@v5`, `actions/setup-node@v5`, third-p
 ## Phase 0 — Pre-flight
 
 **Erik (GitHub settings — blocking):**
-- [ ] `npm-publish-release` environment → deployment branches: allow the pattern `publish/*`.
+- [x] `npm-publish-release` environment → deployment branches: allow the pattern `publish/*`.
+      (Proven by the 5.1.0 run on `publish/5.1.0`.)
 - [ ] `npm-publish-alpha` → allow `prerelease` as a branch-**name** rule (survives recreation).
 - [ ] Branch protection: `main` and `release/*` PR-only; `publish/*` writable by the workflow.
-- [ ] Settings → Actions → General: **"Allow GitHub Actions to create and approve pull requests"**
-      on, or the follow-up-PR step fails (403) after the packages are already published.
+- [x] Settings → Actions → General: **"Allow GitHub Actions to create and approve pull requests"**
+      on, or the follow-up-PR step fails (403) after the packages are already published. (#798 was
+      opened by `github-actions[bot]`.)
 - [ ] Know that PRs opened with the job's `GITHUB_TOKEN` do not trigger `ci.yml`; push to the
       branch, or close and reopen the PR, to get checks on it (or switch the step to an App token).
 - [ ] Before `publish/5.1.0`, dispatch **one alpha** as a smoke test: it runs the same
@@ -200,13 +232,15 @@ every `uses:` floats — `actions/checkout@v5`, `actions/setup-node@v5`, third-p
 - [ ] Prove that **Re-run failed jobs** lets `download-artifact` fetch the first attempt's artifact
       (a throwaway workflow: job A uploads, job B fails once, re-run B and see it download). Recovery
       rests on it; if it does not hold, the bundle-based fallback in *Recovery* is the path.
-- [ ] Confirm npm trusted publishing (OIDC) is bound to repo + workflow file, not branch; verify on
-      the first publish.
+- [x] Confirm npm trusted publishing (OIDC) is bound to repo + workflow file, not branch; verify on
+      the first publish. (5.1.0 is on npm as `latest` from `publish/5.1.0`; 33 `<pkg>_v5.1.0` tags
+      point at `d198bfda6`.)
 
 **Orchestrator/agent:**
 - [x] The `--apply` dry run in *Automated publish* step 3.
-- [ ] Reconcile root-tooling strays between `main` and `release` (the 2026-07 plan's Phase 2: root
-      `package.json` / rush dependency, #464 deltas) so the drain merge is conflict-free.
+- [x] Reconcile root-tooling strays between `main` and `release` (the 2026-07 plan's Phase 2: root
+      `package.json` / rush dependency, #464 deltas) so the drain merge is conflict-free. (Absorbed
+      by the drain, #791 → `34396526c`.)
 
 ## Phase 1 — Workflow rework (PR into the current `release` line, so it rides the drain)
 
@@ -214,7 +248,7 @@ every `uses:` floats — `actions/checkout@v5`, `actions/setup-node@v5`, third-p
       changelog, child-branch commit, tags, follow-up PRs, summary).
 - [x] `ci.yml` triggers: push `['main']`; pull_request `['main', 'release', 'release/**',
       'publish/**', 'prerelease', 'integration/**']` (`hotfix` dropped). `release` stays while the
-      current PR flow still targets it and is dropped in Phase 4. Change-verify keys off `base_ref`.
+      current PR flow still targets it and is dropped in Phase 4 (done). Change-verify keys off `base_ref`.
 - [x] Delete `publish-legacy.yml`, `publish-alpha-legacy.yml`, `publish-major-legacy.yml`; confirm
       nothing references `NPM_TOKEN`. (`publish-major-impl.yml` also deleted — `major` reuses the
       release impl. Neither publish path runs `rush publish` any more, so nothing reads
@@ -223,39 +257,54 @@ every `uses:` floats — `actions/checkout@v5`, `actions/setup-node@v5`, third-p
 
 ## Phase 2 — The drain
 
-- [ ] Land the 5.1.0 release-prep streams on `release` (sudoku extraction, release-compat, changelog
-      curation, docs regeneration, this workflow rework) and Erik's testbed run.
-- [ ] PR `release` → `main`, **merge commit**. Close #154 and #256 as obsolete.
-- [ ] CI green on `main`; `rush install && rush rebuild` clean.
+- [x] Land the 5.1.0 release-prep streams on `release` (sudoku extraction, release-compat, changelog
+      curation, docs regeneration, this workflow rework) and Erik's testbed run. (#790 `b39b23491`,
+      #793 `050d8245a`.)
+- [x] PR `release` → `main`, **merge commit**. Close #154 and #256 as obsolete. (#791 →
+      `34396526c`; #154 and #256 closed.)
+- [x] CI green on `main`; `rush install && rush rebuild` clean. (Re-run on `main` + this stream's
+      branch, 2026-11-20: see the stream's result.md.)
 
 ## Phase 3 — Create the train, publish 5.1.0
 
-- [ ] Erik deletes `release` (agents never delete branches on origin). Archived history stays
-      reachable through `main` and the per-package tags.
-- [ ] Create `release/5` from `main` (the promotion), `publish/5.1.0` from `release/5`.
-- [ ] Dispatch the stable publish on `publish/5.1.0`. Verify: versions 5.1.0, CHANGELOGs populated,
+- [x] Erik deletes `release` (agents never delete branches on origin). Archived history stays
+      reachable through `main` and the per-package tags. (`refs/heads/release` absent on origin.)
+- [x] Create `release/5` from `main` (the promotion), `publish/5.1.0` from `release/5`. (`release/5`
+      cut at `34396526c`.)
+- [x] Dispatch the stable publish on `publish/5.1.0`. Verify: versions 5.1.0, CHANGELOGs populated,
       change files consumed, tags pushed, npm `latest` = 5.1.0, both follow-up PRs opened.
-- [ ] Merge `publish/5.1.0` → `release/5` (merge commit), then the back-merge → `main`. On this
+      (`d198bfda6` "Publish 5.1.0"; 33 tags; `latest` 5.1.0; #798 opened by the workflow, the
+      back-merge by hand as expected below.)
+- [x] Merge `publish/5.1.0` → `release/5` (merge commit), then the back-merge → `main`. (#798 →
+      `19aa60ccf`; #799 → `3a541a89f`, from a `merge/5.1.0` branch.) On this
       first run `release/5` has no commits ahead of `main`, so the workflow cannot open the draft
       back-merge PR; it prints a warning with the compare link — open it after the first merge.
-- [ ] Recreate `prerelease` from `main` (only now) and set its policy to `5.2.0-0` / `nextBump:
-      prerelease` (the stable publish leaves `5.1.0` / `minor`); confirm the next alpha is 5.2.0-N.
-- [ ] PR to `main` moving the policy to the next stable version (`5.2.0`) so the next
-      `publish/5.2.0` passes the branch-equals-policy guard.
-- [ ] Bump `.ai/BASELINE.md`.
+- [x] Recreate `prerelease` from `main` (only now) and set its policy to `5.2.0-0` / `nextBump:
+      prerelease` (the stable publish leaves `5.1.0` / `minor`). (`ac057fae7` on `3a541a89f`.)
+- [ ] Confirm the next alpha is 5.2.0-N. **Erik** — npm `alpha` is still `5.1.0-64` on 2026-11-20;
+      the first alpha dispatch from the recreated `prerelease` is also the proof for setup-node v7
+      in the publish jobs (see the stream result).
+- [x] ~~PR to `main` moving the policy to the next stable version (`5.2.0`) so the next
+      `publish/5.2.0` passes the branch-equals-policy guard.~~ **Unnecessary**: the guard now takes
+      the version from the branch name and requires it to be newer than the policy, so `main`'s
+      policy keeps saying 5.1.0 — the last version published — until `publish/5.2.0`'s own bump
+      commit moves it (`post-510-branch-model`).
+- [x] Bump `.ai/BASELINE.md`. (`post-510-branch-model`: published commit `d198bfda6`.)
 
-## Phase 4 — Docs sweep (PR → `main`)
+## Phase 4 — Docs sweep (PR → `main`) — done on `post-510-branch-model`
 
-- [ ] "Branch off / PR to `release`" → `main` across `CLAUDE.md`, `.ai/instructions/`,
+- [x] "Branch off / PR to `release`" → `main` across `CLAUDE.md`, `.ai/instructions/`,
       `.ai/conventions/workflow/` (notably `branch-buffer-and-promotion.md`, whose canonical/buffer
       framing changes), `.claude/agents/orchestrator.md`, `.claude/skills/`, handoff notes. Grep
       `release` in `.ai/` and `.claude/`.
-- [ ] The "every touched package needs a change file" rule names `--target-branch origin/release`;
+- [x] The "every touched package needs a change file" rule names `--target-branch origin/release`;
       update to `origin/main`.
-- [ ] `LIBRARY_CAPABILITIES.md` and package `CAPABILITIES.md` links: `tree/release/...` →
+- [x] `LIBRARY_CAPABILITIES.md` and package `CAPABILITIES.md` links: `tree/release/...` →
       `tree/main/...` (the router's `Repository:` line too).
-- [ ] Integration branches (`integration/*`) re-base on `main`.
-- [ ] Drop `release` from `ci.yml`'s pull_request branches.
+- [x] Integration branches (`integration/*`) re-base on `main` — documented. Rebasing the live
+      `integration/*` branches themselves is their owners' job, when each next merges `main`.
+- [x] Drop `release` from `ci.yml`'s pull_request branches. Added the `release-source` job.
+- [ ] **Erik:** make `release-source` a required status check on `release/*`.
 
 ## Open questions
 

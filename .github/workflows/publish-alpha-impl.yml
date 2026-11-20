@@ -12,6 +12,10 @@ name: Publish Alpha (Implementation)
 #   build   read-only token, no npm credentials: install, rebuild, tarball check, pack.
 #   publish environment npm-publish-alpha, OIDC and a write token; installs nothing; publishes the
 #           tarballs and pushes tags, with credentials passed to `git push` only.
+#
+# Every setup-node step sets `package-manager-cache: false`: setup-node v7 restores a package-manager
+# cache automatically when the root package.json names a `packageManager`, and a cache restored into
+# a job holding OIDC or a write token is a path for repository-controlled content into that job.
 
 on:
   workflow_call:
@@ -47,6 +51,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.15.0
+          package-manager-cache: false
 
       - name: Version policy and package list
         id: check
@@ -92,6 +97,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.15.0
+          package-manager-cache: false
 
       # No `rush change --verify`: on `prerelease` it compared the branch with itself.
       - name: Rush Install
@@ -190,6 +196,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.15.0
+          package-manager-cache: false
           registry-url: 'https://registry.npmjs.org'
 
       - name: Upgrade npm for OIDC support

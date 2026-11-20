@@ -3,16 +3,51 @@ on:
   push:
     branches: ['main']
   pull_request:
-    # 'integration/**' covers multi-version stream branches that collect several PRs and land as
-    # one. 'release/**' is the release trains, 'publish/**' the publish children PR'd back into
-    # them. 'release' stays until the drain into 'main' is done; it is removed in the docs-sweep
-    # phase of .ai/notes/orchestrator/branch-migration-checklist.md.
-    branches: ['main', 'release', 'release/**', 'publish/**', 'prerelease', 'integration/**']
+    # 'main' is the trunk. 'integration/**' covers multi-version stream branches (based on main)
+    # that collect several PRs and land as one. 'release/**' is the release trains, 'publish/**'
+    # the publish children PR'd back into them. See
+    # .ai/notes/orchestrator/branch-migration-checklist.md.
+    branches: ['main', 'release/**', 'publish/**', 'prerelease', 'integration/**']
 
 permissions:
   contents: read
 
 jobs:
+  # A release train takes promotions from main and merges of a publish/<version> child, nothing
+  # else; a hotfix reaches a train through a publish child or a promotion. Make this a required
+  # check on release/*: on every other base it passes, so requiring it blocks nothing there.
+  release-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: A release train accepts only main or publish/*
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "Not a pull request; nothing to check."
+            exit 0
+          fi
+          case "$BASE_REF" in
+            release/*) ;;
+            *) echo "Base $BASE_REF is not a release train; nothing to check."; exit 0 ;;
+          esac
+          if [ "$HEAD_REPO" != "$GITHUB_REPOSITORY" ]; then
+            echo "::error title=Release train source::a PR into $BASE_REF must come from a branch of $GITHUB_REPOSITORY, not $HEAD_REPO"
+            exit 1
+          fi
+          case "$HEAD_REF" in
+            main | publish/*)
+              echo "PR into $BASE_REF from $HEAD_REF: allowed."
+              ;;
+            *)
+              echo "::error title=Release train source::a PR into $BASE_REF must come from main (a promotion) or publish/<version> (a publish child); this one comes from $HEAD_REF"
+              exit 1
+              ;;
+          esac
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -44,6 +79,9 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.15.0
+      # Compares against the PR's own base (main, release/*, publish/*, prerelease or
+      # integration/*); fetch-depth 0 fetched every branch, so origin/<base> exists. A push to main
+      # compares main with itself, which checks nothing; the PR into main already did.
       - name: Verify Change Logs
         env:
           EVENT_NAME: ${{ github.event_name }}

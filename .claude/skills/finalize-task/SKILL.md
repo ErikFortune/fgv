@@ -167,7 +167,7 @@ retired PR is often the most instructive thing a cluster produced — the reason
 shape changed. Verify state rather than assuming: a number appearing in an artifact is not
 evidence it landed.
 
-**A sub-stream's `prs` names the PRs it authored, not the one that carried it to `release`.**
+**A sub-stream's `prs` names the PRs it authored, not the one that carried it to `main`.**
 When a cluster promotes several sub-streams in one squash, that promotion PR belongs to the
 **cluster parent's** record only. Putting it on every sub-stream inflates each one's apparent
 footprint and makes the same PR look like four separate pieces of work. Record the
@@ -321,11 +321,11 @@ with a hyphen without collapsing runs — so `### A.1 — the thing` becomes
 
 ### 7. Verify the mechanical gates
 
-- `rush change --verify --target-branch origin/release` — **CI's first gate, and
+- `rush change --verify --target-branch origin/main` (or the PR's base) — **CI's first gate, and
   invisible to the entire local build/test suite.** A missing change file fails the job
   in ~30 seconds having compiled nothing.
 - Regenerate the corpus index if a generator exists; skip if not.
-- `git diff --name-only origin/release... | cut -d/ -f2` against the change files
+- `git diff --name-only origin/main... | cut -d/ -f2` against the change files
   actually being shipped.
 
 ### 8. Report the ledger gap

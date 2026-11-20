@@ -8,9 +8,9 @@
 
 ---
 
-[libraries/ts-res](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-res)
+[libraries/ts-res](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res)
 
-A full conditional-resource runtime: qualifier types, qualifiers, conditions, decisions, candidates, resources, bundles, zip archive packaging. Use when you need context-aware resource resolution (i18n, theming, A/B variants, environment overrides). Key packlets: [`runtime`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-res/src/packlets/runtime), [`bundle`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-res/src/packlets/bundle), [`config`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-res/src/packlets/config), [`import`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-res/src/packlets/import), [`resource-json`](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-res/src/packlets/resource-json). See the project's own [CLAUDE.md](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-res/CLAUDE.md) for architecture details.
+A full conditional-resource runtime: qualifier types, qualifiers, conditions, decisions, candidates, resources, bundles, zip archive packaging. Use when you need context-aware resource resolution (i18n, theming, A/B variants, environment overrides). Key packlets: [`runtime`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/src/packlets/runtime), [`bundle`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/src/packlets/bundle), [`config`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/src/packlets/config), [`import`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/src/packlets/import), [`resource-json`](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/src/packlets/resource-json). See the project's own [CLAUDE.md](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res/CLAUDE.md) for architecture details.
 
 ---
 

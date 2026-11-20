@@ -7,7 +7,7 @@
 
 ---
 
-[libraries/ts-agent-tasks](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-agent-tasks)
+[libraries/ts-agent-tasks](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-agent-tasks)
 
 **A library that records work and mediates observations and commands. It runs no agent loop** —
 no scheduler, no executor, no model invocation, no retry policy. Hosts call it; nothing here runs

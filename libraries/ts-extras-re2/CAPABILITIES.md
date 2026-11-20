@@ -7,7 +7,7 @@
 
 ---
 
-[libraries/ts-extras-re2](https://github.com/ErikFortune/fgv/tree/release/libraries/ts-extras-re2)
+[libraries/ts-extras-re2](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras-re2)
 
 **The default `patternValidator` for a `pattern` that comes from somewhere you do not control** — an
 MCP server's tool schema, a schema loaded at runtime. `JsonSchema.fromJson` and `adaptMcpTools`

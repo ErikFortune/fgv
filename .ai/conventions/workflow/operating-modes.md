@@ -10,7 +10,7 @@ The orchestrator **prepares** work; the user **runs** it.
 
 For each stream, the orchestrator:
 
-1. Creates the stream's branch from the right base: `release` for a direct-to-release stream, the
+1. Creates the stream's branch from the right base: `main` for a direct-to-main stream, the
    integration branch for a cluster phase.
 2. Commits `brief.md`, plus an empty `state.md`, under `.ai/tasks/active/<stream-id>/` on that
    branch, and pushes it.

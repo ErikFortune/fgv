@@ -25,36 +25,43 @@ blast radius of any stream needs to account for this — a change in
 one package ships in the same alpha as every other package's changes.
 
 **Stability-via-consumption.** We presume instability until at least
-one consumer has applied a feature end-to-end. `release` and the
+one consumer has applied a feature end-to-end. `main` and the
 alphas published from `prerelease` are post-feature-PR but
-pre-validation. Production promotion is gated on observed consumer
-use, not just CI green. Case in point: a -25 → -26 type-tightening
-that would have been a production regression if -25 had shipped to
-main.
+pre-validation. Promotion to a `release/<major>` train (and so a
+stable publish) is gated on observed consumer use, not just CI
+green. Case in point: a -25 → -26 type-tightening that would have
+been a production regression if -25 had shipped stable.
 
 ## Branch flow
 
 ```
-agent feature branches ─PR─▶ release ──mirror──▶ prerelease ──npm-publish─▶ alpha
-                                │
-                                └── promote (test/docs gate, not code review) ──▶ main
+agent feature branches ─PR─▶ main ──sync──▶ prerelease ──npm-publish─▶ alpha
+integration/<x> (off main) ─PR─┘ │
+                                 └── promote (PR, test/docs gate) ──▶ release/<major> ──▶ publish/<version> ──▶ stable
+                                                                            └── merge back ──▶ main
 ```
 
-- **`release`** is the buffer line. Feature PRs merge here. Iterative
-  review cycles, followups, and slips are absorbed here.
-- **`prerelease`** mirrors `release` immediately. The only deltas vs.
-  `release` are `package.json` / version-policy files and Rush
-  changelogs. Alphas publish from `prerelease` via the
-  `npm-publish` GitHub workflow.
-- **`main`** is the canonical line. Promotion `release` → `main` is
-  a release event — it accumulates a long delta and is gated on
+- **`main`** is the trunk and the buffer line. Feature PRs and
+  integration branches merge here; iterative review cycles,
+  followups and slips are absorbed here. Never published from.
+- **`prerelease`** is synced from `main`; its only deltas are the
+  version policy and `package.json` versions for the next alpha
+  (`<next minor>.0-N`). Alphas publish from it via the `publish.yml`
+  workflow.
+- **`release/<major>`** (`release/5`, …) is a release train: what is
+  on npm for that major. Promotion `main` → `release/<major>` is a
+  release event — it accumulates a long delta and is gated on
   **test/docs/sibling-sweep, not code review** (each constituent PR
-  was reviewed on its way into `release`; the unified delta is too
-  large for meaningful re-review).
+  was reviewed on its way into `main`; the unified delta is too
+  large for meaningful re-review). A stable publish runs on a
+  `publish/<version>` child cut at the train's tip, which merges
+  back into the train and the train back into `main`.
 
-A branch-model evolution to a more conventional "main is tip,
-hotfix branches off main" topology is on the roadmap; see the
-relevant entry in this file when it's drafted.
+The full model and the release flow:
+`.ai/conventions/workflow/branch-buffer-and-promotion.md` and
+`.ai/notes/orchestrator/branch-migration-checklist.md`. Before
+5.1.0 the buffer was a branch named `release` and `main` the
+promoted line; older entries below use that vocabulary.
 
 ## Status conventions
 
@@ -62,7 +69,7 @@ relevant entry in this file when it's drafted.
 - 🟡 ready but trailing on a soft dependency, or trigger TBD
 - 🔵 in flight (active design or implementation)
 - 🔴 blocked (hard dependency unmet)
-- ✅ shipped (merged to `release`)
+- ✅ shipped (merged to `main`; `release` in entries before 2026-11-20)
 
 ## Stream entry shape
 
@@ -82,12 +89,12 @@ Full kickoff-prompt shape: `.ai/conventions/workflow/kickoff-prompt-shape.md`.
 
 ## Branch base
 
-New streams branch from current `release` HEAD. There is no shared
+New streams branch from current `main` HEAD. There is no shared
 "wave base" — streams are mostly independent, and the few real
 file-boundary conflicts are caught by the package-surface and
 out-of-scope declarations in the stream entry. `.ai/BASELINE.md`
-pins the last `release` → `main` promotion (i.e. the last
-published lockstep version), used as a recovery referent and for
+pins the last stable publish (the published commit on its
+`release/<major>` train and its lockstep version), used as a recovery referent and for
 sizing blast radius, not as a stream-start gate.
 
 ## Stream versions
@@ -454,8 +461,8 @@ here so a stream can be found by id without opening them; each archive links bac
 the same "docs ship with the code" rule as everywhere else, so the working ledger never
 accumulates history again.
 
-**[2026-11](workstreams/2026-11.md)** — 18 shipped
-`publish-hygiene-5-1-0` · `docs-regen-5-1-0` · `publish-workflow-rework` · `changelog-curation-5-1-0` · `sudoku-extraction` · `release-compat` · `mcp-task-support-vocabulary` · `agent-tasks-drain-principals` · `luna-temperature-with-effort` · `gemini-thinking-level` · `model-followups` · `fable-5-2` · `live-run-corrections` · `final-model-fixes` · `testbed-model-probes` · `model-alias-refresh` · `deps-refresh` · `model-max-output-tokens`
+**[2026-11](workstreams/2026-11.md)** — 19 shipped
+`post-510-branch-model` · `publish-hygiene-5-1-0` · `docs-regen-5-1-0` · `publish-workflow-rework` · `changelog-curation-5-1-0` · `sudoku-extraction` · `release-compat` · `mcp-task-support-vocabulary` · `agent-tasks-drain-principals` · `luna-temperature-with-effort` · `gemini-thinking-level` · `model-followups` · `fable-5-2` · `live-run-corrections` · `final-model-fixes` · `testbed-model-probes` · `model-alias-refresh` · `deps-refresh` · `model-max-output-tokens`
 
 **[2026-10](workstreams/2026-10.md)** — 52 shipped
 `converter-safe-failure-format` · `filetree-prefix-confinement` · `async-control-write-gate` · `agent-memory-cas-write` · `agent-tasks-delivery-and-deferral` · `agent-tasks-host-helpers` · `mcp-task-support-and-bounds` · `agent-memory-atomic-writes` · `ai-assist-client-tool-loop` · `chores-2026-10-asks-hmac-compositeid` · `sqlite-vec-index-identity` · `ts-utils-mapsuccess-partial-errors` · `safer-fetch-walk-chain` · `agent-memory-scope-decoding` · `ts-extras-re2` · `deterministic-timing-tests` · `ai-assist-wire-followups` · `json-schema-pattern` · `json-schema-options` · `memory-search-scope` · `testbed-wire-probe` · `json-schema-shapes` · `json-schema-constraints` · `agent-memory-scope-invariant` · `agent-memory-merge-scope` · `mcp-round-2b` · `mcp-round-2a` · `json-schema-fromjson-widening` · `mcp-client-cancellation` · `system-one-decisions` · `json-schema-open-object` · `ts-extras-browser-barrel-gaps` · `agent-tasks-cluster-close` · `personality-intake` · `agent-tasks-p1` · `agent-tasks-m1-stop` · `agent-tasks-i2` · `agent-tasks-tracked-commands` · `agent-tasks-i1d` · `agent-tasks-i1c` · `agent-tasks-i1b` · `agent-tasks-i1a` · `agent-tasks-t9` · `agent-tasks-t8b` · `agent-tasks-t8` · `agent-tasks-t7` · `agent-tasks-t6` · `agent-tasks-t5` · `agent-tasks-t4` · `agent-tasks-t3` · `agent-tasks-t2` · `agent-tasks-t1`
