@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/typedoc-compact-theme",
+      "comment": "Added a README and LICENSE.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/typedoc-compact-theme"
+}
