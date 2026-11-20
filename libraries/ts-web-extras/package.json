@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-web-extras",
-  "version": "5.1.0",
+  "version": "5.2.0-0",
   "description": "Browser-compatible utilities and FileTree implementations",
   "files": [
     "lib",

@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res",
-  "version": "5.1.0",
+  "version": "5.2.0-0",
   "description": "Multi-dimensional Resource Runtime",
   "files": [
     "lib",
