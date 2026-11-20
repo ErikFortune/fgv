@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras-argon2",
+      "comment": "Added a README.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras-argon2"
+}

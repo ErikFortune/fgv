@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-webauthn",
+      "comment": "Added a README.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-webauthn"
+}
