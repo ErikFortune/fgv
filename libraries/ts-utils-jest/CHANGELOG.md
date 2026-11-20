@@ -1,6 +1,18 @@
 # Change Log - @fgv/ts-utils-jest
 
-This log was last generated on Wed, 17 Dec 2025 18:08:09 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 05:01:24 GMT and should not be manually modified.
+
+## 5.1.0
+Fri, 20 Nov 2026 05:01:24 GMT
+
+### Patches
+
+- Node ESM `import` of this package now works; in 5.0.2 it failed with `ERR_UNSUPPORTED_DIR_IMPORT`.
+- Packaging: source maps and `CAPABILITIES.md` now ship in the package.
+
+### Updates
+
+- Upgrading from 5.0.2: the runtime dependencies (`expect`, `jest-snapshot`, `jest-matcher-utils`, `@jest/expect-utils`) moved from Jest 29 to Jest 30. The Result matchers and snapshot matchers are verified working under Jest 29 as well.
 
 ## 5.0.2
 Wed, 17 Dec 2025 18:08:09 GMT

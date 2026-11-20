@@ -1,0 +1,17 @@
+{
+  "name": "@fgv/heft-dual-rig",
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/heft-dual-rig_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "First release on the 5.x lockstep line (previously published separately as 0.1.0): a Heft rig that dual-emits CommonJS (`lib/`) and ESM (`dist/`), and fails the build when Jest coverage thresholds are missed."
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,6 +1,18 @@
 # Change Log - @fgv/ts-res-browser-cli
 
-This log was last generated on Wed, 17 Dec 2025 18:08:09 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 05:01:24 GMT and should not be manually modified.
+
+## 5.1.0
+Fri, 20 Nov 2026 05:01:24 GMT
+
+### Breaking changes
+
+- Upgrading from 5.0.2: Node.js 22.22.0 or later is required (`engines.node` was `>=20.0.0`; Node 20 is no longer supported).
+
+### Patches
+
+- Dependency update: `commander` ^11.1.0.
+- Packaging: the MIT `LICENSE` file now ships in the package.
 
 ## 5.0.2
 Wed, 17 Dec 2025 18:08:09 GMT

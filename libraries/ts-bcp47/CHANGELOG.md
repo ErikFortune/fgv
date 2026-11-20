@@ -1,6 +1,18 @@
 # Change Log - @fgv/ts-bcp47
 
-This log was last generated on Wed, 17 Dec 2025 18:08:09 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 05:01:24 GMT and should not be manually modified.
+
+## 5.1.0
+Fri, 20 Nov 2026 05:01:24 GMT
+
+### Patches
+
+- Fix: validation failures render the offending value safely, so a cyclic input fails instead of throwing.
+- Packaging: source maps and `CAPABILITIES.md` now ship in the package.
+
+### Updates
+
+- Upgrading from 5.0.2: the package is now dual-published — ESM for bundlers, CommonJS for Node. There is no API change.
 
 ## 5.0.2
 Wed, 17 Dec 2025 18:08:09 GMT

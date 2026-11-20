@@ -1,6 +1,15 @@
 # Change Log - @fgv/ts-json
 
-This log was last generated on Wed, 17 Dec 2025 18:08:09 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 05:01:24 GMT and should not be manually modified.
+
+## 5.1.0
+Fri, 20 Nov 2026 05:01:24 GMT
+
+### Patches
+
+- Corrected the import paths documented in README.md and CAPABILITIES.md: converters, editor and diff are imported from `@fgv/ts-json` itself, not from subpaths. No API change.
+- Fix: `JsonEditor.mergeObjectInPlace`, converter-option merging and `JsonContextHelper.mergeContext` no longer throw on null-prototype objects.
+- Packaging: source maps and `CAPABILITIES.md` now ship in the package.
 
 ## 5.0.2
 Wed, 17 Dec 2025 18:08:09 GMT

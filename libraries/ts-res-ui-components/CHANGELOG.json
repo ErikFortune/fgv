@@ -2,6 +2,24 @@
   "name": "@fgv/ts-res-ui-components",
   "entries": [
     {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-res-ui-components_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Fix: resource editing no longer throws when a null-prototype value is replaced by a non-object, and now deletes a property named like an `Object.prototype` member (such as `toString`)."
+          },
+          {
+            "comment": "Dependency updates: `json-edit-react` ~1.30.2 and `tslib` ^2.9.1."
+          },
+          {
+            "comment": "Packaging: the MIT `LICENSE` file, source maps and `CAPABILITIES.md` now ship in the package."
+          }
+        ]
+      }
+    },
+    {
       "version": "5.0.2",
       "tag": "@fgv/ts-res-ui-components_v5.0.2",
       "date": "Wed, 17 Dec 2025 18:08:09 GMT",

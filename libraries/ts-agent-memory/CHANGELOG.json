@@ -1,0 +1,26 @@
+{
+  "name": "@fgv/ts-agent-memory",
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-agent-memory_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Initial release: a FileTree-backed storage and retrieval substrate for agent memory and knowledge — a vault of markdown records with YAML front matter that git can track."
+          },
+          {
+            "comment": "`FileTreeMemoryStore`: typed record bodies per kind, attributed edges, dedup, write policies, compare-and-set writes, and crash-safe atomic record writes on filesystem roots."
+          },
+          {
+            "comment": "Retrieval over an in-memory envelope index (by kind, tag, recency or rank), with semantic recall through the `IVectorIndex` and `IFragmentVectorIndex` seams and the in-memory cosine indexes."
+          },
+          {
+            "comment": "Index consistency: vector indexes report `size` / `has` and rebuild with a per-kind report, so a store can check its derived state against its records."
+          }
+        ]
+      }
+    }
+  ]
+}

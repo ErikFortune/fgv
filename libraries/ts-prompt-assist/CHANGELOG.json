@@ -1,0 +1,29 @@
+{
+  "name": "@fgv/ts-prompt-assist",
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-prompt-assist_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Initial release: authoring, resolution and composition of LLM prompts that vary by context, built on `@fgv/ts-res` conditional resources and Mustache rendering."
+          },
+          {
+            "comment": "`PromptLibrary`: one YAML file per scope and prompt id, scope-chained resolution, slot bindings — including a slot bound to another prompt — and typed validation of JSON or free-text model output."
+          },
+          {
+            "comment": "`HorizontalComposer` merges several resolved prompts into one, with provenance ordering."
+          },
+          {
+            "comment": "Safety policies: length caps, pluggable screeners and an anti-jailbreak preface."
+          },
+          {
+            "comment": "Observation and caching: observers on every resolution, opt-in composition reports of what a prompt is made of, prompt-cache stability analysis, and `toCacheRequest` to place `@fgv/ts-extras` ai-assist cache breakpoints."
+          }
+        ]
+      }
+    }
+  ]
+}

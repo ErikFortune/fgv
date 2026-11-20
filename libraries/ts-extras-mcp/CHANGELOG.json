@@ -1,4 +1,23 @@
 {
   "name": "@fgv/ts-extras-mcp",
-  "entries": []
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-extras-mcp_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Initial release: a Result boundary over `@modelcontextprotocol/sdk` that connects to MCP servers and adapts their tools into `@fgv/ts-extras` ai-assist client tools for `executeClientToolTurn`."
+          },
+          {
+            "comment": "Stdio, HTTP and custom transports; `connectMcpSession`, `listMcpTools`, `callMcpTool` and `closeMcpSession` with timeouts, cancellation and a classified `McpFailureReason`."
+          },
+          {
+            "comment": "`adaptMcpTools` converts each tool's input schema through `JsonSchema.fromJson`, and reports every tool it cannot adapt instead of failing the whole list."
+          }
+        ]
+      }
+    }
+  ]
 }
