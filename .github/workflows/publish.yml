@@ -22,9 +22,11 @@ on:
 permissions:
   contents: read
 
-# Two dispatches on the same branch would race the same version; the second waits.
+# Stable and major publishes share one group whatever their branch: two publish/* runs at once
+# could both pass the guard against the same npm state and race. Alphas have their own group. A
+# second dispatch waits for the first.
 concurrency:
-  group: publish-${{ github.ref }}
+  group: ${{ inputs.release_type == 'alpha' && 'publish-alpha' || 'publish-stable' }}
   cancel-in-progress: false
 
 jobs:

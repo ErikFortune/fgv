@@ -11,14 +11,16 @@ trains, `publish/<version>` children). Three things were left over. The publish 
 the version policy *equal* the version being published, so every release needed a PR first that made
 `main`'s policy claim an unpublished version; the guard now takes the version from the branch name
 and requires it to be newer than the policy, which therefore stays honest. CI accepted any head into
-a train; a `release-source` job now fails a PR into `release/*` unless it comes from `main` or
-`publish/*` in this repository. And every instruction still said to branch from and PR to the deleted
+a train; a `release-source` check (its own workflow, re-run on retarget) now fails a PR into
+`release/*` unless it comes from `main` or `publish/<digit>…` in this repository. And every instruction still said to branch from and PR to the deleted
 `release` branch; they now say `main`, and the branch-model convention describes the real topology.
 
 ## What a reader should know
 
-- **`publish/<X.Y.Z>` is the version.** Strict `X.Y.Z`, newer than the train's policy, a major change
-  only to `<n+1>.0.0`, `HEAD` exactly `origin/release/<X>`. Proven for 5.2.0, 5.1.1 and 6.0.0 on a
+- **`publish/<X.Y.Z>` is the version.** Strict `X.Y.Z`, newer than the train's policy and not older
+  than the highest stable version on npm in its major (the policy lags npm until the publish PR
+  merges), a major change only to `<n+1>.0.0`, `HEAD` exactly `origin/release/<X>`. Stable runs are
+  serialized by one `publish-stable` concurrency group. Proven for 5.2.0, 5.1.1 and 6.0.0 on a
   scratch clone; seventeen refusal cases in `result.md`.
 - **Change-file `type` is not inert.** It picks the CHANGELOG heading (Breaking changes / Minor
   changes / Patches / Updates), as the 5.1.0 CHANGELOGs show; `ACTIVE_DEVELOPMENT.md` now says so.

@@ -19,8 +19,11 @@ summary:
     plain-X.Y.Z policy, a major change only to the next X.0.0, and HEAD equal to origin/release/<V's
     major>; every earlier guard, the npm rules, dist-tag, bump allowlist and tarball checks are
     unchanged. A scratch clone with a scratch origin proved 5.2.0, 5.1.1 and 6.0.0 from a 5.1.0
-    policy and seventeen refusals. ci.yml drops release, documents base_ref change-verify and adds
-    release-source (fails PRs into release/* unless the head is main or publish/* from this repo).
+    policy and seventeen refusals. ci.yml drops release and documents base_ref change-verify; a
+    separate release-source.yml workflow (also on edited, so retargeting re-runs it) fails PRs into
+    release/* unless the head is main or publish/<digit> from this repo. After an independent
+    security review the guard also requires V to be at least the highest stable npm version in its
+    major, and stable dispatches share one publish-stable concurrency group.
     The docs sweep covers the listed files plus the WORKSTREAMS preamble and CHORES triggers; the
     type section now cites the 5.1.0 CHANGELOGs. BASELINE pins d198bfda6 with the train, promotion
     and back-merge commits. Mid-flight: merged main's setup-node v7 pins, set package-manager-cache

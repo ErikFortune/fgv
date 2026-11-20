@@ -49,9 +49,12 @@ own prefix (`publish/*`), never `release/5/...`.
    the old version. The publish workflow opens this PR automatically.
 6. Bump `.ai/BASELINE.md` to the published commit and version.
 
-**Who may PR into a train.** CI's `release-source` job (in `ci.yml`) fails a PR into `release/*`
-unless its head is `main` (a promotion) or `publish/*` (a publish child) from this repository; on
-every other base it passes. Make it a required check on `release/*` (Erik, branch protection).
+**Who may PR into a train.** The `release-source` job of the **Release source** workflow
+(`.github/workflows/release-source.yml`; the required-check name is `release-source`) fails a PR into
+`release/*` unless its head is `main` (a promotion) or `publish/<digit>…` (a publish child) from
+this repository; on every other base it passes. It runs on `opened`, `synchronize`, `reopened` and
+`edited`, so retargeting a PR's base re-runs it. Make `release-source` a required check on
+`release/*` (Erik, branch protection).
 Once it is required, the publish PR the workflow opens with `GITHUB_TOKEN` gets no CI run on its
 own (see Phase 0); close and reopen it, or push to it, so the check reports.
 
@@ -82,14 +85,20 @@ Today the publish step is dispatched and then fixed up by hand — changelogs es
    - the branch name `publish/<V>` is the version: `V` must be a plain `X.Y.Z` (no prerelease, no
      leading zeros) and **newer** than the version the branch's policy names (the last one
      published); a change of major must be exactly `<policy major + 1>.0.0`;
+   - `V` must also be at least the highest **stable** version any `base-utils` package has on npm
+     in `V`'s major (in any major, for a `major`): the train's policy lags npm between a publish run
+     and its publish PR merging, so npm is the ledger. Equal is only ever a resume, bounded by the
+     tag rule below;
    - the `publish/*` branch must **equal** `origin/release/<n>` (not merely descend from it), where
      `<n>` is `V`'s major — a `publish/6.0.0` cut from `release/5` is refused;
    - not every package may already be at the version on npm — a run that stopped part-way can be
      finished, and the publish job skips what npm already has;
    - if the version is older than npm's `latest` (a maintenance train), the run publishes under the
      dist-tag `release-<n>` instead of `latest`, and says so in the summary.
-2. Verify change files, install, rebuild, run the tests (the stable path currently skips `rush test`),
-   verify tarball exports.
+   - stable and major dispatches share one concurrency group (`publish-stable`) whatever their
+     branch, so two `publish/*` runs never overlap; alphas use `publish-alpha`.
+2. Verify change files, install, rebuild, run the tests (`rush test` runs in the build job), verify
+   tarball exports.
 3. **Version and changelogs in-workflow:** `rush version --bump` (or `rush publish --apply`) so the
    version policy, every `package.json`, `CHANGELOG.json` and `CHANGELOG.md` are written by the run, and
    the consumed `common/changes/` files are deleted by it. Resolve first: `publish-release-impl.yml`
@@ -303,15 +312,16 @@ every `uses:` floats — `actions/checkout@v5`, `actions/setup-node@v5`, third-p
       `tree/main/...` (the router's `Repository:` line too).
 - [x] Integration branches (`integration/*`) re-base on `main` — documented. Rebasing the live
       `integration/*` branches themselves is their owners' job, when each next merges `main`.
-- [x] Drop `release` from `ci.yml`'s pull_request branches. Added the `release-source` job.
+- [x] Drop `release` from `ci.yml`'s pull_request branches. Added the **Release source** workflow
+      (`release-source.yml`, job `release-source`).
 - [ ] **Erik:** make `release-source` a required status check on `release/*`.
 
 ## Open questions
 
 1. `hotfix` in CI triggers is dropped above; hotfixes are PRs into `release/<n>`. Confirm.
 2. ~~Major releases: keep `--override-bump major`?~~ Resolved by the experiment: no. The `major`
-   dispatch runs the same workflow as `release`, requires the policy to say `<n>.0.0`, and
-   `release` refuses `<n>.0.0`.
+   dispatch runs the same workflow as `release` on a branch `publish/<n>.0.0` cut from
+   `release/<n>`, whose policy is still at `<n-1>.x.y`; `release` refuses `<n>.0.0`.
 
 ## Superseded
 

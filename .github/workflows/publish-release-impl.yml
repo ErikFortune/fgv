@@ -151,9 +151,12 @@ jobs:
           # already on npm must also have its <pkg>_v<VERSION> tag on origin. Anything else (all
           # published, or published by someone else) is refused.
           TOTAL=0; DONE=0; UNTAGGED=""
+          : > "$RUNNER_TEMP/npm-versions.jsonl"
           while read -r NAME; do
             TOTAL=$((TOTAL + 1))
             if OUT=$(npm view "$NAME" versions --json 2>&1); then
+              printf '%s\n' "$OUT" | tr -d '\n' >> "$RUNNER_TEMP/npm-versions.jsonl"
+              echo >> "$RUNNER_TEMP/npm-versions.jsonl"
               if OUT="$OUT" node -e 'process.exit([].concat(JSON.parse(process.env.OUT)).includes(process.argv[1]) ? 0 : 1)' "$VERSION"; then
                 DONE=$((DONE + 1))
                 git ls-remote --exit-code --tags origin "refs/tags/${NAME}_v$VERSION" >/dev/null || UNTAGGED="$UNTAGGED $NAME"
@@ -166,6 +169,33 @@ jobs:
           [ -z "$UNTAGGED" ] || fail "already on npm at $VERSION without a ${VERSION} tag on origin (not a resume of this workflow):$UNTAGGED"
           if [ "$DONE" -gt 0 ]; then
             echo "::warning title=Resuming a partial publish::$DONE of $TOTAL packages are already on npm at $VERSION and tagged; this run publishes the rest"
+          fi
+
+          # The policy on the train is the last version *merged* into it, which lags npm between a
+          # publish run and its publish PR merging. npm is the ledger: VERSION must be at least the
+          # highest stable version any base-utils package has on npm in VERSION's major (in any
+          # major, for a new major). Equal is a resume, which the checks above already bounded.
+          # shellcheck disable=SC2016 # single quotes: the argument is JavaScript, not shell
+          HIGHEST=$(node -e '
+            const fs = require("fs");
+            const [file, major, kind] = process.argv.slice(1);
+            const core = (v) => v.split(".").map(Number);
+            const cmp = (a, b) => { const [x, y] = [core(a), core(b)]; return x[0] - y[0] || x[1] - y[1] || x[2] - y[2]; };
+            const all = fs.readFileSync(file, "utf8").split("\n").filter(Boolean).flatMap((l) => [].concat(JSON.parse(l)));
+            const stable = all.filter((v) => /^\d+\.\d+\.\d+$/.test(v))
+              .filter((v) => kind === "major" || core(v)[0] === Number(major));
+            console.log(stable.sort(cmp).pop() ?? "");
+          ' "$RUNNER_TEMP/npm-versions.jsonl" "$MAJOR" "$RELEASE_KIND") \
+            || fail "could not read the stable versions on npm"
+          if [ -n "$HIGHEST" ]; then
+            # shellcheck disable=SC2016 # single quotes: the argument is JavaScript, not shell
+            BEHIND=$(node -e '
+              const core = (v) => v.split(".").map(Number);
+              const [a, b] = [core(process.argv[1]), core(process.argv[2])];
+              console.log((a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) < 0 ? "yes" : "no");
+            ' "$VERSION" "$HIGHEST")
+            [ "$BEHIND" = "no" ] \
+              || fail "publish/$VERSION is older than $HIGHEST, already on npm; the train's policy ($POLICY_VERSION) lags npm until a publish PR merges. Merge the open publish PR into release/$MAJOR and cut a newer publish/<version>"
           fi
 
           # A maintenance-train release older than npm's latest must not move `latest` backwards.

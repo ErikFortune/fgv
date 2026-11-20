@@ -13,41 +13,6 @@ permissions:
   contents: read
 
 jobs:
-  # A release train takes promotions from main and merges of a publish/<version> child, nothing
-  # else; a hotfix reaches a train through a publish child or a promotion. Make this a required
-  # check on release/*: on every other base it passes, so requiring it blocks nothing there.
-  release-source:
-    runs-on: ubuntu-latest
-    steps:
-      - name: A release train accepts only main or publish/*
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BASE_REF: ${{ github.base_ref }}
-          HEAD_REF: ${{ github.head_ref }}
-          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-        run: |
-          if [ "$EVENT_NAME" != "pull_request" ]; then
-            echo "Not a pull request; nothing to check."
-            exit 0
-          fi
-          case "$BASE_REF" in
-            release/*) ;;
-            *) echo "Base $BASE_REF is not a release train; nothing to check."; exit 0 ;;
-          esac
-          if [ "$HEAD_REPO" != "$GITHUB_REPOSITORY" ]; then
-            echo "::error title=Release train source::a PR into $BASE_REF must come from a branch of $GITHUB_REPOSITORY, not $HEAD_REPO"
-            exit 1
-          fi
-          case "$HEAD_REF" in
-            main | publish/*)
-              echo "PR into $BASE_REF from $HEAD_REF: allowed."
-              ;;
-            *)
-              echo "::error title=Release train source::a PR into $BASE_REF must come from main (a promotion) or publish/<version> (a publish child); this one comes from $HEAD_REF"
-              exit 1
-              ;;
-          esac
-
   build:
     runs-on: ubuntu-latest
     steps:

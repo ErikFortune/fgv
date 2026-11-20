@@ -57,7 +57,11 @@ CHANGELOG heading (table major/minor/patch/none → Breaking changes / Minor cha
 Updates), so a wrong `major` is a false "Breaking changes" heading in a shipped CHANGELOG. The
 "`major` means breaks code that shipped non-alpha" rule and its guidance stay.
 
-## 2. `ci.yml`
+## 2. `ci.yml` and the `release-source` check
+
+*Revised after the security review (below): the job moved out of `ci.yml` into its own workflow,
+`.github/workflows/release-source.yml`, and the publish head pattern narrowed to `publish/[0-9]*`.
+The first version is described here as it shipped in `b734cb7a6`.*
 
 - `pull_request.branches`: `['main', 'release/**', 'publish/**', 'prerelease', 'integration/**']`
   (`release` dropped).
@@ -238,3 +242,21 @@ proof.
   streams' `sourceLine`s.
 - **`publish.yml`**: its comments were already correct.
 - **The live `integration/*` branches**: not rebased (no pushes outside this branch).
+
+## Security review (2026-11-20, independent, on `b29128787`)
+
+No P1. Every finding fixed on this branch except the three noted as no-change.
+
+| finding | disposition | proved by |
+|---|---|---|
+| **P2-1** "V newer" trusted only the train's policy, which is stale between a publish run and its publish PR merging into `release/<major>`. In that window `publish/5.1.1` (or a second `publish/5.2.1`) cut from the train tip passed, could publish 5.1.1 after 5.2.0 carrying 5.2.0's features and re-render unconsumed change files, and could race: the `publish-${{ github.ref }}` group did not serialize different `publish/*` branches | **Fixed.** (a) The guard keeps every `npm view <pkg> versions --json` it already makes and requires `V` ≥ the highest **stable** (`X.Y.Z`, no prerelease) version of any `base-utils` package in `V`'s major — any major for a `major` dispatch. Equal is allowed only because the existing rules bound it: all-published is refused, partial is a resume only when every published package is tagged. Taking the maximum over every package rather than `ts-utils` alone also covers a partial run that stopped before `ts-utils`. (b) `publish.yml`'s concurrency group is `publish-stable` for `release`/`major` and `publish-alpha` for `alpha`, no longer per ref | Stubbed-npm guard runs on a fresh scratch clone (`release/5` = `19aa60ccf`, policy 5.1.0): npm 5.2.0 everywhere → `publish/5.1.1` **refused** (*older than 5.2.0, already on npm; the train's policy (5.1.0) lags npm…*), `publish/5.2.0` **refused** (all 33 already at 5.2.0, unchanged), `publish/5.2.1` and `publish/5.3.0` **pass**; only `ts-utils` at 5.2.0 → `publish/5.1.1` refused, `publish/5.2.0` refused untagged, passes as a tagged resume; a `5.3.0-4` prerelease on npm is ignored (`publish/5.2.0` passes); 6.0.0 on npm with 5.9.9 the highest 5.x → `publish/5.9.10` passes (maintenance train); `publish/6.0.0` major on `release/6` passes with npm max 5.1.0 and is refused when 6.1.0 is on npm. Earlier cases re-run: 5.1.1 passes; 5.1.0, 5.2.0-1, 6.0.0-on-`release/5`, 6.1.0 refused as before |
+| **P2-2** `release-source` could be bypassed by retargeting a PR's base: the default `pull_request` types exclude `edited`, so a PR opened against `main` (green) and retargeted to `release/5` kept its green check on the same SHA | **Fixed.** The job is now `.github/workflows/release-source.yml` (workflow **Release source**, job and check name `release-source`), on `pull_request` with `types: [opened, synchronize, reopened, edited]` only — never `pull_request_target` — with `permissions: {}`, no checkout, refs through `env:`. Removed from `ci.yml`. The checklist names the check exactly | Extracted script: `release/5` ← `main` / `publish/5.2.0` pass; ← `publish/foo`, `publish/`, `feature/x`, a fork's `main` fail; other bases pass |
+| **P3** narrow the publish head pattern | **Fixed**: `publish/[0-9]*` (a digit after `publish/`) | `publish/foo` and `publish/` refused above |
+| **P3** checklist open question 2 said `major` requires the policy to say `<n>.0.0` | **Fixed**: it requires the branch `publish/<n>.0.0`, cut from `release/<n>`, with the policy still at `<n-1>.x.y` | — |
+| **P3** checklist said the stable path "currently skips `rush test`" | **Fixed**: `rush test` runs in the build job | — |
+| removing the `NODE_AUTH_TOKEN` dummy | **No change.** It fails closed: an unset `${NODE_AUTH_TOKEN}` stays a literal, invalid token, so the worst case is an npm auth failure, not a use of some other credential | — |
+| `package-manager-cache: false` | **No change.** Defensive: no `packageManager` field exists today, so nothing was being cached; the setting keeps it that way if one is added | — |
+| dist-tag compares against `@fgv/ts-utils`'s `latest` only | **No change.** Under the lockstep policy every `base-utils` package shares one version, so `ts-utils` stands for all of them | — |
+
+actionlint 1.7.12 + ShellCheck 0.11.0 on all five workflows: no output, exit 0. Pin check: *All
+uses: references in 5 files are pinned to a commit SHA.*
