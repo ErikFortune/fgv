@@ -1,4 +1,20 @@
 {
   "name": "@fgv/ts-extras-system-one",
-  "entries": []
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-extras-system-one_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Initial release: a Result boundary over `@typesafe-ai/sdk` for System-1 decision servers (CLM, openjev, Jev), which answer typed yes/no, choice and score questions with a distribution over closed candidates. Node only."
+          },
+          {
+            "comment": "`askSystemOne` validates every answer and classifies failures; `measureSystemOneInput` enforces a mandatory input bound before a request is sent."
+          }
+        ]
+      }
+    }
+  ]
 }

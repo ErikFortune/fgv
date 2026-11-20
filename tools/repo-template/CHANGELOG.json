@@ -1,0 +1,17 @@
+{
+  "name": "@fgv/repo-template",
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/repo-template_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Initial release: the `repo-template` CLI for creating and maintaining Rush monorepos derived from this one — `create`, `sync`, `init-library`, `link` / `unlink` against a local checkout, `update-fgv-versions` and JSONC `patch`."
+          }
+        ]
+      }
+    }
+  ]
+}

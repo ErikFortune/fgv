@@ -2,6 +2,26 @@
   "name": "@fgv/ts-res-browser-cli",
   "entries": [
     {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-res-browser-cli_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Dependency update: `commander` ^11.1.0."
+          },
+          {
+            "comment": "Packaging: the MIT `LICENSE` file now ships in the package."
+          }
+        ],
+        "major": [
+          {
+            "comment": "Upgrading from 5.0.2: Node.js 22.22.0 or later is required (`engines.node` was `>=20.0.0`; Node 20 is no longer supported)."
+          }
+        ]
+      }
+    },
+    {
       "version": "5.0.2",
       "tag": "@fgv/ts-res-browser-cli_v5.0.2",
       "date": "Wed, 17 Dec 2025 18:08:09 GMT",

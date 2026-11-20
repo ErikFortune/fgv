@@ -1,0 +1,17 @@
+{
+  "name": "@fgv/ts-web-extras-argon2",
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-web-extras-argon2_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Initial release: `BrowserArgon2Provider`, a pure-WASM Argon2id provider (via `hash-wasm`) that runs the same in browsers and Node — pass it to `@fgv/ts-extras`' `KeyStore` Argon2id password methods."
+          }
+        ]
+      }
+    }
+  ]
+}

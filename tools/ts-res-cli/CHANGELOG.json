@@ -2,6 +2,24 @@
   "name": "@fgv/ts-res-cli",
   "entries": [
     {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-res-cli_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Fix: the `ts-res-compile` command runs on Linux and macOS; in 5.0.2 the script had Windows line endings, so its `#!/usr/bin/env node` line failed."
+          },
+          {
+            "comment": "Dependency update: `commander` ^11.1.0."
+          },
+          {
+            "comment": "Packaging: the MIT `LICENSE` file and source maps now ship in the package."
+          }
+        ]
+      }
+    },
+    {
       "version": "5.0.2",
       "tag": "@fgv/ts-res-cli_v5.0.2",
       "date": "Wed, 17 Dec 2025 18:08:09 GMT",
