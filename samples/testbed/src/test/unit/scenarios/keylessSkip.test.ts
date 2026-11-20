@@ -80,7 +80,8 @@ describe('keyless scenarios skip instead of failing', () => {
     delete process.env.EMBED_PROVIDER;
     try {
       const reason = await skipReasonOf(scenario, []);
-      expect(reason).toMatch(new RegExp(`^${key}.* not set; set it to run `));
+      expect(reason?.startsWith(key)).toBe(true);
+      expect(reason).toContain(' not set; set it to run ');
       expect(reason).toMatch(purpose);
       expect(await skipReasonOf(scenario, [key])).toBeUndefined();
     } finally {

@@ -201,12 +201,15 @@ async function runAllScenarios(
     }
     streams.stdout.write(`=== ${scenario.id}\n`);
     const result = await runScenarioCli(scenario.cli, streams);
-    if (result.isSuccess() && result.value.kind === 'skipped') {
-      streams.stdout.write(`skipped — ${result.value.reason}\n`);
-      outcomes.push({ id: scenario.id, kind: 'skipped', reason: result.value.reason });
-    } else if (result.isSuccess()) {
-      streams.stdout.write(`${result.value.report}\n`);
-      outcomes.push({ id: scenario.id, kind: 'passed' });
+    if (result.isSuccess()) {
+      const outcome = result.value;
+      if (outcome.kind === 'skipped') {
+        streams.stdout.write(`skipped — ${outcome.reason}\n`);
+        outcomes.push({ id: scenario.id, kind: 'skipped', reason: outcome.reason });
+      } else {
+        streams.stdout.write(`${outcome.report}\n`);
+        outcomes.push({ id: scenario.id, kind: 'passed' });
+      }
     } else {
       streams.stdout.write(`FAILED: ${result.message}\n`);
       outcomes.push({ id: scenario.id, kind: 'failed', message: result.message });
