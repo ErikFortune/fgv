@@ -1,0 +1,15 @@
+id: agent-memory-index-injection-seam
+status: shipped
+packages: ['@fgv/ts-agent-memory']
+prs: [582]
+closed: 2026-07-31
+summary:
+  intended: >
+    Let a consumer inject the derived record index into the store so index behaviour could be observed and instrumented.
+  shipped: >
+    One additive optional `index?: IMemoryIndex` param on the public store factory; omitting it is byte-identical to before.
+  diverged: >
+    The seam was later found NOT to be the resident-memory fix it was read as — the ceiling was in the read contract, which returned whole records by construction. That was corrected by `agent-memory-index-partial-read`.
+  sourceLine: '## What shipped One additive optional param on the public store factory:'
+keywords: ['injection seam', 'derived index', 'instrumentation', 'resident memory', 'superseded premise']
+sourceHash: f3286aa01ef36862

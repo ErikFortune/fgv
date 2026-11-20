@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2022 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+// The node-only IANA surface: everything the shared `./index` barrel exports, plus the filesystem
+// loader. `src/index.ts` — the entry the `node` condition resolves — is the only *shipped* importer;
+// the filesystem-loader unit tests import it directly as well, since the surface they exercise is
+// deliberately absent from the shared barrel. Nothing reachable from `src/index.browser.ts` may
+// import this file.
+//
+// The export list is spelled out rather than re-exported from `./index` because a packlet file may
+// not import its own index. That mirrors `./index.browser`, which spells out the same list minus
+// the node-only pieces; the three barrels are meant to be read side by side.
+
+import { nowAsYearMonthDay } from './common/utils';
+import * as Converters from './converters';
+import * as Jar from './jar';
+import * as LanguageSubtags from './language-subtags';
+import * as LanguageTagExtensions from './language-tag-extensions';
+import * as Model from './model';
+import * as Validate from './validate';
+
+export { DefaultRegistries } from './defaultRegistries';
+export * from './languageRegistries';
+export * from './languageRegistriesLoader';
+export * from './languageRegistriesFileLoader';
+export { Converters, Jar, Model, LanguageSubtags, LanguageTagExtensions, Validate, nowAsYearMonthDay };

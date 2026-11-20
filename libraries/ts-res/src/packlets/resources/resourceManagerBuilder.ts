@@ -201,7 +201,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
   }
 
   /**
-   * {@inheritdoc Runtime.IResourceManager.numResources}
+   * {@inheritDoc Runtime.IResourceManager.numResources}
    */
   public get numResources(): number {
     return this._resources.size;
@@ -213,7 +213,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
   protected _numCandidates?: number;
 
   /**
-   * {@inheritdoc Runtime.IResourceManager.numCandidates}
+   * {@inheritDoc Runtime.IResourceManager.numCandidates}
    */
   public get numCandidates(): number {
     if (this._numCandidates === undefined) {
@@ -223,7 +223,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
   }
 
   /**
-   * {@inheritdoc Runtime.IResourceManager.builtResources}
+   * {@inheritDoc Runtime.IResourceManager.builtResources}
    */
   public get builtResources(): Collections.IReadOnlyValidatingResultMap<ResourceId, Resource> {
     return this._performBuild().orThrow();
@@ -326,7 +326,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
   /**
    * Given a {@link ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration}, builds and adds
    * a {@link Resources.ResourceCandidate | candidate} to the manager.
-   * @param candidate - The {@link Resources.ResourceCandidate | candidate} to add.
+   * @param decl - The {@link ResourceJson.Json.ILooseResourceCandidateDecl | loose resource candidate declaration} to add.
    * @returns `Success` with the candidate if successful, or `Failure` with an error message if not.
    * @public
    */
@@ -425,7 +425,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
 
   /**
    * Adds a condition set to the manager.
-   * @param decl - The condition set declaration to add.
+   * @param conditions - The {@link ResourceJson.Normalized.ConditionSetDecl | condition set declaration} to add.
    * @returns `Success` with the condition set if successful, or `Failure` with an error message if not.
    * @public
    */

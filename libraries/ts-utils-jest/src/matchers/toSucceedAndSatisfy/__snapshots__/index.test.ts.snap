@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`.toSucceedAndSatisfy reports details when callback fails an expectation: toFailTestAndMatchSnapshot 1`] = `
 "expect(received).toBe(expected) // Object.is equality

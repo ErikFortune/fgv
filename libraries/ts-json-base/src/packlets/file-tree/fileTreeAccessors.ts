@@ -20,9 +20,55 @@
  * SOFTWARE.
  */
 
-import { Result } from '@fgv/ts-utils';
+import { DetailedResult, Result } from '@fgv/ts-utils';
 import { Converter, Validator } from '@fgv/ts-utils';
 import { JsonValue } from '../json';
+
+/**
+ * Indicates the persistence capability of a save operation.
+ * - `persistent`: Changes are saved to durable storage (e.g., file system).
+ * - `transient`: Changes are saved in memory only and will be lost on reload.
+ * @public
+ */
+export type SaveCapability = 'persistent' | 'transient';
+
+/**
+ * Indicates the reason a save operation cannot be performed.
+ * - `not-supported`: The accessors do not support mutation.
+ * - `read-only`: The file or file system is read-only.
+ * - `not-mutable`: Mutability is disabled in configuration.
+ * - `path-excluded`: The path is excluded by the mutability filter.
+ * - `permission-denied`: Insufficient permissions to write.
+ * @public
+ */
+export type SaveFailureReason =
+  | 'not-supported'
+  | 'read-only'
+  | 'not-mutable'
+  | 'path-excluded'
+  | 'permission-denied';
+
+/**
+ * Detail type for getIsMutable results.
+ * @public
+ */
+export type SaveDetail = SaveCapability | SaveFailureReason;
+
+/**
+ * Filter specification for controlling which paths are mutable.
+ * @public
+ */
+export interface IFilterSpec {
+  /**
+   * Paths or patterns to include. If specified, only matching paths are mutable.
+   */
+  include?: (string | RegExp)[];
+
+  /**
+   * Paths or patterns to exclude. Matching paths are not mutable.
+   */
+  exclude?: (string | RegExp)[];
+}
 
 /**
  * Type of item in a file tree.
@@ -46,10 +92,34 @@ export type ContentTypeFactory<TCT extends string = string> = (
 export interface IFileTreeInitParams<TCT extends string = string> {
   prefix?: string;
   inferContentType?: ContentTypeFactory<TCT>;
+
+  /**
+   * Controls mutability of the file tree.
+   * - `undefined` or `false`: No files are mutable.
+   * - `true`: All files are mutable.
+   * - `IFilterSpec`: Only files matching the filter are mutable.
+   */
+  mutable?: boolean | IFilterSpec;
 }
 
 /**
- * Interface for a file in a file tree.
+ * Options for deleting a child item from a directory.
+ * @public
+ */
+export interface IDeleteChildOptions {
+  /**
+   * If true, recursively delete directory children and their contents.
+   * Default: false (fail if directory is non-empty).
+   */
+  recursive?: boolean;
+}
+
+// ============================================================================
+// File Item Interfaces
+// ============================================================================
+
+/**
+ * Interface for a read-only file in a file tree.
  * @public
  */
 export interface IFileTreeFileItem<TCT extends string = string> {
@@ -101,6 +171,20 @@ export interface IFileTreeFileItem<TCT extends string = string> {
 
   /**
    * Gets the raw contents of the file as a string.
+   *
+   * @remarks
+   * The bytes are decoded as UTF-8 with the *lenient* WHATWG default, so malformed
+   * input is silently replaced with U+FFFD rather than reported. Accessors whose
+   * backing store is byte-native also implement
+   * {@link FileTree.IBinaryFileTreeFileItem | IBinaryFileTreeFileItem}; narrow with
+   * {@link FileTree.isBinaryFileItem | isBinaryFileItem} and call
+   * {@link FileTree.IBinaryFileTreeFileItem.getRawBytes | getRawBytes} to read the
+   * undecoded bytes — for a strict decode that fails loudly on malformed UTF-8:
+   *
+   * ```ts
+   * new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+   * ```
+   *
    * @returns `Success` with the raw contents if successful, or
    * `Failure` with an error message otherwise.
    */
@@ -108,7 +192,143 @@ export interface IFileTreeFileItem<TCT extends string = string> {
 }
 
 /**
- * Interface for a directory in a file tree.
+ * Extended file item interface for files whose text can be decoded **strictly**.
+ *
+ * @remarks
+ * An *optional capability*, mirroring
+ * {@link FileTree.IBinaryFileTreeFileItem | IBinaryFileTreeFileItem}: narrow with
+ * {@link FileTree.isStrictTextFileItem | isStrictTextFileItem}.
+ *
+ * As with the binary guards, **the file-item guard narrows the type only and is
+ * not a success guarantee** — {@link FileTree.FileItem | FileItem} implements
+ * this unconditionally and delegates, reporting a store that cannot honour it as
+ * a `Failure` rather than omitting the method. Use
+ * {@link FileTree.isStrictTextAccessors | isStrictTextAccessors} when the check
+ * itself must guarantee success.
+ * @public
+ */
+export interface IStrictTextFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
+  /**
+   * Gets the file's contents with a strict UTF-8 decode, failing on malformed
+   * input rather than substituting U+FFFD.
+   */
+  getTextStrict(): Result<string>;
+}
+
+/**
+ * Extended file item interface for files whose contents can be read as raw bytes.
+ *
+ * @remarks
+ * This is an *optional capability* — it is deliberately not part of
+ * {@link FileTree.IFileTreeFileItem}. Use
+ * {@link FileTree.isBinaryFileItem | isBinaryFileItem} to narrow.
+ *
+ * **The file-item guard narrows the type; it does not promise the call succeeds.**
+ * {@link FileTree.FileItem} — the generic wrapper backing every adapter except zip —
+ * implements this interface unconditionally and delegates to its accessors, reporting
+ * an accessor that lacks the capability as a `Failure` rather than by omitting the
+ * method. So `isBinaryFileItem` is `true` for any `FileItem` regardless of what backs
+ * it. That mirrors the pre-existing `setRawContents` / `getIsMutable` shape on
+ * {@link FileTree.IMutableFileTreeFileItem} rather than introducing a new convention.
+ * For a capability check that *is* a success guarantee, narrow the **accessors** with
+ * {@link FileTree.isBinaryAccessors | isBinaryAccessors} instead; either way, handle
+ * the returned `Result`.
+ * @public
+ */
+export interface IBinaryFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
+  /**
+   * Gets the raw contents of the file as bytes, with no text decoding applied.
+   *
+   * @remarks
+   * The returned array must be treated as read-only — implementations are free to
+   * return their internal buffer rather than a copy.
+   *
+   * @returns `Success` with the raw bytes if successful, or `Failure` with an
+   * error message otherwise.
+   */
+  getRawBytes(): Result<Uint8Array>;
+}
+
+/**
+ * Extended file item interface that supports mutation operations.
+ * Use {@link FileTree.isMutableFileItem | isMutableFileItem} type guard to narrow.
+ * @public
+ */
+export interface IMutableFileTreeFileItem<TCT extends string = string> extends IFileTreeFileItem<TCT> {
+  /**
+   * Indicates whether this file can be saved.
+   * @returns `DetailedSuccess` with {@link FileTree.SaveCapability} if the file can be saved,
+   * or `DetailedFailure` with {@link FileTree.SaveFailureReason} if it cannot.
+   */
+  getIsMutable(): DetailedResult<boolean, SaveDetail>;
+
+  /**
+   * Sets the contents of the file from a JSON value.
+   * @param json - The JSON value to serialize and save.
+   * @returns `Success` if the file was saved, or `Failure` with an error message.
+   */
+  setContents(json: JsonValue): Result<JsonValue>;
+
+  /**
+   * Sets the raw contents of the file.
+   *
+   * @remarks
+   * The string is encoded as UTF-8. To write bytes that are not valid UTF-8, narrow
+   * with {@link FileTree.isMutableBinaryFileItem | isMutableBinaryFileItem} and use
+   * {@link FileTree.IMutableBinaryFileTreeFileItem.setRawBytes | setRawBytes} instead.
+   *
+   * @param contents - The string contents to save.
+   * @returns `Success` if the file was saved, or `Failure` with an error message.
+   */
+  setRawContents(contents: string): Result<string>;
+
+  /**
+   * Deletes this file from its backing store.
+   * @returns `Success` with `true` if the file was deleted, or `Failure` with an error message.
+   */
+  delete(): Result<boolean>;
+}
+
+/**
+ * Extended file item interface for files whose contents can be both read and written
+ * as raw bytes.
+ *
+ * @remarks
+ * This is an *optional capability* — use
+ * {@link FileTree.isMutableBinaryFileItem | isMutableBinaryFileItem} to narrow.
+ *
+ * **At the accessors level**, only backing stores that persist bytes verbatim
+ * implement the mutable half; stores that persist text (in-memory, `localStorage`,
+ * HTTP JSON transport) implement only the read-only
+ * {@link FileTree.IBinaryFileTreeAccessors}, because a byte write could not
+ * round-trip.
+ *
+ * **At the file-item level that distinction is not visible to the guard.**
+ * {@link FileTree.FileItem} implements this interface unconditionally and delegates to
+ * its accessors, so `isMutableBinaryFileItem` is `true` for any `FileItem` — including
+ * one backed by a text-persisting store, whose `setRawBytes` then returns a `Failure`.
+ * Narrow the **accessors** with
+ * {@link FileTree.isMutableBinaryAccessors | isMutableBinaryAccessors} when you need
+ * the capability check to be a success guarantee.
+ * @public
+ */
+export interface IMutableBinaryFileTreeFileItem<TCT extends string = string>
+  extends IBinaryFileTreeFileItem<TCT>,
+    IMutableFileTreeFileItem<TCT> {
+  /**
+   * Sets the raw contents of the file from bytes, with no text encoding applied.
+   * @param bytes - The bytes to save.
+   * @returns `Success` with the bytes that were saved, or `Failure` with an error message.
+   */
+  setRawBytes(bytes: Uint8Array): Result<Uint8Array>;
+}
+
+// ============================================================================
+// Directory Item Interfaces
+// ============================================================================
+
+/**
+ * Interface for a read-only directory in a file tree.
  * @public
  */
 export interface IFileTreeDirectoryItem<TCT extends string = string> {
@@ -133,13 +353,192 @@ export interface IFileTreeDirectoryItem<TCT extends string = string> {
    * or `Failure` with an error message otherwise.
    */
   getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>>;
+
+  /**
+   * Says what storage this directory names, so a consumer can tell whether two
+   * directory items reach the same place. Optional: an item that cannot say
+   * leaves it absent. See {@link FileTree.IFileTreeStorageIdentity}.
+   */
+  getStorageIdentity?(): IFileTreeStorageIdentity<TCT>;
 }
+
+/**
+ * What storage a {@link FileTree.IFileTreeDirectoryItem | directory item} names.
+ *
+ * @remarks
+ * Two items name the same directory when they share `accessors` and `path`, or
+ * when both carry a `realPath` and those are equal. Nothing else is detectable:
+ * two separate accessor objects over one non-filesystem backing store (two
+ * `localStorage` accessors over the same key, say) carry no `realPath` and look
+ * like different storage.
+ * @public
+ */
+export interface IFileTreeStorageIdentity<TCT extends string = string> {
+  /** The accessors object that serves the item. */
+  readonly accessors: IFileTreeAccessors<TCT>;
+
+  /** The item's absolute path, as its accessors resolve it. */
+  readonly path: string;
+
+  /**
+   * For a filesystem-backed item, its canonical path with every symbolic link
+   * resolved. Absent for storage that has no such notion, or when the path
+   * cannot be resolved (it does not exist).
+   */
+  readonly realPath?: string;
+}
+
+/**
+ * Extended directory item interface that supports mutation operations.
+ * Use {@link FileTree.isMutableDirectoryItem | isMutableDirectoryItem} type guard to narrow.
+ * @public
+ */
+export interface IMutableFileTreeDirectoryItem<TCT extends string = string>
+  extends IFileTreeDirectoryItem<TCT> {
+  /**
+   * Creates a new file as a child of this directory.
+   * @param name - The file name to create.
+   * @param contents - The string contents to write.
+   * @returns `Success` with the new file item, or `Failure` with an error message.
+   */
+  createChildFile(name: string, contents: string): Result<IMutableFileTreeFileItem<TCT>>;
+
+  /**
+   * Creates a new subdirectory as a child of this directory.
+   * @param name - The directory name to create.
+   * @returns `Success` with the new directory item, or `Failure` with an error message.
+   */
+  createChildDirectory(name: string): Result<IMutableFileTreeDirectoryItem<TCT>>;
+
+  /**
+   * Deletes a child item from this directory.
+   * @param name - The name of the child to delete.
+   * @param options - Optional {@link FileTree.IDeleteChildOptions | options} controlling deletion behavior.
+   * @returns `Success` with `true` if the child was deleted, or `Failure` with an error message.
+   */
+  deleteChild(name: string, options?: IDeleteChildOptions): Result<boolean>;
+
+  /**
+   * Deletes this directory from its backing store.
+   * The directory must be empty or the operation will fail.
+   * @returns `Success` with `true` if the directory was deleted, or `Failure` with an error message.
+   */
+  delete(): Result<boolean>;
+}
+
+/**
+ * Extended directory item interface for directories that can create a child file
+ * directly from raw bytes.
+ *
+ * @remarks
+ * This is an *optional capability* — use
+ * {@link FileTree.isMutableBinaryDirectoryItem | isMutableBinaryDirectoryItem} to narrow.
+ * It exists because
+ * {@link FileTree.IMutableFileTreeDirectoryItem.createChildFile | createChildFile} is
+ * string-only: without it, writing a byte-native file into a directory means creating a
+ * placeholder and then calling
+ * {@link FileTree.IMutableBinaryFileTreeFileItem.setRawBytes | setRawBytes}, which leaves
+ * an empty file behind when the byte write turns out not to be supported.
+ *
+ * **As with the other item-level guards, `isMutableBinaryDirectoryItem` narrows the type
+ * and is not a success guarantee** — {@link FileTree.DirectoryItem} implements this
+ * interface unconditionally and delegates to its accessors. Unlike the file-item case,
+ * however, the answer *is* reachable from the item: call
+ * {@link FileTree.IMutableBinaryFileTreeDirectoryItem.canCreateChildFileBytes | canCreateChildFileBytes},
+ * which reports what the backing store will actually do. That mirrors
+ * {@link FileTree.IMutableFileTreeFileItem.getIsMutable | getIsMutable}, which exists for
+ * the same reason.
+ * @public
+ */
+export interface IMutableBinaryFileTreeDirectoryItem<TCT extends string = string>
+  extends IMutableFileTreeDirectoryItem<TCT> {
+  /**
+   * Reports whether the backing store can persist bytes verbatim.
+   *
+   * @remarks
+   * Total and synchronous, and **this one is a success guarantee in the direction that
+   * matters**: it answers from the accessors, which the item's own guard cannot see.
+   * `false` means
+   * {@link FileTree.IMutableBinaryFileTreeDirectoryItem.createChildFileBytes | createChildFileBytes}
+   * will fail for every name, because the store persists text and a byte write could not
+   * round-trip.
+   *
+   * **It reports the store's mechanism, not its current mutability policy** — the same
+   * axis {@link FileTree.isMutableAccessors | isMutableAccessors} reports, and for the same
+   * reason. A byte-persisting store with mutation switched off still answers `true`, and
+   * the write then fails with the real reason. That is deliberate: answering `false` there
+   * would send a caller down a text path to be refused for a *different* reason, which is
+   * a worse diagnosis than the true one. Ask
+   * {@link FileTree.IMutableFileTreeFileItem.getIsMutable | getIsMutable} for the policy.
+   *
+   * @returns `true` if the backing store persists bytes verbatim.
+   */
+  canCreateChildFileBytes(): boolean;
+
+  /**
+   * Creates a new file as a child of this directory from raw bytes, with no text
+   * encoding applied.
+   *
+   * @remarks
+   * Nothing is written when the capability is absent — the check happens before the
+   * create, so a failure leaves no placeholder behind.
+   *
+   * @param name - The file name to create.
+   * @param bytes - The bytes to write.
+   * @returns `Success` with the new file item, or `Failure` with an error message.
+   */
+  createChildFileBytes(name: string, bytes: Uint8Array): Result<IMutableFileTreeFileItem<TCT>>;
+}
+
+// ============================================================================
+// Union Types
+// ============================================================================
 
 /**
  * Type for an item in a file tree.
  * @public
  */
 export type FileTreeItem<TCT extends string = string> = IFileTreeFileItem<TCT> | IFileTreeDirectoryItem<TCT>;
+
+/**
+ * Type for a mutable item in a file tree.
+ * @public
+ */
+export type MutableFileTreeItem<TCT extends string = string> =
+  | IMutableFileTreeFileItem<TCT>
+  | IMutableFileTreeDirectoryItem<TCT>;
+
+/**
+ * A file item that may or may not be mutable at runtime.
+ *
+ * Use this type for parameters or fields where the code checks for mutability
+ * and handles the read-only case gracefully. Use {@link FileTree.IMutableFileTreeFileItem}
+ * when mutation is required.
+ *
+ * Narrow with {@link FileTree.isMutableFileItem} to access mutation methods.
+ * @public
+ */
+export type AnyFileTreeFileItem<TCT extends string = string> =
+  | IFileTreeFileItem<TCT>
+  | IMutableFileTreeFileItem<TCT>;
+
+/**
+ * A directory item that may or may not be mutable at runtime.
+ *
+ * Use this type for parameters or fields where the code checks for mutability
+ * and handles the read-only case gracefully. Use {@link FileTree.IMutableFileTreeDirectoryItem}
+ * when mutation is required.
+ *
+ * Narrow with {@link FileTree.isMutableDirectoryItem} to access mutation methods.
+ * @public
+ */
+export type AnyFileTreeDirectoryItem<TCT extends string = string> =
+  | IFileTreeDirectoryItem<TCT>
+  | IMutableFileTreeDirectoryItem<TCT>;
+
+// ============================================================================
+// Accessor Interfaces
+// ============================================================================
 
 /**
  * Common abstraction layer interface for a tree of files
@@ -153,6 +552,16 @@ export interface IFileTreeAccessors<TCT extends string = string> {
    * @returns The resolved absolute path.
    */
   resolveAbsolutePath(...paths: string[]): string;
+
+  /**
+   * Resolves a path to its canonical real path, with every symbolic link
+   * resolved. Optional: only storage that has symbolic links (a filesystem)
+   * implements it.
+   * @param path - The path to resolve.
+   * @returns `Success` with the real path, or `Failure` if it cannot be
+   * resolved (for example, it does not exist).
+   */
+  resolveRealPath?(path: string): Result<string>;
 
   /**
    * Gets the extension of a path.
@@ -185,6 +594,20 @@ export interface IFileTreeAccessors<TCT extends string = string> {
 
   /**
    * Gets the contents of a file in the file tree.
+   *
+   * @remarks
+   * The bytes are decoded as UTF-8 with the *lenient* WHATWG default, so malformed
+   * input is silently replaced with U+FFFD rather than reported. Accessors whose
+   * backing store is byte-native also implement
+   * {@link FileTree.IBinaryFileTreeAccessors | IBinaryFileTreeAccessors}; narrow with
+   * {@link FileTree.isBinaryAccessors | isBinaryAccessors} and call
+   * {@link FileTree.IBinaryFileTreeAccessors.getFileBytes | getFileBytes} to read the
+   * undecoded bytes — for a strict decode that fails loudly on malformed UTF-8:
+   *
+   * ```ts
+   * new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+   * ```
+   *
    * @param path - Absolute path of the file.
    * @returns The contents of the file.
    */
@@ -204,4 +627,703 @@ export interface IFileTreeAccessors<TCT extends string = string> {
    * @returns The children of the directory.
    */
   getChildren(path: string): Result<ReadonlyArray<FileTreeItem<TCT>>>;
+}
+
+/**
+ * Extended accessors interface that supports mutation operations.
+ * All mutation methods are required — use {@link FileTree.isMutableAccessors | isMutableAccessors}
+ * type guard to check if an accessor supports mutation.
+ * @public
+ */
+export interface IMutableFileTreeAccessors<TCT extends string = string> extends IFileTreeAccessors<TCT> {
+  /**
+   * Checks if a file at the given path can be saved.
+   * @param path - The path to check.
+   * @returns `DetailedSuccess` with {@link FileTree.SaveCapability} if the file can be saved,
+   * or `DetailedFailure` with {@link FileTree.SaveFailureReason} if it cannot.
+   */
+  fileIsMutable(path: string): DetailedResult<boolean, SaveDetail>;
+
+  /**
+   * Saves the contents to a file at the given path.
+   *
+   * @remarks
+   * The string is encoded as UTF-8. To write bytes that are not valid UTF-8, narrow
+   * with {@link FileTree.isMutableBinaryAccessors | isMutableBinaryAccessors} and use
+   * {@link FileTree.IMutableBinaryFileTreeAccessors.saveFileBytes | saveFileBytes} instead.
+   *
+   * @param path - The path of the file to save.
+   * @param contents - The string contents to save.
+   * @returns `Success` if the file was saved, or `Failure` with an error message.
+   */
+  saveFileContents(path: string, contents: string): Result<string>;
+
+  /**
+   * Deletes a file at the given path.
+   * @param path - The path of the file to delete.
+   * @returns `Success` with `true` if the file was deleted, or `Failure` with an error message.
+   */
+  deleteFile(path: string): Result<boolean>;
+
+  /**
+   * Creates a directory at the given path, including any missing parent directories.
+   * @param path - The path of the directory to create.
+   * @returns `Success` with the absolute path if created, or `Failure` with an error message.
+   */
+  createDirectory(path: string): Result<string>;
+
+  /**
+   * Deletes a directory at the given path.
+   * The directory must be empty or the operation will fail.
+   * @param path - The path of the directory to delete.
+   * @returns `Success` with `true` if the directory was deleted, or `Failure` with an error message.
+   */
+  deleteDirectory(path: string): Result<boolean>;
+}
+
+/**
+ * Extended accessors interface for trees whose file contents can be read as raw bytes.
+ *
+ * @remarks
+ * This is an *optional capability* — it is deliberately not part of
+ * {@link FileTree.IFileTreeAccessors}, so implementations with no byte-native backing
+ * store simply do not implement it and existing implementations are unaffected. Use
+ * {@link FileTree.isBinaryAccessors | isBinaryAccessors} to narrow.
+ * @public
+ */
+export interface IBinaryFileTreeAccessors<TCT extends string = string> extends IFileTreeAccessors<TCT> {
+  /**
+   * Gets the contents of a file in the file tree as bytes, with no text decoding applied.
+   *
+   * @remarks
+   * The returned array must be treated as read-only — implementations are free to
+   * return their internal buffer rather than a copy.
+   *
+   * @param path - Absolute path of the file.
+   * @returns `Success` with the raw bytes of the file, or `Failure` with an error message.
+   */
+  getFileBytes(path: string): Result<Uint8Array>;
+}
+
+/**
+ * Extended accessors interface for trees whose file contents can be both read and
+ * written as raw bytes.
+ *
+ * @remarks
+ * This is an *optional capability* — use
+ * {@link FileTree.isMutableBinaryAccessors | isMutableBinaryAccessors} to narrow. Only
+ * backing stores that persist bytes verbatim implement it; stores that persist text
+ * (in-memory, `localStorage`, HTTP JSON transport) implement the read-only
+ * {@link FileTree.IBinaryFileTreeAccessors} instead, because a byte write could not
+ * round-trip.
+ * @public
+ */
+export interface IMutableBinaryFileTreeAccessors<TCT extends string = string>
+  extends IBinaryFileTreeAccessors<TCT>,
+    IMutableFileTreeAccessors<TCT> {
+  /**
+   * Saves bytes to a file at the given path, with no text encoding applied.
+   * @param path - The path of the file to save.
+   * @param bytes - The bytes to save.
+   * @returns `Success` with the bytes that were saved, or `Failure` with an error message.
+   */
+  saveFileBytes(path: string, bytes: Uint8Array): Result<Uint8Array>;
+}
+
+/**
+ * Extended accessors interface that supports persistence operations.
+ * @public
+ */
+export interface IPersistentFileTreeAccessors<TCT extends string = string>
+  extends IMutableFileTreeAccessors<TCT> {
+  /**
+   * Synchronize all dirty files to persistent storage.
+   * @returns Promise resolving to success or failure
+   */
+  syncToDisk(): Promise<Result<void>>;
+
+  /**
+   * Check if there are unsaved changes.
+   * @returns True if there are dirty files
+   */
+  isDirty(): boolean;
+
+  /**
+   * Get paths of all files with unsaved changes.
+   * @returns Array of dirty file paths
+   */
+  getDirtyPaths(): string[];
+}
+
+// ============================================================================
+// Atomic Write Types
+// ============================================================================
+
+/**
+ * Every {@link FileTree.AtomicWriteGuarantee | atomic write guarantee}, ordered
+ * weakest to strongest, so a consumer can rank one against another.
+ * @public
+ */
+export const atomicWriteGuarantees = ['session', 'process-crash', 'os-crash', 'power-loss'] as const;
+
+/**
+ * Durability guarantee an atomic write claims to honor.
+ *
+ * @remarks
+ * Ordered weakest to strongest. `'session'` means only that a reader never
+ * observes a torn write while the writing process is alive — nothing survives
+ * a crash. `'process-crash'` additionally survives abrupt termination of the
+ * writing process while the OS/filesystem keeps running. `'os-crash'` and
+ * `'power-loss'` are stronger claims that no accessor in this package makes
+ * yet; they are reserved for a future qualified implementation and requesting
+ * either today fails rather than silently downgrading.
+ * @public
+ */
+export type AtomicWriteGuarantee = (typeof atomicWriteGuarantees)[number];
+
+/**
+ * Reports what atomic replacement a directory's backing store can actually
+ * offer.
+ *
+ * @remarks
+ * This is an inquiry, not a capability guard: a store that cannot atomically
+ * replace anything still answers `Success` with `atomicReplace: false` and an
+ * empty `guarantees` list, rather than `Failure` — the guard
+ * ({@link FileTree.isAtomicAccessors | isAtomicAccessors} /
+ * {@link FileTree.isAtomicDirectoryItem | isAtomicDirectoryItem}) answers
+ * *method presence*; this answers *what a write would actually achieve*, the
+ * same relationship {@link FileTree.IMutableFileTreeFileItem.getIsMutable |
+ * getIsMutable} has to {@link FileTree.isMutableFileItem | isMutableFileItem}.
+ * @public
+ */
+export interface IAtomicWriteCapabilities {
+  /**
+   * `true` if this store can replace a file such that a reader never observes
+   * a torn write.
+   */
+  readonly atomicReplace: boolean;
+
+  /**
+   * The durability guarantees this store can honor for an atomic write,
+   * weakest to strongest. Empty when `atomicReplace` is `false`.
+   */
+  readonly guarantees: ReadonlyArray<AtomicWriteGuarantee>;
+
+  /**
+   * Why the store answered as it did, in a form that can be shown to a caller
+   * whose durable write would be refused — for a capable store as well as an
+   * incapable one. Optional: a store that cannot say leaves it absent.
+   */
+  readonly reason?: string;
+}
+
+/**
+ * Options controlling an atomic write.
+ * @public
+ */
+export interface IAtomicWriteOptions {
+  /**
+   * The durability guarantee the caller requires. A guarantee stronger than
+   * the store can honor fails before any mutation — there is no silent
+   * downgrade to a weaker guarantee than requested.
+   */
+  readonly guarantee: AtomicWriteGuarantee;
+}
+
+/**
+ * Receipt returned by a successful atomic write.
+ * @public
+ */
+export interface IAtomicWriteReceipt {
+  /**
+   * The guarantee actually honored. Always equal to the guarantee requested
+   * in {@link FileTree.IAtomicWriteOptions.guarantee} — a weaker receipt is
+   * never substituted for a stronger request.
+   */
+  readonly guarantee: AtomicWriteGuarantee;
+
+  /**
+   * `true` if this write replaced an existing file; `false` if it created a
+   * new one.
+   */
+  readonly replaced: boolean;
+}
+
+/**
+ * Classified detail for a failed atomic write.
+ *
+ * @remarks
+ * Separates *why* the write failed from *what a reader can now see*, because
+ * those are independent questions once a write protocol has multiple stages.
+ * A failure at `'replace'` or later may have already changed what is durably
+ * visible; a failure at `'validate'` never has.
+ * @public
+ */
+export interface IAtomicWriteFailure {
+  /**
+   * - `unsupported`: the store or destination does not support atomic
+   *   writes, or the requested guarantee exceeds what the store can honor.
+   * - `not-writable`: the destination or containing directory is not
+   *   writable, or the requested name/path is not valid.
+   * - `io`: an underlying read/write/flush/rename operation failed.
+   */
+  readonly code: 'unsupported' | 'not-writable' | 'io';
+
+  /**
+   * The protocol stage at which the failure occurred.
+   * - `validate`: destination, guarantee and path checks, before anything is
+   *   touched. Always `visibility: 'unchanged'`.
+   * - `temporary-write`: creating or writing the working file a store commits
+   *   through. The destination has not been opened.
+   * - `file-flush`: flushing or closing that working file. The previous
+   *   destination is still authoritative.
+   * - `replace`: the rename or assignment that makes the new contents visible.
+   *   This is the stage whose `visibility` can be `'unknown'`.
+   * - `directory-flush`: establishing the durability boundary *after* the
+   *   contents are already visible, so `visibility` is `'replaced'`.
+   *
+   * @remarks
+   * A store that replaces in one step produces only `'validate'` and
+   * `'replace'`; a store that commits through a working file produces all five.
+   *
+   * There is deliberately no `'cleanup'` stage. Removing a working file is
+   * something a store does *on the way out of* a failure, and the failure a
+   * caller has to act on is the one that caused it — so a cleanup problem is
+   * reported in the message and never replaces the classification. A successful
+   * commit leaves nothing to clean up, because the replacement consumes the
+   * working file.
+   */
+  readonly stage: 'validate' | 'temporary-write' | 'file-flush' | 'replace' | 'directory-flush';
+
+  /**
+   * What a subsequent reader can now see for the destination path.
+   * - `unchanged`: the destination still holds whatever it held before this
+   *   call — nothing was mutated.
+   * - `replaced`: the destination was already replaced when the failure
+   *   occurred (a failure during a later stage, such as directory flush).
+   * - `unknown`: the underlying operation's outcome could not be determined
+   *   (for example, an ambiguous system-call result).
+   */
+  readonly visibility: 'unchanged' | 'replaced' | 'unknown';
+}
+
+/**
+ * Extended accessors interface for trees that can replace a file's contents
+ * such that a reader never observes a torn write.
+ *
+ * @remarks
+ * This is an *optional capability* — use
+ * {@link FileTree.isAtomicAccessors | isAtomicAccessors} to narrow. It is
+ * deliberately separate from {@link FileTree.IPersistentFileTreeAccessors} —
+ * `isPersistentAccessors` means `syncToDisk`/`isDirty`/`getDirtyPaths` exist,
+ * which is neither necessary for atomic write-through storage nor sufficient
+ * for transactional durability; a buffered adapter would need to implement
+ * and separately qualify this capability, including its own flush boundary,
+ * before a caller can accept it as durable. Method presence (this guard),
+ * writability (still {@link FileTree.IMutableFileTreeAccessors.fileIsMutable
+ * | fileIsMutable}), atomic visibility
+ * ({@link FileTree.IAtomicWriteCapabilities.atomicReplace | atomicReplace}),
+ * and durability ({@link FileTree.IAtomicWriteCapabilities.guarantees |
+ * guarantees}) are four distinct questions this interface keeps separate
+ * rather than conflating into one boolean.
+ * @public
+ */
+export interface IAtomicFileTreeAccessors<TCT extends string = string>
+  extends IMutableFileTreeAccessors<TCT> {
+  /**
+   * Reports what atomic replacement this store can offer for writes into the
+   * given directory.
+   * @param directory - Absolute path of the containing directory.
+   * @returns `Success` with the store's {@link FileTree.IAtomicWriteCapabilities
+   * | capabilities}, or `Failure` if the directory does not exist or the path
+   * names a file rather than a directory.
+   */
+  getAtomicWriteCapabilities(directory: string): Result<IAtomicWriteCapabilities>;
+
+  /**
+   * Replaces (or creates) a file's contents such that a reader never
+   * observes a torn write.
+   *
+   * @remarks
+   * Validates destination writability, path confinement, and the requested
+   * guarantee before any mutation — a stronger guarantee than this store can
+   * honor fails at the `'validate'` stage, leaving the destination
+   * unchanged. Ordinary {@link FileTree.IMutableFileTreeAccessors.saveFileContents
+   * | saveFileContents} retains its existing semantics; this is a sibling
+   * capability, not a replacement.
+   *
+   * @param path - Absolute path of the file to write.
+   * @param contents - The string contents to write.
+   * @param options - The requested {@link FileTree.IAtomicWriteOptions | options}.
+   * @returns `DetailedSuccess` with the {@link FileTree.IAtomicWriteReceipt |
+   * receipt} if the write committed, or `DetailedFailure` with a classified
+   * {@link FileTree.IAtomicWriteFailure | failure}.
+   */
+  writeFileAtomically(
+    path: string,
+    contents: string,
+    options: IAtomicWriteOptions
+  ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure>;
+
+  /**
+   * Removes any working files this store reserves for interrupted atomic
+   * writes from the given directory.
+   *
+   * @remarks
+   * A store that commits by writing somewhere else first can leave that
+   * working file behind when the process dies mid-write. The name of such a
+   * file is reserved to the store, so only the store can recognize one; this
+   * is how a consumer reclaims them without being handed a naming convention
+   * it would then depend on.
+   *
+   * **Call this only at exclusive reopen**, which the single-writer fault
+   * model already assumes: a working file belonging to a *live* write is
+   * indistinguishable from an orphan, and removing it would break that write.
+   * A store with nothing to reclaim answers with an empty list.
+   *
+   * @param directory - Absolute path of the directory to reclaim.
+   * @returns `Success` with the names removed, or `Failure` naming what could
+   * not be removed.
+   */
+  cleanupAtomicTemporaries(directory: string): Result<ReadonlyArray<string>>;
+}
+
+/**
+ * Extended directory item interface for directories that can atomically
+ * write a child file, without the caller ever seeing a native path or
+ * reaching into accessor internals.
+ *
+ * @remarks
+ * This is an *optional capability* — use
+ * {@link FileTree.isAtomicDirectoryItem | isAtomicDirectoryItem} to narrow.
+ * **As with the other item-level guards, the guard narrows the type and is
+ * not a success guarantee** — {@link FileTree.DirectoryItem} implements this
+ * interface unconditionally and delegates to its accessors, so
+ * `isAtomicDirectoryItem` is `true` for any `DirectoryItem` regardless of
+ * what backs it. Ask
+ * {@link FileTree.IAtomicFileTreeDirectoryItem.getAtomicWriteCapabilities |
+ * getAtomicWriteCapabilities} for the store's actual answer, mirroring
+ * {@link FileTree.IMutableBinaryFileTreeDirectoryItem.canCreateChildFileBytes
+ * | canCreateChildFileBytes}.
+ * @public
+ */
+export interface IAtomicFileTreeDirectoryItem<TCT extends string = string>
+  extends IMutableFileTreeDirectoryItem<TCT> {
+  /**
+   * Reports what atomic replacement this directory's backing store can
+   * offer.
+   * @returns `Success` with the store's {@link FileTree.IAtomicWriteCapabilities
+   * | capabilities} — a non-capable store answers `atomicReplace: false`
+   * rather than failing the inquiry. This directory's own `absolutePath` is
+   * known to exist, so no accessor shipped today fails this call for a
+   * `DirectoryItem`; a hypothetical accessor whose directory-existence check
+   * could race with deletion is not precluded from returning `Failure`.
+   */
+  getAtomicWriteCapabilities(): Result<IAtomicWriteCapabilities>;
+
+  /**
+   * Atomically writes (creating or replacing) a child file of this
+   * directory, such that a reader never observes a torn write.
+   * @param name - The file name to write, relative to this directory. Must
+   * be a single valid child name — no path separators.
+   * @param contents - The string contents to write.
+   * @param options - The requested {@link FileTree.IAtomicWriteOptions | options}.
+   * @returns `DetailedSuccess` with the {@link FileTree.IAtomicWriteReceipt |
+   * receipt} if the write committed, or `DetailedFailure` with a classified
+   * {@link FileTree.IAtomicWriteFailure | failure}.
+   */
+  writeChildAtomically(
+    name: string,
+    contents: string,
+    options: IAtomicWriteOptions
+  ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure>;
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeAccessors.cleanupAtomicTemporaries}
+   */
+  cleanupAtomicTemporaries(): Result<ReadonlyArray<string>>;
+}
+
+// ============================================================================
+// Type Guards
+// ============================================================================
+
+/**
+ * Type guard to check if accessors support mutation.
+ * @param accessors - The accessors to check.
+ * @returns `true` if the accessors implement {@link FileTree.IMutableFileTreeAccessors}.
+ * @public
+ */
+export function isMutableAccessors<TCT extends string = string>(
+  accessors: IFileTreeAccessors<TCT>
+): accessors is IMutableFileTreeAccessors<TCT> {
+  const mutable = accessors as IMutableFileTreeAccessors<TCT>;
+  return (
+    typeof mutable.fileIsMutable === 'function' &&
+    typeof mutable.saveFileContents === 'function' &&
+    typeof mutable.deleteFile === 'function' &&
+    typeof mutable.createDirectory === 'function' &&
+    typeof mutable.deleteDirectory === 'function'
+  );
+}
+
+/**
+ * Type guard to check if accessors support persistence.
+ * @param accessors - The accessors to check.
+ * @returns `true` if the accessors implement {@link FileTree.IPersistentFileTreeAccessors}.
+ * @public
+ */
+export function isPersistentAccessors<TCT extends string = string>(
+  accessors: IFileTreeAccessors<TCT>
+): accessors is IPersistentFileTreeAccessors<TCT> {
+  const persistent = accessors as IPersistentFileTreeAccessors<TCT>;
+  /* c8 ignore next 6 - unreachable from THIS package's suite: no accessor here implements IPersistentFileTreeAccessors (three in ts-web-extras do) */
+  return (
+    isMutableAccessors(accessors) &&
+    typeof persistent.syncToDisk === 'function' &&
+    typeof persistent.isDirty === 'function' &&
+    typeof persistent.getDirtyPaths === 'function'
+  );
+}
+
+/**
+ * Type guard to check if accessors support reading raw bytes.
+ * @param accessors - The accessors to check.
+ * @returns `true` if the accessors implement {@link FileTree.IBinaryFileTreeAccessors}.
+ * @public
+ */
+export function isBinaryAccessors<TCT extends string = string>(
+  accessors: IFileTreeAccessors<TCT>
+): accessors is IBinaryFileTreeAccessors<TCT> {
+  const binary = accessors as IBinaryFileTreeAccessors<TCT>;
+  return typeof binary.getFileBytes === 'function';
+}
+
+/**
+ * Extended accessors for stores that can decode a file's text **strictly** —
+ * failing on malformed UTF-8 instead of substituting U+FFFD.
+ *
+ * @remarks
+ * This is an *optional capability*, deliberately not part of
+ * {@link FileTree.IFileTreeAccessors}. Narrow with
+ * {@link FileTree.isStrictTextAccessors | isStrictTextAccessors}.
+ *
+ * **The capability is about custody of the bytes, not about the adapter.** A
+ * store can only answer "was this valid UTF-8?" if it still holds the original
+ * bytes. A store whose transport already decoded them — a REST payload carrying
+ * `contents` as a JSON string, `localStorage`, an in-memory tree seeded with a
+ * `string` — cannot answer it *even in principle*: the substitution happened
+ * before the store existed, and re-encoding the decoded string produces
+ * well-formed UTF-8 whose corruption is baked in and no longer detectable.
+ *
+ * Such stores therefore **fail** rather than reporting success. That is the
+ * whole point of the capability: a strict read that quietly succeeded on an
+ * already-decoded string would be a green light from a check that cannot fail,
+ * which is worse than not offering one.
+ * @public
+ */
+export interface IStrictTextFileTreeAccessors<TCT extends string = string> extends IFileTreeAccessors<TCT> {
+  /**
+   * Reads a file's contents, decoding UTF-8 strictly.
+   * @param path - Absolute path of the file.
+   * @returns `Success` with the decoded text; `Failure` if the bytes are not
+   * valid UTF-8, or if this store no longer holds the original bytes to judge.
+   */
+  getFileTextStrict(path: string): Result<string>;
+}
+
+/**
+ * Narrows accessors to {@link FileTree.IStrictTextFileTreeAccessors}.
+ *
+ * @remarks
+ * Unlike the file-item guards, this one is a genuine capability check on the
+ * store. Note it reports whether the store *implements* strict decoding, not
+ * whether any particular file can be judged — a store that keeps some files as
+ * bytes and others as already-decoded strings implements the capability and
+ * fails per-file for the latter.
+ * @public
+ */
+export function isStrictTextAccessors<TCT extends string = string>(
+  accessors: IFileTreeAccessors<TCT>
+): accessors is IStrictTextFileTreeAccessors<TCT> {
+  const strict = accessors as IStrictTextFileTreeAccessors<TCT>;
+  return typeof strict.getFileTextStrict === 'function';
+}
+
+/**
+ * Type guard to check if accessors support both reading and writing raw bytes.
+ * @param accessors - The accessors to check.
+ * @returns `true` if the accessors implement {@link FileTree.IMutableBinaryFileTreeAccessors}.
+ * @public
+ */
+export function isMutableBinaryAccessors<TCT extends string = string>(
+  accessors: IFileTreeAccessors<TCT>
+): accessors is IMutableBinaryFileTreeAccessors<TCT> {
+  const binary = accessors as IMutableBinaryFileTreeAccessors<TCT>;
+  return (
+    isBinaryAccessors(accessors) &&
+    isMutableAccessors(accessors) &&
+    typeof binary.saveFileBytes === 'function'
+  );
+}
+
+/**
+ * Type guard to check if accessors support atomic writes.
+ * @param accessors - The accessors to check.
+ * @returns `true` if the accessors implement {@link FileTree.IAtomicFileTreeAccessors}.
+ * @public
+ */
+export function isAtomicAccessors<TCT extends string = string>(
+  accessors: IFileTreeAccessors<TCT>
+): accessors is IAtomicFileTreeAccessors<TCT> {
+  const atomic = accessors as IAtomicFileTreeAccessors<TCT>;
+  return (
+    isMutableAccessors(accessors) &&
+    typeof atomic.getAtomicWriteCapabilities === 'function' &&
+    typeof atomic.writeFileAtomically === 'function' &&
+    typeof atomic.cleanupAtomicTemporaries === 'function'
+  );
+}
+
+/**
+ * Type guard narrowing a file item to {@link FileTree.IBinaryFileTreeFileItem}.
+ *
+ * @remarks
+ * Narrows the type; does **not** promise `getRawBytes()` will succeed.
+ * {@link FileTree.FileItem} implements the interface unconditionally and delegates to
+ * its accessors, so this returns `true` for any `FileItem` and the call reports a
+ * non-byte-capable backing store as a `Failure`. Use
+ * {@link FileTree.isBinaryAccessors | isBinaryAccessors} for a capability check that
+ * is a success guarantee.
+ * @param item - The file item to check.
+ * @returns `true` if the item implements {@link FileTree.IBinaryFileTreeFileItem}.
+ * @public
+ */
+export function isBinaryFileItem<TCT extends string = string>(
+  item: AnyFileTreeFileItem<TCT> | FileTreeItem<TCT>
+): item is IBinaryFileTreeFileItem<TCT> {
+  const binary = item as IBinaryFileTreeFileItem<TCT>;
+  return binary.type === 'file' && typeof binary.getRawBytes === 'function';
+}
+
+/**
+ * Narrows a file item to {@link FileTree.IStrictTextFileTreeFileItem}.
+ *
+ * @remarks
+ * Type narrowing only — see that interface's remarks. `FileItem` always
+ * satisfies this guard; whether the call succeeds depends on the store.
+ * @public
+ */
+export function isStrictTextFileItem<TCT extends string = string>(
+  item: AnyFileTreeFileItem<TCT> | FileTreeItem<TCT>
+): item is IStrictTextFileTreeFileItem<TCT> {
+  const strict = item as IStrictTextFileTreeFileItem<TCT>;
+  return strict.type === 'file' && typeof strict.getTextStrict === 'function';
+}
+
+/**
+ * Type guard narrowing a file item to {@link FileTree.IMutableBinaryFileTreeFileItem}.
+ *
+ * @remarks
+ * Narrows the type; does **not** promise `setRawBytes()` will succeed — see
+ * {@link FileTree.isBinaryFileItem | isBinaryFileItem}. Byte writes are supported only
+ * by byte-persisting stores, and that is knowable at the accessors level: use
+ * {@link FileTree.isMutableBinaryAccessors | isMutableBinaryAccessors} when the check
+ * needs to be a success guarantee.
+ * @param item - The file item to check.
+ * @returns `true` if the item implements {@link FileTree.IMutableBinaryFileTreeFileItem}.
+ * @public
+ */
+export function isMutableBinaryFileItem<TCT extends string = string>(
+  item: AnyFileTreeFileItem<TCT> | FileTreeItem<TCT>
+): item is IMutableBinaryFileTreeFileItem<TCT> {
+  const binary = item as IMutableBinaryFileTreeFileItem<TCT>;
+  return isBinaryFileItem(item) && isMutableFileItem(item) && typeof binary.setRawBytes === 'function';
+}
+
+/**
+ * Type guard to check if a file item supports mutation.
+ * @param item - The file item to check.
+ * @returns `true` if the item implements {@link FileTree.IMutableFileTreeFileItem}.
+ * @public
+ */
+export function isMutableFileItem<TCT extends string = string>(
+  item: AnyFileTreeFileItem<TCT> | FileTreeItem<TCT>
+): item is IMutableFileTreeFileItem<TCT> {
+  const mutable = item as IMutableFileTreeFileItem<TCT>;
+  return (
+    mutable.type === 'file' &&
+    typeof mutable.getIsMutable === 'function' &&
+    typeof mutable.setContents === 'function' &&
+    typeof mutable.setRawContents === 'function' &&
+    typeof mutable.delete === 'function'
+  );
+}
+
+/**
+ * Type guard to check if a directory item supports mutation.
+ * @param item - The directory item to check.
+ * @returns `true` if the item implements {@link FileTree.IMutableFileTreeDirectoryItem}.
+ * @public
+ */
+export function isMutableDirectoryItem<TCT extends string = string>(
+  item: AnyFileTreeDirectoryItem<TCT> | FileTreeItem<TCT>
+): item is IMutableFileTreeDirectoryItem<TCT> {
+  const mutable = item as IMutableFileTreeDirectoryItem<TCT>;
+  return (
+    mutable.type === 'directory' &&
+    typeof mutable.createChildFile === 'function' &&
+    typeof mutable.createChildDirectory === 'function' &&
+    typeof mutable.deleteChild === 'function' &&
+    typeof mutable.delete === 'function'
+  );
+}
+
+/**
+ * Type guard narrowing a directory item to
+ * {@link FileTree.IMutableBinaryFileTreeDirectoryItem}.
+ *
+ * @remarks
+ * Narrows the type; does **not** promise `createChildFileBytes()` will succeed — see that
+ * interface's remarks. Follow a successful narrowing with
+ * {@link FileTree.IMutableBinaryFileTreeDirectoryItem.canCreateChildFileBytes | canCreateChildFileBytes},
+ * which does answer for the backing store.
+ * @param item - The directory item to check.
+ * @returns `true` if the item implements
+ * {@link FileTree.IMutableBinaryFileTreeDirectoryItem}.
+ * @public
+ */
+export function isMutableBinaryDirectoryItem<TCT extends string = string>(
+  item: AnyFileTreeDirectoryItem<TCT> | FileTreeItem<TCT>
+): item is IMutableBinaryFileTreeDirectoryItem<TCT> {
+  const binary = item as IMutableBinaryFileTreeDirectoryItem<TCT>;
+  return (
+    isMutableDirectoryItem(item) &&
+    typeof binary.canCreateChildFileBytes === 'function' &&
+    typeof binary.createChildFileBytes === 'function'
+  );
+}
+
+/**
+ * Type guard narrowing a directory item to {@link FileTree.IAtomicFileTreeDirectoryItem}.
+ *
+ * @remarks
+ * Narrows the type; does **not** promise `writeChildAtomically()` will
+ * succeed — see that interface's remarks. Follow a successful narrowing with
+ * {@link FileTree.IAtomicFileTreeDirectoryItem.getAtomicWriteCapabilities |
+ * getAtomicWriteCapabilities}, which does answer for the backing store.
+ * @param item - The directory item to check.
+ * @returns `true` if the item implements {@link FileTree.IAtomicFileTreeDirectoryItem}.
+ * @public
+ */
+export function isAtomicDirectoryItem<TCT extends string = string>(
+  item: AnyFileTreeDirectoryItem<TCT> | FileTreeItem<TCT>
+): item is IAtomicFileTreeDirectoryItem<TCT> {
+  const atomic = item as IAtomicFileTreeDirectoryItem<TCT>;
+  return (
+    isMutableDirectoryItem(item) &&
+    typeof atomic.getAtomicWriteCapabilities === 'function' &&
+    typeof atomic.writeChildAtomically === 'function' &&
+    typeof atomic.cleanupAtomicTemporaries === 'function'
+  );
 }

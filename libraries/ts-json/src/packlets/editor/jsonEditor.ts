@@ -278,7 +278,7 @@ export class JsonEditor implements IJsonCloneEditor {
     state: JsonEditorState
   ): Result<JsonObject> {
     for (const key in src) {
-      if (src.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(src, key)) {
         // Skip dangerous property names to prevent prototype pollution
         if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
           continue;

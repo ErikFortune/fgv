@@ -1,0 +1,375 @@
+/*
+ * Copyright (c) 2026 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+import React, { useCallback, useMemo, useState } from 'react';
+
+import { Logging } from '@fgv/ts-utils';
+import {
+  FunnelIcon,
+  DocumentDuplicateIcon,
+  MagnifyingGlassIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
+import { CheckIcon } from '@heroicons/react/24/solid';
+
+import { deriveSeverityFromLevel, IMessage, MessageSeverity } from './model';
+import { useResponsive } from '../responsive';
+
+// ============================================================================
+// Severity display config
+// ============================================================================
+
+const SEVERITY_ICONS: Record<MessageSeverity, string> = {
+  info: '\u2139',
+  success: '\u2713',
+  warning: '\u26A0',
+  error: '\u2717'
+};
+
+const SEVERITY_COLORS: Record<MessageSeverity, string> = {
+  info: 'text-status-info-icon',
+  success: 'text-status-success-icon',
+  warning: 'text-status-warning-icon',
+  error: 'text-status-error-icon'
+};
+
+const LOG_ROW_COLORS: Record<MessageSeverity, string> = {
+  info: '',
+  success: 'bg-status-success-bg',
+  warning: 'bg-status-warning-bg',
+  error: 'bg-status-error-bg'
+};
+
+// ============================================================================
+// Level filter config
+// ============================================================================
+
+/**
+ * Effective display severity for a message: its explicit `severity` styling override,
+ * or the severity derived from its canonical log level.
+ */
+function effectiveSeverity(message: IMessage): MessageSeverity {
+  return message.severity ?? deriveSeverityFromLevel(message.level);
+}
+
+/**
+ * Filter choices exposed in the UI, mapping labels to ReporterLogLevel values.
+ *
+ * The full log-level granularity is exposed (the core gap fix): `Detail+` lets the panel
+ * filter at the same granularity a ts-utils logger records, including `detail` messages
+ * that the previous severity-based filter could not represent. `All` additionally surfaces
+ * `quiet`-level messages (per {@link @fgv/ts-utils#Logging.shouldLog | shouldLog} semantics,
+ * `quiet` is only visible under the `all` threshold).
+ */
+const FILTER_LEVELS: ReadonlyArray<{ readonly label: string; readonly level: Logging.ReporterLogLevel }> = [
+  { label: 'All', level: 'all' },
+  { label: 'Detail+', level: 'detail' },
+  { label: 'Info+', level: 'info' },
+  { label: 'Warn+', level: 'warning' },
+  { label: 'Error', level: 'error' }
+] as const;
+
+// ============================================================================
+// Status Bar
+// ============================================================================
+
+/**
+ * Props for the StatusBar component.
+ * @public
+ */
+export interface IStatusBarProps {
+  readonly messages: ReadonlyArray<IMessage>;
+  readonly onClear: () => void;
+  /** Initial filter level for the log panel. Defaults to 'all'. */
+  readonly initialFilterLevel?: Logging.ReporterLogLevel;
+  /**
+   * Maximum height of the expanded panel as a CSS length (e.g. `'40vh'`, `'320px'`).
+   * The panel is bounded to this height on both desktop and mobile; the message list
+   * scrolls within the bound while the header and filter controls stay fixed. Defaults to `'40vh'`.
+   */
+  readonly maxExpandedHeight?: string;
+  /** Whether the panel is expanded on mount. Defaults to `false` (collapsed). */
+  readonly defaultExpanded?: boolean;
+}
+
+/**
+ * Collapsible status bar / log panel at the bottom of the application.
+ *
+ * Collapsed: shows severity counts.
+ * Expanded: filterable, searchable, copyable log of all messages, bounded to
+ * {@link IStatusBarProps.maxExpandedHeight} with the list scrolling within the bound.
+ * @public
+ */
+export function StatusBar(props: IStatusBarProps): React.ReactElement {
+  const {
+    messages,
+    onClear,
+    initialFilterLevel,
+    maxExpandedHeight = '40vh',
+    defaultExpanded = false
+  } = props;
+  const { layoutMode } = useResponsive();
+  const isMobile = layoutMode === 'mobile';
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterLevel, setFilterLevel] = useState<Logging.ReporterLogLevel>(initialFilterLevel ?? 'all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [copySuccessId, setCopySuccessId] = useState<string | null>(null);
+
+  const counts = useMemo(() => {
+    const result: Record<MessageSeverity, number> = { info: 0, success: 0, warning: 0, error: 0 };
+    for (const msg of messages) {
+      result[effectiveSeverity(msg)]++;
+    }
+    return result;
+  }, [messages]);
+
+  const filteredMessages = useMemo(() => {
+    return messages.filter((msg) => {
+      const passesLevel = Logging.shouldLog(msg.level, filterLevel);
+      const passesSearch = searchTerm === '' || msg.text.toLowerCase().includes(searchTerm.toLowerCase());
+      return passesLevel && passesSearch;
+    });
+  }, [messages, filterLevel, searchTerm]);
+
+  const isFiltered = filteredMessages.length !== messages.length;
+
+  const formatTime = useCallback((timestamp: number): string => {
+    return new Date(timestamp).toLocaleTimeString();
+  }, []);
+
+  const copyToClipboard = useCallback((text: string, id: string): void => {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setCopySuccessId(id);
+        setTimeout(() => setCopySuccessId(null), 2000);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const copyAllFiltered = useCallback((): void => {
+    const text = filteredMessages
+      .map((msg) => `[${msg.level.toUpperCase()}] ${formatTime(msg.timestamp)} - ${msg.text}`)
+      .join('\n');
+    copyToClipboard(text, '__all__');
+  }, [filteredMessages, formatTime, copyToClipboard]);
+
+  return (
+    <div className="border-t border-border bg-surface">
+      {/* Collapsed bar */}
+      <button
+        onClick={(): void => setExpanded(!expanded)}
+        className="flex items-center justify-between w-full px-4 py-1.5 text-xs text-secondary hover:bg-hover"
+      >
+        <div className="flex items-center gap-4">
+          {(Object.keys(counts) as MessageSeverity[]).map((severity) =>
+            counts[severity] > 0 ? (
+              <span key={severity} className={`flex items-center gap-1 ${SEVERITY_COLORS[severity]}`}>
+                <span>{SEVERITY_ICONS[severity]}</span>
+                <span>{counts[severity]}</span>
+              </span>
+            ) : null
+          )}
+          {messages.length === 0 && <span className="text-muted">No messages</span>}
+        </div>
+        <span className="text-muted">{expanded ? '\u25BC' : '\u25B2'}</span>
+      </button>
+
+      {/* Expanded log — bounded bottom-sheet on mobile, bounded inline panel on desktop.
+          The panel stays in document flow on both layouts (no `fixed` takeover); the mobile
+          backdrop is the only fixed element, dimming the rest and supporting tap-to-dismiss. */}
+      {expanded && (
+        <>
+          {isMobile && (
+            <div
+              className="fixed inset-0 z-40 bg-backdrop"
+              onClick={(): void => setExpanded(false)}
+              aria-hidden="true"
+            />
+          )}
+          <div
+            className={`flex flex-col border-t border-border-subtle ${
+              isMobile ? 'relative z-50 bg-surface shadow-xl rounded-t-lg' : ''
+            }`}
+            style={{ maxHeight: maxExpandedHeight }}
+          >
+            {/* Header toolbar */}
+            <div className="flex items-center justify-between px-4 py-1 bg-surface-alt border-b border-border-subtle shrink-0">
+              <span className="text-xs font-medium text-muted">
+                {isFiltered
+                  ? `${filteredMessages.length} of ${messages.length} messages`
+                  : `${messages.length} message${messages.length !== 1 ? 's' : ''}`}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={(): void => setShowFilters(!showFilters)}
+                  className={`p-1 rounded hover:bg-surface-raised ${showFilters ? 'bg-surface-raised' : ''}`}
+                  title="Filter messages"
+                >
+                  <FunnelIcon className="h-3.5 w-3.5 text-muted" style={{ width: 14, height: 14 }} />
+                </button>
+                <button
+                  onClick={copyAllFiltered}
+                  className={`p-1 rounded transition-colors ${
+                    copySuccessId === '__all__' ? 'bg-status-success-bg' : 'hover:bg-surface-raised'
+                  }`}
+                  title={copySuccessId === '__all__' ? 'Copied!' : 'Copy filtered messages'}
+                >
+                  {copySuccessId === '__all__' ? (
+                    <CheckIcon
+                      className="h-3.5 w-3.5 text-status-success-icon"
+                      style={{ width: 14, height: 14 }}
+                    />
+                  ) : (
+                    <DocumentDuplicateIcon
+                      className="h-3.5 w-3.5 text-muted"
+                      style={{ width: 14, height: 14 }}
+                    />
+                  )}
+                </button>
+                <button onClick={onClear} className="text-xs text-muted hover:text-secondary ml-1">
+                  Clear
+                </button>
+                <button
+                  onClick={(): void => setExpanded(false)}
+                  className="p-1 rounded hover:bg-surface-raised ml-1"
+                  title="Collapse log panel"
+                  aria-label="Collapse log panel"
+                >
+                  <XMarkIcon className="h-3.5 w-3.5 text-muted" style={{ width: 14, height: 14 }} />
+                </button>
+              </div>
+            </div>
+
+            {/* Filter toolbar */}
+            {showFilters && (
+              <div className="px-4 py-1.5 bg-surface-raised border-b border-border-subtle flex items-center gap-3 shrink-0">
+                {/* Level filter buttons */}
+                <div className="flex items-center gap-1">
+                  {FILTER_LEVELS.map(({ label, level }) => (
+                    <button
+                      key={level}
+                      onClick={(): void => setFilterLevel(level)}
+                      className={`text-xs px-2 py-0.5 rounded border ${
+                        filterLevel === level
+                          ? 'bg-status-info-bg border-status-info-border text-status-info-text'
+                          : 'bg-surface border-border text-secondary hover:bg-hover'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Search input — `position: relative` inline so the absolutely-positioned
+                    icon + clear-button fallbacks have a containing block even when Tailwind's
+                    `relative` utility is absent. */}
+                <div className="relative flex-1" style={{ position: 'relative' }}>
+                  <MagnifyingGlassIcon
+                    className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted"
+                    style={{
+                      position: 'absolute',
+                      left: 8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 14,
+                      height: 14
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search messages..."
+                    value={searchTerm}
+                    onChange={(e): void => setSearchTerm(e.target.value)}
+                    className="w-full pl-7 pr-6 py-0.5 text-xs border border-border rounded bg-surface text-primary focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
+                  />
+                  {searchTerm.length > 0 && (
+                    <button
+                      onClick={(): void => setSearchTerm('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-secondary text-xs"
+                      style={{
+                        position: 'absolute',
+                        right: 8,
+                        top: '50%',
+                        transform: 'translateY(-50%)'
+                      }}
+                      aria-label="Clear search"
+                    >
+                      &times;
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Message list — scrolls within the bounded panel; header/filters stay fixed */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              {filteredMessages.length === 0 ? (
+                <div className="px-4 py-3 text-xs text-muted text-center">
+                  {isFiltered ? 'No messages match the current filter' : 'No messages'}
+                </div>
+              ) : (
+                filteredMessages.map((msg) => {
+                  const severity = effectiveSeverity(msg);
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`group flex items-start gap-2 px-4 py-1.5 text-xs border-b border-border-subtle ${LOG_ROW_COLORS[severity]}`}
+                    >
+                      <span className={`shrink-0 ${SEVERITY_COLORS[severity]}`}>
+                        {SEVERITY_ICONS[severity]}
+                      </span>
+                      <span className="flex-1 text-secondary">{msg.text}</span>
+                      <button
+                        onClick={(): void => copyToClipboard(msg.text, msg.id)}
+                        className={`shrink-0 p-0.5 rounded transition-colors ${
+                          copySuccessId === msg.id
+                            ? 'opacity-100 bg-status-success-surface'
+                            : 'opacity-0 group-hover:opacity-100 hover:bg-surface-raised'
+                        }`}
+                        title={copySuccessId === msg.id ? 'Copied!' : 'Copy message'}
+                      >
+                        {copySuccessId === msg.id ? (
+                          <CheckIcon
+                            className="h-3 w-3 text-status-success-icon"
+                            style={{ width: 12, height: 12 }}
+                          />
+                        ) : (
+                          <DocumentDuplicateIcon
+                            className="h-3 w-3 text-muted"
+                            style={{ width: 12, height: 12 }}
+                          />
+                        )}
+                      </button>
+                      <span className="shrink-0 text-muted">{formatTime(msg.timestamp)}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

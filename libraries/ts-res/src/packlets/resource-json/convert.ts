@@ -234,3 +234,298 @@ export const importerResourceCollectionDecl: Converter<Normalized.IImporterResou
       }).convert(from, context);
     }
   );
+
+// --- Typed sibling converters (Phase B-2) -----------------------------------
+//
+// Each `typed*<TQualifierNames>(qualifierNameConverter)` returns a converter
+// whose result type is narrowed on `TQualifierNames`. The existing untyped
+// exports above remain unchanged at the signature and behavior level; consumers
+// opt in by calling a typed sibling. Internally each typed factory composes
+// lower-level typed factories so a single `qualifierNameConverter` flows
+// end-to-end through the converter tree.
+//
+// DRIFT HAZARD: each typed sibling duplicates the field list of its untyped
+// twin (the duplication exists to preserve `ObjectConverter` return types on
+// the defaults — see phase-b2-result.md). If a field is added, removed, or
+// re-typed on an untyped converter above, the typed sibling MUST be updated
+// in lockstep. The per-pair `keep in sync with X` markers below flag each
+// pair at the call site.
+
+/**
+ * Returns a `Converter` for a `Json.ILooseConditionDecl<TQualifierNames>`
+ * narrowed on a supplied `qualifierName` converter.
+ *
+ * @public
+ */
+// Keep in sync with `looseConditionDecl` above.
+export function typedLooseConditionDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<Json.ILooseConditionDecl<TQualifierNames>> {
+  return Converters.strictObject<Json.ILooseConditionDecl<TQualifierNames>>({
+    qualifierName: qualifierNameConverter,
+    value: Converters.string,
+    operator: CommonConvert.conditionOperator.optional(),
+    priority: CommonConvert.conditionPriority.optional(),
+    scoreAsDefault: Converters.number.optional()
+  });
+}
+
+function _typedConditionSetDeclFromArray<TQualifierNames extends string>(
+  innerLooseConditionDecl: Converter<Json.ILooseConditionDecl<TQualifierNames>>
+): Converter<Json.ConditionSetDeclAsArray<TQualifierNames>> {
+  return Converters.arrayOf(innerLooseConditionDecl);
+}
+
+function _typedConditionSetDeclFromRecord<TQualifierNames extends string>(
+  innerLooseConditionDecl: Converter<Json.ILooseConditionDecl<TQualifierNames>>
+): Converter<Json.ConditionSetDecl<TQualifierNames>> {
+  return Converters.generic<Json.ConditionSetDecl<TQualifierNames>, unknown>(
+    (
+      from: unknown,
+      __self: Converter<Json.ConditionSetDecl<TQualifierNames>, unknown>,
+      context?: unknown
+    ): Result<Json.ConditionSetDecl<TQualifierNames>> => {
+      /* c8 ignore next 3 - branch covered by underlying record check */
+      if (!_isConditionSetRecord(from)) {
+        return fail('Expected an object');
+      }
+      return mapResults(
+        Array.from(Object.entries(from)).map(([qualifierName, value]) => {
+          const toConvert: Json.ILooseConditionDecl =
+            typeof value === 'string' ? { qualifierName, value } : { qualifierName, ...value };
+          return innerLooseConditionDecl.convert(toConvert, context);
+        })
+      );
+    }
+  );
+}
+
+/**
+ * Returns a `Converter` for a `Json.ConditionSetDecl<TQualifierNames>`
+ * (either array form or record form) narrowed on a supplied `qualifierName`
+ * converter.
+ *
+ * @public
+ */
+// Keep in sync with `conditionSetDecl` (and its two private feeder converters
+// `conditionSetDeclFromArray` / `conditionSetDeclFromRecord`) above.
+export function typedConditionSetDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<Json.ConditionSetDecl<TQualifierNames>> {
+  const inner = typedLooseConditionDecl(qualifierNameConverter);
+  return Converters.oneOf<Json.ConditionSetDecl<TQualifierNames>>([
+    _typedConditionSetDeclFromArray(inner),
+    _typedConditionSetDeclFromRecord(inner)
+  ]);
+}
+
+/**
+ * Returns a `Converter` for a `Json.ILooseResourceCandidateDecl<TQualifierNames>`
+ * narrowed on a supplied `qualifierName` converter.
+ *
+ * @public
+ */
+// Keep in sync with `looseResourceCandidateDecl` above.
+export function typedLooseResourceCandidateDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<Json.ILooseResourceCandidateDecl<TQualifierNames>> {
+  return Converters.strictObject<Json.ILooseResourceCandidateDecl<TQualifierNames>>({
+    id: CommonConvert.resourceId,
+    json: JsonConverters.jsonObject,
+    conditions: typedConditionSetDecl(qualifierNameConverter).optional(),
+    mergeMethod: CommonConvert.resourceValueMergeMethod.optional(),
+    isPartial: Converters.boolean.optional(),
+    resourceTypeName: CommonConvert.resourceTypeName.optional()
+  });
+}
+
+/**
+ * Returns a `Converter` for a `Json.IImporterResourceCandidateDecl<TQualifierNames>`
+ * narrowed on a supplied `qualifierName` converter.
+ *
+ * @public
+ */
+// Keep in sync with `importerResourceCandidateDecl` above.
+export function typedImporterResourceCandidateDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<Json.IImporterResourceCandidateDecl<TQualifierNames>> {
+  return Converters.strictObject<Json.IImporterResourceCandidateDecl<TQualifierNames>>({
+    id: CommonConvert.resourceId.optional(),
+    json: JsonConverters.jsonObject,
+    conditions: typedConditionSetDecl(qualifierNameConverter).optional(),
+    mergeMethod: CommonConvert.resourceValueMergeMethod.optional(),
+    isPartial: Converters.boolean.optional(),
+    resourceTypeName: CommonConvert.resourceTypeName.optional()
+  });
+}
+
+/**
+ * Returns a `Converter` for a `Json.IChildResourceCandidateDecl<TQualifierNames>`
+ * narrowed on a supplied `qualifierName` converter.
+ *
+ * @public
+ */
+// Keep in sync with `childResourceCandidateDecl` above.
+export function typedChildResourceCandidateDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<Json.IChildResourceCandidateDecl<TQualifierNames>> {
+  return Converters.strictObject<Json.IChildResourceCandidateDecl<TQualifierNames>>({
+    json: JsonConverters.jsonObject,
+    conditions: typedConditionSetDecl(qualifierNameConverter).optional(),
+    isPartial: Converters.boolean.optional(),
+    mergeMethod: CommonConvert.resourceValueMergeMethod.optional()
+  });
+}
+
+/**
+ * Returns a `Converter` for a `Json.ILooseResourceDecl<TQualifierNames>`
+ * narrowed on a supplied `qualifierName` converter.
+ *
+ * @public
+ */
+// Keep in sync with `looseResourceDecl` above.
+export function typedLooseResourceDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<Json.ILooseResourceDecl<TQualifierNames>> {
+  return Converters.strictObject<Json.ILooseResourceDecl<TQualifierNames>>({
+    id: CommonConvert.resourceId,
+    resourceTypeName: CommonConvert.resourceTypeName,
+    candidates: Converters.arrayOf(typedChildResourceCandidateDecl(qualifierNameConverter)).optional()
+  });
+}
+
+/**
+ * Returns a `Converter` for a `Json.IChildResourceDecl<TQualifierNames>`
+ * narrowed on a supplied `qualifierName` converter.
+ *
+ * @public
+ */
+// Keep in sync with `childResourceDecl` above.
+export function typedChildResourceDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<Json.IChildResourceDecl<TQualifierNames>> {
+  return Converters.strictObject<Json.IChildResourceDecl<TQualifierNames>>({
+    resourceTypeName: CommonConvert.resourceTypeName,
+    candidates: Converters.arrayOf(typedChildResourceCandidateDecl(qualifierNameConverter)).optional()
+  });
+}
+
+/**
+ * Returns a `Converter` for a `Json.IContainerContextDecl<TQualifierNames>`
+ * narrowed on a supplied `qualifierName` converter.
+ *
+ * @public
+ */
+// Keep in sync with `containerContextDecl` above.
+export function typedContainerContextDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<Json.IContainerContextDecl<TQualifierNames>> {
+  return Converters.strictObject<Json.IContainerContextDecl<TQualifierNames>>({
+    baseId: Converters.oneOf([CommonConvert.resourceId, Converters.literal('')]).optional(),
+    conditions: typedConditionSetDecl(qualifierNameConverter).optional(),
+    mergeMethod: CommonConvert.resourceValueMergeMethod.optional()
+  });
+}
+
+/**
+ * Returns a `Converter` for a `Json.IResourceTreeChildNodeDecl<TQualifierNames>`
+ * narrowed on a supplied `qualifierName` converter.
+ *
+ * @public
+ */
+// Keep in sync with `resourceTreeChildNodeDecl` above.
+export function typedResourceTreeChildNodeDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<Json.IResourceTreeChildNodeDecl<TQualifierNames>> {
+  const childResource = typedChildResourceDecl(qualifierNameConverter);
+  return Converters.generic<Json.IResourceTreeChildNodeDecl<TQualifierNames>, unknown>(
+    (
+      from: unknown,
+      self: Converter<Json.IResourceTreeChildNodeDecl<TQualifierNames>, unknown>,
+      context?: unknown
+    ): Result<Json.IResourceTreeChildNodeDecl<TQualifierNames>> => {
+      return Converters.strictObject<Json.IResourceTreeChildNodeDecl<TQualifierNames>>({
+        resources: Converters.recordOf(childResource).optional(),
+        children: Converters.recordOf(self).optional()
+      }).convert(from, context);
+    }
+  );
+}
+
+/**
+ * Returns a `Converter` for a `Json.IResourceTreeRootDecl<TQualifierNames>`
+ * narrowed on a supplied `qualifierName` converter.
+ *
+ * @public
+ */
+// Keep in sync with `resourceTreeRootDecl` above.
+export function typedResourceTreeRootDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<Json.IResourceTreeRootDecl<TQualifierNames>> {
+  return Converters.strictObject<Json.IResourceTreeRootDecl<TQualifierNames>>({
+    context: typedContainerContextDecl(qualifierNameConverter).optional(),
+    resources: Converters.recordOf(typedChildResourceDecl(qualifierNameConverter)).optional(),
+    children: Converters.recordOf(typedResourceTreeChildNodeDecl(qualifierNameConverter)).optional()
+  });
+}
+
+/**
+ * Returns a `Converter` for a `Json.IResourceCollectionDecl<TQualifierNames>`
+ * narrowed on a supplied `qualifierName` converter.
+ *
+ * @public
+ */
+// Keep in sync with `resourceCollectionDecl` above.
+export function typedResourceCollectionDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<Json.IResourceCollectionDecl<TQualifierNames>> {
+  const containerContext = typedContainerContextDecl(qualifierNameConverter);
+  const looseCandidate = typedLooseResourceCandidateDecl(qualifierNameConverter);
+  const looseResource = typedLooseResourceDecl(qualifierNameConverter);
+  return Converters.generic<Json.IResourceCollectionDecl<TQualifierNames>, unknown>(
+    (
+      from: unknown,
+      self: Converter<Json.IResourceCollectionDecl<TQualifierNames>, unknown>,
+      context?: unknown
+    ): Result<Json.IResourceCollectionDecl<TQualifierNames>> => {
+      return Converters.strictObject<Json.IResourceCollectionDecl<TQualifierNames>>({
+        context: containerContext.optional(),
+        candidates: Converters.arrayOf(looseCandidate).optional(),
+        resources: Converters.arrayOf(looseResource).optional(),
+        collections: Converters.arrayOf(self).optional(),
+        metadata: JsonConverters.jsonObject.optional()
+      }).convert(from, context);
+    }
+  );
+}
+
+/**
+ * Returns a `Converter` for a `Json.IImporterResourceCollectionDecl<TQualifierNames>`
+ * narrowed on a supplied `qualifierName` converter.
+ *
+ * @public
+ */
+// Keep in sync with `importerResourceCollectionDecl` above.
+export function typedImporterResourceCollectionDecl<TQualifierNames extends string>(
+  qualifierNameConverter: Converter<TQualifierNames>
+): Converter<Json.IImporterResourceCollectionDecl<TQualifierNames>> {
+  const containerContext = typedContainerContextDecl(qualifierNameConverter);
+  const importerCandidate = typedImporterResourceCandidateDecl(qualifierNameConverter);
+  const looseResource = typedLooseResourceDecl(qualifierNameConverter);
+  const childResource = typedChildResourceDecl(qualifierNameConverter);
+  return Converters.generic<Json.IImporterResourceCollectionDecl<TQualifierNames>, unknown>(
+    (
+      from: unknown,
+      self: Converter<Json.IImporterResourceCollectionDecl<TQualifierNames>, unknown>,
+      context?: unknown
+    ): Result<Json.IImporterResourceCollectionDecl<TQualifierNames>> => {
+      return Converters.strictObject<Json.IImporterResourceCollectionDecl<TQualifierNames>>({
+        context: containerContext.optional(),
+        candidates: Converters.arrayOf(importerCandidate).optional(),
+        resources: Converters.arrayOf(Converters.oneOf([looseResource, childResource])).optional(),
+        collections: Converters.arrayOf(self).optional(),
+        metadata: JsonConverters.jsonObject.optional()
+      }).convert(from, context);
+    }
+  );
+}

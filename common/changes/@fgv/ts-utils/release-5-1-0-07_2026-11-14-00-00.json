@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Logging: `BootLogger` buffers output until a real logger is ready, `RetainingLogger` keeps a queryable ring of structured log records, `MultiLogger` fans out to several loggers; `MessageLogLevel` and `ReporterLogLevel` gain value lists and converters.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

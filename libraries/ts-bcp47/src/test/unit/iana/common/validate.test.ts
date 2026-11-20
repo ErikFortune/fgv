@@ -46,6 +46,16 @@ describe('Iana common validators', () => {
     });
   });
 
+  describe('failure messages for values JSON.stringify cannot render', () => {
+    test('toCanonical fails, without throwing, for a cyclic value', () => {
+      const cyclic: Record<string, unknown> = {};
+      cyclic.self = cyclic;
+      expect(Iana.Validate.yearMonthDateSpec.toCanonical(cyclic)).toFailWith(
+        /invalid Year-Month-Date.*\("\{"self":"\[Circular\]"\}"\)/i
+      );
+    });
+  });
+
   describe('isoAlpha2 region code', () => {
     const v = Iana.Validate.isoAlpha2RegionCode;
     const c = Iana.Converters.isoAlpha2RegionCode;

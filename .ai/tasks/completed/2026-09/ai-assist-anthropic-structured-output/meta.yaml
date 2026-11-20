@@ -1,0 +1,61 @@
+id: ai-assist-anthropic-structured-output
+status: shipped
+packages: ['@fgv/ts-extras'] # published packages only; samples/testbed also touched (unpublished)
+prs: [694]
+openPrs: []
+opened: 2026-09-25
+closed: 2026-09-25
+summary:
+  intended: >
+    Close the P2 #692 filed. Add a non-forcing Anthropic structured-output format, declare it by
+    modelPrefix for the lines that reject forced tool_choice, keep anthropic-tool-forced for the
+    rest, then rotate @anthropic:opus to claude-opus-5-5 and @anthropic:fable to claude-fable-5-1.
+    Decide three forks explicitly: the mechanism, the enforcement value, and whether the
+    server-tools refusal still applies. Every wire claim had to be sourced from a fetched page. No
+    live call; add an Anthropic structured-output probe to the testbed canary instead.
+  shipped: >
+    anthropic-output-format (output_config.format, json_schema) declared for claude-opus-5-5 and
+    claude-fable-5-1, reporting 'schema'. StructuredOutputEnforcement is unchanged, and
+    AiStructuredOutputFormat gains one member (change type minor). json-object is unexpressible
+    and routes through onUnsupported. The Anthropic adapter merges output_config so the
+    adaptive-thinking effort survives beside the format. The web_search refusal is kept, re-reasoned
+    as a feature-level citations incompatibility. Both aliases rotated. The TECH_DEBT P2 was removed
+    and a P3 filed for the web-search question. The testbed canary gained a structured-output probe
+    per tier plus @anthropic:fable, and the anthropic-structured-output scenario gained opus and
+    fable probes. Live-verified by the maintainer's anthropic-structured-output (3/3) and
+    anthropic-model-tiers (15/15, including effort + schema rows added after the first run) runs on
+    2026-09-25. Adding those rows surfaced a P3 (forced tool + manual thinking on pre-Claude-5 lines).
+  diverged: >
+    Fork 3 did not resolve either way the brief anticipated. JSON outputs have no wire or API-level
+    clash with tools, but Anthropic documents citations as incompatible with output_config.format,
+    and web search always cites. Whether that applies to web search is undocumented, so the refusal
+    was kept on that basis and the open question filed as a P3, rather than relaxed. The
+    output_config merge was not in the brief: the naive wire assignment would have dropped
+    output_config.effort on an always-thinking model. The testbed probe also added a plain live row
+    for @anthropic:fable, which no tier reaches. The antagonist pass found claude-mythos-5-1, a
+    documented id no alias reaches, had been skipped on an unsourced inference; the Fable 5.1 page
+    says it rejects forcing and is adaptive-only, so it was declared on both tables. The brief put
+    every package outside ts-extras out of scope while asking for a testbed probe; the probe shipped.
+  sourceLine: "**Shipped:** Anthropic structured output no longer depends on forcing a tool call on the lines that reject it — `claude-opus-5-5` and `claude-fable-5-1` get Anthropic's JSON outputs, and `@anthropic:opus` / `@anthropic:fable` rotate to them."
+  headline: >
+    Anthropic structured output works on Claude Opus 5.5 and Fable 5.1 via JSON outputs instead of a
+    forced tool call, and the advanced tier now resolves to claude-opus-5-5.
+relatedStreams:
+  - id: ai-assist-model-catalog-2026-09
+    relationship: 'predecessor — held the Anthropic aliases and filed the P2 this stream closes'
+  - id: ai-assist-structured-output
+    relationship: 'built the structured-output surface, the enforcement report and anthropic-tool-forced'
+keywords:
+  - forced tool_choice
+  - JSON outputs
+  - output_config.format
+  - constrained decoding
+  - strict tool use
+  - enforcement report
+  - server tools conflict
+  - citations incompatibility
+  - Claude Opus 5.5
+  - Claude Fable 5.1
+  - provider line rotation
+  - capability catch-all
+sourceHash: d692873bac526786 # sha256/16 over brief.md, result.md

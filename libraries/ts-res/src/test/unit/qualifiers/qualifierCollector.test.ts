@@ -162,6 +162,125 @@ describe('QualifierCollector class', () => {
         })
       ).toFailWith(/qualifier name.*not unique/i);
     });
+
+    test('creates an empty collector when qualifierTypes is omitted and qualifiers is undefined', () => {
+      expect(TsRes.Qualifiers.QualifierCollector.create({})).toSucceedAndSatisfy((qc) => {
+        expect(qc.size).toBe(0);
+        expect(qc.qualifierTypes.size).toBe(0);
+      });
+    });
+
+    test('creates an empty collector when qualifierTypes is omitted and qualifiers is an empty array', () => {
+      expect(TsRes.Qualifiers.QualifierCollector.create({ qualifiers: [] })).toSucceedAndSatisfy((qc) => {
+        expect(qc.size).toBe(0);
+        expect(qc.qualifierTypes.size).toBe(0);
+      });
+    });
+
+    test('creates an empty collector when qualifierTypes is provided and qualifiers is an empty array', () => {
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({ qualifierTypes, qualifiers: [] })
+      ).toSucceedAndSatisfy((qc) => {
+        expect(qc.size).toBe(0);
+        expect(qc.qualifierTypes).toBe(qualifierTypes);
+      });
+    });
+
+    test('synthesizes literal qualifier types from bare string entries with descending priorities', () => {
+      // 2 entries: step = floor(1000 / 2) = 500. Priorities = 1000 - index * 500.
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({
+          qualifiers: ['language', 'tone']
+        })
+      ).toSucceedAndSatisfy((qc) => {
+        expect(qc.size).toBe(2);
+        expect(qc.validating.get('language')).toSucceedAndSatisfy((q) => {
+          expect(q.type.name).toBe('language');
+          expect(q.defaultPriority).toBe(1000);
+        });
+        expect(qc.validating.get('tone')).toSucceedAndSatisfy((q) => {
+          expect(q.type.name).toBe('tone');
+          expect(q.defaultPriority).toBe(500);
+        });
+      });
+    });
+
+    test('accepts a mixed array of strings and full decls when qualifierTypes covers the decls', () => {
+      // 2 entries: synthesized string gets priority 1000 at index 0; explicit decl uses its own value.
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({
+          qualifierTypes,
+          qualifiers: ['greeting', { name: 'language', typeName: 'language', defaultPriority: 500 }]
+        })
+      ).toSucceedAndSatisfy((qc) => {
+        expect(qc.size).toBe(2);
+        expect(qc.validating.get('greeting')).toSucceedAndSatisfy((q) => {
+          expect(q.type.name).toBe('greeting');
+          expect(q.defaultPriority).toBe(1000);
+        });
+        expect(qc.validating.get('language')).toSucceedAndSatisfy((q) => {
+          expect(q.type.name).toBe('language');
+          expect(q.defaultPriority).toBe(500);
+        });
+      });
+    });
+
+    test('priority synthesis stays within ConditionPriority range for length=11 (regression: fixed-step overflowed)', () => {
+      // 11 entries: step = floor(1000/11) = 90. Priorities = 1000, 910, 820, ..., 100.
+      // Under the prior fixed-step formula `(length - index) * 100`, the first
+      // element would have priority 1100 — overflowing MaxConditionPriority and
+      // failing validation deep inside the qualifier factory.
+      const names = Array.from({ length: 11 }, (__unused, i) => `axis${i}`);
+      expect(TsRes.Qualifiers.QualifierCollector.create({ qualifiers: names })).toSucceedAndSatisfy((qc) => {
+        expect(qc.size).toBe(11);
+        expect(qc.validating.get('axis0')).toSucceedAndSatisfy((q) => {
+          expect(q.defaultPriority).toBe(1000);
+        });
+        expect(qc.validating.get('axis10')).toSucceedAndSatisfy((q) => {
+          expect(q.defaultPriority).toBe(100);
+        });
+      });
+    });
+
+    test('rejects an entry that is neither a string nor a valid IQualifierDecl shape at the Converter boundary', () => {
+      // The Converters.oneOf entry-validation rejects malformed inputs at the
+      // public-API boundary, citing the input rather than failing deep inside
+      // the qualifier factory.
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({
+          qualifierTypes,
+          qualifiers: [{ name: 'broken' } as unknown as TsRes.Qualifiers.IQualifierDecl]
+        })
+      ).toFail();
+    });
+
+    test('skips synthesizing a literal type when one with the same name is already supplied', () => {
+      // 'literal' qualifier type already exists in the test `qualifierTypes` collector
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({
+          qualifierTypes,
+          qualifiers: ['literal']
+        })
+      ).toSucceedAndSatisfy((qc) => {
+        expect(qc.size).toBe(1);
+        expect(qc.qualifierTypes.size).toBe(qualifierTypes.size);
+        expect(qc.validating.get('literal')).toSucceedAndSatisfy((q) => {
+          expect(q.type.name).toBe('literal');
+        });
+      });
+    });
+
+    test('fails when qualifiers include declarations and qualifierTypes is omitted, naming missing typeNames', () => {
+      expect(
+        TsRes.Qualifiers.QualifierCollector.create({
+          qualifiers: [
+            { name: 'lang', typeName: 'language', defaultPriority: 600 },
+            { name: 'home', typeName: 'territory', defaultPriority: 700 },
+            { name: 'language', typeName: 'language', defaultPriority: 500 }
+          ]
+        })
+      ).toFailWith(/qualifierTypes must be supplied.*'language'.*'territory'/);
+    });
   });
 
   describe('validating getOrAdd method', () => {

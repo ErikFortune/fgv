@@ -339,4 +339,136 @@ describe('GenericValidator class', () => {
       );
     });
   });
+
+  describe('or method', () => {
+    const stringValidator = new Base.GenericValidator<string>({
+      validator: (from: unknown): boolean | Failure<string> => {
+        return typeof from === 'string' ? true : fail('not a string');
+      }
+    });
+
+    const numberValidator = new Base.GenericValidator<number>({
+      validator: (from: unknown): boolean | Failure<number> => {
+        return typeof from === 'number' ? true : fail('not a number');
+      }
+    });
+
+    test('returns value from first validator if it succeeds', () => {
+      const combined = stringValidator.or(numberValidator as unknown as Base.GenericValidator<string>);
+      expect(combined.validate('hello')).toSucceedWith('hello');
+    });
+
+    test('tries second validator if first fails', () => {
+      // A validator that accepts either strings or numbers
+      const stringOrNumber = stringValidator.or(
+        new Base.GenericValidator<string>({
+          validator: (from: unknown): boolean | Failure<string> => {
+            return typeof from === 'number' ? true : fail('not a number');
+          }
+        })
+      );
+
+      expect(stringOrNumber.validate('hello')).toSucceedWith('hello');
+      expect(stringOrNumber.validate(42)).toSucceed();
+    });
+
+    test('fails with second validator error if both fail', () => {
+      const failingValidator1 = new Base.GenericValidator<string>({
+        validator: (): boolean | Failure<string> => {
+          return fail('first validator failed');
+        }
+      });
+      const failingValidator2 = new Base.GenericValidator<string>({
+        validator: (): boolean | Failure<string> => {
+          return fail('second validator failed');
+        }
+      });
+
+      const combined = failingValidator1.or(failingValidator2);
+      expect(combined.validate('anything')).toFailWith('second validator failed');
+    });
+
+    test('passes context to both validators', () => {
+      interface IContext {
+        useFirst: boolean;
+      }
+
+      const contextValidator1 = new Base.GenericValidator<string, IContext>({
+        validator: (from: unknown, context?: IContext): boolean | Failure<string> => {
+          if (context?.useFirst) {
+            return true;
+          }
+          return fail('first rejected');
+        }
+      });
+
+      const contextValidator2 = new Base.GenericValidator<string, IContext>({
+        validator: (from: unknown, context?: IContext): boolean | Failure<string> => {
+          if (!context?.useFirst) {
+            return true;
+          }
+          return fail('second rejected');
+        }
+      });
+
+      const combined = contextValidator1.or(contextValidator2);
+
+      expect(combined.validate('test', { useFirst: true })).toSucceedWith('test');
+      expect(combined.validate('test', { useFirst: false })).toSucceedWith('test');
+    });
+
+    test('can chain multiple or calls', () => {
+      const stringOnly = new Base.GenericValidator<string | number | boolean>({
+        validator: (from: unknown): boolean | Failure<string | number | boolean> => {
+          return typeof from === 'string' ? true : fail('not a string');
+        }
+      });
+
+      const numberOnly = new Base.GenericValidator<string | number | boolean>({
+        validator: (from: unknown): boolean | Failure<string | number | boolean> => {
+          return typeof from === 'number' ? true : fail('not a number');
+        }
+      });
+
+      const booleanOnly = new Base.GenericValidator<string | number | boolean>({
+        validator: (from: unknown): boolean | Failure<string | number | boolean> => {
+          return typeof from === 'boolean' ? true : fail('not a boolean');
+        }
+      });
+
+      const combined = stringOnly.or(numberOnly).or(booleanOnly);
+
+      expect(combined.validate('hello')).toSucceedWith('hello');
+      expect(combined.validate(42)).toSucceedWith(42);
+      expect(combined.validate(true)).toSucceedWith(true);
+      expect(combined.validate({})).toFailWith('not a boolean');
+    });
+
+    test('returns true from inner validator when first fails', () => {
+      // This tests the specific case where _validator returns boolean true
+      const booleanReturningValidator = new Base.GenericValidator<string>({
+        validator: (from: unknown): boolean | Failure<string> => {
+          return typeof from === 'string';
+        }
+      });
+
+      const fallbackValidator = new Base.GenericValidator<string>({
+        validator: (from: unknown): boolean | Failure<string> => {
+          return typeof from === 'number' ? true : fail('not a number either');
+        }
+      });
+
+      const combined = booleanReturningValidator.or(fallbackValidator);
+
+      // First validator returns true for string
+      expect(combined.validate('hello')).toSucceedWith('hello');
+
+      // First validator returns false (not Failure), so tries second
+      // which returns true for number
+      expect(combined.validate(42)).toSucceed();
+
+      // Both fail
+      expect(combined.validate({})).toFailWith('not a number either');
+    });
+  });
 });

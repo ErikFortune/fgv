@@ -1,0 +1,72 @@
+id: agent-tasks-tracked-commands
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [705]
+openPrs: []
+opened: 2026-10-01
+closed: 2026-10-01
+summary:
+  headline: '' # one line per capability, not per stream: this slice's capability is carried by agent-tasks-i1a's headline
+  intended: >
+    A designed fifth I1 slice, authorized proactively: give fgv.tracked@1's eleven transitions
+    registered JsonSchema parameter schemas on trackedTaskDescriptor(), so I1c's generator can offer
+    them as command tools with no change to packlets/tools/. Decide between two validators with
+    agreement as a fixture obligation (register schemas; _prepare keeps converting through
+    trackedCommand) and unifying _prepare onto the registered handle. Register all eleven and leave
+    the choice to the host's enable list; document set-attention's forgeable references and
+    succeed/fail asserting outcomes; prove a lifecycle move end to end through the real broker and
+    task_inspect; confirm no new disclosure channel; remove the fgv.tracked@1 TECH_DEBT entry; add
+    the slice to the implementation plan. Must not touch packlets/tools/ or fixedTaskToolNames (I1d's).
+  shipped: >
+    trackedTaskDescriptor() registers all eleven trackedTaskCommandNames as ITaskCommandHandles over
+    JsonSchema schemas held in a total Record, so a twelfth name does not compile without a schema;
+    a test pins the registered names to the vocabulary in order. Option 1 taken: _prepare keeps
+    converting through trackedCommand, which stays authoritative. Agreement fixtures pin both
+    validators' verdicts on 71 values: 23 both accept, 28 both refuse, 19 only the schema accepts,
+    1 only the converter accepts. Handles register idempotency 'none' and conditional false, inert on
+    native paths. End to end through a real broker, the lifecycle commands move the task and task_inspect
+    reports the new status, the set-* commands change the committed fields, and one captured
+    Anthropic model turn calls task_command_start; a stale revision and an unavailable transition read
+    as I1c's fixed conflict line naming no status. Hosts are told that references (six of eleven
+    commands) are accepted on syntax alone and that succeed/fail/cancel assert a final state.
+    Command-handle and descriptor TSDoc now scope "the broker validates/encodes" to externally
+    executed kinds. Revert matrix: 11 rows (TC-1…TC-11), 0 UNVERIFIED. Copilot loop stopped at 4
+    rounds.
+  diverged: >
+    The brief framed unification (option 2) as "one authority, no obligation to maintain"; the stream
+    found it cannot deliver that — the JsonSchema subset cannot state the converter's bounds, so a
+    unified _prepare would still run trackedCommand behind the schema, would narrow what the broker
+    accepts for host callers, and would couple fgv.task-list@1 to registration. The brief named
+    set-attention as the reference hazard; the stream found references in six of the eleven commands
+    (every reason's attention and every outcome's artifacts). The fixtures surfaced a disagreement
+    the brief did not anticipate — the converter coerces a numeric-string amount the schema refuses —
+    and a ts-utils quirk (an object converter with no fields converts null to {}). The first
+    registration used idempotency 'source-key' and conditional true; layer 1 reversed that to the
+    inert values. Copilot round 2 found that registering native handles made public command-handle
+    TSDoc false (the broker never calls a native handle's validate), so doc-only edits landed in
+    types/registry.ts and types/commands.ts, which the brief did not list. Gemini acceptance of an
+    empty nested object and the wrong "do not send it again" line for converter-only refusals were
+    left open and routed, the latter to I1d, whose own result.md does not mention it.
+  sourceLine: '**Shipped:** A model can now move a tracked task''s lifecycle — `fgv.tracked@1` registers all eleven of its transitions with parameter schemas, so a host offers any of them as typed command tools, one by one, while the broker''s own converter stays the authority on what it accepts.'
+keywords:
+  - tracked task lifecycle commands
+  - fgv.tracked@1 command registration
+  - trackedTaskDescriptor
+  - trackedTaskCommandNames
+  - schema converter agreement fixtures
+  - two validators fixture obligation
+  - _prepare native command path
+  - forgeable references
+  - set-attention
+  - terminal outcome assertion
+  - empty-parameter object schema Gemini
+  - null to empty object coercion
+  - inert idempotency conditional
+relatedStreams:
+  - id: agent-tasks-i1c
+    relationship: 'the command-tool generator this slice feeds; closed the fgv.tracked@1 limitation I1c routed'
+  - id: agent-tasks-i1d
+    relationship: 'run in parallel with disjoint file ownership; received the native-refusal unknown-line routing'
+  - id: agent-tasks-i1b
+    relationship: 'withheld attention from task_update as forgeable; this slice documents offering it back'
+sourceHash: b2c815ebe0775c36

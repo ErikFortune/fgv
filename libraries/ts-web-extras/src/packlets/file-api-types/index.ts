@@ -226,7 +226,14 @@ export async function safeShowOpenFilePicker(
   options?: ShowOpenFilePickerOptions
 ): Promise<FileSystemFileHandle[] | null> {
   if (supportsFileSystemAccess(window)) {
-    return window.showOpenFilePicker(options);
+    try {
+      return await window.showOpenFilePicker(options);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return null;
+      }
+      throw error;
+    }
   }
   return null;
 }
@@ -243,7 +250,14 @@ export async function safeShowSaveFilePicker(
   options?: ShowSaveFilePickerOptions
 ): Promise<FileSystemFileHandle | null> {
   if (supportsFileSystemAccess(window)) {
-    return window.showSaveFilePicker(options);
+    try {
+      return await window.showSaveFilePicker(options);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return null;
+      }
+      throw error;
+    }
   }
   return null;
 }
@@ -260,7 +274,14 @@ export async function safeShowDirectoryPicker(
   options?: ShowDirectoryPickerOptions
 ): Promise<FileSystemDirectoryHandle | null> {
   if (supportsFileSystemAccess(window)) {
-    return window.showDirectoryPicker(options);
+    try {
+      return await window.showDirectoryPicker(options);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return null;
+      }
+      throw error;
+    }
   }
   return null;
 }

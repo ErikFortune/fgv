@@ -1,0 +1,18 @@
+[Home](../../README.md) > [Diff](../README.md) > [IJsonDiffOptions](./IJsonDiffOptions.md) > arrayOrderMatters
+
+## IJsonDiffOptions.arrayOrderMatters property
+
+If true, treats arrays as ordered lists where position matters.
+If false, treats arrays as unordered sets.
+
+When `true` (default), array changes are reported by index position:
+`[1,2,3]` vs `[1,3,2]` shows modifications at indices 1 and 2.
+
+When `false`, arrays are compared as sets: `[1,2,3]` vs `[1,3,2]`
+may be considered equivalent (simplified unordered comparison).
+
+**Signature:**
+
+```typescript
+arrayOrderMatters: boolean;
+```

@@ -152,7 +152,7 @@ export class ConditionalJsonEditorRule extends JsonEditorRuleBase {
   /**
    * Determines if a given property key is conditional. Derived classes can override this
    * method to use a different format for conditional properties.
-   * @param value - The `JsonValue` of the property to be considered.
+   * @param key - The property key to be considered.
    * @param state - The {@link JsonEditorState | editor state} for the object being edited.
    * @returns `Success` with detail `'deferred'` and a
    * {@link EditorRules.IConditionalJsonKeyResult | IConditionalJsonKeyResult} describing the

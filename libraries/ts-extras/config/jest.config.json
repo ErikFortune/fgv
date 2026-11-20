@@ -1,6 +1,17 @@
 {
-  "extends": "@rushstack/heft-node-rig/profiles/default/config/jest.config.json",
-  "coveragePathIgnorePatterns": ["index.js", "public.js", "internal.js", "index.browser.js", "index.node.js"],
+  "extends": "@fgv/heft-dual-rig/profiles/default/config/jest.config.json",
+  "coveragePathIgnorePatterns": [
+    "index.js",
+    "public.js",
+    "internal.js",
+    "index.browser.js",
+    "index.node.js",
+    "safer-fetch/model.js",
+    "safer-fetch/failureReason.js",
+    "ai-assist/structuredOutputTypes.js",
+    "ai-assist/usageTypes.js",
+    "ai-assist/toolTypes.js"
+  ],
   "coverageThreshold": {
     "global": {
       "branches": 100,

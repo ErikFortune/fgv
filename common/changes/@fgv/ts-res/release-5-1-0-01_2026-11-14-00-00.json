@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res",
+      "comment": "Qualifier-name-typed declarations: the resource and condition declaration types take an optional `TQualifierNames` parameter (default `string`), and matching `typed*` converters such as `ResourceJson.Convert.typedResourceTreeRootDecl(qualifierNameConverter)` validate qualifier names at load time.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-res",
+  "email": "noreply@anthropic.com"
+}

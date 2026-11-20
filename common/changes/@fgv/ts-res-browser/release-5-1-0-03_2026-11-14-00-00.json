@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-browser",
+      "comment": "Upgrading from 5.0.2: Node.js 22.22.0 or later is required (`engines.node` was `>=20.0.0`; Node 20 is no longer supported).",
+      "type": "major"
+    }
+  ],
+  "packageName": "@fgv/ts-res-browser",
+  "email": "noreply@anthropic.com"
+}

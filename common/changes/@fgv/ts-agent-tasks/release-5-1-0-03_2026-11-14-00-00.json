@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "`TaskBroker`: principal-bound, authorized and projected access, external task sources reconciled in order, subscriptions with issued receipts, retention, and cascade stop over a task subtree.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks",
+  "email": "noreply@anthropic.com"
+}

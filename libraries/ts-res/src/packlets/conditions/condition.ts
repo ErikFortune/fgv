@@ -75,12 +75,8 @@ export class Condition implements IValidatedConditionDecl {
 
   /**
    * Constructs a new {@link Conditions.Condition | Condition} object.
-   * @param qualifier - The {@link Qualifiers.Qualifier | qualifier} used in this condition.
-   * @param value - The value to be matched in this condition.
-   * @param operator - The {@link ConditionOperator | operator} used when matching context value to condition value.
-   * @param priority - The {@link ConditionPriority | relative priority} of this condition.
-   * @param scoreAsDefault - The {@link QualifierMatchScore | score} to be used when this condition is the default.
-   * @param index - The index of this condition.
+   * @param params - The {@link Conditions.IValidatedConditionDecl | validated condition declaration}
+   * used to construct this condition.
    * @public
    */
   protected constructor({
@@ -142,7 +138,7 @@ export class Condition implements IValidatedConditionDecl {
    * @returns A {@link QualifierMatchScore | match score} indicating match quality if the condition is present
    * in the context to be matched, `undefined` otherwise.
    * @remarks
-   * If {@link Context.IContextMatchOptions.partialContextMatch | `options.partialContextMatch``} is `true`, then
+   * If {@link Context.IContextMatchOptions.partialContextMatch | `options.partialContextMatch`} is `true`, then
    * the method will return `undefined` if the corresponding qualifier is not present in the context.
    */
   public getContextMatch(

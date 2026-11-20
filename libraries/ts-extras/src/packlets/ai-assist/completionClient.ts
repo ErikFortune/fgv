@@ -1,0 +1,1291 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/**
+ * Chat completion clients for AI assist. One provider dispatcher over
+ * `IAiProviderDescriptor.apiFormat`, the four adapters it routes to (OpenAI Chat
+ * Completions, OpenAI/xAI Responses, Anthropic, Google Gemini), the response
+ * validators those adapters use, and the proxied variant of the same modality.
+ *
+ * @packageDocumentation
+ */
+
+import { type AnthropicThinkingOffType, resolveAnthropicThinkingOffType } from './anthropicThinkingOff';
+import { resolveGeminiModelThinking } from './geminiThinking';
+import { checkSamplingParams, temperatureAcceptedWithThinking } from './samplingParams';
+import { isJsonObject, type JsonObject } from '@fgv/ts-json-base';
+import {
+  captureResult,
+  fail,
+  type Logging,
+  Result,
+  succeed,
+  type Validator,
+  Validators
+} from '@fgv/ts-utils';
+
+import {
+  AiPrompt,
+  type AiServerToolConfig,
+  DEFAULT_ANTHROPIC_MAX_TOKENS,
+  type IAiCompletionResponse,
+  type IAiProviderDescriptor,
+  type IChatMessage,
+  type IChatRequest,
+  type IThinkingConfig,
+  type ModelSpec,
+  type ModelSpecKey,
+  isAdaptiveThinkingModel,
+  isThinkingRequiredModel,
+  isResponsesOnlyModel,
+  resolveProviderModel,
+  usesMaxCompletionTokensField
+} from './model';
+import { type IAiCacheRequest } from './cacheRequest';
+import { aiCompletionUsage } from './converters';
+import type { IAiCompletionUsage } from './usageTypes';
+import {
+  anthropicEffortToBudgetTokens,
+  checkTemperatureConflict,
+  geminiThinkingConfigWire,
+  resolveThinkingConfig,
+  providerDiscriminatorForId,
+  type IResolvedThinkingConfig
+} from './thinkingOptionsResolver';
+import {
+  buildAnthropicMessages,
+  buildAnthropicSystem,
+  buildGeminiContents,
+  buildMessages,
+  buildOpenAiChatSystemContent,
+  buildOpenAiChatUserContent,
+  buildOpenAiResponsesSystemContent,
+  buildOpenAiResponsesUserContent,
+  normalizeOutboundMessages,
+  splitChatRequest
+} from './chatRequestBuilders';
+import {
+  anthropicAuthHeaders,
+  bearerAuthHeader,
+  geminiAuthHeader,
+  resolveEffectiveBaseUrl
+} from './endpoint';
+import { type IAiApiConfig, fetchJson } from './http';
+import { type IAiVerifiedEndpoint, schemaWireProviderId } from './schemaKeywords';
+import { serverToolsToAnthropic, serverToolsToGemini, serverToolsToResponsesApi } from './toolFormats';
+import {
+  ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME,
+  type IResolvedStructuredOutput,
+  NO_STRUCTURED_OUTPUT,
+  isStructuredOutputEnforcement,
+  resolveStructuredOutput
+} from './structuredOutput';
+import { resolveStructuredOutputCapability } from './registry';
+import {
+  supportsCacheUsageReporting,
+  supportsPromptCacheBreakpoints,
+  supportsPromptCacheRouting
+} from './streamUsageCapability';
+import type { StructuredOutputRequest } from './structuredOutputTypes';
+import {
+  normalizeAnthropicUsage,
+  normalizeGeminiUsage,
+  normalizeOpenAiChatUsage,
+  normalizeOpenAiResponsesUsage
+} from './usageNormalization';
+
+// ============================================================================
+// Types
+// ============================================================================
+
+/**
+ * Parameters for a provider completion request. Carries the unified
+ * {@link AiAssist.IChatRequest} shape (`system?` + ordered `messages`, last =
+ * current user turn); history is linearized before the current turn.
+ * @public
+ */
+export interface IProviderCompletionParams extends IChatRequest {
+  /** The provider descriptor */
+  readonly descriptor: IAiProviderDescriptor;
+  /** API key for authentication */
+  readonly apiKey: string;
+  /**
+   * Sampling temperature. Sent to the provider only when explicitly provided; omitted otherwise
+   * so the provider's own default applies. Many current-gen models reject a non-default value;
+   * a model on `IAiProviderDescriptor.samplingParamsRejectedModelPrefixes` still accepts the
+   * descriptor's `samplingParamsAcceptedTemperature`, with or without thinking, and is refused
+   * any other value before the wire; a model on
+   * `IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes` applies the same rule
+   * unless the request turns thinking off (effort `'none'`), when any value is sent.
+   */
+  readonly temperature?: number;
+  /** Optional model override — string or context-aware map (uses descriptor.defaultModel otherwise) */
+  readonly modelOverride?: ModelSpec;
+  /**
+   * Optional quality tier selecting which completion model to use. `undefined`
+   * selects the `base` tier; `'frontier'` cascades to `advanced` then `base`
+   * when a tier is unset for a provider. Orthogonal to `thinking` and `tools`,
+   * which never select a model.
+   */
+  readonly tier?: 'advanced' | 'frontier';
+  /** Optional logger for request/response observability. */
+  readonly logger?: Logging.ILogger;
+  /** Server-side tools to include in the request. Overrides settings-level tool config when provided. */
+  readonly tools?: ReadonlyArray<AiServerToolConfig>;
+  /** Optional abort signal for cancelling the in-flight request. */
+  readonly signal?: AbortSignal;
+  /**
+   * Optional override of the descriptor's default base URL (scheme + host +
+   * optional port + path prefix). The per-route suffix (e.g. `/chat/completions`)
+   * is appended unchanged. Must be a well-formed `http`/`https` URL. Auth shape
+   * is unchanged: `needsSecret` providers still require an API key.
+   *
+   * Schemas sent to an overridden endpoint — client-tool parameters and structured-output
+   * schemas — are adapted with the conservative keyword table
+   * (`JsonSchema.unverifiedWireSchemaKeywords`), since the provider's documentation describes its
+   * own endpoint, unless `verifiedEndpoint` asserts this one is the provider itself.
+   */
+  readonly endpoint?: string;
+  /**
+   * The host's assertion that `endpoint` reaches the descriptor's own provider, so this request's
+   * schemas are adapted with that provider's keyword table instead of the conservative one.
+   * Ignored without `endpoint`, and honoured only as `IAiVerifiedEndpoint` describes.
+   */
+  readonly verifiedEndpoint?: IAiVerifiedEndpoint;
+  /**
+   * Optional thinking/reasoning config. Anthropic, OpenAI, and xAI reject `temperature` when
+   * the effective merged effort is non-`'none'`, except a model's accepted default
+   * (`IAiProviderDescriptor.samplingParamsAcceptedTemperature`); Gemini always accepts both.
+   */
+  readonly thinking?: IThinkingConfig;
+  /**
+   * Optional cap on generated output tokens, mapped to each provider's native field:
+   * Anthropic `max_tokens`, OpenAI/xAI Responses `max_output_tokens`, Gemini
+   * `generationConfig.maxOutputTokens`, and on the chat-completions path the descriptor's
+   * `chatOutputTokensField` (`max_completion_tokens` for OpenAI, Groq and xAI; `max_tokens` for
+   * Mistral, Ollama and `openai-compat`). When unset,
+   * every provider except Anthropic omits the field and applies its own default; Anthropic's
+   * Messages API requires the field, so it falls back to `DEFAULT_ANTHROPIC_MAX_TOKENS`.
+   */
+  readonly maxTokens?: number;
+  /**
+   * Ask the provider to constrain its output — to a schema, or to syntactically
+   * valid JSON of arbitrary shape.
+   *
+   * @remarks
+   * **The caller supplies intent; the response reports outcome.** A caller cannot
+   * know up front which concrete model will serve the request (a `tier` request
+   * cascades, and aliases resolve at call time), so it never has to: whatever was
+   * actually enforced comes back on
+   * `IAiCompletionResponse.structuredOutput`.
+   */
+  readonly structuredOutput?: StructuredOutputRequest;
+  /**
+   * Prompt-caching plan for this request. Omitted, nothing cache-related is sent — the request
+   * body is byte-identical to a build predating this feature. See {@link AiAssist.IAiCacheRequest}.
+   */
+  readonly cache?: IAiCacheRequest;
+}
+
+// ============================================================================
+// Response validators (non-strict — extra API fields preserved for debugging)
+// ============================================================================
+
+// ---- OpenAI Chat Completions format ----
+
+/** @internal */
+interface IOpenAiMessage {
+  content: string;
+}
+/** @internal */
+interface IOpenAiChoice {
+  message: IOpenAiMessage;
+  finish_reason: string;
+}
+/** @internal */
+interface IOpenAiResponse {
+  choices: IOpenAiChoice[];
+}
+
+const openAiMessage: Validator<IOpenAiMessage> = Validators.object<IOpenAiMessage>({
+  content: Validators.string
+});
+const openAiChoice: Validator<IOpenAiChoice> = Validators.object<IOpenAiChoice>({
+  message: openAiMessage,
+  finish_reason: Validators.string
+});
+const openAiResponse: Validator<IOpenAiResponse> = Validators.object<IOpenAiResponse>({
+  choices: Validators.arrayOf(openAiChoice).withConstraint((arr) => arr.length > 0)
+});
+
+// ---- OpenAI/xAI Responses API format ----
+
+/** @internal */
+interface IResponsesApiOutputText {
+  type: 'output_text';
+  text: string;
+}
+/** @internal */
+interface IResponsesApiMessage {
+  type: 'message';
+  role: string;
+  content: IResponsesApiOutputText[];
+}
+/** @internal */
+interface IResponsesApiResponse {
+  output: Array<Record<string, unknown>>;
+  status: string;
+}
+
+const responsesApiOutputText: Validator<IResponsesApiOutputText> = Validators.object<IResponsesApiOutputText>(
+  {
+    type: Validators.literal('output_text'),
+    text: Validators.string
+  }
+);
+const responsesApiMessage: Validator<IResponsesApiMessage> = Validators.object<IResponsesApiMessage>({
+  type: Validators.literal('message'),
+  role: Validators.string,
+  content: Validators.arrayOf(responsesApiOutputText).withConstraint((arr) => arr.length > 0)
+});
+const responsesApiOutputItem: Validator<Record<string, unknown>> = Validators.isA(
+  'object',
+  (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
+);
+const responsesApiResponse: Validator<IResponsesApiResponse> = Validators.object<IResponsesApiResponse>({
+  output: Validators.arrayOf(responsesApiOutputItem).withConstraint((arr) => arr.length > 0),
+  status: Validators.string
+});
+
+// ---- Gemini format ----
+
+/** @internal */
+interface IGeminiPart {
+  // Optional: a part is not always a text part. Reasoning parts carry `thought`, and tool parts
+  // carry `functionCall`; both arrive with no `text` at all.
+  text?: string;
+}
+/** @internal */
+interface IGeminiContent {
+  parts?: IGeminiPart[];
+}
+/** @internal */
+interface IGeminiCandidate {
+  // Every field here is optional because a candidate that produced nothing still comes back —
+  // as `content: {}`, or with no `content` key. Requiring them turned "the model declined, and
+  // here is why" into an opaque validation error naming a field of an empty object.
+  content?: IGeminiContent;
+  finishReason?: string;
+  finishMessage?: string;
+}
+/** @internal */
+interface IGeminiResponse {
+  candidates: IGeminiCandidate[];
+}
+
+const geminiPart: Validator<IGeminiPart> = Validators.object<IGeminiPart>({
+  text: Validators.string.optional()
+});
+const geminiContent: Validator<IGeminiContent> = Validators.object<IGeminiContent>({
+  // No non-empty constraint: `parts: []` is a shape Gemini actually returns, and rejecting it
+  // here reports a schema violation for what is really "the model produced no output".
+  parts: Validators.arrayOf(geminiPart).optional()
+});
+const geminiCandidate: Validator<IGeminiCandidate> = Validators.object<IGeminiCandidate>({
+  content: geminiContent.optional(),
+  finishReason: Validators.string.optional(),
+  finishMessage: Validators.string.optional()
+});
+
+// Terminal reasons that mean "the model finished normally", as distinct from a refusal. Kept in
+// step with the identical set in `imageGenerationClient.ts`; both exist so an empty response can
+// be reported as the decline it is rather than as an empty string or a parse error.
+const benignGeminiFinishReasons: ReadonlySet<string> = new Set(['STOP', 'MAX_TOKENS']);
+const geminiResponse: Validator<IGeminiResponse> = Validators.object<IGeminiResponse>({
+  candidates: Validators.arrayOf(geminiCandidate).withConstraint((arr) => arr.length > 0)
+});
+
+// ============================================================================
+// OpenAI-compatible client (Chat Completions — no tools)
+// ============================================================================
+
+/**
+ * Calls an OpenAI-compatible chat completion endpoint.
+ * Works for xAI Grok, OpenAI, Groq, and Mistral.
+ * @internal
+ */
+async function callOpenAiCompletion(
+  config: IAiApiConfig,
+  prompt: AiPrompt,
+  head?: ReadonlyArray<IChatMessage>,
+  temperature?: number,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal,
+  resolvedThinking?: IResolvedThinkingConfig,
+  maxTokens?: number,
+  useMaxCompletionTokensField: boolean = false,
+  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT,
+  reportsUsage: boolean = false,
+  cache?: IAiCacheRequest,
+  cacheKeyHeader?: string
+): Promise<Result<IAiCompletionResponse>> {
+  const url = `${config.baseUrl}/chat/completions`;
+  const systemContentResult = buildOpenAiChatSystemContent(prompt.system, cache);
+  if (systemContentResult.isFailure()) {
+    return fail(systemContentResult.message);
+  }
+  const messages = buildMessages(systemContentResult.value, buildOpenAiChatUserContent(prompt), {
+    head
+  });
+  const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
+  const maxTokensField = useMaxCompletionTokensField ? 'max_completion_tokens' : 'max_tokens';
+  const body: Record<string, unknown> = {
+    model: config.model,
+    messages,
+    // Temperature is sent only when the caller explicitly provided one — omitting it lets each
+    // provider apply its own default (current-gen models reject a non-default temperature). The
+    // completion path already rejects temperature + non-'none' thinking upstream
+    // (checkTemperatureConflict), so no effort gate is needed here: beside an effort, the only
+    // temperature that reaches this point is a model's accepted default.
+    ...(temperature !== undefined ? { temperature } : {}),
+    ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning_effort: effort } : {}),
+    // Omitted when the caller doesn't set maxTokens — every non-Anthropic provider applies its
+    // own default. See AiAssist.usesMaxCompletionTokensField for the field-name split.
+    ...(maxTokens !== undefined ? { [maxTokensField]: maxTokens } : {}),
+    // Pure additive routing plumbing (research.md §1.3) — no vocabulary, no cap. `cacheKey` is
+    // gated at the dispatch site to descriptors with a confirmed routing transport (see
+    // supportsPromptCacheRouting), and carried here as a body field only for providers that take
+    // it that way. xAI takes it as the `cacheKeyHeader` below instead, so sending it in the body
+    // as well would be an unrecognized field on a server whose tolerance is unconfirmed.
+    ...(cache?.cacheKey !== undefined && cacheKeyHeader === undefined
+      ? // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field name
+        { prompt_cache_key: cache.cacheKey }
+      : {})
+  };
+  if (resolvedThinking?.otherParams !== undefined) {
+    Object.assign(body, resolvedThinking.otherParams);
+  }
+  Object.assign(body, structured.wire);
+
+  const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
+  // Sticky-routing key, when the provider carries it as a header rather than a body field.
+  // xAI's prompt cache is per-server, so an identical prefix can still miss if the request is
+  // routed to a different box; `x-grok-conv-id` pins it.
+  if (cache?.cacheKey !== undefined && cacheKeyHeader !== undefined) {
+    headers[cacheKeyHeader] = cache.cacheKey;
+  }
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`OpenAI completion: model=${config.model}`);
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  // Only descriptors with confirmed cache-relevant usage reporting are normalized — the
+  // adapter is shared by Groq/Mistral/Ollama/openai-compat too, and an ordinary usage block
+  // from one of those carries no cache information. See supportsCacheUsageReporting.
+  const rawUsage = jsonResult.value.usage;
+  const usage = reportsUsage
+    ? normalizeOpenAiChatUsage(isJsonObject(rawUsage) ? rawUsage : undefined)
+    : undefined;
+  return openAiResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `OpenAI API response: ${msg}`)
+    .onSuccess((response) => {
+      const choice = response.choices[0];
+      return succeed({
+        content: choice.message.content,
+        truncated: choice.finish_reason === 'length',
+        structuredOutput: structured.enforcement,
+        ...(usage !== undefined ? { usage } : {})
+      });
+    });
+}
+
+// ============================================================================
+// OpenAI/xAI Responses API (with tools)
+// ============================================================================
+
+/**
+ * Extracts text content from a Responses API output array.
+ * Finds the first message-type output item and concatenates its text content blocks.
+ * @internal
+ */
+function extractResponsesApiText(output: Array<Record<string, unknown>>): Result<string> {
+  for (const item of output) {
+    if (item.type === 'message') {
+      const messageResult = responsesApiMessage.validate(item as JsonObject);
+      if (messageResult.isSuccess()) {
+        return succeed(messageResult.value.content.map((c) => c.text).join(''));
+      }
+    }
+  }
+  return fail('Responses API output contained no message with text content');
+}
+
+/**
+ * Calls the xAI/OpenAI Responses API with server-side tools.
+ * Used when tools are configured for an openai-format provider.
+ * @internal
+ */
+async function callOpenAiResponsesCompletion(
+  config: IAiApiConfig,
+  prompt: AiPrompt,
+  tools: ReadonlyArray<AiServerToolConfig> = [],
+  head?: ReadonlyArray<IChatMessage>,
+  temperature?: number,
+  logger?: Logging.ILogger,
+  signal?: AbortSignal,
+  resolvedThinking?: IResolvedThinkingConfig,
+  maxTokens?: number,
+  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT,
+  reportsUsage: boolean = false,
+  cache?: IAiCacheRequest
+): Promise<Result<IAiCompletionResponse>> {
+  const url = `${config.baseUrl}/responses`;
+  const systemContentResult = buildOpenAiResponsesSystemContent(prompt.system, cache);
+  if (systemContentResult.isFailure()) {
+    return fail(systemContentResult.message);
+  }
+  const input = buildMessages(systemContentResult.value, buildOpenAiResponsesUserContent(prompt), {
+    head
+  });
+  const effort = resolvedThinking?.openAiEffort ?? resolvedThinking?.xaiEffort;
+  const body: Record<string, unknown> = {
+    model: config.model,
+    input,
+    // `tools` is omitted entirely when none are requested — a Responses-only model routed
+    // here for tier/model reasons (not tools) must not send an empty tools array.
+    ...(tools.length > 0 ? { tools: serverToolsToResponsesApi(tools) } : {}),
+    // Temperature is sent only when the caller explicitly provided one (see callOpenAiCompletion).
+    ...(temperature !== undefined ? { temperature } : {}),
+    ...(effort !== undefined && config.model !== 'grok-4' ? { reasoning: { effort } } : {}),
+    // See the identical field and gating on callOpenAiCompletion's body — same routing plumbing,
+    // confirmed on both Chat Completions and the Responses API (research.md §1.3).
+    ...(cache?.cacheKey !== undefined
+      ? // eslint-disable-next-line @typescript-eslint/naming-convention -- wire field name
+        { prompt_cache_key: cache.cacheKey }
+      : {})
+  };
+  // Shared by OpenAI and xAI — both route through the Responses API with the same field name.
+  if (maxTokens !== undefined) {
+    body.max_output_tokens = maxTokens;
+  }
+  if (resolvedThinking?.otherParams !== undefined) {
+    Object.assign(body, resolvedThinking.otherParams);
+  }
+  Object.assign(body, structured.wire);
+
+  const headers: Record<string, string> = bearerAuthHeader(config.apiKey);
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`OpenAI Responses API: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  // See the identical gate in callOpenAiCompletion above — this route is shared the same way.
+  const rawResponsesUsage = jsonResult.value.usage;
+  const responsesUsage = reportsUsage
+    ? normalizeOpenAiResponsesUsage(isJsonObject(rawResponsesUsage) ? rawResponsesUsage : undefined)
+    : undefined;
+  return responsesApiResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `Responses API response: ${msg}`)
+    .onSuccess((response) => {
+      return extractResponsesApiText(response.output).onSuccess((text) =>
+        succeed({
+          content: text,
+          truncated: response.status === 'incomplete',
+          structuredOutput: structured.enforcement,
+          ...(responsesUsage !== undefined ? { usage: responsesUsage } : {})
+        })
+      );
+    });
+}
+
+// ============================================================================
+// Anthropic adapter
+// ============================================================================
+
+/**
+ * Extracts text content from Anthropic response content blocks.
+ * When tools are used, the content array contains mixed block types
+ * (text, server_tool_use, web_search_tool_result). We extract and
+ * concatenate only the text blocks.
+ * @internal
+ */
+function extractAnthropicText(content: unknown[]): Result<string> {
+  const textParts: string[] = [];
+  for (const block of content) {
+    if (typeof block === 'object' && block !== null && 'type' in block) {
+      const typed = block as Record<string, unknown>;
+      if (typed.type === 'text' && typeof typed.text === 'string') {
+        textParts.push(typed.text);
+      }
+    }
+  }
+  if (textParts.length === 0) {
+    return fail('Anthropic response contained no text content blocks');
+  }
+  return succeed(textParts.join(''));
+}
+
+/**
+ * Extracts the forced structured-output tool's input from Anthropic response
+ * content blocks and re-serializes it.
+ *
+ * @remarks
+ * Under `'tool-forced'` enforcement the model's answer arrives as a `tool_use`
+ * block's `input` — a parsed object — rather than as text. Re-serializing it here
+ * keeps `IAiCompletionResponse.content` a JSON **string** on every provider, so a
+ * caller's converter is written once and does not branch on which enforcement it
+ * got. A useful side effect: the string is produced by `JSON.stringify` rather
+ * than by the model, so under this enforcement it is syntactically valid by
+ * construction.
+ * @internal
+ */
+function extractAnthropicStructuredOutput(content: unknown[]): Result<string> {
+  for (const block of content) {
+    if (typeof block === 'object' && block !== null && 'type' in block) {
+      const typed = block as Record<string, unknown>;
+      if (typed.type === 'tool_use' && typed.name === ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME) {
+        // `JSON.stringify` returns `undefined` — not a string, and not a throw —
+        // for `undefined` and for a function or symbol. `captureResult` would wrap
+        // that as a Success, putting `undefined` behind a `content: string`
+        // contract with nothing to catch it downstream. A `tool_use` block with no
+        // `input` is exactly that case.
+        return captureResult(() => JSON.stringify(typed.input))
+          .withErrorFormat(
+            (msg) => `Anthropic API response: structured output could not be serialized: ${msg}`
+          )
+          .onSuccess((json) =>
+            typeof json === 'string'
+              ? succeed(json)
+              : fail(
+                  `Anthropic API response: forced tool '${ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME}' returned no serializable input`
+                )
+          );
+      }
+    }
+  }
+  // Loud rather than a silent fall back to text: we forced the tool, so its
+  // absence means the request did not do what the response is about to claim it
+  // did — and `structuredOutput: 'tool-forced'` would then be a lie.
+  return fail(
+    `Anthropic API response: structured output was forced but no '${ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME}' tool_use block was returned`
+  );
+}
+
+/**
+ * Merges a resolved structured-output wire into an Anthropic request body.
+ *
+ * @remarks
+ * A plain `Object.assign` except for `output_config`, which is **merged one level
+ * deep**. Two writers share that object: the adaptive-thinking path puts `effort` in
+ * it, and `'anthropic-output-format'` puts `format` in it. Anthropic's Messages API
+ * reference documents both as optional siblings of one `OutputConfig`
+ * (https://platform.claude.com/docs/en/api/messages/create, fetched 2026-09-25), so
+ * they belong in the same object — and a structured-output call on an always-thinking
+ * model such as `claude-opus-5-5` is exactly the call that carries both. Assigning
+ * would drop the caller's effort with nothing failing.
+ * @internal
+ */
+function mergeAnthropicStructuredWire(body: Record<string, unknown>, wire: JsonObject): void {
+  const { output_config: wireOutputConfig, ...rest } = wire;
+  Object.assign(body, rest);
+  if (isJsonObject(wireOutputConfig)) {
+    const existing = body.output_config;
+    body.output_config = isJsonObject(existing) ? { ...existing, ...wireOutputConfig } : wireOutputConfig;
+  }
+}
+
+/** Calls the Anthropic Messages API with optional tool support. @internal */
+async function callAnthropicCompletion(
+  config: IAiApiConfig,
+  prompt: AiPrompt,
+  head?: ReadonlyArray<IChatMessage>,
+  temperature?: number,
+  logger?: Logging.ILogger,
+  tools?: ReadonlyArray<AiServerToolConfig>,
+  signal?: AbortSignal,
+  resolvedThinking?: IResolvedThinkingConfig,
+  useAdaptiveThinking: boolean = false,
+  maxTokens?: number,
+  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT,
+  cache?: IAiCacheRequest,
+  thinkingOffType: AnthropicThinkingOffType = 'disabled'
+): Promise<Result<IAiCompletionResponse>> {
+  const url = `${config.baseUrl}/messages`;
+  const messages = buildAnthropicMessages(prompt, { head });
+  const systemResult = buildAnthropicSystem(prompt.system, cache);
+  if (systemResult.isFailure()) {
+    return fail(systemResult.message);
+  }
+  const body: Record<string, unknown> = {
+    model: config.model,
+    system: systemResult.value,
+    messages,
+    // Anthropic's Messages API requires max_tokens on every request — see
+    // AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS for why only this provider defaults it.
+    max_tokens: maxTokens ?? DEFAULT_ANTHROPIC_MAX_TOKENS,
+    // Temperature is sent only when explicitly provided. The completion path refuses a rejected value
+    // upstream (checkSamplingParams, checkTemperatureConflict), so no effort gate is needed here.
+    ...(temperature !== undefined ? { temperature } : {})
+  };
+
+  const effort = resolvedThinking?.anthropicEffort;
+  if (effort !== undefined) {
+    if (useAdaptiveThinking) {
+      // Claude 5 family: adaptive thinking — no budget_tokens; effort moves to the
+      // top-level output_config block. See AiAssist.isAdaptiveThinkingModel.
+      body.thinking = { type: 'adaptive' };
+      body.output_config = { effort };
+    } else {
+      body.thinking = { type: 'enabled', budget_tokens: anthropicEffortToBudgetTokens(effort) };
+    }
+  } else if (resolvedThinking?.anthropicThinkingDisabled === true && useAdaptiveThinking) {
+    // Adaptive models think by default, so omitting `thinking` would not turn it off. The off value
+    // is per model (resolveAnthropicThinkingOffType), and a generic 'none' sends no effort beside it:
+    // this branch runs only when anthropicEffort is unset (an 'other' block's otherParams, merged
+    // below, can still add one), which also keeps between_tools clear of its 400 at
+    // effort xhigh and max. A model on thinkingRequiredModelPrefixes never gets here: a generic
+    // 'none' is degraded or refused when it is resolved, and the client-tool path refuses a caller-built flag
+    // for it before dispatch.
+    body.thinking = { type: thinkingOffType };
+  }
+  if (resolvedThinking?.otherParams !== undefined) {
+    Object.assign(body, resolvedThinking.otherParams);
+  }
+
+  // The forced-tool wire (`'tool-forced'`) carries `tools` + `tool_choice` of its
+  // own, so the server-tool assignment below would clobber it. (The
+  // `'anthropic-output-format'` wire lives in `output_config` and carries no tools,
+  // which is why this checks the enforcement, not merely that a wire exists.)
+  // `resolveStructuredOutput` refuses forced-tool + server tools up front, which is
+  // what makes the two mutually exclusive — but that is an invariant held in a
+  // DIFFERENT FILE, and a relaxed conflict guard (or a new tools-based format) would
+  // reintroduce silent clobbering with nothing failing at this line. So assert it
+  // here rather than trusting a comment across a file boundary.
+  // Unreachable through the public API — resolveStructuredOutput refuses this
+  // combination before dispatch — and unreachable BY DESIGN: it cannot be
+  // exercised without first breaking the very thing it guards against.
+  /* c8 ignore next 6 - defensive: internal consistency check, see above */
+  if (structured.enforcement === 'tool-forced' && tools !== undefined && tools.length > 0) {
+    return fail(
+      `Anthropic completion: structured output and server-side tools both claim the tools channel; ` +
+        `this combination must be refused before reaching the adapter`
+    );
+  }
+  mergeAnthropicStructuredWire(body, structured.wire);
+
+  if (tools && tools.length > 0) {
+    body.tools = serverToolsToAnthropic(tools);
+    /* c8 ignore next 3 - optional logger diagnostic output */
+    logger?.info(`Anthropic completion: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
+  } else {
+    /* c8 ignore next 1 - optional logger */
+    logger?.info(`Anthropic completion: model=${config.model}`);
+  }
+
+  const headers: Record<string, string> = anthropicAuthHeaders(config.apiKey);
+
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+
+  const rawContent = (jsonResult.value as Record<string, unknown>).content;
+  const stopReason = (jsonResult.value as Record<string, unknown>).stop_reason;
+  const rawAnthropicUsage = jsonResult.value.usage;
+  const anthropicUsage = normalizeAnthropicUsage(
+    isJsonObject(rawAnthropicUsage) ? rawAnthropicUsage : undefined
+  );
+  if (!Array.isArray(rawContent)) {
+    return fail('Anthropic API response: content is not an array');
+  }
+  if (typeof stopReason !== 'string') {
+    return fail('Anthropic API response: stop_reason is missing or not a string');
+  }
+  const extracted =
+    structured.enforcement === 'tool-forced'
+      ? extractAnthropicStructuredOutput(rawContent)
+      : extractAnthropicText(rawContent);
+  return extracted.onSuccess((text) =>
+    succeed({
+      content: text,
+      truncated: stopReason === 'max_tokens',
+      structuredOutput: structured.enforcement,
+      ...(anthropicUsage !== undefined ? { usage: anthropicUsage } : {})
+    })
+  );
+}
+
+// ============================================================================
+// Google Gemini adapter
+// ============================================================================
+
+/**
+ * Calls the Google Gemini generateContent API.
+ * When tools are configured, includes Google Search grounding.
+ * @internal
+ */
+async function callGeminiCompletion(
+  config: IAiApiConfig,
+  prompt: AiPrompt,
+  head?: ReadonlyArray<IChatMessage>,
+  temperature?: number,
+  logger?: Logging.ILogger,
+  tools?: ReadonlyArray<AiServerToolConfig>,
+  signal?: AbortSignal,
+  resolvedThinking?: IResolvedThinkingConfig,
+  maxTokens?: number,
+  structured: IResolvedStructuredOutput = NO_STRUCTURED_OUTPUT
+): Promise<Result<IAiCompletionResponse>> {
+  const url = `${config.baseUrl}/models/${config.model}:generateContent`;
+  const contents = buildGeminiContents(prompt, { head });
+
+  // Temperature is sent only when explicitly provided; otherwise Gemini's default applies.
+  const generationConfig: Record<string, unknown> = {};
+  if (temperature !== undefined) {
+    generationConfig.temperature = temperature;
+  }
+  if (maxTokens !== undefined) {
+    generationConfig.maxOutputTokens = maxTokens;
+  }
+  // The resolver never sets both a level and a budget (see geminiThinkingConfigWire).
+  const thinkingConfig = geminiThinkingConfigWire(resolvedThinking);
+  if (thinkingConfig !== undefined) {
+    generationConfig.thinkingConfig = thinkingConfig;
+  }
+  if (resolvedThinking?.otherParams !== undefined) {
+    Object.assign(generationConfig, resolvedThinking.otherParams);
+  }
+  // Gemini nests the constraint INSIDE generationConfig, not on the body.
+  Object.assign(generationConfig, structured.wire);
+  const body: Record<string, unknown> = {
+    systemInstruction: { parts: [{ text: prompt.system }] },
+    contents,
+    generationConfig
+  };
+
+  if (tools && tools.length > 0) {
+    body.tools = serverToolsToGemini(tools);
+    /* c8 ignore next 1 - optional logger */
+    logger?.info(`Gemini completion: model=${config.model}, tools=${tools.map((t) => t.type).join(',')}`);
+  } else {
+    /* c8 ignore next 1 - optional logger */
+    logger?.info(`Gemini completion: model=${config.model}`);
+  }
+
+  const headers: Record<string, string> = geminiAuthHeader(config.apiKey);
+
+  const jsonResult = await fetchJson(url, headers, body, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+  const rawGeminiUsage = jsonResult.value.usageMetadata;
+  const geminiUsage = normalizeGeminiUsage(isJsonObject(rawGeminiUsage) ? rawGeminiUsage : undefined);
+  return geminiResponse
+    .validate(jsonResult.value)
+    .withErrorFormat((msg) => `Gemini API response: ${msg}`)
+    .onSuccess((response) => {
+      const candidate = response.candidates[0];
+      // ALL parts, not `parts[0]`. Gemini may split one reply across several
+      // text parts, and reading only the first silently discards the rest —
+      // yielding a truncated document that often still parses, which is the
+      // worst way to be wrong. The streaming adapter has always concatenated
+      // (`fullText += part.text`); this path did not, so the same response gave
+      // different text depending on which one you called.
+      //
+      // `part.text ?? ''` rather than `part.text`: a reasoning or tool part contributes no text,
+      // and joining `undefined` would put the literal string "undefined" into the reply.
+      const content = candidate.content?.parts?.map((part) => part.text ?? '').join('') ?? '';
+      if (content.length === 0) {
+        // Nothing came back. If the candidate says why, say so — an empty string handed to a
+        // caller is indistinguishable from a model that legitimately replied with nothing, and
+        // sends them looking in the wrong place.
+        const reason = candidate.finishReason;
+        if (reason !== undefined && !benignGeminiFinishReasons.has(reason)) {
+          const suffix = candidate.finishMessage ? ` — ${candidate.finishMessage}` : '';
+          return fail(`Gemini completion declined: ${reason}${suffix}`);
+        }
+      }
+      return succeed({
+        content,
+        truncated: candidate.finishReason === 'MAX_TOKENS',
+        structuredOutput: structured.enforcement,
+        ...(geminiUsage !== undefined ? { usage: geminiUsage } : {})
+      });
+    });
+}
+
+// ============================================================================
+// Provider dispatcher
+// ============================================================================
+
+/**
+ * Calls the appropriate chat completion API for a given provider. Routes by
+ * `apiFormat`: `'openai'` (xAI/OpenAI/Groq/Mistral — switches to Responses API
+ * when tools are set), `'anthropic'`, or `'gemini'`.
+ * @public
+ */
+export async function callProviderCompletion(
+  params: IProviderCompletionParams
+): Promise<Result<IAiCompletionResponse>> {
+  const {
+    descriptor,
+    apiKey,
+    system,
+    messages,
+    temperature,
+    modelOverride,
+    tier,
+    logger,
+    tools,
+    signal,
+    endpoint,
+    verifiedEndpoint,
+    thinking,
+    maxTokens,
+    structuredOutput,
+    cache
+  } = params;
+
+  const splitResult = splitChatRequest(system, messages);
+  if (splitResult.isFailure()) {
+    return fail(splitResult.message);
+  }
+  const { prompt, head } = splitResult.value;
+
+  const baseUrlResult = resolveEffectiveBaseUrl(descriptor, endpoint);
+  if (baseUrlResult.isFailure()) {
+    return fail(baseUrlResult.message);
+  }
+  if (prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
+    return fail(`provider "${descriptor.id}" does not accept image input`);
+  }
+
+  const hasTools = tools !== undefined && tools.length > 0;
+  const discriminator = providerDiscriminatorForId(descriptor.id);
+  // The quality tier is the only completion-model selector; thinking and tools
+  // are orthogonal request params/capabilities and never pick a model.
+  const modelContext: ModelSpecKey | undefined = tier;
+
+  const modelResult = resolveProviderModel(descriptor, modelOverride, modelContext);
+  if (modelResult.isFailure()) {
+    return fail(modelResult.message);
+  }
+  const model = modelResult.value;
+
+  let resolvedThinking: IResolvedThinkingConfig | undefined;
+  if (thinking !== undefined) {
+    if (discriminator !== undefined) {
+      const mergeResult = resolveThinkingConfig(
+        thinking,
+        model,
+        discriminator,
+        isThinkingRequiredModel(descriptor, model),
+        resolveGeminiModelThinking(descriptor, model)
+      );
+      if (mergeResult.isFailure()) {
+        return fail(mergeResult.message);
+      }
+      resolvedThinking = mergeResult.value.resolved;
+      const conflictResult = checkTemperatureConflict(
+        resolvedThinking,
+        discriminator,
+        temperature,
+        mergeResult.value.noneDegraded,
+        temperatureAcceptedWithThinking(descriptor, model)
+      );
+      if (conflictResult.isFailure()) {
+        return fail(conflictResult.message);
+      }
+    }
+  }
+  const samplingResult = checkSamplingParams(descriptor, model, temperature, resolvedThinking);
+  if (samplingResult.isFailure()) {
+    return fail(samplingResult.message);
+  }
+
+  // Resolved against the CONCRETE model, after resolveProviderModel — passing an
+  // alias here is the defect resolveImageCapability once had.
+  // The OpenAI route depends on tools AND the model, so it is computed here (once,
+  // beside the switch that uses it) and handed to the resolver — a capability keyed
+  // on the model alone cannot know which of the two OpenAI wire shapes applies.
+  const usesResponsesApi: boolean =
+    descriptor.apiFormat === 'openai' && (hasTools || isResponsesOnlyModel(descriptor, model));
+  // The schema-keyword tables trust a provider's documentation only on that provider's own
+  // endpoint: a caller-supplied `endpoint` (a gateway, LiteLLM, vLLM) is an unverified server
+  // unless the host asserts otherwise.
+  const wireProviderId: string | undefined = schemaWireProviderId(descriptor, endpoint, verifiedEndpoint);
+  const structuredResult = resolveStructuredOutput(
+    descriptor,
+    model,
+    structuredOutput,
+    tools,
+    usesResponsesApi,
+    resolveStructuredOutputCapability,
+    { providerId: wireProviderId, model }
+  );
+  if (structuredResult.isFailure()) {
+    return fail(structuredResult.message);
+  }
+  const resolvedStructured = structuredResult.value;
+
+  // OpenAI rejects `response_format: { type: 'json_object' }` with a 400 unless the
+  // conversation mentions JSON somewhere — a documented API rule, and one a caller
+  // has no way to discover from a schema-mode request that worked. Pre-empted with a
+  // named failure before the wire call, the same treatment the Gemini
+  // grounding-plus-function-calling conflict already gets. `generateJsonCompletion`
+  // satisfies it for free via its prompt hint; a direct caller may not.
+  if (resolvedStructured.enforcement === 'json-mode' && descriptor.apiFormat === 'openai') {
+    const mentionsJson: boolean =
+      (system ?? '').toLowerCase().includes('json') ||
+      messages.some((m) => m.content.toLowerCase().includes('json'));
+    if (!mentionsJson) {
+      return fail(
+        `provider '${descriptor.id}': json-object structured output requires the word 'json' to ` +
+          `appear in the system prompt or a message — OpenAI rejects the request otherwise. Mention ` +
+          `it, or use structuredOutput: { mode: 'schema', schema } which carries no such rule`
+      );
+    }
+  }
+
+  const config: IAiApiConfig = {
+    baseUrl: baseUrlResult.value,
+    apiKey,
+    model,
+    providerId: wireProviderId
+  };
+  /* c8 ignore next 8 - optional logger diagnostic output */
+  if (logger) {
+    const toolTypes = hasTools ? tools.map((t) => t.type).join(',') : 'none';
+    const supported = descriptor.supportedTools.length > 0 ? descriptor.supportedTools.join(',') : 'none';
+    logger.info(
+      `AI completion: provider=${descriptor.id}, format=${descriptor.apiFormat}, model=${config.model}, ` +
+        `tools=${toolTypes}, supported=${supported}`
+    );
+  }
+
+  switch (descriptor.apiFormat) {
+    case 'openai': {
+      // Responses-API-only models (e.g. gpt-5.5-pro) 400 on /chat/completions, so they route
+      // to the Responses path even with no tools requested — same path the tools case uses.
+      // `cache` carries two independently-supported things, and they are gated separately.
+      // `systemBreakpoints` restructures `content` and needs the server to tolerate an
+      // unrecognized field inside it (OpenAI only). `cacheKey` is an opaque routing string that
+      // makes repeated requests with a shared prefix land on the same cache-holding server —
+      // which xAI needs precisely because it does per-server byte-for-byte prefix matching.
+      // Gating them together withheld the routing key from the provider that depends on it most.
+      // Every descriptor supporting neither (Groq, Mistral, Ollama, openai-compat) still gets the
+      // exact request body it would have gotten had the caller passed no `cache` at all.
+      const routing = supportsPromptCacheRouting(descriptor);
+      const breakpoints = supportsPromptCacheBreakpoints(descriptor) ? cache?.systemBreakpoints : undefined;
+      const routedKey = routing !== undefined ? cache?.cacheKey : undefined;
+      const gatedCache: IAiCacheRequest | undefined =
+        breakpoints !== undefined || routedKey !== undefined
+          ? { systemBreakpoints: breakpoints, cacheKey: routedKey }
+          : undefined;
+      if (usesResponsesApi) {
+        return callOpenAiResponsesCompletion(
+          config,
+          prompt,
+          tools,
+          head,
+          temperature,
+          logger,
+          signal,
+          resolvedThinking,
+          maxTokens,
+          resolvedStructured,
+          supportsCacheUsageReporting(descriptor),
+          gatedCache
+        );
+      }
+      return callOpenAiCompletion(
+        config,
+        prompt,
+        head,
+        temperature,
+        logger,
+        signal,
+        resolvedThinking,
+        maxTokens,
+        usesMaxCompletionTokensField(descriptor),
+        resolvedStructured,
+        supportsCacheUsageReporting(descriptor),
+        gatedCache,
+        routing?.chatCompletionsHeader
+      );
+    }
+    case 'anthropic':
+      return callAnthropicCompletion(
+        config,
+        prompt,
+        head,
+        temperature,
+        logger,
+        tools,
+        signal,
+        resolvedThinking,
+        isAdaptiveThinkingModel(descriptor, config.model),
+        maxTokens,
+        resolvedStructured,
+        cache,
+        resolveAnthropicThinkingOffType(descriptor, config.model)
+      );
+    case 'gemini':
+      return callGeminiCompletion(
+        config,
+        prompt,
+        head,
+        temperature,
+        logger,
+        tools,
+        signal,
+        resolvedThinking,
+        maxTokens,
+        resolvedStructured
+      );
+    /* c8 ignore next 4 - defensive coding: exhaustive switch guaranteed by TypeScript */
+    default: {
+      const _exhaustive: never = descriptor.apiFormat;
+      return fail(`unsupported API format: ${String(_exhaustive)}`);
+    }
+  }
+}
+
+// ============================================================================
+// Proxied completion (routes through a backend server)
+// ============================================================================
+
+/**
+ * Calls the AI completion endpoint on a proxy server instead of calling the
+ * provider API directly from the browser. The proxy handles provider dispatch,
+ * CORS, and API key forwarding. The request body serializes the unified
+ * {@link AiAssist.IChatRequest} shape (`system?` + `messages`). Enforces the same
+ * non-empty / trailing-user-turn and image-input invariants as the direct path.
+ *
+ * @remarks
+ * Two parameters are handled before the body is composed, rather than forwarded.
+ * `tier` is resolved here and sent as a concrete `modelOverride`, because both
+ * halves of the resolution live on the descriptor the caller already holds — so a
+ * proxy needs no `tier` vocabulary, where a `tier` body field it did not understand
+ * would be ignored and silently serve a frontier request from the base model.
+ * `endpoint` is **refused**: it names where the prompt must go, the proxy is what
+ * makes that call, and the field has never been sent to one — so honoring it is
+ * unverifiable and ignoring it would reach the provider's default upstream instead
+ * of the host the caller pinned. Use `callProviderCompletion`, or point the
+ * proxy itself at the intended upstream.
+ *
+ * @param proxyUrl - Base URL of the proxy server
+ * @param params - Same parameters as {@link callProviderCompletion}
+ * @public
+ */
+export async function callProxiedCompletion(
+  proxyUrl: string,
+  params: IProviderCompletionParams
+): Promise<Result<IAiCompletionResponse>> {
+  const {
+    descriptor,
+    apiKey,
+    system,
+    messages,
+    temperature,
+    modelOverride,
+    logger,
+    tools,
+    signal,
+    thinking,
+    maxTokens,
+    structuredOutput,
+    cache,
+    tier,
+    endpoint
+  } = params;
+
+  const splitResult = splitChatRequest(system, messages);
+  if (splitResult.isFailure()) {
+    return fail(splitResult.message);
+  }
+  if (splitResult.value.prompt.attachments.length > 0 && !descriptor.acceptsImageInput) {
+    return fail(`provider "${descriptor.id}" does not accept image input`);
+  }
+
+  // `endpoint` names the upstream the request must reach. Unlike `tier` it cannot be
+  // resolved on this side, because the proxy is the one making that call — it would
+  // have to be forwarded and honored. No proxy honors it: the field has never been
+  // sent, so every deployed proxy would ignore it and fall back to the provider's
+  // public API.
+  //
+  // Silently is the problem. A caller names an endpoint to pin *where the prompt
+  // goes* — a self-hosted model, a LAN deployment, a residency boundary — so the
+  // failure is not a degraded answer, it is the content going somewhere they
+  // explicitly said it must not, discoverable only by watching the proxy's traffic.
+  // That is the same shape as the structured-output silent-drop this function
+  // already refuses to allow, with a worse consequence.
+  //
+  // So refuse rather than pretend. Honoring `endpoint` over a proxy needs a wire
+  // field AND a report-back the caller can verify, the way `structuredOutput` is
+  // acknowledged below; until that protocol exists, the direct path is where this
+  // parameter works.
+  if (endpoint !== undefined) {
+    return fail(
+      `callProxiedCompletion: endpoint is not supported on the proxied path — a proxy ` +
+        `cannot confirm it honored it, and silently reaching the provider's default ` +
+        `upstream would send the request somewhere the caller excluded. Use ` +
+        `callProviderCompletion, or route the proxy itself at the intended upstream.`
+    );
+  }
+
+  // The quality tier is resolved HERE rather than forwarded, because it can be:
+  // the tier walk and the alias map both live on the descriptor, which is
+  // client-side, so this side already holds everything the resolution needs.
+  // Sending the concrete model through the existing `modelOverride` field means a
+  // proxy needs no new vocabulary and an already-deployed one honors the tier
+  // without being updated — where a `tier` body field it did not understand would
+  // be ignored, silently serving a frontier request from the base model.
+  //
+  // Only when a tier was actually asked for. With no tier, `modelOverride` passes
+  // through exactly as before, including absent — which is what lets a proxy apply
+  // its own default.
+  let effectiveModelOverride: ModelSpec | undefined = modelOverride;
+  if (tier !== undefined) {
+    const tierResult = resolveProviderModel(descriptor, modelOverride, tier);
+    if (tierResult.isFailure()) {
+      return fail(tierResult.message);
+    }
+    effectiveModelOverride = tierResult.value;
+  }
+
+  const body: Record<string, unknown> = {
+    providerId: descriptor.id,
+    apiKey,
+    messages: normalizeOutboundMessages(splitResult.value)
+  };
+  // Temperature is forwarded only when explicitly provided, matching the direct path — the proxy
+  // omits it from the upstream request so the provider default applies.
+  if (temperature !== undefined) {
+    body.temperature = temperature;
+  }
+  if (system !== undefined) {
+    body.system = system;
+  }
+  if (effectiveModelOverride !== undefined) {
+    body.modelOverride = effectiveModelOverride;
+  }
+
+  if (tools && tools.length > 0) {
+    body.tools = tools;
+  }
+  if (thinking !== undefined) {
+    body.thinking = thinking;
+  }
+  // Forwarded only when explicitly provided; the proxy is responsible for mapping it to the
+  // correct upstream provider field (see AiAssist.usesMaxCompletionTokensField).
+  if (maxTokens !== undefined) {
+    body.maxTokens = maxTokens;
+  }
+  if (structuredOutput !== undefined) {
+    // The schema travels as its draft-07 wire form, not as the validator object —
+    // an `ISchemaValidator` is not JSON-serializable. A proxy reconstitutes it with
+    // `JsonSchema.fromJson(raw)` before calling `callProviderCompletion`.
+    body.structuredOutput =
+      structuredOutput.mode === 'schema'
+        ? {
+            mode: 'schema',
+            schema: structuredOutput.schema.toJson(),
+            ...(structuredOutput.onUnsupported !== undefined
+              ? { onUnsupported: structuredOutput.onUnsupported }
+              : {}),
+            // Part of the request, not a local-only concern: the hoist is applied
+            // where the wire schema is built, which on this path is the proxy. Drop
+            // it and an opted-in caller's schema gets refused or degraded instead of
+            // hoisted, and `onUnsupported` reports a constraint loss the caller had
+            // already opted out of.
+            ...(structuredOutput.adaptOptionalToNullable !== undefined
+              ? { adaptOptionalToNullable: structuredOutput.adaptOptionalToNullable }
+              : {})
+          }
+        : {
+            mode: 'json-object',
+            ...(structuredOutput.onUnsupported !== undefined
+              ? { onUnsupported: structuredOutput.onUnsupported }
+              : {})
+          };
+  }
+  // `IAiCacheRequest` is plain numbers and a string — JSON-serializable as-is, unlike
+  // `structuredOutput`'s schema above, so it needs no wire projection before forwarding.
+  if (cache !== undefined) {
+    body.cache = cache;
+  }
+
+  /* c8 ignore next 1 - optional logger */
+  logger?.info(`AI proxy request: provider=${descriptor.id}, proxy=${proxyUrl}`);
+  const url = `${proxyUrl}/api/ai/completion`;
+  const jsonResult = await fetchJson(url, {}, body, logger, signal);
+  if (jsonResult.isFailure()) {
+    return fail(jsonResult.message);
+  }
+
+  const response = jsonResult.value as Record<string, unknown>;
+  if (typeof response.error === 'string') {
+    return fail(`proxy: ${response.error}`);
+  }
+
+  if (typeof response.content !== 'string') {
+    return fail('proxy returned invalid response: missing content');
+  }
+
+  // A caller who asked for nothing gets `'none'` without the proxy having to say
+  // so. A caller who DID ask gets a loud failure when the proxy cannot report,
+  // rather than a response claiming an enforcement nobody verified — a proxy
+  // predating this feature drops the constraint silently, which is the exact
+  // failure this surface exists to remove.
+  // A proxy relaying `callProviderCompletion`'s result carries an already-normalized
+  // IAiCompletionUsage, not a provider wire shape — so this validates that shape
+  // rather than reaching for the per-provider normalizers. A proxy that reports
+  // nothing, or reports something malformed, yields `undefined`: the documented
+  // "no normalized usage exposed", never a partially-trusted object and never a
+  // fabricated zero.
+  const usage: IAiCompletionUsage | undefined = aiCompletionUsage.convert(response.usage).orDefault();
+
+  // Built once: the two returns differ only in the enforcement they report, and
+  // duplicating the shape is how a field added to one and not the other drifts.
+  const base = {
+    content: response.content,
+    truncated: response.truncated === true,
+    ...(usage !== undefined ? { usage } : {})
+  };
+
+  if (structuredOutput === undefined) {
+    return succeed({ ...base, structuredOutput: 'none' });
+  }
+  if (!isStructuredOutputEnforcement(response.structuredOutput)) {
+    return fail(
+      `proxy did not report which structured-output constraint it applied ` +
+        `(got ${JSON.stringify(response.structuredOutput)}); it may predate the feature and have ` +
+        `dropped the request silently`
+    );
+  }
+  return succeed({ ...base, structuredOutput: response.structuredOutput });
+}

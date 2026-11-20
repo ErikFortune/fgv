@@ -16,5 +16,7 @@
 # for example if the machine loses power.  A safer practice is to pass the token via an
 # environment variable, which can be referenced from .npmrc using ${} expansion.  For example:
 #
-//registry.npmjs.org/:_authToken=${NPM_TOKEN}
+#   //registry.npmjs.org/:_authToken=${NPM_TOKEN}
 #
+# That line is deliberately NOT active: publishing from CI uses npm trusted publishing (OIDC) only,
+# and no workflow sets NPM_TOKEN. Uncomment it only for a local emergency publish with a token.

@@ -1,0 +1,1982 @@
+/*
+ * Copyright (c) 2026 Erik Fortune
+ * SPDX-License-Identifier: MIT
+ */
+
+import {
+  Hash,
+  Logging,
+  Result,
+  captureResult,
+  fail,
+  mapResults,
+  mapSuccess,
+  succeed,
+  succeedWithDetail
+} from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
+import {
+  AdmissionDecision,
+  DEFAULT_DEDUP_SCOPE,
+  DedupScope,
+  EntityId,
+  IIdentityCodecResult,
+  IEdgeTarget,
+  IIdentityCodec,
+  IMemoryEnvelope,
+  IMemoryRecord,
+  ITemporalIdentityCodec,
+  IWritePolicy,
+  Kind,
+  KnowledgeLwwPolicy,
+  MemoryId,
+  MemoryScopeKey,
+  RankProjector,
+  isTemporalIdentityCodec,
+  isVersionCurrent,
+  selectCurrentVersion
+} from '../types';
+import {
+  IBodyConverterRegistry as IRegistry,
+  parseMemoryFile,
+  serializeMemoryFile,
+  splitFrontmatter
+} from '../converters';
+import { VectorMaintenance } from './vectorMaintenance';
+import { IDerivedStateCoverage } from './coverage';
+import { computeCoverage } from './storeCoverage';
+import { codecFor, resolveIdentity, verifyLoadedIdentity, verifyOccupantKind } from './storeIdentity';
+import {
+  IScopeCoding,
+  decodeScopeDir,
+  deleteRecordFile,
+  resolveScopeDir,
+  writeRecordFile
+} from './storeFileAccess';
+import { DerivedArtifact, ReconcileReport } from './reconcile';
+import { reconcileVectors } from './storeReconcile';
+import { IIndexedMemoryEntry, IMemoryIndex, MemoryIndex } from '../index';
+import { IMemoryObserver, MemoryEmbedOutcome, MemoryObservationPhase } from '../observe';
+import { IObservationDetails, ObservationFanout } from './storeObservation';
+import {
+  FragmentEmbedder,
+  IFragmentVectorIndex,
+  IMemoryRecordSource,
+  IScopedMemoryRecord,
+  IVectorIndex,
+  MemoryEmbedder
+} from '../vector';
+import { defaultMemoryScopeEncoding } from './scopeEncoding';
+import { IMemoryStore } from './memoryStore';
+import { IMemoryStoreListFilter, MemoryListSelection, isWholeVaultScan } from './listSelection';
+import { vectorRecordSource } from './vectorRecordSource';
+import {
+  IMemoryStoreDurability,
+  IMemoryStoreDurabilityOptions,
+  ISkippedRecord,
+  MemoryRecordErrorMode
+} from './openReport';
+import { StoreRootSession } from './storeRootSession';
+import { SeqHighWater } from './storeSeq';
+import { isMutableMetadataUnchanged, projectAsOf, projectMutablePatch } from './storeMerge';
+import {
+  IMemoryDeleteOptions,
+  IMemoryWriteOptions,
+  MemoryWriteExpectation,
+  MemoryWriteResult
+} from './writeFailure';
+import {
+  WriteRefusal,
+  checkExpectation,
+  classify,
+  duplicateRefusal,
+  settleWrite,
+  validateExpectation
+} from './storeWriteCondition';
+
+/** The on-disk extension for a memory record file. */
+const MEMORY_FILE_EXTENSION: string = '.md';
+
+/**
+ * Parameters for {@link FileTreeMemoryStore.create}.
+ * @public
+ */
+export interface IFileTreeMemoryStoreCreateParams {
+  /** Root directory under which scope-encoded sub-trees live. Must be mutable. */
+  readonly root: FileTree.IMutableFileTreeDirectoryItem;
+  /** Per-kind body converter registry. Gates every body on write and read. */
+  readonly registry: IRegistry;
+  /** Per-kind write policies. Kinds without an entry use a default LWW policy. */
+  readonly writePolicies?: ReadonlyMap<Kind, IWritePolicy>;
+  /** Per-kind identity codecs. */
+  readonly codecs?: ReadonlyMap<Kind, IIdentityCodec>;
+  /**
+   * Optional per-kind host projector map. When a kind has an entry, the store
+   * runs the projector on the fully-resolved (post-merge) record on every put
+   * AND every update — in the same pass that recomputes `contentHash` — and
+   * stamps the numeric result into {@link IMemoryEnvelope.rank}, which the index's
+   * rank view and `orderBy: 'rank'` retrieval sort by (descending, absent last).
+   * Absent for a kind → that kind's records carry no `rank`. Purely additive and
+   * zero-overhead when unwired: an absent map leaves every write byte-identical.
+   * The projector is a host callback — a throw is logged at `warn` and the record
+   * is stamped with no `rank`, never failing the write (mirrors the store's other
+   * guard-host-callbacks conventions).
+   */
+  readonly rankProjectors?: ReadonlyMap<Kind, RankProjector>;
+  /**
+   * The kinds whose records participate in the **record-granular** vector index.
+   *
+   * @remarks
+   * **Absent means every kind participates**, which is the pre-existing behavior —
+   * so omitting this is byte-identical to before it existed. Supplying it makes the
+   * set an allowlist: a kind outside it is never handed to the {@link MemoryEmbedder}
+   * on write, and is omitted from {@link IMemoryStore.asRecordSource | asRecordSource},
+   * so a rebuild driven from this store does not pay for it either.
+   *
+   * Two costs motivate it, and the second is the one that is easy to miss:
+   *
+   * - **Embedder work on the critical path.** Embed-on-write is synchronous with
+   *   the write. A bookkeeping row — a status, a counter, a lease — that no query
+   *   will ever return still pays a full embedding round trip, and on a
+   *   locally-hosted model the first call after a restart pays a cold model load
+   *   on top.
+   * - **Un-queried kinds crowd the `topK` window.** `IVectorIndex.query` applies
+   *   `topK` *before* any kind filter the retriever adds, so vectors that can never
+   *   be returned still occupy candidate slots. Over-fetching to compensate hides
+   *   this until the un-queried kinds start scoring well — at which point recall is
+   *   silently lost. Restricting what is indexed fixes the recall problem, not just
+   *   the cost.
+   *
+   * Applies to the record-granular path only. The fragment path
+   * ({@link IFileTreeMemoryStoreCreateParams.fragmentIndex | fragmentIndex} /
+   * `fragmentEmbedder`) is independent and unaffected — a kind may legitimately be
+   * fragment-embedded and not record-embedded, which is the right shape for a long
+   * document whose whole body exceeds the model's context.
+   */
+  readonly embedKinds?: ReadonlySet<Kind>;
+  /** Default codec for kinds without an explicit entry. */
+  readonly defaultCodec?: IIdentityCodec;
+  /**
+   * Optional derived-index implementation. Defaults to a fresh {@link MemoryIndex} —
+   * omitting this parameter is byte-identical to the store's behavior before the
+   * parameter existed. When supplied, the store uses it for EVERY index operation
+   * it performs and never holds a second index, so an injected index is the store's
+   * only view of its own records:
+   *
+   * - `rebuild` — once, from the initial vault walk in `create()`.
+   * - `patch` — on every persisted write, delete, version invalidation, and
+   *   cap-cull eviction.
+   * - `entries` — behind {@link IMemoryStore.list | list} /
+   *   {@link IMemoryStore.listScoped | listScoped}, the keyed temporal reads, the
+   *   write path's content-hash dedup and write-policy admission cohort, AND the
+   *   temporal (versioned) write and delete paths, which resolve an entity's
+   *   version history entirely from the index.
+   *
+   * That last group is the one to weigh before injecting anything other than a
+   * pass-through decorator: an index that filters, reorders, or otherwise reshapes
+   * `entries()` changes WRITE semantics, not just what reads return. Concretely,
+   * on a versioned kind the store derives an entity's whole version history from
+   * `entries()` filtered by scope, and that derivation decides which version a
+   * `put` treats as current (so what it dedups against and what it merges its
+   * patch over), which prior versions it stamps `invalid_at` on, what the
+   * admission cohort is, and which versions a `delete` tombstones. An index that
+   * hides a version makes it invisible to all of those — the FileTree still holds
+   * it, but the store will not supersede, invalidate, or tombstone it. On flat
+   * kinds the same reshaping changes what dedups and what a cap-cull policy
+   * evicts. A faithful delegating decorator — the intended use below — has no such
+   * effect. Note the store's keyed reads ({@link IMemoryStore.get | get} on a flat
+   * kind, and {@link IMemoryStore.getById | getById}) go to the FileTree, not the
+   * index; the FileTree remains the source of truth and the index stays a derived
+   * view.
+   *
+   * @remarks
+   * **This is an instrumentation seam, NOT a resident-memory fix.** The intended
+   * use is wrapping the shipped {@link MemoryIndex} in a decorator that counts and
+   * times the calls the store makes — resident bytes by kind, open cost against
+   * vault size, where the curve actually bends — so a decision about a partial-read
+   * redesign can be driven by measurements instead of estimates.
+   *
+   * It does NOT lower the store's resident-memory ceiling, and injecting a
+   * "persisted" or "lazy" index will not change that. {@link IMemoryIndex}'s read
+   * surface returns whole records by construction: `entries()` yields
+   * {@link IIndexedMemoryRecord}s and `byKind` / `byTag` / `byRecency` / `byRank`
+   * yield `IMemoryRecord<unknown>` — `{ envelope, body }` pairs with the body
+   * materialized. Any implementation satisfying the current contract must therefore
+   * be able to produce every body on demand. An injected index changes WHERE records
+   * come from; it does not change WHETHER bodies are held. Lowering the ceiling
+   * requires a partial-read (id-or-envelope-only) redesign of `IMemoryIndex` itself,
+   * which is separate, breaking, design-first work and is deliberately not part of
+   * this seam.
+   */
+  readonly index?: IMemoryIndex;
+  /**
+   * Maps a scope to the relative directory path its records are stored under.
+   * Defaults to {@link defaultMemoryScopeEncoding}, the identity on valid scopes.
+   *
+   * @remarks
+   * A non-identity encoding must be supplied together with
+   * {@link IFileTreeMemoryStoreCreateParams.scopeDecoding | scopeDecoding}, its
+   * inverse; `create` fails when it is supplied alone, because the open-time walk
+   * could not recover the scopes of the directories it writes.
+   */
+  readonly scopeEncoding?: (scope: MemoryScopeKey) => Result<string>;
+  /**
+   * The inverse of {@link IFileTreeMemoryStoreCreateParams.scopeEncoding | scopeEncoding}:
+   * maps a relative directory path back to the scope stored under it. Required
+   * whenever `scopeEncoding` is supplied; when supplied alone it pairs with
+   * {@link defaultMemoryScopeEncoding}. Omit both for the identity layout.
+   *
+   * @remarks
+   * The pair must be a bijection on the scopes the vault uses:
+   * `scopeDecoding(scopeEncoding(scope))` must succeed with `scope`, and
+   * `scopeEncoding(scopeDecoding(dir))` must succeed with `dir`. The store checks
+   * both halves where it meets them. The open-time walk decodes each directory
+   * that holds record files, requires the result to pass `Convert.scopeKey`, and
+   * requires it to re-encode to that directory. A directory that fails fails the
+   * open, or under `onRecordError: 'skip'` quarantines each of its records into
+   * {@link FileTreeMemoryStore.skippedRecords | skippedRecords}. Every read and
+   * write requires the encoded directory to decode back to the scope it was asked
+   * for, and the encoding to be canonical: non-empty, with no empty, `.` or `..`
+   * segments. The scope invariant is then checked against the decoded scope. A
+   * throw from either function is reported as a failure, like a failed result.
+   */
+  readonly scopeDecoding?: (encoded: string) => Result<MemoryScopeKey>;
+  /**
+   * Transaction-time clock. Defaults to `Date.now`. Injectable so tests can
+   * make `created` / `updated` deterministic. Also stamps observation
+   * `timestamp`s.
+   */
+  readonly clock?: () => number;
+  /**
+   * Optional observers fired once per public `get` / `put` / `delete` call.
+   * Purely additive — when absent, no observation records are produced and the
+   * store behaves exactly as it did without this parameter. Observer errors
+   * never affect the store operation (swallowed, logged to {@link
+   * IFileTreeMemoryStoreCreateParams.logger | logger} at `warn`).
+   */
+  readonly observers?: ReadonlyArray<IMemoryObserver>;
+  /**
+   * Diagnostic logger for swallowed observer failures. Defaults to a
+   * `Logging.NoOpLogger`.
+   */
+  readonly logger?: Logging.ILogger;
+  /**
+   * Optional vector index for semantic recall. Wired together with
+   * {@link IFileTreeMemoryStoreCreateParams.embed | embed}: when both are present
+   * the store embeds each written record and maintains the index on
+   * `put` / `delete` / cap-cull eviction. Absent (or `embed` absent) → no
+   * embedding work happens and the store behaves exactly as it does without this
+   * parameter (the additive, zero-overhead-when-unwired default — mirrors the
+   * observer hook).
+   */
+  readonly vectorIndex?: IVectorIndex;
+  /**
+   * Optional embedder applied to each record on write, wired together with
+   * {@link IFileTreeMemoryStoreCreateParams.vectorIndex | vectorIndex}. The
+   * consumer supplies it (e.g. `callProviderEmbedding` or in-process
+   * transformers); the store never calls an embedding provider directly, so the
+   * core stays embedder-agnostic. Embedding/index maintenance is **best-effort**:
+   * a failed (or throwing) `embed` / `add` / `remove` is logged at `warn` via
+   * {@link IFileTreeMemoryStoreCreateParams.logger | logger} and the record
+   * operation still succeeds — the vector index is a derived view that a later
+   * `rebuild` reconciles, so a vector failure never fails an authoritative write.
+   *
+   * It runs inside the store's write lock, so it must not await a write (`put`, `delete`,
+   * `reconcile`) on this same store: that write queues behind the one waiting on it, and both hang.
+   */
+  readonly embed?: MemoryEmbedder;
+  /**
+   * Optional fragment-granular vector index for sub-document semantic search.
+   * Wired together with
+   * {@link IFileTreeMemoryStoreCreateParams.fragmentEmbedder | fragmentEmbedder}:
+   * when both are present the store chunks + embeds each written record and
+   * maintains the fragment index on `put` / `delete` / cap-cull eviction — the
+   * "discovery" half of a search-then-read contract, queried through a
+   * {@link FragmentSemanticRetriever}. Independent of the record-granular
+   * {@link IFileTreeMemoryStoreCreateParams.vectorIndex | vectorIndex} pair: a
+   * store may wire record vectors, fragment vectors, both, or neither. Absent (or
+   * `fragmentEmbedder` absent) → no fragment work happens and the store behaves
+   * byte-identically (the additive, zero-overhead-when-unwired default).
+   */
+  readonly fragmentIndex?: IFragmentVectorIndex;
+  /**
+   * Optional fragment embedder applied to each record on write, wired together
+   * with {@link IFileTreeMemoryStoreCreateParams.fragmentIndex | fragmentIndex}.
+   * The consumer owns the chunking policy (window size, overlap) and the embedding
+   * call; the store stays chunking- and embedder-agnostic. Fragment index
+   * maintenance is **best-effort**, exactly like the record-vector path: a failed
+   * (or throwing) `fragmentEmbedder` / `addFragments` / `remove` is logged at
+   * `warn` and the record operation still succeeds — the fragment index is a
+   * derived view a later `rebuild` reconciles. Like `embed`, it runs inside the write lock and must
+   * not await a write on this same store.
+   */
+  readonly fragmentEmbedder?: FragmentEmbedder;
+  /**
+   * How the initial vault walk reacts to a record that fails to parse or
+   * validate. Defaults to `'fail'` — one bad record fails the whole open, the
+   * historical behavior, preserved byte-for-byte. Set `'skip'` to quarantine
+   * unreadable records instead: valid records still load, each skip is logged
+   * at `warn` and surfaced on {@link FileTreeMemoryStore.skippedRecords}, and
+   * the offending file is left untouched for a later (post-fix) re-index. See
+   * {@link MemoryRecordErrorMode}.
+   */
+  readonly onRecordError?: MemoryRecordErrorMode;
+  /**
+   * How record writes use the root's atomic-write capability. Absent, the store writes
+   * atomically when the root can and degrades to plain writes when it cannot, reporting which on
+   * {@link FileTreeMemoryStore.durability}. See {@link IMemoryStoreDurabilityOptions}.
+   */
+  readonly durability?: IMemoryStoreDurabilityOptions;
+}
+
+/**
+ * The internal outcome of a locked `put`: the written (or existing, on a
+ * dedup no-op) record plus the {@link MemoryId}s evicted by a `cull-oldest`
+ * admission decision. The eviction file-deletes and index patches happen
+ * inside the write-lock; the `evicted` ids are surfaced so the public `put`
+ * can fire one `'delete'` observation per evicted record AFTER the lock
+ * releases — consistent with the post-op firing of the other observation
+ * hooks, and avoiding observer re-entrancy into the still-held write-lock.
+ */
+interface IPutOutcome {
+  readonly record: IMemoryRecord<unknown>;
+  readonly evicted: ReadonlyArray<MemoryId>;
+  /**
+   * What the record-granular index did about this write, for the `'write'`
+   * observation. Absent whenever no outcome is being reported — nothing wired,
+   * a dedup no-op that attempted nothing, or a failed write. See
+   * `MemoryEmbedOutcome`.
+   */
+  readonly embed?: MemoryEmbedOutcome;
+}
+
+/**
+ * A `put` whose input has been accepted: the body, the resolved address, and the caller's
+ * precondition. `temporal` is set exactly when the kind is versioned.
+ */
+interface IResolvedPut {
+  readonly body: string;
+  readonly scope: MemoryScopeKey;
+  readonly idStem: string;
+  readonly expected?: MemoryWriteExpectation;
+  readonly temporal?: ITemporalIdentityCodec;
+}
+
+interface IInternalParams {
+  readonly root: FileTree.IMutableFileTreeDirectoryItem;
+  readonly session: StoreRootSession;
+  readonly seqs: SeqHighWater;
+  readonly registry: IRegistry;
+  readonly writePolicies: ReadonlyMap<Kind, IWritePolicy>;
+  readonly codecs: ReadonlyMap<Kind, IIdentityCodec>;
+  readonly rankProjectors: ReadonlyMap<Kind, RankProjector>;
+  /** `undefined` = no declaration = every kind participates in the vector index. */
+  readonly embedKinds: ReadonlySet<Kind> | undefined;
+  readonly defaultCodec?: IIdentityCodec;
+  readonly defaultPolicy: IWritePolicy;
+  readonly scopes: IScopeCoding;
+  readonly clock: () => number;
+  readonly index: IMemoryIndex;
+  readonly observers: ReadonlyArray<IMemoryObserver>;
+  readonly logger: Logging.ILogger;
+  readonly vectorIndex?: IVectorIndex;
+  readonly embed?: MemoryEmbedder;
+  readonly fragmentIndex?: IFragmentVectorIndex;
+  readonly fragmentEmbedder?: FragmentEmbedder;
+}
+
+/**
+ * Flat-layout, FileTree-backed {@link IMemoryStore}. The FileTree is the source
+ * of truth; the {@link IMemoryIndex} is a derived in-memory view patched on
+ * every write. Concurrent writes are serialized through a per-instance async
+ * write-lock so the index and the on-disk files never interleave.
+ *
+ * @remarks
+ * Bodies are string (markdown). Both layouts are supported: flat
+ * (one-file-per-entity, non-versioned) and versioned (subtree-per-entity,
+ * invalidate-don't-delete), dispatched per kind by the codec's `isVersioned`
+ * flag. A kind is flat with zero behavioral impact unless it opts into a
+ * {@link ITemporalIdentityCodec}.
+ *
+ * **Scope invariant.** Every record the store returns was read from
+ * `codec(kind).encode(entityId).scope`. Each load — the open-time walk and every
+ * read path — checks it, for every codec, so a codec need not check scope in its
+ * own round-trip. A file under any other scope fails the read (or the open), or
+ * is quarantined into {@link FileTreeMemoryStore.skippedRecords | skippedRecords}
+ * when the store is opened with `onRecordError: 'skip'`.
+ * @public
+ */
+export class FileTreeMemoryStore implements IMemoryStore {
+  private readonly _root: FileTree.IMutableFileTreeDirectoryItem;
+  /** The single-writer claim on `_root`, and the writer every record write and delete uses. */
+  private readonly _session: StoreRootSession;
+  private readonly _registry: IRegistry;
+  private readonly _writePolicies: ReadonlyMap<Kind, IWritePolicy>;
+  private readonly _codecs: ReadonlyMap<Kind, IIdentityCodec>;
+  private readonly _rankProjectors: ReadonlyMap<Kind, RankProjector>;
+  /** `undefined` = no declaration = every kind participates. */
+  private readonly _embedKinds: ReadonlySet<Kind> | undefined;
+  private readonly _defaultCodec: IIdentityCodec | undefined;
+  private readonly _defaultPolicy: IWritePolicy;
+  private readonly _scopes: IScopeCoding;
+  private readonly _clock: () => number;
+  private readonly _index: IMemoryIndex;
+  private readonly _hasher: Hash.Crc32Normalizer;
+  private readonly _observations: ObservationFanout;
+  /** Record- and fragment-vector maintenance; every operation is best-effort. */
+  private readonly _vectors: VectorMaintenance;
+  private readonly _logger: Logging.ILogger;
+  /**
+   * Records the initial walk could not load. Populated during `create()` in
+   * {@link MemoryRecordErrorMode | `'skip'` mode}; empty otherwise.
+   */
+  private readonly _skippedRecords: ISkippedRecord[];
+
+  /** The envelope `seq` allocator, with its persisted high-water mark; used inside the write lock. */
+  private readonly _seqs: SeqHighWater;
+  /** Tail of the write-lock promise chain that serializes mutating ops. */
+  private _writeTail: Promise<unknown>;
+
+  private constructor(params: IInternalParams) {
+    this._root = params.root;
+    this._session = params.session;
+    this._seqs = params.seqs;
+    this._registry = params.registry;
+    this._writePolicies = params.writePolicies;
+    this._codecs = params.codecs;
+    this._rankProjectors = params.rankProjectors;
+    this._embedKinds = params.embedKinds ?? undefined;
+    this._defaultCodec = params.defaultCodec;
+    this._defaultPolicy = params.defaultPolicy;
+    this._scopes = params.scopes;
+    this._clock = params.clock;
+    this._index = params.index;
+    this._hasher = new Hash.Crc32Normalizer();
+    this._observations = new ObservationFanout(params.observers, params.clock, (m) => this._warnSwallowed(m));
+    this._logger = params.logger;
+    this._vectors = new VectorMaintenance({
+      vectorIndex: params.vectorIndex,
+      embed: params.embed,
+      fragmentIndex: params.fragmentIndex,
+      fragmentEmbedder: params.fragmentEmbedder,
+      warn: (message) => this._warnSwallowed(message),
+      embedsKind: (kind) => this.embedsKind(kind),
+      checkWritable: () => this._session.checkWritable()
+    });
+    this._skippedRecords = [];
+    this._writeTail = Promise.resolve();
+  }
+
+  /**
+   * Records the initial vault walk could not parse or validate and quarantined
+   * (not indexed). Non-empty only when the store was opened with
+   * {@link MemoryRecordErrorMode | `onRecordError: 'skip'`} AND at least one
+   * record failed to load. Each entry identifies the offending file so a host
+   * can repair it; the file itself is never deleted or mutated, so a later open
+   * (after the body converter is fixed) re-indexes it.
+   */
+  public get skippedRecords(): ReadonlyArray<ISkippedRecord> {
+    return this._skippedRecords;
+  }
+
+  /** Whether record writes are atomic, at what guarantee, and why — established once at open. */
+  public get durability(): IMemoryStoreDurability {
+    return this._session.durability;
+  }
+
+  /**
+   * Release this store's in-process claim on its root, so another store may open it. Idempotent.
+   * Every later write, delete or reconcile fails. Reads still answer, from this store's index —
+   * stale once a new owner writes. A dispose during a delete can leave orphan vector or fragment
+   * entries for the deleted record, which only an index rebuild clears (see `VectorMaintenance`).
+   */
+  public dispose(): void {
+    this._session.release();
+  }
+
+  /**
+   * Family-convention factory. Resolves the derived index (the caller's
+   * {@link IFileTreeMemoryStoreCreateParams.index | index} when supplied, a fresh
+   * {@link MemoryIndex} otherwise) and a default LWW policy, then performs an
+   * initial FileTree walk so an existing vault is indexed (and the `seq` counter
+   * resumes past the highest persisted `seq`). Refuses a root another store in this process
+   * holds; the claim is taken before the walk and released if the open fails.
+   */
+  public static create(params: IFileTreeMemoryStoreCreateParams): Result<FileTreeMemoryStore> {
+    if (params.scopeEncoding !== undefined && params.scopeDecoding === undefined) {
+      return fail(
+        'memory store: scopeEncoding requires scopeDecoding, so the open-time walk can recover each directory scope'
+      );
+    }
+    const logger: Logging.ILogger = params.logger ?? new Logging.NoOpLogger();
+    return KnowledgeLwwPolicy.create().onSuccess((defaultPolicy) =>
+      FileTreeMemoryStore._resolveIndex(params.index).onSuccess((index) =>
+        StoreRootSession.open(params.root, params.durability, logger).onSuccess((session) =>
+          // Everything after the claim is captured, so neither a failure nor a throw leaves it held.
+          captureResult(() =>
+            SeqHighWater.open(params.root, session).onSuccess((seqs) => {
+              const store: FileTreeMemoryStore = new FileTreeMemoryStore({
+                root: params.root,
+                session,
+                seqs,
+                registry: params.registry,
+                writePolicies: params.writePolicies ?? new Map<Kind, IWritePolicy>(),
+                codecs: params.codecs ?? new Map<Kind, IIdentityCodec>(),
+                rankProjectors: params.rankProjectors ?? new Map<Kind, RankProjector>(),
+                embedKinds: params.embedKinds,
+                defaultCodec: params.defaultCodec,
+                defaultPolicy,
+                scopes: {
+                  encode: params.scopeEncoding ?? defaultMemoryScopeEncoding,
+                  decode: params.scopeDecoding
+                },
+                clock: params.clock ?? Date.now,
+                index,
+                observers: params.observers ?? [],
+                logger,
+                vectorIndex: params.vectorIndex,
+                embed: params.embed,
+                fragmentIndex: params.fragmentIndex,
+                fragmentEmbedder: params.fragmentEmbedder
+              });
+              return store._initialIndex(params.onRecordError ?? 'fail').onSuccess(() => succeed(store));
+            })
+          )
+            .onSuccess((opened) => opened)
+            .onFailure((message) => {
+              session.release();
+              return fail(message);
+            })
+        )
+      )
+    );
+  }
+
+  /**
+   * Resolve the derived index for a `create()`: the caller's injected
+   * {@link IMemoryIndex} verbatim, or a fresh {@link MemoryIndex} when none was
+   * supplied (the default that keeps an omitting caller byte-identical).
+   */
+  private static _resolveIndex(index: IMemoryIndex | undefined): Result<IMemoryIndex> {
+    // Nullish rather than strictly-undefined, matching how every sibling optional
+    // param in `create()` handles absence (`params.codecs ?? new Map()`, and so on).
+    // A JS caller — or a TS caller arriving through an `unknown` escape hatch —
+    // passing `null` otherwise gets `null` installed as the store's index and fails
+    // later inside `entries()` with a message that names neither the param nor the
+    // cause.
+    return index ? succeed(index) : MemoryIndex.create();
+  }
+
+  /** {@inheritDoc IMemoryStore.get} */
+  public async get(kind: Kind, entityId: EntityId): Promise<Result<IMemoryRecord<unknown> | undefined>> {
+    const result: Result<IMemoryRecord<unknown> | undefined> = codecFor(
+      this._codecs,
+      this._defaultCodec,
+      kind
+    ).onSuccess((codec) =>
+      codec.encode(entityId).onSuccess((addr) => {
+        if (addr.isVersioned) {
+          if (!isTemporalIdentityCodec(codec)) {
+            return fail(
+              `memory get '${entityId}': codec for versioned kind '${kind}' does not implement the temporal codec interface`
+            );
+          }
+          // Versioned keyed read resolves the CURRENT version (highest-seq
+          // version whose `invalid_at` is null/absent) from the entity subtree,
+          // read off the derived index. `asOf` resolution is via `list({ asOf })`
+          // and the temporal retrievers.
+          return this._readVersionedCurrent(addr.scope, kind);
+        }
+        return this._readRecord(addr.scope, addr.idStem, kind);
+      })
+    );
+    await this._fireObservation('read', kind, entityId, {
+      outcome: result.isSuccess() ? 'success' : 'failure',
+      id: result.isSuccess() ? result.value?.envelope.id : undefined,
+      error: result.isFailure() ? result.message : undefined
+    });
+    return result;
+  }
+
+  /** {@inheritDoc IMemoryStore.getById} */
+  public async getById(
+    scope: MemoryScopeKey,
+    id: MemoryId
+  ): Promise<Result<IMemoryRecord<unknown> | undefined>> {
+    return this._readRecord(scope, id);
+  }
+
+  /** {@inheritDoc IMemoryStore.list} */
+  public async list(selection: MemoryListSelection): Promise<Result<ReadonlyArray<IMemoryRecord<unknown>>>> {
+    // Deliberately NOT annotated `: boolean`. An explicit annotation discards the
+    // type predicate, and TypeScript's aliased-condition narrowing is what lets
+    // the ternary below see `selection` as a filter on the false branch. With the
+    // annotation this line compiles and the next one does not.
+    const scan = isWholeVaultScan(selection);
+    const filter: IMemoryStoreListFilter = scan ? {} : selection;
+    if (!scan && filter.scope === undefined && filter.kind === undefined && filter.tag === undefined) {
+      // `asOf` alone does not narrow — it collapses versions, it does not exclude
+      // entities — so a selection carrying only `asOf` lands here too.
+      return fail(
+        'memory list: a selection must narrow by scope, kind or tag; ' +
+          'pass scanEveryRecord() to read every record in the vault deliberately'
+      );
+    }
+    // Select over envelopes, project temporally, and materialize LAST — so a
+    // narrowed list reads only the files it is going to return.
+    const selected: ReadonlyArray<IIndexedMemoryEntry> = this._index.entries().filter((entry) => {
+      if (filter.scope !== undefined && entry.scope !== filter.scope) {
+        return false;
+      }
+      if (filter.kind !== undefined && entry.envelope.kind !== filter.kind) {
+        return false;
+      }
+      if (filter.tag !== undefined && !entry.envelope.tags.includes(filter.tag)) {
+        return false;
+      }
+      return true;
+    });
+    const projected: ReadonlyArray<IIndexedMemoryEntry> =
+      selection.asOf === undefined
+        ? // No temporal projection requested: the flat-path guarantee — every
+          // version is returned.
+          selected
+        : projectAsOf(selected, selection.asOf);
+    return this._materialize(projected);
+  }
+
+  /** {@inheritDoc IMemoryStore.coverage} */
+  public coverage(): Promise<Result<IDerivedStateCoverage>> {
+    return Promise.resolve(
+      computeCoverage({
+        entries: this._index.entries(),
+        hasRankProjector: (kind) => this._rankProjectors.has(kind),
+        anyRankProjector: this._rankProjectors.size > 0,
+        embedsKind: (kind) => this.embedsKind(kind),
+        vectorIndex: this._vectors.vectorIndex,
+        fragmentIndex: this._vectors.fragmentIndex
+      })
+    );
+  }
+
+  /** {@inheritDoc IMemoryStore.listEntries} */
+  public async listEntries(): Promise<Result<ReadonlyArray<IIndexedMemoryEntry>>> {
+    return succeed(this._index.entries());
+  }
+
+  /** {@inheritDoc IMemoryStore.listScoped} */
+  public async listScoped(): Promise<Result<ReadonlyArray<IScopedMemoryRecord>>> {
+    // The derived index already carries each record's scope, so the scoped
+    // projection keys straight off it — `(scope, id)` is exactly the address the
+    // vector index uses. Bodies ARE materialized here: this seam feeds an
+    // embedder, which is the one consumer that genuinely needs every body. No
+    // filter/temporal projection — it re-embeds the whole vault by contract.
+    //
+    // **Complete or failed — never quietly short.** This call is the sole feed
+    // for `asRecordSource()`, and therefore for `IVectorIndex.rebuild`'s coverage
+    // report. A record dropped here would land in none of `records` / `excluded`
+    // / `indexed` / `declined` / `skipped`, so a caller computing coverage would
+    // undercount *in the direction of looking healthier* — which is precisely the
+    // failure `vectorRecordSource`'s own tally exists to prevent, reintroduced one
+    // layer down. A loud failure is recoverable; a silent undercount is not.
+    //
+    // Two consequences worth stating rather than discovering. Before the index
+    // was projected this method read nothing and could not fail, because the
+    // index held the records themselves; it now costs a full-vault read and is
+    // fallible. And it is NOT write-locked, so a concurrent `put` whose cap-cull
+    // physically evicts a record between the snapshot and the read will fail it.
+    // That window is real and is tracked in `docs/FUTURE.md` — the answer is to
+    // make the loss *countable*, not to swallow it.
+    return mapResults(
+      this._index.entries().map((entry) => {
+        const target: IEdgeTarget = { scope: entry.scope, id: entry.envelope.id };
+        return this._resolveRequired(entry).onSuccess((record) => succeed({ target, record }));
+      })
+    );
+  }
+
+  /** {@inheritDoc IMemoryRecordResolver.resolveRecord} */
+  public resolveRecord(scope: MemoryScopeKey, id: MemoryId): Result<IMemoryRecord<unknown> | undefined> {
+    return this._readRecord(scope, id);
+  }
+
+  private _codec(kind: Kind): Result<IIdentityCodec> {
+    return codecFor(this._codecs, this._defaultCodec, kind);
+  }
+
+  /** {@inheritDoc IIdentityResolver.resolveIdentity} */
+  public resolveIdentity(kind: Kind, entityId: EntityId): Result<IIdentityCodecResult> {
+    return resolveIdentity(this._codecs, this._defaultCodec, kind, entityId);
+  }
+
+  /**
+   * Materialize a selected set of entries into records, dropping any that have
+   * vanished since selection.
+   *
+   * @remarks
+   * A miss is not a failure. Selection reads the in-memory index and
+   * materialization reads storage, so a record deleted in between is a legitimate
+   * race and yields a shorter list rather than an error. A read that FAILS is a
+   * real fault and propagates.
+   */
+  private _materialize(
+    entries: ReadonlyArray<IIndexedMemoryEntry>
+  ): Result<ReadonlyArray<IMemoryRecord<unknown>>> {
+    return mapResults(entries.map((entry) => this._readRecord(entry.scope, entry.envelope.id))).onSuccess(
+      (records) => succeed(records.filter((r): r is IMemoryRecord<unknown> => r !== undefined))
+    );
+  }
+
+  /**
+   * Materialize one entry, treating "gone" as a fault rather than a miss.
+   *
+   * @remarks
+   * For paths where a vanished record really does mean the index and the vault
+   * disagree, rather than that something legitimately removed it in between.
+   *
+   * Three of the four callers hold the write lock, so nothing can have removed
+   * the record since the entry was read. `get()`'s versioned path does not, and
+   * is safe only because temporal kinds never physically delete a version — they
+   * invalidate in place, and cap-cull does not apply to them. **If eviction is
+   * ever added to the temporal path, that caller must change**, or it
+   * reintroduces the race this method exists to detect.
+   *
+   * `listScoped` also does not hold the lock, and uses this deliberately anyway:
+   * it feeds a coverage report, so a silent drop there is worse than a loud
+   * failure. See its comment, and `docs/FUTURE.md` for the eviction window.
+   *
+   * The drop-tolerant counterpart is {@link FileTreeMemoryStore._materialize},
+   * for readers where a record that vanished between selection and
+   * materialization is a miss rather than a fault.
+   */
+  private _resolveRequired(entry: IIndexedMemoryEntry): Result<IMemoryRecord<unknown>> {
+    return this._readRecord(entry.scope, entry.envelope.id).onSuccess((record) =>
+      record === undefined
+        ? fail(`memory: index entry '${entry.scope}/${entry.envelope.id}' has no record in the vault`)
+        : succeed(record)
+    );
+  }
+
+  /** {@inheritDoc IMemoryStore.asRecordSource} */
+  public asRecordSource(): IMemoryRecordSource {
+    return vectorRecordSource(this);
+  }
+
+  /** {@inheritDoc IMemoryStore.reconcile} */
+  public async reconcile(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>> {
+    return this._enqueue(() => this._reconcileLocked(kind, artifact));
+  }
+
+  /** {@inheritDoc IMemoryStore.put} */
+  public async put(
+    record: IMemoryRecord<unknown>,
+    options?: IMemoryWriteOptions
+  ): Promise<MemoryWriteResult<IMemoryRecord<unknown>>> {
+    const result: MemoryWriteResult<IPutOutcome> = settleWrite(
+      await this._enqueue(() => this._putLocked(record, options))
+    );
+    await this._fireObservation('write', record.envelope.kind, record.envelope.entityId, {
+      outcome: result.isSuccess() ? 'success' : 'failure',
+      id: result.isSuccess() ? result.value.record.envelope.id : record.envelope.id,
+      provenance: record.envelope.provenance,
+      error: result.isFailure() ? result.message : undefined,
+      embed: result.isSuccess() ? result.value.embed : undefined
+    });
+    // Fire one `'delete'` observation per record evicted by cap-cull. The
+    // evicted records are always in the same `(scope, kind)` cohort as the
+    // incoming record, so resolving the scope from the incoming `entityId`
+    // yields the evicted record's scope; the observation records the evicted
+    // record's own `id`. A no-op / first-write / reject path yields no
+    // evictions, so this loop is empty there.
+    if (result.isSuccess()) {
+      for (const evictedId of result.value.evicted) {
+        await this._fireObservation('delete', record.envelope.kind, record.envelope.entityId, {
+          outcome: 'success',
+          id: evictedId
+        });
+      }
+    }
+    return result.onSuccess((outcome) => succeedWithDetail(outcome.record));
+  }
+
+  /** {@inheritDoc IMemoryStore.delete} */
+  public async delete(
+    kind: Kind,
+    entityId: EntityId,
+    options?: IMemoryDeleteOptions
+  ): Promise<MemoryWriteResult<MemoryId>> {
+    const result: MemoryWriteResult<MemoryId> = settleWrite(
+      await this._enqueue(() => this._deleteLocked(kind, entityId, options?.expected))
+    );
+    await this._fireObservation('delete', kind, entityId, {
+      outcome: result.isSuccess() ? 'success' : 'failure',
+      id: result.isSuccess() ? result.value : undefined,
+      error: result.isFailure() ? result.message : undefined
+    });
+    return result;
+  }
+
+  /**
+   * Serialize a mutating task behind the write-lock. Tasks run in submission
+   * order; a failed task does not break the chain for subsequent ones.
+   */
+  private _enqueue<T>(task: () => Promise<Result<T>>): Promise<Result<T>> {
+    // A disposed store refuses at entry, so nothing queued behind a dispose embeds or writes.
+    const result: Promise<Result<T>> = this._writeTail.then(() =>
+      this._session.checkWritable().thenOnSuccess(task)
+    );
+    this._writeTail = result.then(
+      () => undefined,
+      () => undefined
+    );
+    return result;
+  }
+
+  /** Fan out one observation for a completed op; see `ObservationFanout`. */
+  private _fireObservation(
+    phase: MemoryObservationPhase,
+    kind: Kind,
+    entityId: EntityId,
+    details: IObservationDetails
+  ): Promise<void> {
+    return this._observations.fire(phase, kind, () => this._scopeBestEffort(kind, entityId), details);
+  }
+
+  /**
+   * Log a swallowed-issue warning (observer failure or best-effort vector
+   * maintenance), tolerating a logger that itself throws — diagnostic logging
+   * must never make a store op reject.
+   */
+  private _warnSwallowed(message: string): void {
+    try {
+      this._logger.warn(message);
+    } catch {
+      // Diagnostic logging must not affect the store operation.
+    }
+  }
+
+  /** Resolve a scope for an observation, best-effort (undefined when unresolvable). */
+  private _scopeBestEffort(kind: Kind, entityId: EntityId): MemoryScopeKey | undefined {
+    return this._codec(kind)
+      .onSuccess((codec) => codec.encode(entityId))
+      .onSuccess((addr) => succeed(addr.scope))
+      .orDefault();
+  }
+
+  private async _putLocked(
+    record: IMemoryRecord<unknown>,
+    options: IMemoryWriteOptions | undefined
+  ): Promise<Result<IPutOutcome | WriteRefusal>> {
+    // Input refusals are `invalid` and read nothing; the precondition is checked per layout, under
+    // this lock and before dedup. The flat path keeps its dedup/policy ordering; the versioned path
+    // is a wholly separate branch.
+    return classify(this._resolvePut(record, options), 'invalid').thenOnSuccess((resolved) => {
+      if (resolved instanceof WriteRefusal) {
+        return Promise.resolve(succeed<IPutOutcome | WriteRefusal>(resolved));
+      }
+      if (resolved.temporal !== undefined) {
+        return this._putVersioned(record, resolved, resolved.temporal);
+      }
+      return this._contentHash(record.envelope.kind, resolved.body, record.envelope.links).thenOnSuccess(
+        (hash) => this._writeResolved(record, resolved, hash)
+      );
+    });
+  }
+
+  /** Accept or refuse a `put`'s input: body, `expected`, codec, and layout. Reads no records. */
+  private _resolvePut(record: IMemoryRecord<unknown>, options?: IMemoryWriteOptions): Result<IResolvedPut> {
+    const envelope: IMemoryEnvelope = record.envelope;
+    if (typeof record.body !== 'string') {
+      return fail(
+        `memory put '${envelope.id}': only string (markdown) bodies are supported (got ${typeof record.body})`
+      );
+    }
+    const body: string = record.body;
+    return validateExpectation(options?.expected, `memory put '${envelope.id}'`, true).onSuccess((expected) =>
+      this._registry
+        .convert(envelope.kind, body)
+        .withErrorFormat((msg) => `memory put '${envelope.id}': invalid body: ${msg}`)
+        .onSuccess(() => this._codec(envelope.kind))
+        .onSuccess((codec) =>
+          codec.encode(envelope.entityId).onSuccess((addr) => {
+            const resolved: IResolvedPut = { body, scope: addr.scope, idStem: addr.idStem, expected };
+            if (addr.isVersioned) {
+              return isTemporalIdentityCodec(codec)
+                ? succeed({ ...resolved, temporal: codec })
+                : fail<IResolvedPut>(
+                    `memory put '${envelope.entityId}': codec for versioned kind '${envelope.kind}' does not implement the temporal codec interface`
+                  );
+            }
+            return envelope.id === addr.idStem
+              ? succeed(resolved)
+              : fail<IResolvedPut>(
+                  `memory put: envelope id '${envelope.id}' does not match codec-derived stem '${addr.idStem}'`
+                );
+          })
+        )
+    );
+  }
+
+  /**
+   * Run dedup → policy → stamp → embed → write for a resolved address and content
+   * hash. Async because the embed-on-write hook (when wired) does a network call
+   * or in-process inference; the whole chain runs inside the write-lock so the
+   * vector index, the on-disk file, and the derived index never interleave.
+   */
+  private async _writeResolved(
+    record: IMemoryRecord<unknown>,
+    target: IResolvedPut,
+    hash: string
+  ): Promise<Result<IPutOutcome | WriteRefusal>> {
+    const { body, scope, idStem } = target;
+    const policy: IWritePolicy = this._policyFor(record.envelope.kind);
+    // Read through the public accessor so the write path and every external
+    // caller (the ingest orchestrator's layer-1) resolve dedup granularity from
+    // ONE place — there is no second declaration site.
+    const dedupScope: DedupScope = this.dedupScopeFor(record.envelope.kind);
+    // Content-hash dedup runs BEFORE policy. Its granularity is the kind's
+    // `dedupScope`:
+    //   - 'content': an identical { kind, body, links } triple ANYWHERE in the
+    //     scope (even under a different id) is a no-op (knowledge family).
+    //   - 'entity' (default): only an identical re-put of the SAME id is a no-op;
+    //     two distinct entities with identical content never collapse (experience
+    //     families). The same-id check is folded into the `_readRecord` below.
+    // (Tags / provenance are metadata and are NOT part of the hash; see
+    // design-lock §2.5.)
+    // The same-id record is read FIRST, for the precondition: content dedup below can answer with a
+    // different id's record, so a check after it would let a dedup no-op mask a conflict.
+    return this._readRecord(scope, idStem, record.envelope.kind).thenOnSuccess(async (existing) => {
+      const refusal: WriteRefusal | undefined = checkExpectation(
+        target.expected,
+        existing,
+        `memory put '${record.envelope.id}'`
+      );
+      if (refusal !== undefined) {
+        return succeed(refusal);
+      }
+      if (dedupScope === 'content') {
+        // Cross-id content collapse: an identical { kind, body, links } triple under a DIFFERENT id
+        // is a no-op (knowledge family). A same-id match is excluded here and falls through to the
+        // LWW path below so a metadata-only revision (tags / provenance — outside the content hash
+        // but inside the policy's mutableFields) actually applies. Content-dedup must never shadow
+        // LWW for the same entity.
+        const duplicate: Result<IMemoryRecord<unknown> | undefined> = this._findByContentHash(
+          scope,
+          hash,
+          record.envelope.id
+        );
+        if (duplicate.isFailure()) {
+          return fail(duplicate.message);
+        }
+        if (duplicate.value !== undefined) {
+          // Under `expected`, success means the addressed record was written; a dedup onto another
+          // id is not that, so it is refused rather than reported as a write.
+          return target.expected === undefined
+            ? succeed({ record: duplicate.value, evicted: [] })
+            : succeed(duplicateRefusal(duplicate.value, `memory put '${record.envelope.id}'`));
+        }
+      }
+      // Same-id re-put is a no-op ONLY when the content hash matches AND the
+      // mutable metadata is also unchanged. The content hash covers
+      // { kind, body, links }; a matching hash with revised tags/provenance is a
+      // real update that must reach applyUpdate, not be swallowed as a duplicate
+      // (both dedup scopes).
+      if (
+        existing !== undefined &&
+        existing.envelope.contentHash === hash &&
+        isMutableMetadataUnchanged(this._hasher, existing, record)
+      ) {
+        return succeed({ record: existing, evicted: [] });
+      }
+      // The admission cohort is the set of records the policy's cap applies to:
+      // every record in this scope of this kind EXCEPT the target id. On a first
+      // write the post-write count is `cohort.length + 1`; on an update the prior
+      // same-id record is excluded so the count is still `cohort.length + 1`
+      // (a replace, not a grow). The same-id `existing` record is threaded
+      // separately into `_buildRecord` for the merge-patch. Knowledge LWW ignores
+      // this argument, so its behavior is unchanged by the wider cohort.
+      return this._admissionCohort(scope, record.envelope.kind, idStem)
+        .onSuccess((cohort) => policy.admit(record, cohort))
+        .thenOnSuccess((decision) =>
+          this._admitWrite(record, body, scope, idStem, hash, policy, existing, decision)
+        );
+    });
+  }
+
+  /**
+   * Build → embed → persist → evict for an admitted write.
+   *
+   * The durable record store is authoritative; the vector index is a **derived,
+   * rebuildable** view, so vector maintenance is **best-effort** — a failed embed
+   * or `add` is logged and the durable write still succeeds (the index can be
+   * rebuilt via {@link InMemoryCosineIndex.rebuild}). Only genuine record-store
+   * failures (body/codec/policy, persist, file eviction) fail the `put`.
+   *
+   * Ordering: the embed + `add` run immediately before the single `_persist` so
+   * the index-returned `embeddingRef` lands in one durable write (a post-persist
+   * stamp would need a second write whose failure path is effectively untestable).
+   * Build and persist the replacement BEFORE evicting the cull-oldest cohort, so a
+   * later eviction failure never loses data with nothing written in its place.
+   */
+  private async _admitWrite(
+    record: IMemoryRecord<unknown>,
+    body: string,
+    scope: MemoryScopeKey,
+    idStem: string,
+    hash: string,
+    policy: IWritePolicy,
+    existing: IMemoryRecord<unknown> | undefined,
+    decision: AdmissionDecision
+  ): Promise<Result<IPutOutcome | WriteRefusal>> {
+    if (decision.decision === 'reject') {
+      return succeed(
+        new WriteRefusal({ code: 'rejected' }, `memory put: rejected by policy: ${decision.reason}`)
+      );
+    }
+    return this._buildRecord(record, body, existing, policy, hash)
+      .onSuccess((built) => succeed(this._stampRank(built)))
+      .thenOnSuccess((built) => this._vectors.embedOnWrite(built, scope))
+      .thenOnSuccess(async (embedded) =>
+        (await this._vectors.embedFragmentsOnWrite(embedded.record, scope)).onSuccess((withFragments) =>
+          succeed({ ...embedded, record: withFragments })
+        )
+      )
+      .onSuccess((embedded) =>
+        this._persist(embedded.record, scope, idStem).onSuccess((persisted) =>
+          succeed({ persisted, stale: embedded.stale, embed: embedded.embed })
+        )
+      )
+      .thenOnSuccess(async ({ persisted, stale, embed }) => {
+        // Everything after the authoritative `_persist` commit is best-effort and
+        // never turns a committed write into a `Failure`:
+        //   - a stale vector superseded by a decline is pruned here rather than at
+        //     the point of the decline, because a `_persist` that fails leaves the
+        //     PREVIOUS content on disk — content that vector is still an accurate
+        //     embedding of. Pruning early would delete a correct vector on behalf
+        //     of a write that never landed;
+        //   - a cull-oldest eviction that fails is logged (the per-(scope,kind)
+        //     cap may be transiently exceeded; the next write's admission restores
+        //     it), and only the successfully-evicted ids flow onward;
+        //   - vector pruning of the evicted cohort is likewise best-effort.
+        await this._vectors.pruneStaleVector(stale);
+        const evicted: ReadonlyArray<MemoryId> = this._applyEvictions(decision, scope);
+        await this._vectors.removeEvictedVectors(evicted, scope);
+        return succeed({ record: persisted, evicted, embed });
+      });
+  }
+
+  /**
+   * Evict the records named by a `cull-oldest` decision, best-effort. Runs only
+   * after the authoritative `_persist`, so a failed eviction is logged (never
+   * fatal) and the cap self-corrects on the next admission. Returns the ids that
+   * were actually evicted (so observations / vector pruning cover only those).
+   * `accept` / `reject` decisions evict nothing.
+   */
+  private _applyEvictions(decision: AdmissionDecision, scope: MemoryScopeKey): ReadonlyArray<MemoryId> {
+    if (decision.decision !== 'cull-oldest') {
+      return [];
+    }
+    const evicted: MemoryId[] = [];
+    for (const id of decision.evict) {
+      const result: Result<MemoryId> = this._evict(scope, id);
+      if (result.isSuccess()) {
+        evicted.push(result.value);
+      } else {
+        this._warnSwallowed(
+          this._session.released
+            ? `memory put: eviction of '${id}' skipped: the store was disposed after the write committed; the next owner's admission restores the cap`
+            : `memory put: best-effort eviction of '${id}' failed (cap may be transiently exceeded; restored on the next write): ${result.message}`
+        );
+      }
+    }
+    return evicted;
+  }
+
+  /**
+   * Build the record to persist. On a first write the incoming envelope is the
+   * base (final content equals the incoming content, so the dedup `hash` is
+   * reused). On an update the incoming record's mutable fields are projected into
+   * a merge-patch and the policy's `applyUpdate` merges them over the existing
+   * record (preserving `created`); the persisted body and `contentHash` are then
+   * taken from the policy's actual output, so a body-transforming policy is never
+   * bypassed and the stored hash always matches the stored `{ kind, body, links }`.
+   * The store stamps the transaction-time metadata it owns
+   * (`created` / `updated` / `seq` / `contentHash`).
+   */
+  private _buildRecord(
+    incoming: IMemoryRecord<unknown>,
+    body: string,
+    existing: IMemoryRecord<unknown> | undefined,
+    policy: IWritePolicy,
+    hash: string
+  ): Result<IMemoryRecord<string>> {
+    const now: number = this._clock();
+    return this._seqs.next().onSuccess((seq) => {
+      if (existing === undefined) {
+        return succeed({
+          envelope: { ...incoming.envelope, created: now, updated: now, seq, contentHash: hash },
+          body
+        });
+      }
+      return this._mergeRecord(incoming, existing, policy, now, seq);
+    });
+  }
+
+  /** The update branch of {@link FileTreeMemoryStore._buildRecord}. */
+  private _mergeRecord(
+    incoming: IMemoryRecord<unknown>,
+    existing: IMemoryRecord<unknown>,
+    policy: IWritePolicy,
+    now: number,
+    seq: number
+  ): Result<IMemoryRecord<string>> {
+    const patch: Record<string, unknown> = projectMutablePatch(incoming, policy.mutableFields);
+    return policy
+      .applyUpdate(existing, patch)
+      .withErrorFormat((msg) => `memory put '${incoming.envelope.id}': update failed: ${msg}`)
+      .onSuccess((updated) => {
+        if (typeof updated.body !== 'string') {
+          return fail(
+            `memory put '${incoming.envelope.id}': policy returned a non-string body (${typeof updated.body})`
+          );
+        }
+        const finalBody: string = updated.body;
+        return this._contentHash(updated.envelope.kind, finalBody, updated.envelope.links).onSuccess(
+          (finalHash) =>
+            succeed({
+              envelope: {
+                ...updated.envelope,
+                created: existing.envelope.created,
+                updated: now,
+                seq,
+                contentHash: finalHash
+              },
+              body: finalBody
+            })
+        );
+      });
+  }
+
+  /** Serialize and write a fully-stamped record, then patch the index. */
+  private _persist(
+    record: IMemoryRecord<string>,
+    scope: MemoryScopeKey,
+    idStem: string
+  ): Result<IMemoryRecord<unknown>> {
+    return serializeMemoryFile(record.envelope, record.body)
+      .onSuccess((raw) => writeRecordFile(this._root, this._scopes, this._session, scope, idStem, raw))
+      .onSuccess(() => this._index.patch('put', { scope, record }))
+      .onSuccess(() => succeed(record));
+  }
+
+  private async _deleteLocked(
+    kind: Kind,
+    entityId: EntityId,
+    expected: number | undefined
+  ): Promise<Result<MemoryId | WriteRefusal>> {
+    const resolved: Result<IIdentityCodecResult> = validateExpectation(
+      expected,
+      `memory delete '${entityId}'`,
+      false
+    )
+      .onSuccess(() => this._codec(kind))
+      .onSuccess((codec) =>
+        codec
+          .encode(entityId)
+          .onSuccess((addr) =>
+            addr.isVersioned && !isTemporalIdentityCodec(codec)
+              ? fail<IIdentityCodecResult>(
+                  `memory delete '${entityId}': codec for versioned kind '${kind}' does not implement the temporal codec interface`
+                )
+              : succeed(addr)
+          )
+      );
+    return classify(resolved, 'invalid').thenOnSuccess((addr) => {
+      if (addr instanceof WriteRefusal) {
+        return Promise.resolve(succeed<MemoryId | WriteRefusal>(addr));
+      }
+      return addr.isVersioned
+        ? this._deleteVersioned(entityId, addr.scope, kind, expected)
+        : this._deleteFlat(entityId, addr.scope, addr.idStem, kind, expected);
+    });
+  }
+
+  /**
+   * Flat (non-versioned) delete: physically remove the record file + index
+   * entry, then prune the vector best-effort. Structurally unchanged from the
+   * pre-temporal delete path.
+   */
+  private async _deleteFlat(
+    entityId: EntityId,
+    scope: MemoryScopeKey,
+    idStem: string,
+    kind: Kind,
+    expected: number | undefined
+  ): Promise<Result<MemoryId | WriteRefusal>> {
+    return this._readRecord(scope, idStem, kind).thenOnSuccess((existing) => {
+      const target: IMemoryRecord<unknown> | WriteRefusal = FileTreeMemoryStore._deletable(
+        entityId,
+        existing,
+        expected
+      );
+      if (target instanceof WriteRefusal) {
+        return Promise.resolve(succeed<MemoryId | WriteRefusal>(target));
+      }
+      // Delete the record file + index entry (authoritative), then prune the
+      // vector best-effort: a committed delete must not fail because the
+      // derived index could not be pruned.
+      return deleteRecordFile(this._root, this._scopes, this._session, scope, idStem)
+        .onSuccess(() => this._index.patch('delete', { scope, record: target }))
+        .thenOnSuccess(async () => {
+          await this._vectors.removeAll({ scope, id: target.envelope.id });
+          return succeed<MemoryId | WriteRefusal>(target.envelope.id);
+        });
+    });
+  }
+
+  /**
+   * The record a delete acts on, or why it may not: a conflict when `expected` does not match
+   * `current`, a `not-found` when there is nothing to delete.
+   */
+  private static _deletable(
+    entityId: EntityId,
+    current: IMemoryRecord<unknown> | undefined,
+    expected: number | undefined
+  ): IMemoryRecord<unknown> | WriteRefusal {
+    const label: string = `memory delete '${entityId}'`;
+    return (
+      checkExpectation(expected, current, label) ??
+      current ??
+      new WriteRefusal({ code: 'not-found' }, `${label}: no record found`)
+    );
+  }
+
+  /**
+   * Resolve the current version of a temporal entity from the derived index: the
+   * highest-`seq` version under the entity subtree `scope` whose `invalid_at` is
+   * null/absent. `undefined` when the entity has no current version (never
+   * written, or fully invalidated / soft-deleted).
+   */
+  private _readVersionedCurrent(
+    scope: MemoryScopeKey,
+    expectedKind?: Kind
+  ): Result<IMemoryRecord<unknown> | undefined> {
+    // Select over ENVELOPES, then materialize the one winner — which is what
+    // `IMemoryStore.get`'s docstring promises and what `selectCurrentVersion`
+    // being generic over `IEnvelopeCarrier` exists for. Materializing every
+    // version first (as this did) cost N file reads and N body validations to
+    // return one record, and made that docstring false.
+    const current: IIndexedMemoryEntry | undefined = selectCurrentVersion(
+      this._index.entries().filter((entry) => entry.scope === scope)
+    );
+    if (current === undefined) {
+      return succeed(undefined);
+    }
+    return this._resolveRequired(current).onSuccess((materialized) =>
+      verifyOccupantKind(expectedKind, scope, materialized.envelope.id, materialized)
+    );
+  }
+
+  /**
+   * Every persisted version of the entity whose subtree is `scope`. All version
+   * files for one entity live under exactly that scope (which encodes the
+   * entityId), so a scope filter over the index isolates one entity's versions.
+   */
+  private _versionsForEntity(
+    scope: MemoryScopeKey,
+    expectedKind?: Kind
+  ): Result<ReadonlyArray<IMemoryRecord<unknown>>> {
+    // Selected on the envelope (scope), materialized after — so a versioned write
+    // reads only that entity's versions, never the vault. Bounded by the entity's
+    // version count.
+    return mapResults(
+      this._index
+        .entries()
+        .filter((entry) => entry.scope === scope)
+        .map((entry) =>
+          this._resolveRequired(entry).onSuccess((r) =>
+            verifyOccupantKind(expectedKind, scope, r.envelope.id, r)
+          )
+        )
+    );
+  }
+
+  /**
+   * Versioned write (invalidate-don't-delete). Builds the new version's content
+   * (a first version from the incoming record, or a merge of the incoming patch
+   * over the current version), persists it as a NEW version file, then sets
+   * `invalid_at` on the prior current version.
+   *
+   * Durability order: the new version is persisted FIRST. It carries the highest
+   * `seq`, so a crash before the prior-version invalidation completes still
+   * resolves the new version as current (`selectCurrentVersion` breaks a
+   * two-current tie by highest `seq`), and `asOf` reads stay correct because each
+   * version's `valid_at` lower-bounds its interval.
+   */
+  private async _putVersioned(
+    record: IMemoryRecord<unknown>,
+    target: IResolvedPut,
+    codec: ITemporalIdentityCodec
+  ): Promise<Result<IPutOutcome | WriteRefusal>> {
+    const { body, scope } = target;
+    const envelope: IMemoryEnvelope = record.envelope;
+    const entityId: EntityId = envelope.entityId;
+    const kind: Kind = envelope.kind;
+    // Snapshot the entity's versions BEFORE the write. `priorCurrents` is every
+    // still-current version at snapshot time — normally one, but two-or-more if a
+    // prior invalidation partially failed; invalidating all of them lets the write
+    // self-heal a stuck state (P2-7).
+    const snapshot: Result<ReadonlyArray<IMemoryRecord<unknown>>> = this._versionsForEntity(scope, kind);
+    if (snapshot.isFailure()) {
+      return fail(snapshot.message);
+    }
+    const versions: ReadonlyArray<IMemoryRecord<unknown>> = snapshot.value;
+    const priorCurrents: ReadonlyArray<IMemoryRecord<unknown>> = versions.filter(isVersionCurrent);
+    const current: IMemoryRecord<unknown> | undefined = selectCurrentVersion(versions);
+    // The precondition compares with the CURRENT version, before entity dedup can answer with it.
+    const refusal: WriteRefusal | undefined = checkExpectation(
+      target.expected,
+      current,
+      `memory put '${entityId}'`
+    );
+    if (refusal !== undefined) {
+      return succeed(refusal);
+    }
+    const policy: IWritePolicy = this._policyFor(kind);
+    // Same single-owner read as the flat path (see `_writeResolved`).
+    const dedupScope: DedupScope = this.dedupScopeFor(kind);
+    return this._contentHash(kind, body, envelope.links).thenOnSuccess((hash) => {
+      // Entity-scoped dedup: a re-put is a no-op only when the CURRENT content AND
+      // its mutable metadata are unchanged (does not spawn a redundant version).
+      // A metadata-only revision (tags/provenance — declared mutable by
+      // TemporalVersionedPolicy) must NOT be swallowed here: it mints a new
+      // version via the applyUpdate merge in `_buildVersionedRecord`, mirroring
+      // the flat path. Content-scoped dedup is not a versioning concern, so only
+      // the entity granularity is honored here.
+      if (
+        dedupScope === 'entity' &&
+        current !== undefined &&
+        current.envelope.contentHash === hash &&
+        isMutableMetadataUnchanged(this._hasher, current, record)
+      ) {
+        return Promise.resolve(succeed<IPutOutcome | WriteRefusal>({ record: current, evicted: [] }));
+      }
+      // On the versioned path the admission cohort is the entity's ENTIRE version
+      // history (no target id to exclude — the new version does not exist yet),
+      // which differs from the flat path's "cohort excluding target id" shape.
+      return policy.admit(record, versions).thenOnSuccess((decision) => {
+        if (decision.decision === 'reject') {
+          const reason: string = `memory put: rejected by policy: ${decision.reason}`;
+          return Promise.resolve(
+            succeed<IPutOutcome | WriteRefusal>(new WriteRefusal({ code: 'rejected' }, reason))
+          );
+        }
+        // No culling on the versioned path — history is retained (invalidate-don't-delete).
+        const now: number = this._clock();
+        // World-truth start of the new version. Each prior current version's
+        // world-truth interval CLOSES at this same instant (not at `now`) so a
+        // backdated/future-dated `valid_at` leaves no gap or overlap on the
+        // valid-time axis.
+        const validAt: number = envelope.temporal?.valid_at ?? now;
+        return this._seqs
+          .next()
+          .onSuccess((seq) =>
+            codec
+              .encodeVersion(entityId, seq)
+              .withErrorFormat((msg) => `memory put '${entityId}': ${msg}`)
+              .onSuccess((versionStem) => succeed({ seq, versionStem }))
+          )
+          .thenOnSuccess(({ seq, versionStem }) =>
+            this._buildVersionedRecord(record, body, current, policy, hash, versionStem, validAt, now, seq)
+              .onSuccess((built) => succeed(this._stampRank(built)))
+              .thenOnSuccess((built) => this._vectors.embedOnWrite(built, scope))
+              .thenOnSuccess(async (embedded) =>
+                (await this._vectors.embedFragmentsOnWrite(embedded.record, scope)).onSuccess(
+                  (withFragments) => succeed({ ...embedded, record: withFragments })
+                )
+              )
+              .onSuccess((embedded) =>
+                this._persist(embedded.record, scope, versionStem).onSuccess((persisted) =>
+                  succeed({ persisted, stale: embedded.stale, embed: embedded.embed })
+                )
+              )
+              .onSuccess(({ persisted, stale, embed }) =>
+                this._invalidateCurrents(scope, priorCurrents, validAt, now).onSuccess(() =>
+                  succeed({ persisted, stale, embed })
+                )
+              )
+              // Post-commit and best-effort, exactly as on the flat path.
+              .thenOnSuccess(async ({ persisted, stale, embed }) => {
+                await this._vectors.pruneStaleVector(stale);
+                return succeed<IPutOutcome | WriteRefusal>({ record: persisted, evicted: [], embed });
+              })
+          );
+      });
+    });
+  }
+
+  /**
+   * Invalidate a set of still-current versions (close each world-truth interval at
+   * `invalidAt`; stamp transaction-time `updated` = `now`). Chained so a mid-list
+   * failure propagates. Invalidating every prior current — not just the
+   * highest-`seq` pick — self-heals a state where a previous write's invalidation
+   * only partially completed (P2-7).
+   */
+  private _invalidateCurrents(
+    scope: MemoryScopeKey,
+    currents: ReadonlyArray<IMemoryRecord<unknown>>,
+    invalidAt: number,
+    now: number
+  ): Result<true> {
+    return currents.reduce<Result<true>>(
+      (acc, version) =>
+        acc.onSuccess(() =>
+          this._invalidateVersion(scope, version, invalidAt, now).onSuccess(() => succeed(true))
+        ),
+      succeed(true)
+    );
+  }
+
+  /**
+   * Build the new version to persist. A first version takes the incoming
+   * content verbatim (its dedup `hash` is reused); a subsequent version projects
+   * the incoming record's mutable fields into a merge-patch and lets the policy
+   * merge them over the CURRENT version (the merge-patch-under-versioning
+   * contract), recomputing the content hash from the policy's output. Each
+   * version is its own record with its own transaction time (`created` = `now`)
+   * and a store-minted `id` = the version stem, so `id === filename stem` holds.
+   */
+  private _buildVersionedRecord(
+    incoming: IMemoryRecord<unknown>,
+    body: string,
+    current: IMemoryRecord<unknown> | undefined,
+    policy: IWritePolicy,
+    // Reused only for the first-version branch (its content is taken verbatim); a
+    // subsequent version recomputes its hash from the merge-patched content.
+    firstVersionHash: string,
+    versionStem: string,
+    validAt: number,
+    now: number,
+    seq: number
+  ): Result<IMemoryRecord<string>> {
+    const mintedId: MemoryId = versionStem as MemoryId;
+    if (current === undefined) {
+      const envelope: IMemoryEnvelope = {
+        ...incoming.envelope,
+        id: mintedId,
+        entityId: incoming.envelope.entityId,
+        created: now,
+        updated: now,
+        seq,
+        contentHash: firstVersionHash,
+        temporal: { valid_at: validAt }
+      };
+      return succeed({ envelope, body });
+    }
+    const patch: Record<string, unknown> = projectMutablePatch(incoming, policy.mutableFields);
+    return policy
+      .applyUpdate(current, patch)
+      .withErrorFormat((msg) => `memory put '${incoming.envelope.entityId}': update failed: ${msg}`)
+      .onSuccess((updated) => {
+        if (typeof updated.body !== 'string') {
+          return fail(
+            `memory put '${
+              incoming.envelope.entityId
+            }': policy returned a non-string body (${typeof updated.body})`
+          );
+        }
+        const finalBody: string = updated.body;
+        return this._contentHash(updated.envelope.kind, finalBody, updated.envelope.links).onSuccess(
+          (finalHash) => {
+            const envelope: IMemoryEnvelope = {
+              ...updated.envelope,
+              id: mintedId,
+              entityId: incoming.envelope.entityId,
+              created: now,
+              updated: now,
+              seq,
+              contentHash: finalHash,
+              temporal: { valid_at: validAt }
+            };
+            return succeed({ envelope, body: finalBody });
+          }
+        );
+      });
+  }
+
+  /**
+   * Set `invalid_at` on a prior current version (invalidate-don't-delete) and
+   * rewrite its file + index entry. The content hash is unchanged — `invalid_at`
+   * is temporal metadata, not part of `{ kind, body, links }` — so the version's
+   * identity is stable.
+   */
+  private _invalidateVersion(
+    scope: MemoryScopeKey,
+    version: IMemoryRecord<unknown>,
+    invalidAt: number,
+    now: number
+  ): Result<IMemoryRecord<unknown>> {
+    /* c8 ignore start -- defensive: every persisted version carries a string body (only string bodies are written) */
+    if (typeof version.body !== 'string') {
+      return fail(`memory put: cannot invalidate version '${version.envelope.id}': non-string body`);
+    }
+    /* c8 ignore stop */
+    // `invalid_at` is the WORLD-TRUTH close of the interval (the superseding version's
+    // `valid_at`, or the delete instant); `updated` is the transaction-time stamp.
+    const invalidated: IMemoryRecord<string> = {
+      envelope: {
+        ...version.envelope,
+        updated: now,
+        temporal: { ...version.envelope.temporal, invalid_at: invalidAt }
+      },
+      body: version.body
+    };
+    return this._persist(invalidated, scope, version.envelope.id);
+  }
+
+  /**
+   * Versioned delete: SOFT delete (invalidate-don't-delete). Sets `invalid_at` on
+   * the current version, leaving the entity's history intact and the entity with
+   * no current version. Returns the invalidated version's {@link MemoryId}. Fails
+   * with "no record found" when there is no current version — matching the flat
+   * delete's not-found semantics. History is retained deliberately: temporal
+   * kinds exist to preserve the audit trail (and the L3 `contradicts` interlock
+   * builds on it), so a hard delete would defeat the purpose.
+   */
+  private async _deleteVersioned(
+    entityId: EntityId,
+    scope: MemoryScopeKey,
+    kind: Kind,
+    expected: number | undefined
+  ): Promise<Result<MemoryId | WriteRefusal>> {
+    const snapshot: Result<ReadonlyArray<IMemoryRecord<unknown>>> = this._versionsForEntity(scope, kind);
+    if (snapshot.isFailure()) {
+      return fail(snapshot.message);
+    }
+    const versions: ReadonlyArray<IMemoryRecord<unknown>> = snapshot.value;
+    const currents: ReadonlyArray<IMemoryRecord<unknown>> = versions.filter(isVersionCurrent);
+    const current: IMemoryRecord<unknown> | undefined = selectCurrentVersion(versions);
+    const target: IMemoryRecord<unknown> | WriteRefusal = FileTreeMemoryStore._deletable(
+      entityId,
+      current,
+      expected
+    );
+    if (target instanceof WriteRefusal) {
+      return succeed(target);
+    }
+    // A delete closes the world-truth interval at the delete instant (`now` for both
+    // the transaction stamp and the `invalid_at` boundary). Every still-current
+    // version is invalidated (self-heals a stuck two-current state — P2-7); the
+    // highest-`seq` current's id is returned.
+    const now: number = this._clock();
+    return this._invalidateCurrents(scope, currents, now, now).onSuccess(() =>
+      succeed<MemoryId | WriteRefusal>(target.envelope.id)
+    );
+  }
+
+  /** Evict (physically delete) a single record file by id, patching the index. */
+  private _evict(scope: MemoryScopeKey, id: MemoryId): Result<MemoryId> {
+    return this._readRecord(scope, id).onSuccess((existing) => {
+      if (existing === undefined) {
+        return fail(`memory put: cannot evict '${id}' in scope '${scope}': not found`);
+      }
+      return deleteRecordFile(this._root, this._scopes, this._session, scope, id)
+        .onSuccess(() => this._index.patch('delete', { scope, record: existing }))
+        .onSuccess(() => succeed(id));
+    });
+  }
+
+  /**
+   * The admission cohort for a write: every indexed record in `scope` of `kind`
+   * except the one at `idStem` (the record being written or updated). This is
+   * the set a per-kind cap (e.g. {@link MemoryCapCullPolicy}) counts against, so
+   * a bounded-ring policy can keep a per-scope/per-kind family within
+   * `maxRecords`. Excluding the target id makes the post-write count uniform
+   * across first-writes and updates.
+   */
+  private _admissionCohort(
+    scope: MemoryScopeKey,
+    kind: Kind,
+    idStem: string
+  ): Result<ReadonlyArray<IMemoryRecord<unknown>>> {
+    // Envelope-only selection; the cohort is per-(scope, kind) and bounded by the
+    // cull cap, so materializing it is small by construction.
+    return mapResults(
+      this._index
+        .entries()
+        .filter(
+          (entry) => entry.scope === scope && entry.envelope.kind === kind && entry.envelope.id !== idStem
+        )
+        .map((entry) => this._resolveRequired(entry))
+    );
+  }
+
+  /**
+   * Find a record in `scope` whose `contentHash` equals `hash`, if any,
+   * optionally excluding a specific id. `excludeId` lets the content-scoped
+   * dedup skip the same-id record so it does not shadow the LWW update path.
+   */
+  private _findByContentHash(
+    scope: MemoryScopeKey,
+    hash: string,
+    excludeId?: string
+  ): Result<IMemoryRecord<unknown> | undefined> {
+    // The clearest win of the projection: the hash lives on the envelope, so this
+    // scans envelopes and reads exactly ONE file — the match — where it used to
+    // hold every body in the scope to look at one field.
+    const match: IIndexedMemoryEntry | undefined = this._index
+      .entries()
+      .find(
+        (entry) =>
+          entry.scope === scope && entry.envelope.contentHash === hash && entry.envelope.id !== excludeId
+      );
+    return match === undefined ? succeed(undefined) : this._resolveRequired(match);
+  }
+
+  private _contentHash(kind: Kind, body: string, links: IMemoryEnvelope['links']): Result<string> {
+    return this._hasher.computeHash({ kind, body, links });
+  }
+
+  /**
+   * The rank branch of {@link FileTreeMemoryStore.reconcile}, under the write lock.
+   *
+   * @remarks
+   * Re-reads each record's file rather than trusting the in-memory index, for
+   * two reasons: the index holds converted bodies on some paths and raw ones on
+   * others, and re-serializing a *converted* body could change the bytes on disk
+   * — a reconcile of an ordering field has no business rewriting content.
+   * `splitFrontmatter` hands back the body text unconverted, so the round trip
+   * carries the authored characters through untouched and only the envelope
+   * moves. The parsed record is additionally put through `_verifyLoaded`, the
+   * same identity checks the load paths apply (id vs filename, scope-derived
+   * entityId, the scope invariant, and a flat kind's idStem) —
+   * without it, reconcile would be the one path that accepts and rewrites a file
+   * the store would refuse to load.
+   *
+   * "Untouched" is not quite "byte-identical", and the exception is line
+   * endings: `splitFrontmatter` strips a trailing `\r` per line and
+   * `joinFrontmatter` writes `\n` delimiters, so a CRLF-authored file comes back
+   * LF-normalized. That is **the store's behavior on every write path, not
+   * something reconcile introduces** — an ordinary `put` normalizes the same way
+   * — so reconcile does not rewrite content that a subsequent write would have
+   * left alone. The property being claimed here is the narrower and load-bearing
+   * one: no body is round-tripped through its registered Converter.
+   *
+   * The projector is fed an `IMemoryRecord<string>` carrying that raw body,
+   * which is exactly the shape {@link FileTreeMemoryStore._stampRank} hands it
+   * on the write path — so a projector cannot see one thing on a write and
+   * another on a reconcile. `_stampRank` itself is reused verbatim, which also
+   * inherits its throw semantics (logged at `warn`, `rank` cleared).
+   */
+  private async _reconcileLocked(kind: Kind, artifact: DerivedArtifact): Promise<Result<ReconcileReport>> {
+    // Envelope-only selection: the walk needs `(scope, id)` and the kind, and
+    // each branch materializes only the records it decides to repair.
+    const targets: ReadonlyArray<IIndexedMemoryEntry> = this._index
+      .entries()
+      .filter((entry) => entry.envelope.kind === kind);
+    if (artifact === 'rank') {
+      return this._reconcileRankLocked(kind, targets);
+    }
+    return reconcileVectors({
+      kind,
+      artifact,
+      targets,
+      maintenance: this._vectors,
+      embedsKind: (k) => this.embedsKind(k),
+      resolve: (scope, id) => this._readRecord(scope, id),
+      stampRef: (scope, id, ref) =>
+        this._rewriteEnvelope(scope, id, (r) =>
+          r.envelope.embeddingRef === ref
+            ? undefined
+            : { envelope: { ...r.envelope, embeddingRef: ref }, body: r.body }
+        )
+    });
+  }
+
+  /** The rank branch of {@link FileTreeMemoryStore._reconcileLocked}. */
+  private async _reconcileRankLocked(
+    kind: Kind,
+    targets: ReadonlyArray<IIndexedMemoryEntry>
+  ): Promise<Result<ReconcileReport>> {
+    if (!this._rankProjectors.has(kind)) {
+      return fail(`memory reconcile '${kind}' rank: no rank projector is registered for this kind`);
+    }
+    // No materialization at all: `_rewriteEnvelope` re-reads each record itself.
+    let repaired: number = 0;
+    for (const target of targets) {
+      const applied: Result<boolean> = this._rewriteEnvelope(target.scope, target.envelope.id, (r) => {
+        const stamped: IMemoryRecord<string> = this._stampRank(r);
+        return stamped.envelope.rank === r.envelope.rank ? undefined : stamped;
+      });
+      if (applied.isFailure()) {
+        return fail(`memory reconcile '${kind}' rank: ${applied.message}`);
+      }
+      if (applied.value) {
+        repaired++;
+      }
+    }
+    return succeed({ artifact: 'rank', kind, examined: targets.length, repaired, failed: [] });
+  }
+
+  /**
+   * Re-apply the rank projector to one record on disk. Returns whether `rank`
+   * actually changed — an unchanged rank writes nothing, so a reconcile over an
+   * already-consistent store touches no files.
+   */
+  private _rewriteEnvelope(
+    scope: MemoryScopeKey,
+    id: MemoryId,
+    mutate: (record: IMemoryRecord<string>) => IMemoryRecord<string> | undefined
+  ): Result<boolean> {
+    return resolveScopeDir(this._root, this._scopes, scope).onSuccess((scopeDir) => {
+      /* c8 ignore next 3 - defensive: the scope dir exists for any indexed record */
+      if (scopeDir === undefined) {
+        return fail(`'${id}': scope '${scope}' not found`);
+      }
+      return scopeDir.getChildren().onSuccess((children) => {
+        const targetName: string = `${id}${MEMORY_FILE_EXTENSION}`;
+        const file: FileTree.IFileTreeFileItem | undefined = children.find(
+          (c): c is FileTree.IFileTreeFileItem => c.type === 'file' && c.name === targetName
+        );
+        /* c8 ignore next 3 - defensive: the file exists for any indexed record */
+        if (file === undefined) {
+          return fail(`'${id}': file not found`);
+        }
+        return file.getRawContents().onSuccess((raw) =>
+          // `parseMemoryFile` validates the body through the registered Converter,
+          // so a corrupt record is refused rather than silently rewritten, and
+          // `_verifyLoaded` re-applies the same identity checks the two load paths
+          // apply (id vs filename, scope-derived entityId, the scope invariant, and a flat kind's
+          // idStem). Reconcile is a
+          // read-then-write, and a file can change on disk after the index was
+          // built, so skipping them would make this the one path that accepts —
+          // and rewrites — a record the store would otherwise refuse to load.
+          // `splitFrontmatter` then supplies the body text for the write.
+          parseMemoryFile(raw, this._registry)
+            .withErrorFormat((msg) => `'${id}': ${msg}`)
+            .onSuccess((parsedRecord) => this._verifyLoaded(scope, file, parsedRecord))
+            .onSuccess((parsed) =>
+              splitFrontmatter(raw)
+                .withErrorFormat((msg) => `'${id}': ${msg}`)
+                .onSuccess((parts) => {
+                  // The mutator says "nothing to change" with `undefined` rather
+                  // than by returning an equal record: persisting unconditionally
+                  // would bump `updated` on every record of the kind, trading a
+                  // wrong value for a wrong timestamp, and a deep comparison here
+                  // would have to know which fields each caller touches.
+                  const stamped: IMemoryRecord<string> | undefined = mutate({
+                    envelope: parsed.envelope,
+                    body: parts.body
+                  });
+                  if (stamped === undefined) {
+                    return succeed(false);
+                  }
+                  return this._persist(stamped, scope, id).onSuccess(() => succeed(true));
+                })
+            )
+        );
+      });
+    });
+  }
+
+  /**
+   * Stamp the store-computed {@link IMemoryEnvelope.rank} onto a fully-built,
+   * fully-stamped record by running the kind's registered {@link RankProjector}.
+   * Runs on the SAME resolved (post-merge) record whose `contentHash` was just
+   * computed, so `rank` is always consistent with the current body — no separate
+   * write path and no consumer write-discipline rule. A no-op pass-through
+   * (byte-identical record) when the kind has no projector — the additive,
+   * zero-overhead-when-unwired default. The projector is a host callback: a throw
+   * is logged at `warn` and the record is stamped with NO `rank` (the field is
+   * explicitly cleared, so a throw on an update drops a now-stale prior rank rather
+   * than preserving it), so a ranking bug never loses an authoritative write.
+   */
+  private _stampRank(record: IMemoryRecord<string>): IMemoryRecord<string> {
+    const projector: RankProjector | undefined = this._rankProjectors.get(record.envelope.kind);
+    if (projector === undefined) {
+      return record;
+    }
+    try {
+      const rank: number = projector(record);
+      return { envelope: { ...record.envelope, rank }, body: record.body };
+    } catch (err) {
+      this._warnSwallowed(
+        `memory put '${record.envelope.id}': rank projector threw (swallowed; rank cleared): ${String(err)}`
+      );
+      // Explicitly CLEAR `rank` (not `return record`): on an update the merged
+      // envelope carries the prior version's `rank` (the write-policy merge does
+      // not touch `rank`), so returning it verbatim would keep a stale value
+      // inconsistent with the revised body. Clearing honors the staleness
+      // contract — an uncomputable rank means the record sorts last as "unranked".
+      return { envelope: { ...record.envelope, rank: undefined }, body: record.body };
+    }
+  }
+
+  private _policyFor(kind: Kind): IWritePolicy {
+    return this._writePolicies.get(kind) ?? this._defaultPolicy;
+  }
+
+  /** {@inheritDoc IMemoryStore.dedupScopeFor} */
+  public dedupScopeFor(kind: Kind): DedupScope {
+    return this._policyFor(kind).dedupScope ?? DEFAULT_DEDUP_SCOPE;
+  }
+
+  /** {@inheritDoc IMemoryStore.embedsKind} */
+  public embedsKind(kind: Kind): boolean {
+    // No declaration means every kind participates — the behavior that predates
+    // this param, so an existing consumer is unaffected.
+    return this._embedKinds === undefined || this._embedKinds.has(kind);
+  }
+
+  /**
+   * Read and validate the record at `<scope>/<idStem>.md`, returning `undefined`
+   * when the scope directory or file is absent. Applies `_verifyLoaded`'s identity
+   * checks on every load, including that the record was read from its codec's
+   * scope.
+   */
+  private _readRecord(
+    scope: MemoryScopeKey,
+    idStem: string,
+    expectedKind?: Kind
+  ): Result<IMemoryRecord<unknown> | undefined> {
+    return resolveScopeDir(this._root, this._scopes, scope).onSuccess((scopeDir) => {
+      if (scopeDir === undefined) {
+        return succeed(undefined);
+      }
+      return scopeDir.getChildren().onSuccess((children) => {
+        const targetName: string = `${idStem}${MEMORY_FILE_EXTENSION}`;
+        const file: FileTree.IFileTreeFileItem | undefined = children.find(
+          (c): c is FileTree.IFileTreeFileItem => c.type === 'file' && c.name === targetName
+        );
+        if (file === undefined) {
+          return succeed(undefined);
+        }
+        return file
+          .getRawContents()
+          .onSuccess((raw) => parseMemoryFile(raw, this._registry))
+          .onSuccess((parsedRecord) => this._verifyLoaded(scope, file, parsedRecord))
+          .onSuccess((loaded) => verifyOccupantKind(expectedKind, scope, idStem, loaded));
+      });
+    });
+  }
+
+  /**
+   * Enforce `envelope.id === filename stem`, the codec round-trip, that the
+   * envelope's own `entityId` agrees with the id decoded from the subtree scope,
+   * the scope invariant (`scope === codec.encode(entityId).scope`), AND for a flat
+   * kind that the stem is `codec.encode(entityId).idStem`.
+   * The round-trip only validates (scope, stem) consistency; the codec derives
+   * `entityId` from the scope path and never reads the envelope's `entityId`
+   * field, so a tampered/corrupt file whose frontmatter declares a foreign
+   * `entityId` would otherwise load undetected — and `entityId` is trusted
+   * verbatim downstream (e.g. merge-into re-addressing). Cross-check it here.
+   */
+  private _verifyLoaded(
+    scope: MemoryScopeKey,
+    file: FileTree.IFileTreeFileItem,
+    record: IMemoryRecord<unknown>
+  ): Result<IMemoryRecord<unknown>> {
+    return verifyLoadedIdentity(this._codec(record.envelope.kind), scope, file, record);
+  }
+
+  /**
+   * Walk the FileTree once and rebuild the index. Also resumes the `seq`
+   * allocator past the highest persisted `seq` — and past the persisted
+   * high-water mark, which `SeqHighWater` already holds — so a `seq` is never
+   * re-issued.
+   *
+   * In `'skip'` mode each per-record failure is captured structurally on
+   * `this._skippedRecords` (path + scope + path-tagged error) at its failure
+   * site and logged at `warn`; the walk keeps every record that loaded.
+   */
+  private _initialIndex(onRecordError: MemoryRecordErrorMode): Result<true> {
+    return this._collectEntries(this._root, [], onRecordError).onSuccess((entries) =>
+      this._index.rebuild(entries).onSuccess(() => {
+        for (const entry of entries) {
+          this._seqs.observe(entry.envelope.seq);
+        }
+        return succeed(true);
+      })
+    );
+  }
+
+  /**
+   * Recursively collect every `.md` record under `dir`. A directory's scope is its
+   * path, decoded once — and only when it holds a record file, since an
+   * intermediate directory of an encoded layout need not decode to a scope.
+   */
+  private _collectEntries(
+    dir: FileTree.IFileTreeDirectoryItem,
+    scopeSegments: ReadonlyArray<string>,
+    onRecordError: MemoryRecordErrorMode
+  ): Result<ReadonlyArray<IIndexedMemoryEntry>> {
+    return dir.getChildren().onSuccess((children) => {
+      const dirPath: string = scopeSegments.join('/');
+      let scope: Result<MemoryScopeKey> | undefined;
+      const results: Result<ReadonlyArray<IIndexedMemoryEntry>>[] = children.map((child) => {
+        if (child.type === 'directory') {
+          return this._collectEntries(child, [...scopeSegments, child.name], onRecordError);
+        }
+        if (!child.name.endsWith(MEMORY_FILE_EXTENSION) || scopeSegments.length === 0) {
+          // Skip non-record files and any record-shaped file sitting at the root
+          // (records always live under at least one scope segment).
+          return succeed<ReadonlyArray<IIndexedMemoryEntry>>([]);
+        }
+        scope = scope ?? decodeScopeDir(this._scopes, dirPath);
+        return this._loadRecordFile(dirPath, scope, child, onRecordError);
+      });
+      // `'skip'` mode: keep every record that parsed, drop the ones that failed
+      // in a single pass (each failure is captured on `this._skippedRecords` and
+      // warn-logged at its site in `_loadRecordFile`). `.orDefault([])` covers
+      // the all-invalid-subtree edge where `mapSuccess` returns Failure because
+      // no element succeeded. `'fail'` mode: `mapResults` fails the whole open on
+      // any bad record — byte-identical to the historical load path.
+      if (onRecordError === 'skip') {
+        return succeed<ReadonlyArray<IIndexedMemoryEntry>>(mapSuccess(results).orDefault([]).flat());
+      }
+      return mapResults(results).onSuccess((perChild) =>
+        succeed<ReadonlyArray<IIndexedMemoryEntry>>(perChild.flat())
+      );
+    });
+  }
+
+  /**
+   * Load and verify one record file. On failure in `'skip'` mode, records the
+   * structured {@link ISkippedRecord} identity (path + scope + path-tagged
+   * error) and logs the skip at `warn`; the failure is still returned so the
+   * caller's `mapSuccess` drops it from the loaded set. In `'fail'` mode the
+   * failure passes through untouched so the historical error is byte-identical.
+   */
+  private _loadRecordFile(
+    dirPath: string,
+    scope: Result<MemoryScopeKey>,
+    child: FileTree.IFileTreeFileItem,
+    onRecordError: MemoryRecordErrorMode
+  ): Result<ReadonlyArray<IIndexedMemoryEntry>> {
+    // Parse → validate → PROJECT → discard, per file. The body is read and fully
+    // validated (which is what gives `onRecordError` its meaning), then dropped
+    // here rather than carried into the index. Peak body residency across the
+    // whole open is therefore ONE record, not N — which is the resident-memory
+    // moment this whole surface exists to fix, and it is why the projection had
+    // to reach `rebuild` and not just the read methods.
+    return scope
+      .onSuccess((decoded) =>
+        child
+          .getRawContents()
+          .onSuccess((raw) => parseMemoryFile(raw, this._registry))
+          .onSuccess((parsedRecord) => this._verifyLoaded(decoded, child, parsedRecord))
+          .onSuccess((verified) =>
+            succeed<ReadonlyArray<IIndexedMemoryEntry>>([{ scope: decoded, envelope: verified.envelope }])
+          )
+      )
+      .onFailure((message) => {
+        if (onRecordError === 'skip') {
+          const path: string = `${dirPath}/${child.name}`;
+          const error: string = `memory record '${path}': ${message}`;
+          this._skippedRecords.push({ path, scope: scope.orDefault(), error });
+          this._warnSwallowed(error);
+        }
+        return fail(message);
+      });
+  }
+}

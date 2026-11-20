@@ -1,0 +1,76 @@
+id: system-one-decisions-design
+status: shipped
+packages: [] # design only; docs/ and .ai/tasks/ files, no package touched
+prs: [710]
+openPrs: []
+opened: 2026-10-01
+closed: 2026-10-02
+ledgerEntry: system-one-decisions
+summary:
+  headline: '' # sibling phase; the cluster's capability line is on system-one-impl
+  intended: >
+    Phase A of the system-one-decisions design-triage-implement cycle: decide whether and how fgv
+    supports System-1 decision models (typed answers with probabilities rather than text), with
+    open CLM-8B as the driving implementation and hosted Jev as the compatibility target. Design
+    document only, at docs/design/system-one-decisions/design.md: establish the facts with every
+    external one marked verified or unverified (four HuggingFace items in particular), confirm or
+    overturn the orchestrator's pressure test that "wrap the library" does not transfer, decide
+    interface versus client, state a decision on five constraints (the 2048-token bound and silent
+    truncation, GPU/vLLM versus the inner loop, safer-fetch for a loopback sidecar, where it lives,
+    Python in the loop), assess three prospective consumers, and leave numbered open questions for
+    Phase B. "Not yet" was an acceptable outcome. No code, package or dependency.
+  shipped: >
+    The design, recommending a thin Result boundary over the vendor's own MIT TS SDK
+    (@typesafe-ai/sdk) with the backend picked by baseUrl plus model at construction, and no fgv
+    interface. The four model-card items were resolved: weights and Qwen3-8B both Apache-2.0; the
+    exact /v1/systemone wire (noul/choice/score, errors 401/422/502, API on :8700); the bound is
+    configurable and silent and cuts the end of the state, where CLM puts the question (derived);
+    the GGUF is heads only and does not lower the GPU floor. CLM-8B is reported not viable on a
+    laptop inner loop. Constraint decisions: refuse at a mandatory caller-declared inputLimit; no
+    backend assumed; safer-fetch not used (the URL is composition-root config); a new Node-only
+    package @fgv/ts-extras-system-one (name provisional) with the SDK as a direct dependency; HTTP to
+    a consumer-operated server, no Python. Twelve numbered open questions; docs only.
+  diverged: >
+    The orchestrator's pressure test was overturned: CLM has no JS client, but the wire it implements
+    has an official TS SDK with baseURL/fetch overrides, which is the ts-extras-ollama shape, not a
+    new integration shape; cross-runtime-interfaces.md was judged not to apply, and the brief's
+    "one interface, two implementations" reading became "no interface, the wire is the interface".
+    Three brief premises were refuted: ts-agent-tasks commands are names needing model-written
+    parameters, so it is not the strongest consumer; TaskContextRenderer omissions are counted, not
+    named; the brief's port 8090 is vLLM's encoder, not the API. HuggingFace turned out reachable
+    while github.com and typesafe.ai were blocked. The user answered OQ-1, OQ-3 and OQ-10 during the
+    stream (the consumer will experiment; production runs CLM locally, development reaches a remote
+    Jev or openjev; vLLM on an Olares One, Ollama elsewhere), which added per-call meta and OQ-10 to
+    OQ-12 (Ollama-versus-vLLM encoder parity) to the design.
+  sourceLine: >
+    **Shipped:** a design for System-1 decisions, at
+    [`docs/design/system-one-decisions/design.md`](../../../../../docs/design/system-one-decisions/design.md).
+keywords:
+  - System-1 decision model
+  - Jev
+  - CLM-8B
+  - openjev
+  - '@typesafe-ai/sdk'
+  - Result integration boundary
+  - pressure test overturned
+  - no fgv interface
+  - wire as interface
+  - silent truncation
+  - mandatory inputLimit
+  - 2048-token state bound
+  - GPU floor
+  - inner loop viability
+  - GGUF heads only
+  - verified/derived/reported/unverified evidence markers
+  - refuted brief premises
+relatedStreams:
+  - {
+      id: system-one-design-antagonist,
+      relationship: 'verification pass over this design; re-cited every §2 row, resolved OQ-7, omitted confidence'
+    }
+  - {
+      id: system-one-triage,
+      relationship: "Phase B; worked this design's §12 open questions and wrote the implementation plan"
+    }
+  - { id: system-one-impl, relationship: 'Phase C; built the package this design recommended' }
+sourceHash: 71ea72467cfe467d

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "Collections: `IResultMap` (implemented by `ResultMap`), `ConvertingResultMap` and `ValidatingConvertingResultMap`, `AggregatedResultMap`, and `RetainingRingBuffer<T>`, a bounded most-recent-N buffer with monotonic `seq` cursor paging.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

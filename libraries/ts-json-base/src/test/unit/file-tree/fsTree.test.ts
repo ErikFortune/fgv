@@ -22,8 +22,10 @@
 
 import '@fgv/ts-utils-jest';
 import path from 'path';
+import fs from 'fs';
+import os from 'os';
 import { Result, succeed, fail } from '@fgv/ts-utils';
-import { FsFileTreeAccessors } from '../../../packlets/file-tree';
+import { FsFileTreeAccessors, DirectoryItem } from '../../../packlets/file-tree';
 
 // Path to static test fixtures
 const FIXTURES_PATH = path.join(__dirname, '../../fixtures/file-tree');
@@ -975,6 +977,135 @@ describe('FsFileTreeAccessors', () => {
               expect(accessors.getFileContentType(child.name)).toSucceed();
             }
           });
+        });
+      });
+    });
+  });
+
+  describe('createDirectory method', () => {
+    let tempDir: string;
+
+    beforeEach(() => {
+      tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fstree-test-'));
+    });
+
+    afterEach(() => {
+      if (tempDir && fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    test('creates a single directory', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+
+      expect(accessors.createDirectory?.('newdir')).toSucceedAndSatisfy((absolutePath) => {
+        expect(absolutePath).toBe(path.join(tempDir, 'newdir'));
+        expect(fs.existsSync(absolutePath)).toBe(true);
+        expect(fs.statSync(absolutePath).isDirectory()).toBe(true);
+      });
+    });
+
+    test('creates nested directories recursively', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+
+      expect(accessors.createDirectory?.('parent/child/grandchild')).toSucceedAndSatisfy((absolutePath) => {
+        expect(absolutePath).toBe(path.join(tempDir, 'parent', 'child', 'grandchild'));
+        expect(fs.existsSync(absolutePath)).toBe(true);
+        expect(fs.existsSync(path.join(tempDir, 'parent'))).toBe(true);
+        expect(fs.existsSync(path.join(tempDir, 'parent', 'child'))).toBe(true);
+      });
+    });
+
+    test('succeeds when directory already exists', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      const dirPath = path.join(tempDir, 'existing');
+      fs.mkdirSync(dirPath);
+
+      expect(accessors.createDirectory?.('existing')).toSucceedAndSatisfy((absolutePath) => {
+        expect(absolutePath).toBe(dirPath);
+        expect(fs.existsSync(absolutePath)).toBe(true);
+      });
+    });
+
+    test('fails when mutability is disabled', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: false });
+
+      expect(accessors.createDirectory?.('newdir')).toFailWith(/mutability is disabled/i);
+      expect(fs.existsSync(path.join(tempDir, 'newdir'))).toBe(false);
+    });
+
+    test('creates multiple directories at same level', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+
+      expect(accessors.createDirectory?.('dir1')).toSucceed();
+      expect(accessors.createDirectory?.('dir2')).toSucceed();
+      expect(accessors.createDirectory?.('dir3')).toSucceed();
+
+      expect(fs.existsSync(path.join(tempDir, 'dir1'))).toBe(true);
+      expect(fs.existsSync(path.join(tempDir, 'dir2'))).toBe(true);
+      expect(fs.existsSync(path.join(tempDir, 'dir3'))).toBe(true);
+    });
+
+    test('creates deeply nested directory structure', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      const deepPath = 'a/b/c/d/e/f/g/h/i/j/k';
+
+      expect(accessors.createDirectory?.(deepPath)).toSucceedAndSatisfy((absolutePath) => {
+        expect(absolutePath).toBe(path.join(tempDir, ...deepPath.split('/')));
+        expect(fs.existsSync(absolutePath)).toBe(true);
+      });
+    });
+
+    test('created directory can be used for file operations', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+
+      expect(accessors.createDirectory?.('workdir')).toSucceedAndSatisfy((dirPath) => {
+        const filePath = 'workdir/test.txt';
+        expect(accessors.saveFileContents(filePath, 'test content')).toSucceed();
+        expect(fs.existsSync(path.join(tempDir, filePath))).toBe(true);
+        expect(fs.readFileSync(path.join(tempDir, filePath), 'utf8')).toBe('test content');
+      });
+    });
+
+    test('created directory can be traversed', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+
+      expect(accessors.createDirectory?.('parent/child')).toSucceed();
+
+      expect(accessors.getItem('parent')).toSucceedAndSatisfy((item) => {
+        expect(item.type).toBe('directory');
+        if (item.type === 'directory') {
+          expect(item.getChildren()).toSucceedAndSatisfy((children) => {
+            expect(children).toHaveLength(1);
+            expect(children[0].name).toBe('child');
+            expect(children[0].type).toBe('directory');
+          });
+        }
+      });
+    });
+
+    test('works with absolute paths', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+      const absolutePath = path.join(tempDir, 'absolute', 'path');
+
+      expect(accessors.createDirectory?.(absolutePath)).toSucceedAndSatisfy((createdPath) => {
+        expect(createdPath).toBe(absolutePath);
+        expect(fs.existsSync(absolutePath)).toBe(true);
+      });
+    });
+
+    test('integrates with DirectoryItem', () => {
+      const accessors = new FsFileTreeAccessors({ prefix: tempDir, mutable: true });
+
+      expect(accessors.createDirectory?.('testdir')).toSucceed();
+
+      expect(DirectoryItem.create('testdir', accessors)).toSucceedAndSatisfy((dirItem) => {
+        expect(dirItem.name).toBe('testdir');
+        expect(dirItem.type).toBe('directory');
+
+        expect(dirItem.createChildDirectory?.('subdir')).toSucceedAndSatisfy((subdir) => {
+          expect(subdir.name).toBe('subdir');
+          expect(fs.existsSync(path.join(tempDir, 'testdir', 'subdir'))).toBe(true);
         });
       });
     });

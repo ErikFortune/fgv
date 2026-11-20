@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-http-storage",
+      "comment": "`createStorageRoutes` serves the storage REST contract as Hono routes over any `IHttpStorageProvider`; `FsStorageProvider` is the filesystem-backed provider.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-http-storage",
+  "email": "noreply@anthropic.com"
+}

@@ -1,0 +1,955 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+import '@fgv/ts-utils-jest';
+
+import { AiAssist } from '../../..';
+
+describe('AiAssist.registry', () => {
+  describe('getProviderDescriptors', () => {
+    test('returns all built-in providers', () => {
+      const descriptors = AiAssist.getProviderDescriptors();
+      expect(descriptors.length).toBeGreaterThan(0);
+
+      // Should include copy-paste and at least some API providers
+      const ids = descriptors.map((d) => d.id);
+      expect(ids).toContain('copy-paste');
+      expect(ids).toContain('xai-grok');
+      expect(ids).toContain('anthropic');
+      expect(ids).toContain('google-gemini');
+    });
+
+    test('copy-paste is the first provider', () => {
+      const descriptors = AiAssist.getProviderDescriptors();
+      expect(descriptors[0].id).toBe('copy-paste');
+    });
+  });
+
+  describe('openai model tiers (B2)', () => {
+    const desc = AiAssist.getProviderDescriptor('openai').shouldNotFail('openai descriptor');
+
+    test('base tier resolves to gpt-6-luna', () => {
+      // undefined context falls to base; explicit 'base' resolves identically.
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('gpt-6-luna');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gpt-6-luna');
+    });
+
+    test('advanced tier resolves to gpt-6.1-sol', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('gpt-6.1-sol');
+    });
+
+    test('gpt-6.1-sol carries the wire declarations its page states', () => {
+      // reasoning.effort low..max (no 'none'), both Chat Completions and Responses, structured
+      // outputs, a cited 128,000 output limit. gpt-6-sol, which lists 'none', stays unmatched.
+      expect(AiAssist.isThinkingRequiredModel(desc, 'gpt-6.1-sol')).toBe(true);
+      expect(AiAssist.isThinkingRequiredModel(desc, 'gpt-6-sol')).toBe(false);
+      expect(AiAssist.isResponsesOnlyModel(desc, 'gpt-6.1-sol')).toBe(false);
+      expect(AiAssist.resolveStructuredOutputCapability(desc, '@openai:flagship')?.format).toBe(
+        'openai-json-schema'
+      );
+      expect(AiAssist.resolveMaxOutputTokens(desc, '@openai:flagship')).toBe(128000);
+    });
+
+    test('frontier resolves to gpt-6-astra via @openai:pro', () => {
+      // The OpenAI map carries a frontier key → @openai:pro → gpt-6-astra. Unlike the earlier
+      // gpt-5.5-pro, the gpt-6 family works on chat completions, so no
+      // `responsesOnlyModelPrefixes` routing is needed for the frontier tier.
+      // Real registry descriptor.
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('gpt-6-astra');
+    });
+
+    test('the @openai:pro alias is also reachable via modelOverride', () => {
+      // The alias backs the frontier tier and is independently reachable via modelOverride; a
+      // direct gpt-5.5-pro override still routes to Responses through `responsesOnlyModelPrefixes`.
+      expect(AiAssist.resolveProviderModel(desc, '@openai:pro', undefined)).toSucceedWith('gpt-6-astra');
+    });
+
+    test('only the tier targets documented and observed to reject thinking-off are thinking-required', () => {
+      for (const [providerId, required, accepts] of [
+        [
+          'openai',
+          ['gpt-6-astra', 'gpt-6-astra-2026-09-01', 'gpt-6.1-sol'],
+          ['gpt-6-sol', 'gpt-6-luna', 'gpt-6-astral', 'gpt-6.1-solar', 'gpt-6.1-terra']
+        ],
+        [
+          'google-gemini',
+          [
+            'gemini-4-argon',
+            'gemini-4-carbon',
+            'gemini-3.1-pro-preview',
+            'gemini-3-pro-preview',
+            'gemini-2.5-pro'
+          ],
+          [
+            'gemini-3.5-flash-lite',
+            'gemini-4-argonite',
+            'gemini-3.8-flash',
+            'gemini-3.8-flash-lite',
+            'gemini-2.5-flash',
+            'gemini-3.6-flash',
+            'gemini-3.5-flash'
+          ]
+        ],
+        ['xai-grok', ['grok-4.7', 'grok-4.6', 'grok-4.5'], ['grok-4.3', 'grok-4']],
+        [
+          'anthropic',
+          ['claude-opus-5-5', 'claude-fable-5', 'claude-fable-5-1', 'claude-mythos-5', 'claude-mythos-5-1'],
+          [
+            'claude-opus-5',
+            'claude-sonnet-5',
+            'claude-sonnet-5-5',
+            'claude-haiku-5-5',
+            'claude-haiku-4-5-20251001',
+            'claude-opus-4-8'
+          ]
+        ]
+      ] as const) {
+        const d = AiAssist.getProviderDescriptor(providerId).orThrow();
+        for (const id of required) {
+          expect(AiAssist.isThinkingRequiredModel(d, id)).toBe(true);
+        }
+        for (const id of accepts) {
+          expect(AiAssist.isThinkingRequiredModel(d, id)).toBe(false);
+        }
+      }
+    });
+
+    test('no gpt-6 id is Responses-only — every tier target keeps both OpenAI routes', () => {
+      for (const id of ['gpt-6-luna', 'gpt-6.1-sol', 'gpt-6-sol', 'gpt-6-astra']) {
+        expect(AiAssist.isResponsesOnlyModel(desc, id)).toBe(false);
+      }
+    });
+
+    test('image default resolves @openai:image → gpt-image-2.5-sunburst and routes via the gpt-image- capability', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gpt-image-2.5-sunburst');
+      expect(AiAssist.resolveImageCapability(desc, 'gpt-image-2.5-sunburst')).toMatchObject({
+        modelPrefix: 'gpt-image-',
+        format: 'openai-images'
+      });
+    });
+
+    test('the non-tier @openai:nano alias resolves via modelOverride only', () => {
+      // gpt-5.4-nano is deprecated and OpenAI names gpt-6-luna as its replacement, so nano now
+      // names the same model as the base tier.
+      expect(AiAssist.resolveProviderModel(desc, '@openai:nano', undefined)).toSucceedWith('gpt-6-luna');
+      expect(AiAssist.isThinkingRequiredModel(desc, 'gpt-6-luna')).toBe(false);
+    });
+
+    test('a raw modelOverride passes through verbatim (no alias resolution)', () => {
+      expect(AiAssist.resolveProviderModel(desc, 'gpt-custom-tuned:v1', 'advanced')).toSucceedWith(
+        'gpt-custom-tuned:v1'
+      );
+    });
+  });
+
+  describe('anthropic model tiers (B3)', () => {
+    const desc = AiAssist.getProviderDescriptor('anthropic').shouldNotFail('anthropic descriptor');
+
+    test('base tier resolves to claude-sonnet-5-5', () => {
+      // undefined context falls to base; explicit 'base' resolves identically.
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('claude-sonnet-5-5');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('claude-sonnet-5-5');
+    });
+
+    test('claude-sonnet-5-5 is adaptive and uses the non-forcing structured-output format', () => {
+      expect(AiAssist.isAdaptiveThinkingModel(desc, 'claude-sonnet-5-5')).toBe(true);
+      expect(AiAssist.resolveStructuredOutputCapability(desc, '@anthropic:sonnet')?.format).toBe(
+        'anthropic-output-format'
+      );
+      expect(AiAssist.resolveMaxOutputTokens(desc, '@anthropic:sonnet')).toBe(128000);
+    });
+
+    test('advanced tier resolves to claude-opus-5-5', () => {
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('claude-opus-5-5');
+    });
+
+    test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
+      // The Anthropic map deliberately omits a frontier key, so a frontier request must
+      // cascade frontier → advanced → opus. This is the real registry descriptor (not a
+      // synthetic one), so it is the live proof of the cascade against shipped defaults.
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('claude-opus-5-5');
+    });
+
+    test('the non-tier @anthropic:haiku alias resolves via modelOverride only', () => {
+      expect(AiAssist.resolveProviderModel(desc, '@anthropic:haiku', undefined)).toSucceedWith(
+        'claude-haiku-5-5'
+      );
+    });
+
+    test('claude-haiku-5-5 is adaptive but keeps forced tool use; claude-haiku-4-5 keeps the budget shape', () => {
+      expect(AiAssist.isAdaptiveThinkingModel(desc, 'claude-haiku-5-5')).toBe(true);
+      expect(AiAssist.isAdaptiveThinkingModel(desc, 'claude-haiku-4-5-20251001')).toBe(false);
+      expect(AiAssist.isAdaptiveThinkingModel(desc, 'claude-haiku-5')).toBe(false);
+      expect(AiAssist.resolveStructuredOutputCapability(desc, '@anthropic:haiku')?.format).toBe(
+        'anthropic-tool-forced'
+      );
+      expect(AiAssist.resolveMaxOutputTokens(desc, '@anthropic:haiku')).toBe(128000);
+    });
+
+    test('the non-tier @anthropic:fable alias resolves via modelOverride only', () => {
+      expect(AiAssist.resolveProviderModel(desc, '@anthropic:fable', undefined)).toSucceedWith(
+        'claude-fable-5-2'
+      );
+    });
+
+    // The capability table, not just the aliases. The two lines that 400 on a forced
+    // tool_choice must resolve to the non-forcing format — including a dated snapshot, which
+    // prefix-matches — and every line that still accepts forcing must keep it. A catch-all
+    // that swallowed the two would compile, resolve, and fail only at the provider.
+    test.each([
+      ['claude-opus-5-5', 'anthropic-output-format'],
+      ['claude-opus-5-5-20260922', 'anthropic-output-format'],
+      ['claude-fable-5-1', 'anthropic-output-format'],
+      ['claude-mythos-5-1', 'anthropic-output-format'],
+      ['claude-sonnet-5-5', 'anthropic-output-format'],
+      ['@anthropic:opus', 'anthropic-output-format'],
+      ['@anthropic:sonnet', 'anthropic-output-format'],
+      ['@anthropic:fable', 'anthropic-output-format'],
+      ['claude-opus-5', 'anthropic-tool-forced'],
+      ['claude-fable-5', 'anthropic-tool-forced'],
+      ['claude-sonnet-5', 'anthropic-tool-forced'],
+      ['claude-haiku-5-5', 'anthropic-tool-forced'],
+      ['@anthropic:haiku', 'anthropic-tool-forced'],
+      ['claude-haiku-4-5-20251001', 'anthropic-tool-forced'],
+      ['claude-opus-4-8', 'anthropic-tool-forced']
+    ] as const)('structured-output capability for %s is %s', (model, format) => {
+      expect(AiAssist.resolveStructuredOutputCapability(desc, model)?.format).toBe(format);
+    });
+
+    test('the rotated ids and claude-mythos-5-1 are adaptive-thinking models', () => {
+      for (const id of [
+        'claude-opus-5-5',
+        'claude-fable-5-1',
+        'claude-opus-5-5-20260922',
+        'claude-mythos-5-1'
+      ]) {
+        expect(AiAssist.isAdaptiveThinkingModel(desc, id)).toBe(true);
+      }
+    });
+
+    test('a raw modelOverride passes through verbatim (no alias resolution)', () => {
+      expect(AiAssist.resolveProviderModel(desc, 'claude-custom-tuned:v1', 'advanced')).toSucceedWith(
+        'claude-custom-tuned:v1'
+      );
+    });
+  });
+
+  describe('google-gemini model tiers (B4)', () => {
+    const desc = AiAssist.getProviderDescriptor('google-gemini').shouldNotFail('google-gemini descriptor');
+
+    test('base tier resolves to gemini-3.8-flash', () => {
+      // undefined context falls to base; explicit 'base' resolves identically.
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('gemini-3.8-flash');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('gemini-3.8-flash');
+    });
+
+    test('advanced tier resolves to gemini-4-argon (reuses the @google-gemini:pro alias)', () => {
+      expect(AiAssist.resolveModel(desc.defaultModel, 'advanced')).toBe('@google-gemini:pro');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('gemini-4-argon');
+    });
+
+    test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
+      // The Gemini map deliberately omits a frontier key, so a frontier request must
+      // cascade frontier → advanced → pro. This is the real registry descriptor, so it is
+      // the live proof of the cascade against the shipped Gemini defaults.
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('gemini-4-argon');
+    });
+
+    test('image tier is unchanged by the advanced-key addition', () => {
+      expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@google-gemini:flash-image');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('gemini-nano-banana-2.1');
+    });
+
+    test('gemini-nano-banana-2.1 resolves to the gemini-image-out wire', () => {
+      expect(AiAssist.resolveImageCapability(desc, '@google-gemini:flash-image')).toMatchObject({
+        format: 'gemini-image-out',
+        acceptsImageReferenceInput: true
+      });
+    });
+
+    test('the completion targets carry their cited output limits', () => {
+      for (const alias of ['@google-gemini:flash', '@google-gemini:flash-lite']) {
+        expect(AiAssist.resolveMaxOutputTokens(desc, alias)).toBe(65536);
+      }
+      // gemini-4-argon: the per-request non-streaming cap, not the 65,536 streaming figure
+      expect(AiAssist.resolveMaxOutputTokens(desc, '@google-gemini:pro')).toBe(32768);
+    });
+
+    test('embedding tier is unchanged by the advanced-key addition', () => {
+      expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('@google-gemini:embedding');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'embedding')).toSucceedWith(
+        'gemini-embedding-001'
+      );
+    });
+
+    test('the non-tier @google-gemini:flash-lite alias resolves via modelOverride only', () => {
+      expect(AiAssist.resolveProviderModel(desc, '@google-gemini:flash-lite', undefined)).toSucceedWith(
+        'gemini-3.5-flash-lite'
+      );
+    });
+  });
+
+  describe('xai-grok model tiers (alias-registry adoption)', () => {
+    const desc = AiAssist.getProviderDescriptor('xai-grok').shouldNotFail('xai-grok descriptor');
+
+    test('base tier resolves to grok-4.3 via @xai-grok:standard', () => {
+      // undefined context falls to base; explicit 'base' resolves identically.
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('grok-4.3');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('grok-4.3');
+    });
+
+    test('advanced tier resolves to grok-4.7 via @xai-grok:flagship', () => {
+      expect(AiAssist.resolveModel(desc.defaultModel, 'advanced')).toBe('@xai-grok:flagship');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('grok-4.7');
+    });
+
+    test('frontier cascades to the advanced id (no frontier key on the descriptor)', () => {
+      // The xAI map deliberately omits a frontier key, so a frontier request must cascade
+      // frontier → advanced → grok-4.7. This is the real registry descriptor, so it is the
+      // live proof of the cascade against the shipped xAI defaults.
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'frontier')).toSucceedWith('grok-4.7');
+    });
+
+    test('image tier resolves to grok-imagine-image-2.0 and routes via its own quality-capable entry', () => {
+      expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@xai-grok:imagine');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith('grok-imagine-image-2.0');
+      expect(AiAssist.resolveImageCapability(desc, 'grok-imagine-image-2.0')).toMatchObject({
+        modelPrefix: 'grok-imagine-image-2.0',
+        format: 'xai-images-edits',
+        supportsQualityParam: true,
+        acceptedQualities: ['low', 'medium', 'auto']
+      });
+    });
+
+    test('only grok-imagine-image-2.0 claims the quality param — the other grok-imagine ids do not', () => {
+      for (const id of ['grok-imagine-image', 'grok-imagine-image-quality']) {
+        expect(AiAssist.resolveImageCapability(desc, id)).toMatchObject({
+          modelPrefix: 'grok-imagine-',
+          format: 'xai-images-edits',
+          supportsQualityParam: false
+        });
+      }
+    });
+
+    test('grok-4.5 is detected as thinking-capable by the default capability config', () => {
+      // Without its own idPattern rule grok-4.5 would hit only /^grok-4/ and lose thinking.
+      const rules = AiAssist.DEFAULT_MODEL_CAPABILITY_CONFIG.perProvider?.['xai-grok'] ?? [];
+      const detected = new Set(
+        rules.filter((r) => r.idPattern.test('grok-4.5')).flatMap((r) => [...r.capabilities])
+      );
+      expect(detected.has('thinking')).toBe(true);
+      expect(detected.has('chat')).toBe(true);
+      expect(detected.has('tools')).toBe(true);
+      // vision accumulates from the /^grok-4/ rule, same as grok-4.3.
+      expect(detected.has('vision')).toBe(true);
+    });
+
+    test('a raw modelOverride passes through verbatim (no alias resolution)', () => {
+      expect(AiAssist.resolveProviderModel(desc, 'grok-custom-tuned:v1', 'advanced')).toSucceedWith(
+        'grok-custom-tuned:v1'
+      );
+    });
+  });
+
+  describe('groq and mistral default models', () => {
+    test('groq defaults to openai/gpt-oss-120b, text-only with a cited output limit', () => {
+      const desc = AiAssist.getProviderDescriptor('groq').orThrow();
+      expect(AiAssist.resolveProviderModel(desc, undefined, undefined)).toSucceedWith('openai/gpt-oss-120b');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'advanced')).toSucceedWith('openai/gpt-oss-120b');
+      expect(desc.acceptsImageInput).toBe(false);
+      expect(AiAssist.resolveMaxOutputTokens(desc)).toBe(65536);
+    });
+
+    test('mistral defaults to mistral-large-4 on the json-schema structured-output wire', () => {
+      const desc = AiAssist.getProviderDescriptor('mistral').orThrow();
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'base')).toSucceedWith('mistral-large-4');
+      expect(AiAssist.resolveProviderModel(desc, undefined, 'embedding')).toSucceedWith('mistral-embed');
+      expect(AiAssist.resolveStructuredOutputCapability(desc, 'mistral-large-4')?.format).toBe(
+        'openai-json-schema'
+      );
+    });
+  });
+
+  describe('getProviderDescriptor', () => {
+    test('returns descriptor for known provider', () => {
+      expect(AiAssist.getProviderDescriptor('xai-grok')).toSucceedAndSatisfy((desc) => {
+        expect(desc.id).toBe('xai-grok');
+        expect(desc.label).toBe('xAI Grok');
+        expect(desc.needsSecret).toBe(true);
+        expect(desc.apiFormat).toBe('openai');
+        expect(desc.baseUrl).toBeTruthy();
+        expect(desc.defaultModel).toEqual({
+          base: '@xai-grok:standard',
+          advanced: '@xai-grok:flagship',
+          image: '@xai-grok:imagine'
+        });
+        expect(desc.supportedTools).toContain('web_search');
+        expect(desc.imageGeneration).toHaveLength(3);
+        expect(desc.imageGeneration?.[0]).toMatchObject({
+          modelPrefix: 'grok-imagine-image-2.0',
+          format: 'xai-images-edits'
+        });
+        expect(desc.imageGeneration?.[1]).toMatchObject({
+          modelPrefix: 'grok-imagine-',
+          format: 'xai-images-edits'
+        });
+        expect(desc.imageGeneration?.[2]).toMatchObject({ modelPrefix: '', format: 'xai-images' });
+      });
+    });
+
+    test('returns descriptor with image generation support for openai', () => {
+      expect(AiAssist.getProviderDescriptor('openai')).toSucceedAndSatisfy((desc) => {
+        // The DALL·E entries were retired; only gpt-image- and the openai-images catch-all survive.
+        expect(desc.imageGeneration).toHaveLength(2);
+        expect(desc.imageGeneration?.[0]).toMatchObject({
+          modelPrefix: 'gpt-image-',
+          format: 'openai-images',
+          acceptsImageReferenceInput: true,
+          outputParamStyle: 'output-format'
+        });
+        expect(desc.imageGeneration?.[1]).toMatchObject({
+          modelPrefix: '',
+          format: 'openai-images',
+          outputParamStyle: 'response-format'
+        });
+        // The default image model is now an alias that resolves to the surviving gpt-image id.
+        expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@openai:image');
+        expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith(
+          'gpt-image-2.5-sunburst'
+        );
+      });
+    });
+
+    test('returns descriptor with image generation support for google-gemini', () => {
+      expect(AiAssist.getProviderDescriptor('google-gemini')).toSucceedAndSatisfy((desc) => {
+        // Only the gemini-image-out catch-all survives after the Imagen surface retirement.
+        expect(desc.imageGeneration).toHaveLength(1);
+        expect(desc.imageGeneration?.[0]).toMatchObject({
+          modelPrefix: '',
+          format: 'gemini-image-out',
+          acceptsImageReferenceInput: true
+        });
+        // The default image model is now an alias that resolves to the surviving flash-image id.
+        expect(AiAssist.resolveModel(desc.defaultModel, 'image')).toBe('@google-gemini:flash-image');
+        expect(AiAssist.resolveProviderModel(desc, undefined, 'image')).toSucceedWith(
+          'gemini-nano-banana-2.1'
+        );
+      });
+    });
+
+    test('vision-capable providers declare acceptsImageInput=true', () => {
+      for (const id of ['openai', 'anthropic', 'google-gemini', 'xai-grok'] as const) {
+        expect(AiAssist.getProviderDescriptor(id)).toSucceedAndSatisfy((desc) => {
+          expect(desc.acceptsImageInput).toBe(true);
+        });
+      }
+    });
+
+    test('non-vision providers declare acceptsImageInput=false', () => {
+      for (const id of ['copy-paste', 'groq', 'mistral'] as const) {
+        expect(AiAssist.getProviderDescriptor(id)).toSucceedAndSatisfy((desc) => {
+          expect(desc.acceptsImageInput).toBe(false);
+        });
+      }
+    });
+
+    test('chat-only providers do not declare image-generation capabilities', () => {
+      for (const id of ['anthropic', 'groq', 'mistral', 'copy-paste'] as const) {
+        expect(AiAssist.getProviderDescriptor(id)).toSucceedAndSatisfy((desc) => {
+          expect(desc.imageGeneration).toBeUndefined();
+          expect(AiAssist.supportsImageGeneration(desc)).toBe(false);
+        });
+      }
+    });
+
+    test('copy-paste provider has no supported tools', () => {
+      expect(AiAssist.getProviderDescriptor('copy-paste')).toSucceedAndSatisfy((desc) => {
+        expect(desc.supportedTools).toEqual([]);
+      });
+    });
+
+    test('fails for unknown provider', () => {
+      expect(AiAssist.getProviderDescriptor('unknown-provider')).toFailWith(/unknown AI provider/i);
+    });
+
+    test('exposes ollama as a non-secret openai-format provider with a localhost default', () => {
+      expect(AiAssist.getProviderDescriptor('ollama')).toSucceedAndSatisfy((desc) => {
+        expect(desc.needsSecret).toBe(false);
+        expect(desc.apiFormat).toBe('openai');
+        expect(desc.baseUrl).toBe('http://localhost:11434/v1');
+      });
+    });
+
+    test('exposes openai-compat as a non-secret openai-format provider with no default baseUrl', () => {
+      expect(AiAssist.getProviderDescriptor('openai-compat')).toSucceedAndSatisfy((desc) => {
+        expect(desc.needsSecret).toBe(false);
+        expect(desc.apiFormat).toBe('openai');
+        expect(desc.baseUrl).toBe('');
+      });
+    });
+  });
+
+  describe('resolveImageCapability', () => {
+    test('returns the matching capability for a model that hits a specific prefix', () => {
+      // openai hosts multiple image surfaces under one descriptor; gpt-image-1 hits its
+      // dedicated prefix rather than the catch-all.
+      const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
+      const capability = AiAssist.resolveImageCapability(descriptor, 'gpt-image-1');
+      expect(capability).toMatchObject({ modelPrefix: 'gpt-image-', format: 'openai-images' });
+    });
+
+    test('falls back to the catch-all entry when no specific prefix matches', () => {
+      const descriptor = AiAssist.getProviderDescriptor('google-gemini').orThrow();
+      const capability = AiAssist.resolveImageCapability(descriptor, 'gemini-3.1-flash-image-preview');
+      expect(capability).toMatchObject({
+        modelPrefix: '',
+        format: 'gemini-image-out',
+        acceptsImageReferenceInput: true
+      });
+    });
+
+    test('selects the most specific (longest) prefix even when the catch-all is listed first', () => {
+      // Order is intentionally "wrong": catch-all first, specific prefix
+      // second. The longest matching prefix should still win.
+      const descriptor: AiAssist.IAiProviderDescriptor = {
+        id: 'openai',
+        label: 'X',
+        buttonLabel: 'X',
+        needsSecret: true,
+        apiFormat: 'openai',
+        baseUrl: 'https://example.com',
+        defaultModel: 'gpt-image-1',
+        supportedTools: [],
+        corsRestricted: false,
+        streamingCorsRestricted: false,
+        acceptsImageInput: true,
+        imageGeneration: [
+          { modelPrefix: '', format: 'openai-images' },
+          { modelPrefix: 'gpt-image-', format: 'openai-images', acceptsImageReferenceInput: true }
+        ]
+      };
+      expect(AiAssist.resolveImageCapability(descriptor, 'gpt-image-1')).toEqual({
+        modelPrefix: 'gpt-image-',
+        format: 'openai-images',
+        acceptsImageReferenceInput: true
+      });
+    });
+
+    test('routes openai built-in models to the right capability by prefix', () => {
+      const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
+      // gpt-image-1 hits the specific prefix → refs supported, output-format style.
+      expect(AiAssist.resolveImageCapability(descriptor, 'gpt-image-1')).toMatchObject({
+        modelPrefix: 'gpt-image-',
+        format: 'openai-images',
+        acceptsImageReferenceInput: true,
+        outputParamStyle: 'output-format'
+      });
+      // any other openai image id falls to the catch-all → response-format style.
+      expect(AiAssist.resolveImageCapability(descriptor, 'some-legacy-image')).toMatchObject({
+        modelPrefix: '',
+        format: 'openai-images',
+        outputParamStyle: 'response-format'
+      });
+    });
+
+    test('returns undefined when the provider declares no image-generation capabilities', () => {
+      const descriptor = AiAssist.getProviderDescriptor('anthropic').orThrow();
+      expect(AiAssist.resolveImageCapability(descriptor, 'claude-3-opus')).toBeUndefined();
+    });
+  });
+
+  describe('supportsEmbedding', () => {
+    test('is true for providers that declare an embedding capability', () => {
+      for (const id of ['openai', 'google-gemini', 'ollama', 'openai-compat', 'mistral'] as const) {
+        expect(AiAssist.getProviderDescriptor(id)).toSucceedAndSatisfy((desc) => {
+          expect(AiAssist.supportsEmbedding(desc)).toBe(true);
+        });
+      }
+    });
+
+    test('is false for providers without an embedding endpoint', () => {
+      for (const id of ['xai-grok', 'anthropic', 'groq', 'copy-paste'] as const) {
+        expect(AiAssist.getProviderDescriptor(id)).toSucceedAndSatisfy((desc) => {
+          expect(desc.embedding).toBeUndefined();
+          expect(AiAssist.supportsEmbedding(desc)).toBe(false);
+        });
+      }
+    });
+  });
+
+  describe('embedding registry entries', () => {
+    test('openai declares a text-embedding-3 default and a dimensions-capable prefix', () => {
+      expect(AiAssist.getProviderDescriptor('openai')).toSucceedAndSatisfy((desc) => {
+        expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('@openai:embedding');
+        expect(AiAssist.resolveProviderModel(desc, undefined, 'embedding')).toSucceedWith(
+          'text-embedding-3-small'
+        );
+        expect(AiAssist.resolveEmbeddingCapability(desc, 'text-embedding-3-small')).toMatchObject({
+          modelPrefix: 'text-embedding-3',
+          format: 'openai-embeddings',
+          supportsDimensions: true,
+          maxBatchSize: 2048
+        });
+      });
+    });
+
+    test('gemini declares a gemini-embedding-001 default with taskType + dimensions', () => {
+      expect(AiAssist.getProviderDescriptor('google-gemini')).toSucceedAndSatisfy((desc) => {
+        // The embedding default is an alias that resolves to the concrete embedding id.
+        expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('@google-gemini:embedding');
+        expect(AiAssist.resolveProviderModel(desc, undefined, 'embedding')).toSucceedWith(
+          'gemini-embedding-001'
+        );
+        const cap = AiAssist.resolveEmbeddingCapability(desc, 'gemini-embedding-001');
+        expect(cap).toMatchObject({
+          format: 'gemini-embeddings',
+          supportsTaskType: true,
+          supportsDimensions: true
+        });
+      });
+    });
+
+    test('mistral declares a mistral-embed default via the openai-embeddings format', () => {
+      expect(AiAssist.getProviderDescriptor('mistral')).toSucceedAndSatisfy((desc) => {
+        expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('mistral-embed');
+        expect(AiAssist.resolveEmbeddingCapability(desc, 'mistral-embed')).toMatchObject({
+          format: 'openai-embeddings'
+        });
+      });
+    });
+
+    test('self-hosted providers declare a catch-all capability and no default embedding model', () => {
+      for (const id of ['ollama', 'openai-compat'] as const) {
+        expect(AiAssist.getProviderDescriptor(id)).toSucceedAndSatisfy((desc) => {
+          expect(AiAssist.resolveModel(desc.defaultModel, 'embedding')).toBe('');
+          expect(AiAssist.resolveEmbeddingCapability(desc, 'nomic-embed-text')).toMatchObject({
+            modelPrefix: '',
+            format: 'openai-embeddings'
+          });
+        });
+      }
+    });
+  });
+
+  describe('resolveEmbeddingCapability', () => {
+    test('selects the most specific (longest) prefix even when listed after the catch-all', () => {
+      const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
+      // text-embedding-3-large hits the specific prefix (dimensions-capable, batched).
+      expect(AiAssist.resolveEmbeddingCapability(descriptor, 'text-embedding-3-large')).toMatchObject({
+        modelPrefix: 'text-embedding-3',
+        format: 'openai-embeddings',
+        supportsDimensions: true,
+        maxBatchSize: 2048
+      });
+      // text-embedding-ada-002 falls back to the catch-all (no dimensions support).
+      expect(AiAssist.resolveEmbeddingCapability(descriptor, 'text-embedding-ada-002')).toMatchObject({
+        modelPrefix: '',
+        format: 'openai-embeddings'
+      });
+      expect(
+        AiAssist.resolveEmbeddingCapability(descriptor, 'text-embedding-ada-002')?.supportsDimensions
+      ).toBeUndefined();
+      // Catch-all carries no batch-size guard (matches design §5.1).
+      expect(
+        AiAssist.resolveEmbeddingCapability(descriptor, 'text-embedding-ada-002')?.maxBatchSize
+      ).toBeUndefined();
+    });
+
+    test('returns undefined when the provider declares no embedding capabilities', () => {
+      const descriptor = AiAssist.getProviderDescriptor('anthropic').orThrow();
+      expect(AiAssist.resolveEmbeddingCapability(descriptor, 'claude-3-opus')).toBeUndefined();
+    });
+  });
+
+  describe('capability resolution — fgv model-alias guard', () => {
+    // Both capability resolvers prefix-match the model id, and every provider declares a
+    // `modelPrefix: ''` catch-all. Before the guard, an fgv alias (`@provider:role`) matched
+    // that catch-all and returned a *confidently wrong* capability — flipping the wire
+    // format on xAI and silently dropping `supportsDimensions` / `maxBatchSize` on OpenAI —
+    // rather than failing or returning `undefined`. These tests pin the alias form to the
+    // same capability the concrete id selects.
+
+    describe('an alias selects the same capability as the concrete id it names', () => {
+      test('openai image: @openai:image is gpt-image-, not the catch-all', () => {
+        const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
+        // Pre-guard this returned { modelPrefix: '', outputParamStyle: 'response-format' },
+        // which suppresses the reference-image affordance and picks the wrong output param.
+        expect(AiAssist.resolveImageCapability(descriptor, '@openai:image')).toMatchObject({
+          modelPrefix: 'gpt-image-',
+          format: 'openai-images',
+          acceptsImageReferenceInput: true,
+          outputParamStyle: 'output-format'
+        });
+      });
+
+      test('xai image: @xai-grok:imagine keeps the edits wire format', () => {
+        const descriptor = AiAssist.getProviderDescriptor('xai-grok').orThrow();
+        // Pre-guard this returned format 'xai-images' with acceptsImageReferenceInput false —
+        // a different wire format from the one the concrete id dispatches to.
+        expect(AiAssist.resolveImageCapability(descriptor, '@xai-grok:imagine')).toMatchObject({
+          modelPrefix: 'grok-imagine-image-2.0',
+          format: 'xai-images-edits',
+          acceptsImageReferenceInput: true
+        });
+      });
+
+      test('openai embedding: @openai:embedding keeps dimensions + batch guard', () => {
+        const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
+        // Pre-guard this returned the catch-all, dropping supportsDimensions and the
+        // maxBatchSize guard that protects callers from an over-large batch.
+        expect(AiAssist.resolveEmbeddingCapability(descriptor, '@openai:embedding')).toMatchObject({
+          modelPrefix: 'text-embedding-3',
+          format: 'openai-embeddings',
+          supportsDimensions: true,
+          maxBatchSize: 2048
+        });
+      });
+
+      test('holds for every registered alias on every built-in provider', () => {
+        // The invariant sweep: whatever a provider's aliases map contains, the alias form and
+        // the concrete id it resolves to must select the identical capability object. This is
+        // the test that generalises the three cases above across the whole registry, so a
+        // future provider gaining a specific-prefix rule cannot silently reintroduce the gap.
+        for (const descriptor of AiAssist.getProviderDescriptors()) {
+          for (const alias of Object.keys(descriptor.aliases ?? {})) {
+            expect(AiAssist.resolveModelAlias(descriptor, alias)).toSucceedAndSatisfy((concrete) => {
+              expect(AiAssist.resolveImageCapability(descriptor, alias)).toEqual(
+                AiAssist.resolveImageCapability(descriptor, concrete)
+              );
+              expect(AiAssist.resolveEmbeddingCapability(descriptor, alias)).toEqual(
+                AiAssist.resolveEmbeddingCapability(descriptor, concrete)
+              );
+            });
+          }
+        }
+      });
+
+      test('a provider whose only rule is the catch-all is unaffected', () => {
+        // google-gemini declares a single catch-all for both modalities, so alias and concrete
+        // always agreed even pre-guard. Pinned so the guard is not credited with a behavior
+        // change it did not make.
+        const descriptor = AiAssist.getProviderDescriptor('google-gemini').orThrow();
+        expect(AiAssist.resolveImageCapability(descriptor, '@google-gemini:flash-image')).toMatchObject({
+          modelPrefix: '',
+          format: 'gemini-image-out'
+        });
+        expect(AiAssist.resolveEmbeddingCapability(descriptor, '@google-gemini:embedding')).toMatchObject({
+          modelPrefix: '',
+          format: 'gemini-embeddings'
+        });
+      });
+    });
+
+    describe('an unresolvable alias yields undefined rather than the catch-all', () => {
+      test('unregistered alias on a provider that declares an aliases map', () => {
+        const descriptor = AiAssist.getProviderDescriptor('openai').orThrow();
+        expect(AiAssist.resolveImageCapability(descriptor, '@openai:no-such-role')).toBeUndefined();
+        expect(AiAssist.resolveEmbeddingCapability(descriptor, '@openai:no-such-role')).toBeUndefined();
+      });
+
+      test('sigil-prefixed id on a provider that declares no aliases map at all', () => {
+        const descriptor: AiAssist.IAiProviderDescriptor = {
+          id: 'openai',
+          label: 'X',
+          buttonLabel: 'X',
+          needsSecret: true,
+          apiFormat: 'openai',
+          baseUrl: 'https://example.com',
+          defaultModel: 'gpt-image-1',
+          supportedTools: [],
+          corsRestricted: false,
+          streamingCorsRestricted: false,
+          acceptsImageInput: true,
+          imageGeneration: [{ modelPrefix: '', format: 'openai-images' }],
+          embedding: [{ modelPrefix: '', format: 'openai-embeddings' }]
+        };
+        expect(AiAssist.resolveImageCapability(descriptor, '@openai:image')).toBeUndefined();
+        expect(AiAssist.resolveEmbeddingCapability(descriptor, '@openai:image')).toBeUndefined();
+      });
+
+      test('cyclic alias chain', () => {
+        const descriptor: AiAssist.IAiProviderDescriptor = {
+          id: 'openai',
+          label: 'X',
+          buttonLabel: 'X',
+          needsSecret: true,
+          apiFormat: 'openai',
+          baseUrl: 'https://example.com',
+          defaultModel: 'gpt-image-1',
+          supportedTools: [],
+          corsRestricted: false,
+          streamingCorsRestricted: false,
+          acceptsImageInput: true,
+          aliases: { '@openai:a': '@openai:b', '@openai:b': '@openai:a' },
+          imageGeneration: [{ modelPrefix: '', format: 'openai-images' }],
+          embedding: [{ modelPrefix: '', format: 'openai-embeddings' }]
+        };
+        expect(AiAssist.resolveImageCapability(descriptor, '@openai:a')).toBeUndefined();
+        expect(AiAssist.resolveEmbeddingCapability(descriptor, '@openai:a')).toBeUndefined();
+      });
+    });
+
+    test('a concrete id containing an @ elsewhere is still matched verbatim', () => {
+      // Only a *leading* sigil marks an alias, so a raw provider id with an interior '@'
+      // must still prefix-match rather than being treated as an unresolvable alias.
+      const descriptor: AiAssist.IAiProviderDescriptor = {
+        id: 'openai-compat',
+        label: 'X',
+        buttonLabel: 'X',
+        needsSecret: false,
+        apiFormat: 'openai',
+        baseUrl: 'https://example.com',
+        defaultModel: '',
+        supportedTools: [],
+        corsRestricted: false,
+        streamingCorsRestricted: false,
+        acceptsImageInput: false,
+        embedding: [
+          { modelPrefix: 'nomic-embed', format: 'openai-embeddings' },
+          { modelPrefix: '', format: 'openai-embeddings' }
+        ]
+      };
+      expect(AiAssist.resolveEmbeddingCapability(descriptor, 'nomic-embed@v1.5')).toMatchObject({
+        modelPrefix: 'nomic-embed'
+      });
+    });
+  });
+
+  describe('allProviderIds', () => {
+    test('contains all provider ids in same order as descriptors', () => {
+      const descriptors = AiAssist.getProviderDescriptors();
+      const expectedIds = descriptors.map((d) => d.id);
+      expect(AiAssist.allProviderIds).toEqual(expectedIds);
+    });
+  });
+
+  describe('serverToolsExclusiveWithClientTools', () => {
+    // The declaration is what makes the rule work: `resolveToolConflicts` reads it
+    // and has no other way to know Gemini has the limit. A registry descriptor that
+    // lost it would still build, still pass every unit test written against a
+    // hand-built descriptor, and put `google_search` + `function_declarations` on
+    // the wire together for an opaque 400. Pin it on the descriptor that ships.
+    test('gemini declares web_search exclusive with client tools', () => {
+      expect(AiAssist.getProviderDescriptor('google-gemini')).toSucceedAndSatisfy((d) => {
+        expect(d.serverToolsExclusiveWithClientTools).toEqual(['web_search']);
+      });
+    });
+
+    test('no other built-in provider declares an exclusion', () => {
+      // Not a style rule — an exclusion silently changes what a host gets back
+      // without the host changing anything, so adding one should be a deliberate
+      // act that updates this test alongside the descriptor.
+      const declaring = AiAssist.getProviderDescriptors()
+        .filter((d) => (d.serverToolsExclusiveWithClientTools?.length ?? 0) > 0)
+        .map((d) => d.id);
+      expect(declaring).toEqual(['google-gemini']);
+    });
+  });
+});
+
+describe('DEFAULT_MODEL_CAPABILITY_CONFIG', () => {
+  const config = AiAssist.DEFAULT_MODEL_CAPABILITY_CONFIG;
+
+  test('ollama catch-all assigns chat to any model id', () => {
+    const rules = config.perProvider?.ollama ?? [];
+    const caps = new Set<string>();
+    for (const rule of rules) {
+      if (rule.idPattern.test('llama3.2')) {
+        rule.capabilities.forEach((c) => caps.add(c));
+      }
+    }
+    expect(caps.has('chat')).toBe(true);
+  });
+
+  test('openai-compat catch-all assigns chat to any model id', () => {
+    const rules = config.perProvider?.['openai-compat'] ?? [];
+    const caps = new Set<string>();
+    for (const rule of rules) {
+      if (rule.idPattern.test('some-local-model')) {
+        rule.capabilities.forEach((c) => caps.add(c));
+      }
+    }
+    expect(caps.has('chat')).toBe(true);
+  });
+
+  test.each([
+    ['openai', 'text-embedding-3-large'],
+    ['google-gemini', 'gemini-embedding-001'],
+    ['mistral', 'mistral-embed']
+  ] as const)('%s tags %s with the embedding capability', (provider, modelId) => {
+    const rules = config.perProvider?.[provider] ?? [];
+    const caps = new Set<string>();
+    for (const rule of rules) {
+      if (rule.idPattern.test(modelId)) {
+        rule.capabilities.forEach((c) => caps.add(c));
+      }
+    }
+    expect(caps.has('embedding')).toBe(true);
+  });
+
+  // The rotated / newly-listed ids must be detected as thinking-capable — these rules back the
+  // *ThinkingModelNames unions, and a prefix miss silently drops thinking from live-discovered ids.
+  test.each([
+    ['anthropic', 'claude-opus-5'],
+    ['anthropic', 'claude-sonnet-5'],
+    ['anthropic', 'claude-fable-5'],
+    ['anthropic', 'claude-opus-5-5'],
+    ['anthropic', 'claude-fable-5-1'],
+    ['anthropic', 'claude-mythos-5-1'],
+    ['anthropic', 'claude-sonnet-5-5'],
+    ['anthropic', 'claude-haiku-5-5'],
+    ['openai', 'gpt-5.6-terra'],
+    ['openai', 'gpt-6.1-sol']
+  ] as const)('%s tags %s with the thinking capability', (provider, modelId) => {
+    const rules = config.perProvider?.[provider] ?? [];
+    const caps = new Set<string>();
+    for (const rule of rules) {
+      if (rule.idPattern.test(modelId)) {
+        rule.capabilities.forEach((c) => caps.add(c));
+      }
+    }
+    expect(caps.has('thinking')).toBe(true);
+  });
+
+  test.each([
+    ['google-gemini', 'gemini-nano-banana-2.1'],
+    ['google-gemini', 'gemini-3.1-flash-image']
+  ] as const)('%s tags %s with the image-generation capability', (provider, modelId) => {
+    const rules = config.perProvider?.[provider] ?? [];
+    const caps = new Set<string>();
+    for (const rule of rules) {
+      if (rule.idPattern.test(modelId)) {
+        rule.capabilities.forEach((c) => caps.add(c));
+      }
+    }
+    expect(caps.has('image-generation')).toBe(true);
+  });
+
+  test('claude-haiku-4-5 is not tagged thinking by the claude-haiku-5-5 rule', () => {
+    const rules = config.perProvider?.anthropic ?? [];
+    const caps = new Set<string>();
+    for (const rule of rules) {
+      if (rule.idPattern.test('claude-haiku-4-5-20251001')) {
+        rule.capabilities.forEach((c) => caps.add(c));
+      }
+    }
+    expect(caps.has('thinking')).toBe(false);
+  });
+});

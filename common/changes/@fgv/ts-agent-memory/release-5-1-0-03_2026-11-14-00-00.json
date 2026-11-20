@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-memory",
+      "comment": "Retrieval over an in-memory envelope index (by kind, tag, recency or rank), with semantic recall through the `IVectorIndex` and `IFragmentVectorIndex` seams and the in-memory cosine indexes.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-memory",
+  "email": "noreply@anthropic.com"
+}

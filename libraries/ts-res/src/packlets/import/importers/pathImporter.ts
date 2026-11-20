@@ -85,7 +85,7 @@ export class PathImporter implements IImporter {
   }
 
   /**
-   * {@inheritdoc Import.Importers.IImporter.import}
+   * {@inheritDoc Import.Importers.IImporter.import}
    */
   public import(
     item: IImportable,

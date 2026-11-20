@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Failure, fail } from '../base';
+import { Failure, fail, formatValueForMessage } from '../base';
 import { GenericValidator, GenericValidatorConstructorParams } from './genericValidator';
 
 /**
@@ -61,6 +61,6 @@ export class NumberValidator<T extends number = number, TC = unknown> extends Ge
     if (typeof from === 'number') {
       return true;
     }
-    return fail<T>(`"${from}": not a number`);
+    return fail<T>(`"${formatValueForMessage(from, { style: 'string' })}": not a number`);
   }
 }

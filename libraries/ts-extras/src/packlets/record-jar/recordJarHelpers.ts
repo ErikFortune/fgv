@@ -21,6 +21,7 @@
  */
 
 import { Result, fail, isKeyOf, succeed } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 
 interface IRecordBody {
   body: string;
@@ -187,7 +188,7 @@ class RecordParser {
   protected _parseContinuation(line: string): Result<IRecordBody> {
     let trimmed = line.trim();
     if (!this._body!.isContinuation) {
-      /* c8 ignore next */
+      /* c8 ignore next - functional code tested but coverage intermittently missed */
       const fixedSize = this.options?.fixedContinuationSize ?? 0;
       if (fixedSize > 0) {
         if (trimmed.length < line.length - fixedSize) {
@@ -251,4 +252,27 @@ class RecordParser {
  */
 export function parseRecordJarLines(lines: string[], options?: JarRecordParserOptions): Result<JarRecord[]> {
   return RecordParser.parse(lines, options);
+}
+
+/**
+ * Reads a record-jar file from a FileTree.
+ * @param fileTree - The FileTree to read from.
+ * @param filePath - Path of the file within the tree.
+ * @param options - Optional parser configuration
+ * @returns The contents of the file as an array of `Record<string, string>`
+ * @see https://datatracker.ietf.org/doc/html/draft-phillips-record-jar-01
+ * @public
+ */
+export function readRecordJarFromTree(
+  fileTree: FileTree.FileTree,
+  filePath: string,
+  options?: JarRecordParserOptions
+): Result<JarRecord[]> {
+  return fileTree
+    .getFile(filePath)
+    .onSuccess((file) => file.getRawContents())
+    .onSuccess((contents) => {
+      const lines = contents.split(/\r?\n/);
+      return parseRecordJarLines(lines, options);
+    });
 }

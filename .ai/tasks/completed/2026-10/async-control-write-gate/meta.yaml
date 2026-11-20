@@ -1,0 +1,60 @@
+id: async-control-write-gate
+status: shipped
+packages: ['@fgv/ts-extras', '@fgv/ts-agent-tasks']
+prs: [761]
+openPrs: []
+opened: 2026-10-26
+closed: 2026-10-26
+summary:
+  intended: >
+    personaility#698 slice B-6: a WriteGate in the ts-extras async-control packlet, generalising
+    personaility's IngestionStopSignal, with create/guard/guardDetailed/raise/lower/check/pause and
+    inFlight/waiting/quiet. The timer is the injectable ScheduleTimer, validated like
+    raceStopConditions. A slot is released on every path, and the reentrant guard is either refused
+    through a browser-safe async context or covered by a documented call-site rule with deadlock
+    detection. Nothing Node-only. It must fit ts-agent-tasks' structural writeGuard, proven against
+    a real broker, and the TaskScheduleTimer copy is consolidated.
+  shipped: >
+    AsyncControl.WriteGate with WriteGateRefusal ('raised' | 'threw'), WriteGatePauseFailure
+    ('timeout' | 'stalled' | 'invalid'), IWriteGatePause and IWriteGateOptions. Admission is
+    synchronous and counted before the write is called. The slot is released on success, failure,
+    throw and rejection. Pauses are nestable and bounded, withdraw themselves on timeout, and their
+    handles are idempotent. isTimerDelay is now shared with raceStopConditions.
+    ts-agent-tasks: ITaskWriteGuard answers PromiseLike<Result<T>>. A not-run refusal keeps its
+    classification only when its detail converts as an ITaskFailure, and a not-run success is
+    invalid. TaskScheduleTimer is replaced by AsyncControl.ScheduleTimer. Six tests wire a real
+    WriteGate into a broker. result.md has a 16-row check-then-act table and a 16-row revert matrix,
+    each row shown red.
+  diverged: >
+    Reentrancy is a documented call-site rule. Its deadlock is detected at the pause and classified
+    'stalled' rather than refused, because no browser-safe async context exists. ITaskWriteGuard
+    had to widen: the brief's WriteGate.guard answers an AsyncResult over a plain Result, which the
+    old Promise<TaskResult<T>> type could not admit. pause answers an AsyncDetailedResult (an
+    AsyncResult subclass) so its failure is classified. Reverting the not-run-success
+    classification hangs the broker suite, so that change also removes a latent non-termination.
+    Review round 1 (no P1) confirmed that hang as a production defect on release: createNative
+    recursed forever as microtasks. createNative and registerExternal now bound a retried miss
+    themselves. A section that ran and then rejected is reconcile-first rather than "nothing
+    written". WriteGate refuses a non-Result write as 'threw' and keeps FIFO order across a resume,
+    and the refusal detail is read structurally, so it survives a second copy of ts-utils.
+    Review round 2 (no P1) replaced the woken count with per-write sequence numbers and a sorted
+    waiting list, which keeps FIFO order when a pause re-holds woken writes. A synchronous
+    withWriter throw now reports its message as the section's rejection.
+  sourceLine: '**Shipped:** `@fgv/ts-extras` `AsyncControl.WriteGate` is a host-wide write switch. `raise` refuses every guarded write unrun, waiting ones included, and `pause` holds new writes until the ones under way drain, bounded and nestable. `@fgv/ts-agent-tasks` broker `writeGuard` takes it with no adapter.'
+  headline: >
+    A host can stop every write it routes through one AsyncControl.WriteGate, or hold them still for
+    a snapshot until the writes under way drain, and hand the same gate to a task broker as its
+    writeGuard.
+keywords:
+  - write gate
+  - stop signal
+  - pause and drain
+  - quiesce
+  - snapshot hold
+  - cooperative cancellation
+  - reentrant deadlock
+  - browser-safe async control
+  - broker write guard
+  - schedule timer
+  - fgv-ask
+sourceHash: sha256:43d4ff6b56af25ac # over brief.md + state.md + result.md

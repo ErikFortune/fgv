@@ -1,0 +1,9 @@
+[Home](../../README.md) > [Iana](../README.md) > [LanguageSubtagRegistry](./LanguageSubtagRegistry.md) > grandfathered
+
+## LanguageSubtagRegistry.grandfathered property
+
+**Signature:**
+
+```typescript
+readonly grandfathered: GrandfatheredTagScope;
+```

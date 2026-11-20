@@ -1,0 +1,24 @@
+[**@fgv Monorepo API Documentation**](../../../../../../../../../../../README.md)
+
+***
+
+[@fgv Monorepo API Documentation](../../../../../../../../../../../README.md) / [@fgv/ts-bcp47](../../../../../../../../../README.md) / [Iana](../../../../../../../README.md) / [Jar](../../../../../README.md) / [LanguageSubtags](../../../README.md) / [Registry](../README.md) / IVariantSubtagRegistryEntry
+
+# Interface: IVariantSubtagRegistryEntry
+
+**`Internal`**
+
+Strongly-typed JAR format variant subtag entry
+
+## Properties
+
+| Property | Type |
+| ------ | ------ |
+| <a id="property-added"></a> `Added` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
+| <a id="property-comments"></a> `Comments?` | `string`[] |
+| <a id="property-deprecated"></a> `Deprecated?` | [`YearMonthDaySpec`](../type-aliases/YearMonthDaySpec.md) |
+| <a id="property-description"></a> `Description` | `string`[] |
+| <a id="property-preferred-value"></a> `Preferred-Value?` | [`VariantSubtag`](../../../../../../LanguageSubtags/type-aliases/VariantSubtag.md) |
+| <a id="property-prefix"></a> `Prefix?` | [`ExtendedLanguageRange`](../../../../../../LanguageSubtags/type-aliases/ExtendedLanguageRange.md)[] |
+| <a id="property-subtag"></a> `Subtag` | [`VariantSubtag`](../../../../../../LanguageSubtags/type-aliases/VariantSubtag.md) |
+| <a id="property-type"></a> `Type` | `"variant"` |

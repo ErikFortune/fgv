@@ -1,0 +1,142 @@
+id: ai-assist-tool-continuation
+status: shipped
+packages: ['@fgv/ts-extras']
+prs: [488]
+closed: 2026-06
+relatedStreams:
+  - id: ai-assist-cross-provider-continuation
+    relationship: >
+      Prerequisite, NOT a duplicate — the two `*-continuation` streams move
+      orthogonal axes of the same field and neither supersedes the other.
+      `ai-assist-cross-provider-continuation` owns the **provider-coverage**
+      axis: it extended `continuationMessages` wire-forwarding from
+      Anthropic-only to all four providers by having `buildMessages` /
+      `buildGeminiContents` consume `IBuildMessagesOptions.rawTail` and by
+      forwarding `continuationMessages` in `executeClientToolTurn`'s `openai`
+      and `gemini` switch arms (completed 2026-06-04; shipped inside the
+      `per-provider-testbed-scenarios` cluster promotion #459, not under its own
+      PR number). This stream owns the **round-accumulation** axis: it left the
+      per-provider builders and the switch untouched and added a single
+      provider-agnostic prepend downstream of that switch, changing
+      `IAiClientToolContinuation.messages` from per-round to cumulative
+      (#488, 2026-06-09). The dependency runs one way and is load-bearing:
+      this stream's brief cites all three forwarding sites (`:487/:501/:514`)
+      as already wired, which is only true because the cross-provider work had
+      already landed — verified in git: #459 (2026-06-05) is an ancestor of #488
+      (2026-06-09) and carries the `rawTail` consumption in all four files. Had
+      it not landed first, the cumulative prepend would have
+      been correct on Anthropic and inert everywhere else. Read together as
+      "who owns the continuation surface": cross-provider owns *whether a
+      provider receives the tail at all*; this stream owns *what the tail
+      contains across rounds*, and therefore owns the `LIBRARY_CAPABILITIES.md`
+      "**cumulative** — replace each round, do not manually concatenate"
+      guarantee. Verified against source 2026-08-14: both behaviours coexist
+      today in `clientToolContinuationBuilder.ts`.
+  - id: ai-assist-client-tools
+    relationship: >
+      Parent. Introduced `executeClientToolTurn`, `IAiClientToolContinuation`,
+      the per-provider continuation builders, and the Anthropic-only
+      `rawTail` forwarding — i.e. it authored the per-round semantics that this
+      stream later reversed. The footgun this stream killed was created there
+      and hidden by the same cause the parent is already the repo's cautionary
+      tale for: its only in-repo reference was a fixed **two-turn** testbed
+      scenario, the degenerate case where replace == accumulate.
+  - id: ai-assist-client-tool-id-fix
+    relationship: >
+      Later sibling on the same file. #504 (2026-06-30) made
+      `buildAnthropicContinuation` / `buildOpenAiContinuation` return
+      `Result<IAiClientToolContinuation>` for id correlation; it restructured
+      the code immediately above this stream's prepend and preserved it. The
+      current `clientToolContinuationBuilder.ts` shows both changes composed.
+  - id: per-provider-testbed-scenarios
+    relationship: >
+      Cluster that commissioned the cross-provider prerequisite. Its
+      still-two-turn `*ClientTools` scenarios are the live reference this
+      stream's brief suggested extending to >2 rounds; that extension was
+      neither done nor filed (see summary.diverged).
+summary:
+  intended: >
+    Kill the second PersonAIlity consumer footgun (after message-ordering) in
+    `@fgv/ts-extras/ai-assist`: `IAiClientToolContinuation.messages` returned
+    per-round only, so a consumer doing the natural thing —
+    `continuationMessages = outcome.continuation.messages` (replace) — sent only
+    the last round's tool exchange each round, losing earlier tool results and
+    looping to the round cap. The decided fix was pinned in the brief: make
+    `messages` the full accumulated tail via a single prepend of the inbound
+    `continuationMessages` at the continuation-assembly point in
+    `executeClientToolTurn`, leaving `build{Anthropic,OpenAi,Gemini}Continuation`
+    per-round. Three decisions to hold: `toolCallsSummary` stays per-round
+    (this turn's calls); provider homogeneity within a loop makes the
+    concatenation valid; the tail stays provider-native and out of the
+    normalized `messages` path. Deliverables: a load-bearing multi-round
+    (N >= 3) mock-fetch regression test proving cumulative growth and that
+    replace produces the full wire transcript in order; TSDoc on both
+    `IAiClientToolContinuation.messages` and
+    `IExecuteClientToolTurnParams.continuationMessages`; a
+    `LIBRARY_CAPABILITIES.md` correction removing the "from the prior turn's
+    result" framing that read like the broken replace pattern; and, optionally,
+    extending one `*ClientTools` testbed scenario past two rounds as the live
+    reference (or filing it as a fast-follow).
+  shipped: >
+    Exactly the pinned fix, via PR #488 (squash-merged direct to `release`
+    2026-06-09). One provider-agnostic prepend in `executeClientToolTurn`,
+    placed downstream of the per-provider builder switch, so
+    `continuation.messages` now carries rounds 1..N for every provider while
+    `toolCallsSummary` stays per-round; the three builders were not touched.
+    TSDoc rewritten on both types in `model.ts` (docs-only change there,
+    including the canonical replace-loop snippet) and the
+    `LIBRARY_CAPABILITIES.md` bullet plus decision shortcut corrected to the
+    cumulative wording that stands today. Two multi-round N=3 regression suites
+    landed in `clientToolContinuationBuilder.test.ts` (Anthropic and OpenAI),
+    asserting 2 -> 4 -> 6 growth, per-round `toolCallsSummary`, correct wire tail
+    on each fed-back round, and `continuation: undefined` on the final no-tool
+    round. Backward compatible: no existing test needed updating, since round-1
+    inbound continuation is empty and cumulative == per-round there. Change file
+    `@fgv/ts-extras` type `none`, as briefed.
+  diverged: >
+    Three deltas, one of which is a live gap. (1) **The optional testbed
+    extension was silently dropped.** The brief offered "extend one
+    `*ClientTools` scenario to >2 rounds as the live reference, or file it as a
+    fast-follow"; `result.md` does neither, and as of 2026-08-14 all four
+    `*ClientTools` scenarios are still fixed two-turn with no entry in
+    `docs/FUTURE.md`, `docs/TECH_DEBT.md`, or `docs/WORKSTREAMS.md`. The
+    cumulative semantics therefore have unit proof but no live-wire proof — the
+    exact shape of blind spot (two-turn-only reference) that hid the original
+    footgun. (2) **Gemini's arm was never driven multi-round.** The brief asked
+    for "a multi-round unit test"; the stream delivered two (Anthropic + OpenAI),
+    over-delivering on count while leaving the third provider's cumulative path
+    untested. Low risk, because the prepend sits outside the provider switch and
+    is provider-agnostic by construction — but it is an untested arm, and the
+    later `ai-assist-antagonist` stream's note that "multi-round cumulative
+    semantics is already exhaustively covered (3-round Anthropic and OpenAI
+    drives)" reads as broader coverage than exists. (3) **Process:** the brief
+    specified an integration branch with sub-branches PR'ing into
+    `ai-assist-tool-continuation`; the work shipped as a single squash PR direct
+    to `release`. Reasonable for a one-seam change, but unstated in `result.md`.
+    Also worth recording for a future reader: `result.md` is 946 bytes and omits
+    the gate report, the `code-reviewer` pass summary, and the doc deltas that
+    the brief's "Report:" clause required — the gates and doc changes are
+    verifiable from #488's diff, but not from the stream's own artifacts, and
+    there is **no `state.md`**, so no live checkpoint exists to cross-check the
+    result against.
+  sourceLine: 'Made `IAiClientToolContinuation.messages` **cumulative** across `executeClientToolTurn` rounds, so the natural consumer pattern — `continuationMessages = outcome.continuation.messages` (replace) — is correct for all N rounds. Kills the multi-round footgun where replace silently dropped earlier tool results and the model looped to the round cap.'
+keywords:
+  - cumulative continuation
+  - executeClientToolTurn
+  - IAiClientToolContinuation
+  - continuationMessages
+  - rawTail
+  - client tools
+  - multi-round tool loop
+  - consumer footgun
+  - replace-vs-concatenate
+  - wire tail accumulation
+  - toolCallsSummary per-round
+  - PersonAIlity
+  - provider-native wire messages
+  - two-turn blind spot
+sourceHash: b71fcec19eb18ac1
+sourceHashNote: >
+  sha256 of `cat brief.md result.md` (first 16 chars) in the target directory as
+  of 2026-08-14. No `state.md` exists for this stream; the hash covers the only
+  two artifacts present.

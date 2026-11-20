@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-ui-components",
+      "comment": "Fix: resource editing no longer throws when a null-prototype value is replaced by a non-object, and now deletes a property named like an `Object.prototype` member (such as `toString`).",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-res-ui-components",
+  "email": "noreply@anthropic.com"
+}

@@ -1,0 +1,79 @@
+id: agent-memory-kind-collision-guard
+status: shipped
+packages:
+  - '@fgv/ts-agent-memory'
+prs: [648]
+openPrs: []
+opened: 2026-08-18
+summary:
+  intended: >
+    Close a defect a PersonAIlity ask filed from a bug they had fixed as far as
+    their side could reach. A record is addressed by (scope, idStem) and the
+    address carries no kind component, so two registered kinds whose identity
+    codecs mint the same address name one record file. The failure is worse than
+    an overwrite: the store reads the occupant and never compares its kind, so
+    the second write applies as an UPDATE — and because kind is immutable to
+    every write policy, the victim keeps its own kind and takes the intruder's
+    body while the intruder's own list returns empty, with neither side
+    reporting anything. Their vault-side guard could not cover the ingest
+    orchestrator's writes (no host seam) and IWritePolicy.admit cannot close it
+    either, since its cohort is same-scope same-kind by contract and a policy is
+    therefore never shown a foreign occupant.
+  shipped: >
+    verifyOccupantKind in storeIdentity.ts, enforcing one invariant — a record
+    loaded from an address derived from kind K is a record of kind K — at every
+    call site that has a kind in hand: put (flat and versioned), delete (flat
+    and versioned), and get. The write fails naming both kinds and the address,
+    because a collision is a configuration bug and the message is the only thing
+    that leads anyone to the cause. getById stays address-first and unguarded,
+    pinned by a test. Eight tests, 100% coverage, each guard watched failing
+    against the unguarded implementation first.
+  diverged: >
+    The ask covered the flat write path. Three things it did not have were found
+    by verifying it and were fixed in the same PR. The versioned path has the
+    same hole with a larger blast radius — _versionsForEntity filters on scope
+    and nothing else, so an intruder would have read the victim's versions as
+    its own history and INVALIDATED them. delete and get have the read-side
+    version, so delete(kindB, id) removed a kindA record through a typed API
+    that looked correct, and a put-only fix would have left that open. And the
+    quarantined-record case the consumer hoped this would close was ALREADY
+    closed by a different mechanism: _readRecord's parse and verify both fail on
+    an unreadable occupant and that failure already fails the write — loudly,
+    but with a parse error rather than a collision error. Told to them directly.
+    The sequencing call was taken the expensive way on purpose: the file was at
+    1989 lines against a 2000-line max-lines CI failure, and rather than take a
+    fifth consecutive ad-hoc extraction to clear the cap, the TECH_DEBT P1 split
+    was done first, on a seam, as a separate commit, api.md byte-identical.
+    CodeRabbit then found a real hole in the first version — _readVersionedCurrent
+    accepted expectedKind and never consumed it, so the versioned read path
+    looked guarded and was not. Invisible to the 100% coverage gate because
+    every line still ran.
+  sourceLine: >
+    **Shipped:** one invariant, enforced at the one layer that sees both sides —
+    a record loaded from an address derived from kind K is a record of kind K.
+keywords:
+  - address carries no kind component
+  - silent update rather than overwrite
+  - victim keeps its kind and takes the intruder's body
+  - the store is the only layer that sees both sides
+  - write policy cohort cannot see a foreign occupant
+  - registration-time check is undecidable
+  - scope equality neither necessary nor sufficient
+  - address-first reads stay unguarded
+  - a parameter accepted and never consumed
+  - coverage cannot see an unread parameter
+  - watched-it-fail gate
+  - split on a seam, not to clear a cap
+relatedStreams:
+  - id: personaility-asks-2026-08
+    relationship: >
+      origin; same consumer channel
+  - id: agent-memory-index-partial-read
+    relationship: >
+      predecessor whose lesson this stream re-instantiated one layer in —
+      coverage cannot see a caller that stopped passing a value, and here could
+      not see a callee that stopped reading one
+  - id: filetree-faithful-copy
+    relationship: >
+      later stream from the same consumer whose ask arrived in the same window;
+      its finalize pass is what surfaced that this one had never been narrated

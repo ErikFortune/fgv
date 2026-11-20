@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Result } from '@fgv/ts-utils';
 import { matcherHint } from 'jest-matcher-utils';
-import { Context, toMatchInlineSnapshot } from 'jest-snapshot';
+import type { Context } from 'jest-snapshot';
+import { toMatchInlineSnapshot } from 'jest-snapshot';
 import { printReceivedResult } from '../../utils/matcherHelpers';
 
 declare global {

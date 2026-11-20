@@ -1,0 +1,15 @@
+id: module-resolution-upgrade
+status: shipped
+packages: ['(repo-wide tsconfig)']
+prs: [608, 609]
+closed: 2026-08-10
+summary:
+  intended: >
+    Make module resolution explicit rather than relying on TypeScript defaults, and reconcile the freestanding overrides.
+  shipped: >
+    `moduleResolution` stated explicitly via an fgv-owned tsconfig layer; the freestanding overrides reconciled; a files allowlist and audited node-only declarations landed alongside.
+  diverged: >
+    The bundler/node16 evaluation was gated behind a dual-emit decision that this stream did not take; that remains open.
+  sourceLine: ''
+keywords: ['module resolution', 'tsconfig layering', 'node10', 'dual emit', 'packaging']
+sourceHash: 602127b6f52e4bf7

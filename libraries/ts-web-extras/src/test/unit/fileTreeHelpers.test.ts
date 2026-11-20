@@ -22,7 +22,6 @@
 
 import '@fgv/ts-utils-jest';
 import { FileTreeHelpers } from '../../packlets/helpers';
-import { FileApiTreeAccessors } from '../../packlets/file-tree';
 import { createMockFile, createMockFileList, createMockDirectoryFileList } from '../utils/testHelpers';
 
 describe('FileTreeHelpers', () => {
@@ -169,8 +168,6 @@ describe('FileTreeHelpers', () => {
         lastModified: Date.now(),
         text: () => Promise.reject(new Error('Read failed'))
       } as unknown as File;
-
-      const fileList = createMockFileList([{ name: 'good.txt', content: 'good content' }]);
 
       // Create a FileList with just the bad file
       const dt = new DataTransfer();
@@ -435,7 +432,7 @@ describe('FileTreeHelpers', () => {
       const result = FileTreeHelpers.getOriginalFile(fileList, 'folder/subfolder/file.txt');
       expect(result).toSucceedAndSatisfy((file) => {
         expect(file.name).toBe('file.txt');
-        expect((file as any).webkitRelativePath).toBe('folder/subfolder/file.txt');
+        expect(file.webkitRelativePath).toBe('folder/subfolder/file.txt');
       });
     });
 

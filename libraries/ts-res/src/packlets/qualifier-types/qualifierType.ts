@@ -174,24 +174,24 @@ export abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject>
   implements IQualifierType<TCFGJSON>
 {
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.name}
+   * {@inheritDoc QualifierTypes.IQualifierType.name}
    */
   public readonly name: QualifierTypeName;
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
+   * {@inheritDoc QualifierTypes.IQualifierType.systemTypeName}
    */
   public abstract readonly systemTypeName: QualifierTypeName;
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.key}
+   * {@inheritDoc QualifierTypes.IQualifierType.key}
    */
   public get key(): QualifierTypeName {
     return this._collectible.key;
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.index}
+   * {@inheritDoc QualifierTypes.IQualifierType.index}
    */
   public get index(): QualifierTypeIndex | undefined {
     return this._collectible.index;
@@ -207,9 +207,8 @@ export abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject>
 
   /**
    * Constructor for use by derived classes.
-   * @param name - The name of the qualifier type.
-   * @param allowContextList - Flag indicating whether this qualifier type allows a
-   * comma-separated list of runtime values in the context. Defaults to `false`.
+   * @param params - The {@link QualifierTypes.IQualifierTypeCreateParams | create parameters}
+   * for this qualifier type.
    */
   protected constructor({ name, index, allowContextList }: IQualifierTypeCreateParams) {
     this.name = Convert.qualifierTypeName.convert(name).orThrow();
@@ -222,12 +221,12 @@ export abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject>
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.isValidConditionValue}
+   * {@inheritDoc QualifierTypes.IQualifierType.isValidConditionValue}
    */
   public abstract isValidConditionValue(value: string): value is QualifierConditionValue;
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.isValidContextValue}
+   * {@inheritDoc QualifierTypes.IQualifierType.isValidContextValue}
    */
   public isValidContextValue(value: string): value is QualifierContextValue {
     if (this.isValidConditionValue(value)) {
@@ -242,7 +241,7 @@ export abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject>
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.isPotentialMatch}
+   * {@inheritDoc QualifierTypes.IQualifierType.isPotentialMatch}
    */
   public isPotentialMatch(conditionValue: string, contextValue: string): boolean {
     if (this.isValidConditionValue(conditionValue) && this.isValidContextValue(contextValue)) {
@@ -253,7 +252,7 @@ export abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject>
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.validateCondition}
+   * {@inheritDoc QualifierTypes.IQualifierType.validateCondition}
    */
   public validateCondition(value: string, operator?: ConditionOperator): Result<QualifierConditionValue> {
     operator = operator ?? 'matches';
@@ -268,7 +267,7 @@ export abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject>
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.validateContextValue}
+   * {@inheritDoc QualifierTypes.IQualifierType.validateContextValue}
    */
   public validateContextValue(value: string): Result<QualifierContextValue> {
     /* c8 ignore next 2 - functional error case tested but coverage intermittently missed */
@@ -279,7 +278,7 @@ export abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject>
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.matches}
+   * {@inheritDoc QualifierTypes.IQualifierType.matches}
    */
   public matches(
     condition: QualifierConditionValue,
@@ -293,33 +292,33 @@ export abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject>
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
+   * {@inheritDoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
   public abstract getConfigurationJson(): Result<JsonCompatibleType<Config.IQualifierTypeConfig<TCFGJSON>>>;
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
+   * {@inheritDoc QualifierTypes.IQualifierType.validateConfigurationJson}
    */
   public abstract validateConfigurationJson(
     from: unknown
   ): Result<JsonCompatibleType<Config.IQualifierTypeConfig<TCFGJSON>>>;
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.setIndex}
+   * {@inheritDoc QualifierTypes.IQualifierType.setIndex}
    */
   public setIndex(index: number): Result<QualifierTypeIndex> {
     return this._collectible.setIndex(index);
   }
 
   /**
-   * {@inheritdoc Validate.isValidQualifierTypeName}
+   * {@inheritDoc Validate.isValidQualifierTypeName}
    */
   public static isValidName(name: string): name is QualifierTypeName {
     return Validate.isValidQualifierTypeName(name);
   }
 
   /**
-   * {@inheritdoc Validate.isValidQualifierTypeIndex}
+   * {@inheritDoc Validate.isValidQualifierTypeIndex}
    */
   public static isValidIndex(index: number): index is QualifierTypeIndex {
     return Validate.isValidQualifierTypeIndex(index);

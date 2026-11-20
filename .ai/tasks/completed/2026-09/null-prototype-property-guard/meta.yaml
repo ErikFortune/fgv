@@ -1,0 +1,59 @@
+id: null-prototype-property-guard
+status: shipped
+packages: ['@fgv/ts-utils', '@fgv/ts-json', '@fgv/ts-res-ui-components', '@fgv/ts-utils-jest']
+prs: [700]
+opened: 2026-09-26
+closed: 2026-09-27
+summary:
+  intended: >
+    Replace every unguarded obj.hasOwnProperty(key) in library source (nine sites across ts-utils,
+    ts-json, ts-res-ui-components and ts-utils-jest) with Object.prototype.hasOwnProperty.call, so
+    isKeyOf and Converters.strictObject().convert() stop throwing on null-prototype objects; enable
+    no-prototype-builtins as an error where every package inherits it, surfacing it instead if no
+    shared lint layer exists; one watched-failing test per fixed site; four patch change files.
+  shipped: >
+    All nine sites fixed (the site list verified independently and matching the brief exactly),
+    plus four incidental calls in ts-utils test code. Eight reachable sites each have a
+    null-prototype regression test asserting the correct answer, each watched red with its fix
+    reverted; the ninth (ts-utils-jest's jest-global probe, only ever called on global) has none
+    possible and is covered by the rule. no-prototype-builtins is an error in the four touched
+    packages. Four patch change files.
+  diverged: >
+    (1) The rule is not repo-wide. No shared lint layer exists (33 per-project eslint.config.js
+    files, none in the rig); surfaced, and the user chose to enable it in the four touched packages
+    only and defer the shared layer, now a P2 in docs/TECH_DEBT.md. (2) The code-reviewer pass found
+    that the first rewrite of the two partial?.hasOwnProperty('extendVars') sites in ts-json
+    jsonConverter.ts dropped null-safety, so a null options object from a JavaScript caller would
+    newly throw. That contradicted the brief's own "nothing that returns starts throwing" claim. It
+    was fixed and pinned by a test before the PR opened. (3) T1's escalation could not be closed in
+    place: agent-tasks-t1/result.md is not on release, so the closure is recorded in this stream's
+    result.md instead. (4) The brief's "100 % coverage in every modified package" gate was not met:
+    ts-utils 99.27 % and ts-json 99.95 %, with ts-res-ui-components configured at a 0 threshold.
+    Coverage is identical on release, the uncovered lines are pre-existing and outside this stream's
+    sites, and they were left alone as out of scope.
+    (5) Copilot's first round found an adjacent bug in the ts-res-ui-components deletion loop: `key in
+    delta` on a plain object dropped deletions of Object.prototype-named keys such as toString. The
+    `in` operator is invisible to no-prototype-builtins. It was fixed in this PR and pinned by a test.
+  sourceLine: '**Shipped:** `isKeyOf`, `Converters.strictObject` and six other property probes no longer throw on a null-prototype object — a converter handed `Object.create(null)` now returns a `Result` — and `no-prototype-builtins` gates the four packages that carried the class.'
+  headline: >
+    A converter handed an Object.create(null) value now returns a Result instead of throwing —
+    isKeyOf, strictObject and six ts-json / ts-res-ui-components property probes stopped calling
+    hasOwnProperty on the object itself.
+keywords:
+  - null prototype
+  - Object.create(null)
+  - hasOwnProperty
+  - no-prototype-builtins
+  - eslint rule
+  - converter throws instead of failing
+  - Result pattern violation
+  - type guard throws
+  - contagion sweep
+  - watched-fail regression test
+  - shared lint config
+relatedStreams:
+  - id: agent-tasks-t1
+    relationship: >
+      escalated the isKeyOf defect (result.md item 6) as an upstream gap it did not own; T3, T4 and
+      T5 each declined it by name before it became this stream
+sourceHash: 476ce29319230708 # sha256/16 over brief.md, result.md, state.md

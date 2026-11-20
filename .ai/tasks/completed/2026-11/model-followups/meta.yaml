@@ -1,0 +1,56 @@
+id: model-followups
+status: shipped
+packages: ['@fgv/ts-extras', '@fgv/ts-extras-mcp', '@fgv/ts-res-cli', '@fgv/testbed']
+prs: [774]
+openPrs: []
+opened: 2026-11-11
+closed: 2026-11-11
+summary:
+  intended: >
+    Close six recorded follow-ups: an OpenAI client-tool guard for a caller-built 'none' effort on a
+    thinking-required model (live-run-corrections F1); decide from the luna 400 whether gpt-6-luna
+    belongs on samplingParamsRejectedModelPrefixes and add OBSERVED canary rows (F2); make
+    resolveModel's callers fail rather than throw on a malformed ModelSpec (TECH_DEBT P3); make the
+    Groq output-token field a descriptor declaration if Groq's docs deprecate max_tokens
+    (model-alias-refresh Q5); harden five named flaky tests; re-check the held @openai:image and
+    gemini-embedding-2 aliases and record the embedding migration in FUTURE.md.
+  shipped: >
+    The client-tool guard, keyed on the OpenAI-format wire and thinkingRequiredModelPrefixes (so it
+    covers xAI's thinking-required models too). gpt-6-luna kept off the effort-blind list, with two
+    report-only luna rows (temp 1 and 0.3 beside effort low). A Result-returning ModelSpec walk that
+    names the provider and key path, moved with resolveModel into modelSpecResolver.ts. A
+    chatOutputTokensField descriptor field set to max_completion_tokens on OpenAI, Groq and xAI. Four
+    flaky tests made deterministic or confirmed already fixed (#745), the egress entry narrowed. Both
+    aliases held; FUTURE entry for gemini-embedding-2.
+  diverged: >
+    The luna decision came out as "do not list": the evidence was taken at luna's default reasoning
+    effort and the list is effort-blind, so the open question moved to OBSERVED rows. The
+    max_tokens change also covers xAI, whose reference deprecates max_tokens too. The F1 guard also
+    refuses xaiEffort 'none' on Grok's thinking-required models, by the same data-driven rule. The
+    ModelSpec walk moved out of model.ts because that file hit the 2000-line lint cap. The
+    saferFetchRetry flake was already fixed by #745; the egress flake did not reproduce and was
+    narrowed rather than fixed.
+  sourceLine: "**Shipped:** the client-tool path refuses a caller-built OpenAI-format `'none'` effort on a thinking-required model; a malformed `ModelSpec` fails with the provider and the offending key instead of throwing; Groq and xAI send `max_completion_tokens` through a new descriptor declaration; four flaky tests are deterministic and a fifth entry is narrowed; `gpt-6-luna` stays off the sampling-restricted list, with two report-only canary rows to settle it; both held aliases stay held."
+  headline: >
+    ai-assist sends max_completion_tokens to Groq and xAI, refuses a hand-built 'none' effort on
+    models that cannot turn thinking off, and fails rather than throws on a malformed model spec.
+keywords:
+  - chatOutputTokensField
+  - max_completion_tokens deprecation
+  - usesMaxCompletionTokensField
+  - client-tool thinking-off guard
+  - thinkingRequiredModelPrefixes
+  - effort-blind sampling list
+  - malformed ModelSpec
+  - walkModelSpec
+  - flaky test hardening
+  - fake clock progress deadline
+  - Argon2id fake KDF salt collision
+  - held alias re-check
+  - embedding space migration
+relatedStreams:
+  - { id: live-run-corrections, relationship: 'answers its F1 and F2 follow-ups' }
+  - { id: model-alias-refresh, relationship: 'answers its Q5; re-checks its held Q2 and Q4' }
+  - { id: model-max-output-tokens, relationship: 'closes the resolveModel TECH_DEBT entry from its review round 2' }
+  - { id: deterministic-timing-tests, relationship: 'its #745 had already fixed the saferFetchRetry flake' }
+sourceHash: sha256:f8458e671e2b2eaf # over brief.md + state.md + result.md

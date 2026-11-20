@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-browser-cli",
+      "comment": "Dependency update: `commander` ^11.1.0.",
+      "type": "patch"
+    }
+  ],
+  "packageName": "@fgv/ts-res-browser-cli",
+  "email": "noreply@anthropic.com"
+}

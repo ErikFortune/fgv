@@ -118,6 +118,15 @@ export class InMemoryDirectory<TCT extends string = string> {
   }
 
   /**
+   * Removes a child from the directory.
+   * @param name - The name of the child to remove.
+   * @returns `true` if the child was found and removed, `false` otherwise.
+   */
+  public removeChild(name: string): boolean {
+    return this._children.delete(name);
+  }
+
+  /**
    * Gets the absolute path for a child of this directory with the supplied
    * name.
    * @param name - The name of the child.
@@ -215,5 +224,29 @@ export class TreeBuilder<TCT extends string = string> {
       this.byAbsolutePath.set(file.absolutePath, file);
       return succeed(file);
     });
+  }
+
+  /**
+   * Ensures a directory exists at the given absolute path, creating
+   * intermediate directories as needed.
+   * @param absolutePath - The absolute path of the directory.
+   * @returns `Success` with the directory if successful, or
+   * `Failure` with an error message otherwise.
+   * @public
+   */
+  public addDirectory(absolutePath: string): Result<InMemoryDirectory<TCT>> {
+    const parts = absolutePath.split('/').filter((p) => p.length > 0);
+    let dir = this.root;
+    for (const part of parts) {
+      const result = dir.getOrAddDirectory(part);
+      if (result.isFailure()) {
+        return fail(result.message);
+      }
+      dir = result.value;
+      if (!this.byAbsolutePath.has(dir.absolutePath)) {
+        this.byAbsolutePath.set(dir.absolutePath, dir);
+      }
+    }
+    return succeed(dir);
   }
 }

@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "New `formatValueForMessage` renders any value for a message without throwing. Every converter and validator failure now uses it, so a cyclic, BigInt or Proxy input fails instead of throwing, and a throw from a function wrapped by `BaseConverter` or `GenericValidator` becomes a `Failure`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

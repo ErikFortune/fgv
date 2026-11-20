@@ -1,0 +1,52 @@
+id: model-max-output-tokens
+status: shipped
+packages: ['@fgv/ts-extras']
+prs: [765]
+openPrs: []
+opened: 2026-11-08
+closed: 2026-11-08
+summary:
+  intended: >
+    personaility#724: Anthropic and OpenAI refuse a maxTokens above a model's output limit, and
+    aliases resolve inside fgv, so a consumer cannot know the limit of the model a slot reaches. Add
+    IAiMaxOutputTokensCapability, an optional IAiProviderDescriptor field and an alias-first
+    resolveMaxOutputTokens built on resolveCapabilityForModel; no catch-all in the shipped registry;
+    populate every cloud provider from provider pages fetched in the run, with a citations table;
+    pin alias coverage; check DEFAULT_ANTHROPIC_MAX_TOKENS against every Anthropic limit; never clamp
+    an explicit maxTokens.
+  shipped: >
+    resolveMaxOutputTokens(descriptor, modelOverride?, context?) — resolveProviderModel's model
+    arguments, resolved through it — and IAiMaxOutputTokensCapability { modelId, maxOutputTokens }
+    on the descriptor field maxOutputTokens, matched by exact model id only. The registry records 11
+    Anthropic ids (128000; Haiku 4.5 and its named snapshot 64000) and 5 OpenAI ids (128000,
+    including gpt-5.4-nano's named snapshot), each cited. A request-body test checks the lookup
+    against the model callProviderCompletion actually sends. A test.each requires every cloud alias to resolve or sit on a commented
+    exclusion list that cannot go stale. DEFAULT_ANTHROPIC_MAX_TOKENS (4096) is below every recorded
+    limit, so no adapter changed; a test pins that finding.
+  diverged: >
+    Review amended the brief three times: longest-prefix matching (the briefed idiom) gave uncited
+    limits to sibling ids such as claude-opus-5-6 and gpt-6-luna-mini, and the dated-snapshot rule
+    that replaced it did the same for snapshots no page names, so matching became exact id only,
+    through its own matcher rather than resolveCapabilityForModel; and the lookup took only a string,
+    so it was given resolveProviderModel's ModelSpec and context parameters. A TECH_DEBT P3 was filed
+    for resolveModel throwing on an out-of-type ModelSpec. Not
+    every cloud provider could be populated: Gemini, Groq and Mistral docs could not be read, and
+    xAI's docs state only a default output length, so those record nothing. Anthropic pages give
+    "128K" without an exact integer; recorded as 128000 on the docs' own k = 1,000 usage.
+  sourceLine: '**Shipped:** `AiAssist.resolveMaxOutputTokens(descriptor, modelOverride?, context?)` in `@fgv/ts-extras` returns the largest `maxTokens` a provider accepts for the model a completion call with the same arguments would use, or `undefined` when the limit is unknown.'
+  headline: >
+    resolveMaxOutputTokens tells you the largest maxTokens the model a call will use accepts, from
+    the same ModelSpec and tier, so a slot can be capped at min(your cap, the model's limit).
+keywords:
+  - max output tokens
+  - maxTokens refusal
+  - output token limit
+  - model alias resolution
+  - provider capability lookup
+  - exact model id match
+  - ModelSpec tier resolution
+  - per-model fact
+  - DEFAULT_ANTHROPIC_MAX_TOKENS
+  - silent truncation
+  - fgv-ask
+sourceHash: sha256:ea2dbc1ba1cf5643 # over brief.md + state.md + result.md

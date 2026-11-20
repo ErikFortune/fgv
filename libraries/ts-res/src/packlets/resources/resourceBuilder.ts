@@ -165,7 +165,7 @@ export class ResourceBuilder {
   /**
    * Given a {@link ResourceJson.Json.IChildResourceCandidateDecl | child resource candidate declaration}, creates and adds a
    * {@link Resources.ResourceCandidate | candidate} to the resource being built.
-   * @param candidate - The {@link ResourceJson.Json.IChildResourceCandidateDecl | IChildResourceCandidateDecl} to add to the
+   * @param childDecl - The {@link ResourceJson.Json.IChildResourceCandidateDecl | IChildResourceCandidateDecl} to add to the
    * resource being built.
    * @returns `Success` with the added {@link Resources.ResourceCandidate | candidate} if successful,
    * or `Failure` with an error message if not.
@@ -203,7 +203,7 @@ export class ResourceBuilder {
   /**
    * Given a {@link ResourceJson.Json.ILooseResourceCandidateDecl | resource candidate declaration}, creates and adds a
    * {@link Resources.ResourceCandidate | candidate} to the resource being built.
-   * @param candidate - The {@link ResourceJson.Json.ILooseResourceCandidateDecl | IResourceCandidateDecl} to add to the
+   * @param decl - The {@link ResourceJson.Json.ILooseResourceCandidateDecl | IResourceCandidateDecl} to add to the
    * resource being built.
    * @returns `Success` with the added {@link Resources.ResourceCandidate | candidate} if successful,
    * or `Failure` with an error message if not. Fails with error detail 'type-mismatch' if the candidate

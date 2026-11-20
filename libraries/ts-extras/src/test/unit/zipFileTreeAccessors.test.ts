@@ -23,6 +23,7 @@
 import '@fgv/ts-utils-jest';
 import { zipSync, Zippable } from 'fflate';
 import { Validators, fail, succeed, Result } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { ZipFileTreeAccessors, ZipFileItem } from '../../packlets/zip-file-tree';
 
 describe('ZipFileTreeAccessors', () => {
@@ -370,7 +371,7 @@ describe('ZipFileTreeAccessors', () => {
   describe('fromFile method', () => {
     it('should create ZipFileTreeAccessors from File object', async () => {
       const zipBuffer = createTestZip();
-      const file = new File([zipBuffer.buffer.slice(0) as ArrayBuffer], 'test.zip', {
+      const file = new File([Uint8Array.from(zipBuffer)], 'test.zip', {
         type: 'application/zip'
       });
 
@@ -1026,6 +1027,31 @@ describe('ZipFileTreeAccessors', () => {
     });
   });
 
+  describe('read-only behavior', () => {
+    let accessors: ZipFileTreeAccessors;
+
+    beforeEach(() => {
+      const zipBuffer = createTestZip();
+      accessors = ZipFileTreeAccessors.fromBuffer(zipBuffer).orThrow();
+    });
+
+    it('isMutableAccessors returns false for ZIP accessors', () => {
+      expect(FileTree.isMutableAccessors(accessors)).toBe(false);
+    });
+
+    it('isMutableFileItem returns false for ZIP file items', () => {
+      expect(accessors.getItem('/manifest.json')).toSucceedAndSatisfy((item) => {
+        expect(FileTree.isMutableFileItem(item)).toBe(false);
+      });
+    });
+
+    it('isMutableDirectoryItem returns false for ZIP directory items', () => {
+      expect(accessors.getItem('/input')).toSucceedAndSatisfy((item) => {
+        expect(FileTree.isMutableDirectoryItem(item)).toBe(false);
+      });
+    });
+  });
+
   describe('contentType functionality', () => {
     // Helper function for tests that need special character files
     const createSpecialCharZip = (): Buffer => {
@@ -1193,7 +1219,7 @@ describe('ZipFileTreeAccessors', () => {
 
     it('should handle file factory method with contentType', async () => {
       const zipBuffer = createTestZip();
-      const file = new File([zipBuffer.buffer.slice(0) as ArrayBuffer], 'test.zip', {
+      const file = new File([Uint8Array.from(zipBuffer)], 'test.zip', {
         type: 'application/zip'
       });
 

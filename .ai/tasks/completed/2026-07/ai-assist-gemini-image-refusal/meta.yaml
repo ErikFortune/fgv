@@ -1,0 +1,60 @@
+id: ai-assist-gemini-image-refusal
+status: shipped
+packages: ['@fgv/ts-extras']
+prs: [520]
+closed: 2026-07
+summary:
+  intended: >
+    Stop reporting a well-behaved Gemini image-generation refusal as a wire-shape parse
+    failure. Model `finishMessage`, make the candidate's `content` optional, drop the
+    non-empty `parts` constraint, and fail with a legible, substring-matchable
+    `Gemini image generation declined: <finishReason>[ — <finishMessage>]` instead of
+    `candidates[0].content: Field not found`.
+  shipped: >
+  diverged: >
+  # summary.shipped / diverged intentionally BLANK: the directory holds only brief.md —
+  # no result.md, no README.md, no state.md. There is no authored account of what the
+  # stream did, and synthesizing one from the brief plus the current source would present
+  # this sweep's inference as the stream's own record. See notes for the sweep's finding.
+  sourceLine: '# Brief — ai-assist: surface Gemini image-generation refusals cleanly'
+  # sourceLine is the opening line of brief.md (the commission), NOT a result/README
+  # opener — this stream has neither.
+keywords:
+  - gemini
+  - image generation
+  - refusal
+  - finishReason
+  - finishMessage
+  - IMAGE_OTHER
+  - validator optionality
+  - error legibility
+  - mis-signal
+  - consumer bug report
+  - PersonAIlity avatar
+notes: >
+  RETROACTIVE finalize sweep, 2026-08-14. The directory contains only brief.md, which is
+  ambiguous on its face (never ran? absorbed elsewhere? shipped without an exit artifact?).
+  Resolved by external evidence, not by the artifacts:
+
+  (1) Merged commit e824d57d8 "fix(ai-assist): surface Gemini image-generation refusals
+  cleanly (#520)", dated 2026-07-07, is on origin/release.
+
+  (2) The brief's concrete asks are present in current source. In
+  `libraries/ts-extras/src/packlets/ai-assist/imageGenerationClient.ts` (the file the
+  `apiClient.ts` split, #620, later carved this path into): `finishMessage?: string` on the
+  candidate interface (:174), `finishMessage: Validators.string.optional()` in the validator
+  (:196), and the refusal branch building
+  `Gemini image generation declined: ${finishReason}${suffix}` with the suffix guarded on a
+  truthy `finishMessage` (:509-512). Tests exist at
+  `src/test/unit/ai-assist/apiClient.imageGeneration.test.ts:770-817` covering the
+  content-less refusal, the no-`finishMessage` (no dangling separator) case, and a
+  `finishReason`-carrying empty-parts case; `apiClient.antagonist.test.ts:122-155` later
+  extended the same message contract.
+
+  Verdict: SHIPPED. The stream ran and landed as briefed; it simply never wrote an exit
+  artifact. This paragraph is THIS SWEEP's finding from source and git, attributed here
+  rather than promoted into `summary.shipped`, which stays blank by design.
+
+  No divergence assessment is possible: `diverged` is the delta between brief and result,
+  and there is no result. It is blank because it is unknowable, not because it is empty.
+sourceHash: ea72a430430781cb

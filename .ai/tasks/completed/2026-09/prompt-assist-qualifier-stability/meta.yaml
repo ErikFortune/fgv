@@ -1,0 +1,60 @@
+id: prompt-assist-qualifier-stability
+status: shipped
+packages:
+  - '@fgv/ts-prompt-assist'
+# Anticipating the merge, per `.ai/conventions/workflow/artifact-protocol.md`
+# § "A PR anticipates its own merge".
+prs: [689]
+openPrs: []
+opened: 2026-09-23
+closed: 2026-09-23
+summary:
+  intended: >
+    Two PersonAIlity asks. A: carry `composition` on `IPromptResolveObservation`, populated from
+    `resolved.composition` by plain assignment, without hoisting `cacheFindings`. B: give a
+    qualifier axis a declared stability (option 1 of three offered; the call-site-override and
+    per-resolve-map options refused on written principle), and have D2 refute a claim only when a
+    qualifier that conditioned the winning candidate is declared less stable than the claim, naming
+    the axis. Undeclared axes must reproduce the existing refutations exactly, pinned by a test, and
+    `@fgv/ts-res` must not change.
+  shipped: >
+    Both asks as briefed. `IExpectedQualifierAxis.stability?` (default 'per-request', converter-
+    parsed); `candidates?` / `qualifiers?` on `IPromptCacheStabilityAnalysisParams`, joined by
+    `candidateIndex` to prompt-assist's own `ConditionSetDecl`s; the finding `detail` names each
+    refuting axis and its declaration; the template section path gets the same treatment. The
+    compatibility contract and the positive case (slot and template, end-to-end) are pinned by tests.
+    No file under `libraries/ts-res/` changed.
+  diverged: >
+    Two additions the brief did not specify, both following from its rule. (1) A refuted
+    conditional-body claim is lowered to the body's conditioning level (the least stable
+    conditioning axis), not always to 'per-request'; with nothing declared that level is
+    'per-request', so no existing refutation moved. (2) Crediting only the winners' axes would have
+    introduced a false 'frozen': a winner conditioned on a frozen axis beside a losing partial
+    conditioned on an undeclared one used to be refuted (any conditional winner put the body at
+    'per-request') and would no longer have been. Once the body is conditional, the axes of losing
+    candidates and `matchAsDefault` winners are now folded in. The first code-reviewer pass missed
+    this; it was found while writing result.md. The all-unconditional-winners gap predates the
+    stream and is left as-is.
+  sourceLine: '**Shipped:** a resolve observation now carries the composition it was computed with, and a qualifier axis can declare how often it changes — so a body conditioned only on axes that never change stops being refuted as volatile, and a refutation names the axis responsible.'
+  headline: 'Shipped: a qualifier axis can declare how often it changes, so a body conditioned only on never-changing axes is no longer refuted as volatile; resolve observations carry their composition.'
+keywords:
+  - qualifier axis stability declaration
+  - conditional body refutation
+  - D2 cache stability check
+  - prompt cache false frozen
+  - losing candidate conditioning
+  - candidateIndex join to condition declaration
+  - IConditionMatchResult does not name qualifier
+  - observation record composition
+  - unfalsifiable override refused
+  - second source of truth refused
+  - compatibility contract pinned by test
+  - widened classification needs repo-wide test
+relatedStreams:
+  - id: ai-assist-prompt-caching
+    relationship: >
+      introduced D1–D5 and the conditional-body check this stream refines; its design.md §9 still
+      describes D2 as refuting on any conditional body, which is correct as a record of that stream
+  - id: prompt-composition-metadata
+    relationship: introduced `IPromptComposition`, which Ask A carries onto the observation record
+sourceHash: 2b4184c7b346f9ab # sha256/16 over brief.md, result.md, state.md

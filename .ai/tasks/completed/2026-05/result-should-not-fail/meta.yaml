@@ -1,0 +1,87 @@
+id: result-should-not-fail
+status: shipped
+packages: ['@fgv/ts-utils']
+prs: [400]
+opened: 2026-05-21
+closed: 2026-05
+summary:
+  intended: >
+    Add a sibling to `.orThrow()` on `Result<T>` for declaration-time / setup-time
+    invariants — `shouldNotFail(label?, frameDepth?)` — that throws on a `Failure`
+    with an error message auto-composed from the original failure message plus the
+    captured call site (function, file, line), replacing the verbose
+    `.orThrow()` + `.withErrorFormat(() => 'context')` boilerplate at module-level
+    `const` declarations, static class property initializers, static initialization
+    blocks, and test fixtures. The brief LOCKED the design: exact signature, the
+    four-row conditional message-format table, `Error.captureStackTrace` on V8 with
+    a WebKit fallback that filters `shouldNotFail` frames, and an inline two-format
+    stack parser to keep `@fgv/ts-utils` dependency-free. Also update the
+    `/result-pattern` skill with a "Declaration-time fallible work" section.
+    Explicitly out of scope: a jest `expect`-flavoured variant, a compile-time
+    TypeScript transformer, any change to `.orThrow()`, source-map helpers.
+  shipped: >
+    All of it, unreduced. `shouldNotFail(label?, frameDepth?)` landed on `IResult`,
+    `Success<T>` and `Failure<T>` in `libraries/ts-utils/src/packlets/base/`, with
+    the inline V8 + WebKit frame parser and the locked four-row message format
+    intact. Four `@internal` underscore-prefixed helpers (`_parseStackFrame`,
+    `_findShouldNotFailFrame`, `_formatShouldNotFailMessage`,
+    `_normalizeShouldNotFailFnName`) plus the `_IShouldNotFailFrame` type carry the
+    parsing. 32 tests at 100% coverage across four metrics, including synthesized
+    V8 and WebKit stack strings and a runtime path that nulls out
+    `Error.captureStackTrace` via `Reflect.set`. `etc/ts-utils.api.md` regenerated
+    additively, `minor` change file, `/result-pattern` skill updated with the new
+    section and `.orThrow()` repositioned in its Extracting Values table.
+    PR #400 merged to `release` 2026-05-21 (5 commits, 11 files, +897/-2).
+  diverged: >
+    The *design* did not move; the *implementation shape* did, twice, and both
+    moves came from post-PR-open review rather than from the stream's own work.
+    (1) The brief said only "throws an `Error` constructed from the Result's failure
+    message + captured call-site info" — the first implementation did exactly that
+    and was WRONG: it captured a `shouldNotFail`-elided stack on a temp `Error`,
+    parsed it, then threw a *fresh* `new Error(message)`, discarding the elided
+    stack so the thrown `.stack` still pointed inside `Failure.shouldNotFail`. The
+    obvious fix (reuse the same `Error`, assign `.message`) surfaced a *second*
+    V8-specific regression: `.stack` is materialized lazily on first read and caches
+    its header with whatever message was set at that moment, so reading `.stack` to
+    find the frame froze the header at `Error` with no message. The shipped shape is
+    a **two-Error probe-then-final pattern** — a probe `Error` with
+    `captureStackTrace` purely to identify the caller frame and compose the message,
+    then a second `Error(formattedMessage)` with its own `captureStackTrace`. Both
+    regressions were caught by `@copilot-pull-request-reviewer` after the PR opened
+    (commits `6a2a3291`, `16a4d337`) and are each pinned by a regression test. This
+    pattern is not in the brief and could not have been — it is a V8 lazy-`.stack`
+    interaction the locked design did not anticipate.
+    (2) The `@internal` helpers were extracted out of `result.ts` into a sibling
+    `shouldNotFail.ts` on Erik's review (commit `774a384d`), so the README's
+    "Files touched" line placing them in `result.ts` is stale as of merge.
+    (3) The brief's implicit test design ("call `shouldNotFail` in a test arrow,
+    assert the test file shows up") does not work: jest-circus runs synchronous test
+    bodies through a Promise microtask, so the anonymous arrow is absent from V8's
+    synchronous stack and the most-recent frame is `Promise.then.completed` in
+    jest-circus internals. Tests wrap the call in named local functions instead —
+    a pattern that doubles as the `frameDepth: 2` case. Relatedly, a naïve
+    `line.includes('shouldNotFail')` frame filter dropped every frame in the test
+    file, which is itself named `shouldNotFail.test.ts`; the filter had to be scoped
+    to the *parsed* `fn` field, never raw line text.
+    Nothing was cut, no verdict reversed, and no stop-and-surface trigger fired
+    (in particular the WebKit format-incompatibility trigger did not). Test count
+    moved 31 → 32 across the review follow-ups; `README.md` and `phase-result.md`
+    both still say 31.
+  sourceLine: 'Added `Result<T>.shouldNotFail(label?, frameDepth?)` on `@fgv/ts-utils`.'
+keywords:
+  - stack-trace parsing
+  - Error.captureStackTrace
+  - V8 lazy stack materialization
+  - WebKit stack format fallback
+  - declaration-time invariant
+  - module-top-level const initialization
+  - static initializer
+  - test fixture setup
+  - orThrow sibling
+  - call-site attribution
+  - frameDepth
+  - source-map dependence
+  - api-extractor internal underscore helpers
+  - jest-circus microtask test bodies
+  - regression caught in post-PR review
+sourceHash: 152b8a476a7eec56

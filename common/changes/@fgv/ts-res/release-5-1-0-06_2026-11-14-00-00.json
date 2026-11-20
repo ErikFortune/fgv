@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res",
+      "comment": "Upgrading from 5.0.2: `QualifierCollector`'s protected constructor now takes `(qualifierTypes, qualifiers?)` instead of `(params)`; a subclass calling `super(params)` must pass the two values.",
+      "type": "major"
+    }
+  ],
+  "packageName": "@fgv/ts-res",
+  "email": "noreply@anthropic.com"
+}

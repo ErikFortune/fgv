@@ -1,0 +1,962 @@
+/*
+ * Copyright (c) 2026 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/**
+ * Public types for the MCP → ai-assist client-tools boundary.
+ * @packageDocumentation
+ */
+
+import { type Logging } from '@fgv/ts-utils';
+import { AiAssist, type SaferFetch } from '@fgv/ts-extras';
+import { type JsonSchema, type JsonValue } from '@fgv/ts-json-base';
+
+import { type McpOAuthClientProvider } from './sdkTypes';
+
+// ============================================================================
+// Transport
+// ============================================================================
+
+/**
+ * Parameters for {@link createStdioTransport}. The transport spawns `command` as a
+ * subprocess and speaks MCP over its stdin/stdout.
+ *
+ * @remarks
+ * **Security:** stdio transport executes a consumer-supplied command. Treat `command`/`args`
+ * as a trust boundary — never source them from untrusted input. See the package README.
+ *
+ * @public
+ */
+export interface IMcpStdioTransportParams {
+  /** Executable to spawn (e.g. `'npx'`, `'node'`, an absolute path). */
+  readonly command: string;
+  /** Arguments passed to the command. */
+  readonly args?: ReadonlyArray<string>;
+  /** Environment variables for the spawned process. When omitted, the SDK's safe default set is used. */
+  readonly env?: Record<string, string>;
+  /** Working directory for the spawned process. */
+  readonly cwd?: string;
+}
+
+/**
+ * The `fetch` a Streamable-HTTP transport sends every request through. Structurally the same as
+ * `SaferFetch.GuardedFetch` from `@fgv/ts-extras`, so a function from `SaferFetch.createGuardedFetch`
+ * fits it directly.
+ * @public
+ */
+export type McpFetch = (url: string | URL, init?: RequestInit) => Promise<Response>;
+
+/**
+ * Parameters for {@link createHttpTransport}. The transport connects to a Streamable-HTTP MCP
+ * endpoint.
+ * @public
+ */
+export interface IMcpHttpTransportParams {
+  /** Absolute `http`/`https` URL of the MCP server endpoint. */
+  readonly url: string;
+  /**
+   * Optional static headers (e.g. an `Authorization` bearer token or an `x-api-key`). Each name may
+   * appear once: header names are case-insensitive, so `X-Api-Key` and `x-api-key` together are
+   * refused rather than sent as one combined value.
+   *
+   * The headers are **copied** when {@link createHttpTransport} is called: changing or adding to
+   * this record afterwards has no effect on any request. Create a new transport to change them.
+   *
+   * They are applied by the package, **only to requests whose URL is on the MCP endpoint's
+   * origin** — never to the authorization server or any other origin. There a static header replaces
+   * one of the same name (a static `Authorization` overrides the OAuth provider's bearer token, as the
+   * SDK's own merge did).
+   *
+   * **Redirects.** The package sees only a request's first URL, so what happens on a redirect is the
+   * `fetch`'s. Without a consumer `fetch` (`globalThis.fetch`), a request carrying static headers
+   * refuses redirects (`redirect: 'error'`), because the platform would carry them to any origin. With
+   * a guarded fetch, its default `redirectPolicy: 'reject'` holds; under `'validate-each-hop'` a
+   * static header crosses a redirect to another origin unless it is listed in `sensitiveHeaders`. A
+   * consumer `fetch` of any other kind is called by the SDK with `redirect: 'manual'`. If it honours
+   * that, the SDK follows only a method-preserving redirect within the origin; if it ignores it, the
+   * fetch's own redirect handling applies.
+   */
+  readonly headers?: Record<string, string>;
+  /**
+   * The `fetch` every HTTP request of the session goes through: each `POST`, the standalone `GET`
+   * event stream, and the `DELETE` that {@link closeMcpSession} sends.
+   *
+   * @remarks
+   * **Use `SaferFetch.createGuardedFetch` with `SaferFetch.blockPrivateNetworks()`** (both from
+   * `@fgv/ts-extras`). That gives MCP egress the same SSRF protection as every other safer-fetch
+   * call — the address guard on every hop, redirects rejected by default — without buffering the
+   * long-lived event streams. A refusal fails the operation with the `'egress-blocked'`
+   * {@link McpFailureReason}. Every refusal is also logged at `detail` to the session's logger, by
+   * its kind only — including one no operation waits on, such as the standalone event stream or the
+   * OAuth discovery the SDK runs after a 401 on its background reconnect.
+   *
+   * **Size `headersTimeoutMs` to your longest MCP request timeout.** The guarded fetch's headers
+   * deadline (default 10 s) runs from each request until its response headers arrive. A server
+   * that answers with JSON rather than an SSE stream holds a `tools/call`'s headers until the tool
+   * finishes, so a 15 s tool fails at 10 s — as `'timeout'` — whatever `timeoutMs` the call was
+   * given. Set `headersTimeoutMs` on `createGuardedFetch` to at least your longest `timeoutMs`.
+   * The package cannot see the guarded fetch's deadline, so it does not warn.
+   *
+   * Refusals are recognized by class, so the guarded fetch must come from the same `@fgv/ts-extras`
+   * this package resolves (it is a peer dependency): one from a second installed copy classifies as
+   * `'transport'`.
+   *
+   * **Any other `fetch` gets no protection from this package.** When omitted, the platform's
+   * `globalThis.fetch` is used, which connects to any address — including a private one — and the
+   * same is true of any function supplied here that does not guard. A custom `fetch` is still the
+   * right seam for a metered or pinned egress path. Redirects are then bounded only by the SDK's
+   * own default `redirectPolicy: 'same-origin'`: it calls the fetch with `redirect: 'manual'` and,
+   * for a fetch that honours that, follows a redirect that keeps the method and the origin (or goes
+   * from http to https on the same host) and fails the request on any other.
+   *
+   * If the guarded fetch allows redirects, list the static credential headers above and
+   * `mcp-session-id` in its `sensitiveHeaders`: `fetch` strips only `authorization` on a
+   * cross-origin redirect.
+   *
+   * With an {@link IMcpHttpTransportParams.authProvider}, OAuth discovery, client registration and
+   * token requests go through this `fetch` too — so the guard also covers the authorization server
+   * the MCP server names.
+   */
+  readonly fetch?: McpFetch;
+  /**
+   * An OAuth 2.1 client provider, for servers that require the MCP authorization flow. The SDK
+   * attaches its access token to every request, refreshes it on a 401, and runs discovery and
+   * client registration as needed.
+   *
+   * @remarks
+   * **Interactive authorization runs only inside {@link connectMcpSession}.** The provider's
+   * `state`, `saveCodeVerifier` and `redirectToAuthorization` are forwarded while the consumer's
+   * connect is in progress, and refused at any other time — on a later call, on the SDK's own
+   * reconnect of the standalone event stream, and on close. A refused step fails the operation with
+   * the `'unauthorized'` {@link McpFailureReason}; reconnect to authorize. For a flow that starts
+   * outside the window the refusal comes before any of the three has run. A flow that starts
+   * inside a connect which then times out or is aborted can already have passed `state` and
+   * `saveCodeVerifier` — and persisted what your provider persists there — and be refused only at
+   * `redirectToAuthorization`. `redirectToAuthorization` is also refused for a URL that is neither
+   * `https:` nor `http:` on a loopback host: the authorization endpoint comes from server-supplied
+   * metadata, so treat the URL as untrusted.
+   *
+   * **Non-interactive steps run wherever the SDK needs them**, including on its background
+   * reconnect of the event stream: discovery and `saveDiscoveryState`, client registration and
+   * `saveClientInformation`, a token refresh and `saveTokens`, and `invalidateCredentials` when the
+   * authorization server answers `invalid_grant` or `invalid_client`.
+   *
+   * After `redirectToAuthorization`, the connect fails `'unauthorized'`. Exchange the authorization
+   * code with the SDK's `auth()` (which saves the tokens through this provider) — **pass your
+   * guarded fetch as its `fetchFn`, or the token request bypasses the guard** — then connect again
+   * with a new transport.
+   *
+   * Static `headers` are never applied to a request for the authorization server: the package
+   * applies them only to requests whose URL is on the MCP endpoint's origin (for redirects, see
+   * {@link IMcpHttpTransportParams.headers}).
+   *
+   * The SDK is given a wrapper, not this object: a forwarding facade that gates the interactive
+   * steps. It is a different object from your provider, so an identity comparison against it fails.
+   */
+  readonly authProvider?: McpOAuthClientProvider;
+}
+
+/**
+ * The minimal structural shape of an MCP SDK client transport, accepted by
+ * {@link createCustomTransport}.
+ *
+ * @remarks
+ * Every `@modelcontextprotocol/sdk` client transport satisfies this shape — the SDK's
+ * `InMemoryTransport` (for tests against an in-process server), `SSEClientTransport`,
+ * `WebSocketClientTransport`, or a consumer's own `Transport` implementation. It is declared
+ * structurally so this package's public surface never names an SDK type; the SDK's own `Transport`
+ * interface is what the object must actually implement at runtime, because the SDK client takes
+ * ownership of it (assigning its `onmessage` / `onclose` / `onerror` callbacks) when the session
+ * connects.
+ *
+ * Two runtime obligations the type cannot express:
+ *
+ * - **`close()` must call the `onclose` callback** the SDK assigned. That is how the SDK fails the
+ *   session's in-flight requests and how {@link IConnectMcpSessionParams.onClose} is told.
+ * - **It must be fresh: unstarted, and without a `sessionId`.** The SDK skips the `initialize`
+ *   handshake for a transport that already has a session id, treating it as a reconnect — so a
+ *   session connected over one would never have negotiated. {@link createCustomTransport} refuses
+ *   a transport whose `sessionId` is already set.
+ *
+ * @public
+ */
+export interface IMcpSdkTransport {
+  /** Starts the transport. Called by the SDK client during {@link connectMcpSession}. */
+  start(): Promise<void>;
+  /** Sends one JSON-RPC message. */
+  send(message: unknown, options?: unknown): Promise<void>;
+  /** Closes the transport. Must call the `onclose` callback the SDK assigned. */
+  close(): Promise<void>;
+  /** The transport's session id, when it has one. Must be unset when the transport is wrapped. */
+  readonly sessionId?: string;
+
+  // The three callback slots are declared in method syntax on purpose. Method parameters are
+  // bivariant, and here that is what we want: the SDK's own transports declare `onmessage` over
+  // its `JSONRPCMessage` type, and must still assign to this SDK-agnostic shape (the same reason
+  // `send` takes `unknown`). This is the opposite of `IAiClientTool.execute`, where bivariance
+  // would let an implementation demand more than its contract supplies.
+
+  /**
+   * Assigned by the SDK when the session connects. `close()` must call it, which is how the SDK
+   * fails the session's in-flight requests and how `onClose` is told.
+   */
+  onclose?(): void;
+  /** Assigned by the SDK when the session connects; call it to report a non-fatal transport error. */
+  onerror?(error: Error): void;
+  /** Assigned by the SDK when the session connects; call it with each JSON-RPC message received. */
+  onmessage?(message: unknown, extra?: unknown): void;
+}
+
+/**
+ * Which kind of transport an {@link IMcpTransport} handle wraps: one this package constructed
+ * (`'stdio'`, `'http'`), or a consumer-supplied SDK transport (`'custom'`).
+ * @public
+ */
+export type McpTransportKind = 'stdio' | 'http' | 'custom';
+
+/**
+ * Opaque handle to an MCP transport produced by {@link createStdioTransport},
+ * {@link createHttpTransport} or {@link createCustomTransport}. Hand it to
+ * {@link connectMcpSession}; do not construct directly.
+ *
+ * @remarks
+ * A handle is single-use: the session that connects over it owns the underlying transport, and
+ * closing that session closes the transport.
+ * @public
+ */
+export interface IMcpTransport {
+  /** Which transport kind this handle wraps. */
+  readonly transportKind: McpTransportKind;
+}
+
+// ============================================================================
+// Session
+// ============================================================================
+
+/**
+ * Parameters for {@link connectMcpSession}.
+ * @public
+ */
+export interface IConnectMcpSessionParams {
+  /**
+   * A transport produced by {@link createStdioTransport}, {@link createHttpTransport} or
+   * {@link createCustomTransport}.
+   */
+  readonly transport: IMcpTransport;
+  /** Client name advertised to the server during the initialize handshake. Default `'@fgv/ts-extras-mcp'`. */
+  readonly clientName?: string;
+  /** Client version advertised to the server. Default the package version. */
+  readonly clientVersion?: string;
+  /** Optional logger for connection diagnostics. */
+  readonly logger?: Logging.ILogger;
+  /**
+   * Called once when the session's connection closes, for any reason: the server process exited,
+   * the transport failed, or {@link closeMcpSession} was called. It is never called for a session
+   * whose connect failed, and never more than once.
+   *
+   * @remarks
+   * This is an observation, not a policy: the package never reconnects. A consumer that pools
+   * sessions uses it to retire a dead session before its next call rather than after. A call made
+   * on a closed session fails with the `'not-connected'` {@link McpFailureReason}.
+   *
+   * The callback runs synchronously inside the SDK's close handling. A throw from it is caught (and
+   * logged to `logger`, when one is supplied) so that it cannot stop the SDK from failing the
+   * session's in-flight requests. It may be `async`: a promise it returns is not awaited (the SDK
+   * fails the in-flight requests straight after), but a rejection of that promise is caught and
+   * logged the same way, never left as an unhandled rejection.
+   *
+   * A Streamable-HTTP session has no connection to lose between requests, so a server that
+   * restarted is not observed here; the next call reports it, as `'session-expired'` when the
+   * server answers HTTP 404 for the stale session id.
+   */
+  readonly onClose?: () => void | Promise<void>;
+  /**
+   * Called when the server sends `notifications/tools/list_changed`: its tool catalog has changed
+   * since the consumer last listed it.
+   *
+   * @remarks
+   * An observation only: the package does not re-list. Call {@link listMcpTools} (or
+   * {@link adaptMcpTools}) when it fires. Once the session is returned it fires once per
+   * notification, and never once
+   * {@link closeMcpSession} has been called (an HTTP close can stay open for up to two seconds
+   * while the server's session is terminated), after the connection has closed, or for a session
+   * whose connect failed. Any notifications that
+   * arrive while the connect is still settling are delivered as one call (a single re-list covers
+   * them all), shortly after
+   * {@link connectMcpSession} has returned the session, so the callback can always use the handle.
+   *
+   * Whether a server sends the notification is its choice; one that advertises
+   * `capabilities.tools.listChanged` says it will. The callback is contained exactly as
+   * `onClose` is: a throw, or a rejection of the promise an `async` callback returns, is caught and
+   * logged to `logger`, never propagated and never left unhandled.
+   */
+  readonly onToolsChanged?: () => void | Promise<void>;
+  /**
+   * Timeout in milliseconds for the whole connect: starting the transport, the `initialize`
+   * request, and sending `notifications/initialized`. Defaults to the SDK's 60 000. Expiry fails the
+   * connect with the `'timeout'` {@link McpFailureReason} and starts closing the transport; the
+   * failure is returned without waiting for that close, so teardown (a stdio child's exit, a slow
+   * custom `close()`) can finish after the connect has returned. Must be a
+   * positive, finite number no greater than 2³¹−1 (`setTimeout`'s limit); anything else fails with
+   * `'invalid-options'`.
+   */
+  readonly timeoutMs?: number;
+  /**
+   * Aborts the connect. An abort at any point before the connect settles — while the transport
+   * starts, while `initialize` is in flight, or while the SDK sends `notifications/initialized` —
+   * fails the connect with the `'aborted'` {@link McpFailureReason} and starts closing the
+   * transport, so an aborted connect never hands back a live session. As with a timeout, the
+   * failure does not wait for the close to finish.
+   */
+  readonly signal?: AbortSignal;
+}
+
+/**
+ * Server identity reported during the MCP initialize handshake.
+ * @public
+ */
+export interface IMcpServerInfo {
+  /** Server-advertised name. */
+  readonly name: string;
+  /** Server-advertised version. */
+  readonly version: string;
+}
+
+/**
+ * Opaque handle to a connected MCP session. Pass it to {@link listMcpTools},
+ * {@link callMcpTool}, {@link adaptMcpTools}, and {@link closeMcpSession}.
+ * @public
+ */
+export interface IMcpSession {
+  /** Client name advertised during the handshake. */
+  readonly clientName: string;
+  /** Client version advertised during the handshake. */
+  readonly clientVersion: string;
+  /** Server identity reported by the handshake, when the server provided one. */
+  readonly serverInfo: IMcpServerInfo | undefined;
+}
+
+// ============================================================================
+// Per-request options
+// ============================================================================
+
+/**
+ * A progress notification from the server for an in-flight request.
+ * @public
+ */
+export interface IMcpProgress {
+  /** Progress so far. Increases with each notification. */
+  readonly progress: number;
+  /** The total, when the server knows it. */
+  readonly total?: number;
+  /** A human-readable progress message, when the server sent one. */
+  readonly message?: string;
+}
+
+/**
+ * Options for a single MCP request, mapped onto the SDK's `RequestOptions`. Accepted by
+ * {@link callMcpTool} and {@link listMcpTools}.
+ *
+ * @remarks
+ * When the request is aborted or its `timeoutMs` elapses, the SDK sends the server a
+ * `notifications/cancelled` for it, so the server can stop the work rather than run it to
+ * completion. Whether it does is the server's choice. **Exception:** when `maxTotalTimeoutMs`
+ * trips (it is checked as a progress notification arrives), the SDK fails the request without
+ * sending a cancellation, so the server is not told to stop; pair it with a `signal` you abort on
+ * a `'timeout'` failure if that matters.
+ * @public
+ */
+export interface IMcpRequestOptions {
+  /**
+   * Request timeout in milliseconds. When it elapses the request fails with the `'timeout'`
+   * {@link McpFailureReason}. Defaults to the SDK's `DEFAULT_REQUEST_TIMEOUT_MSEC`, 60 000.
+   * For {@link listMcpTools} it applies to each page. Must be a positive, finite number no greater
+   * than 2³¹−1 (`setTimeout`'s limit; the SDK would otherwise fire a larger or infinite value after
+   * 1 ms); anything else fails with `'invalid-options'` before a request is sent.
+   */
+  readonly timeoutMs?: number;
+  /**
+   * Aborts the request. A request aborted before it settles fails with the `'aborted'`
+   * {@link McpFailureReason}, never `'timeout'` or `'transport'`; a signal already aborted when
+   * the call is made fails the same way without sending anything.
+   */
+  readonly signal?: AbortSignal;
+  /**
+   * Receives the server's progress notifications for this request. Supplying it is what asks the
+   * server for progress (the SDK attaches a progress token only when a callback is given).
+   */
+  readonly onProgress?: (progress: IMcpProgress) => void;
+  /** When `true`, each progress notification restarts the `timeoutMs` clock. Default `false`. */
+  readonly resetTimeoutOnProgress?: boolean;
+  /**
+   * An overall limit, in milliseconds, that progress cannot extend. The SDK checks it when a
+   * progress notification arrives, so it only has effect together with `resetTimeoutOnProgress`.
+   * The same range as `timeoutMs` applies.
+   */
+  readonly maxTotalTimeoutMs?: number;
+}
+
+/**
+ * Which bound of a paged tool listing was exceeded — the `limit` of the `'limit-exceeded'`
+ * {@link McpFailureReason}.
+ * @public
+ */
+export type McpListingLimit = 'maxPages' | 'maxTotalMs';
+
+/**
+ * Options for {@link listMcpTools}: the per-request options, applied to each page, plus bounds over
+ * the whole paged listing.
+ *
+ * @remarks
+ * Neither bound has a default: without them a server can page without end, or slowly, for as long
+ * as it likes. Exceeding either fails the whole listing with the `'limit-exceeded'`
+ * {@link McpFailureReason}, naming the bound in `limit`; the pages already read are discarded, never
+ * returned as a truncated catalog.
+ * @public
+ */
+export interface IListMcpToolsOptions extends IMcpRequestOptions {
+  /**
+   * The most pages the listing may read. A listing whose page number `maxPages` still carries a
+   * `nextCursor` fails without requesting another page; a catalog of exactly `maxPages` pages
+   * succeeds. Must be a positive integer; anything else fails with `'invalid-options'` before a
+   * request is sent.
+   */
+  readonly maxPages?: number;
+  /**
+   * An overall deadline, in milliseconds, over the whole paged listing, measured from the call. It
+   * is checked before each page is requested, and a page in flight when it elapses is aborted
+   * (the SDK sends the server a `notifications/cancelled` for it). A page that settled before the
+   * deadline fired is kept. It runs alongside each page's own `timeoutMs`, whichever fires first.
+   * The same range as `timeoutMs` applies.
+   */
+  readonly maxTotalMs?: number;
+}
+
+// ============================================================================
+// Failure classification
+// ============================================================================
+
+/**
+ * Why an MCP operation failed — the detail of the `DetailedResult` returned by
+ * {@link connectMcpSession}, {@link listMcpTools}, {@link callMcpTool} and {@link adaptMcpTools}.
+ *
+ * @remarks
+ * Every failure carries exactly one reason: the classification is total, so a consumer can branch
+ * on `kind` without parsing the message. It is derived from the SDK's error classes, its JSON-RPC
+ * error code, and the HTTP status the transport reported — never from message text.
+ *
+ * | kind | produced when |
+ * |---|---|
+ * | `'tool-error'` | The tool ran and returned a result flagged `isError`. The failure message is the tool's own text, unprefixed (see {@link callMcpTool}). |
+ * | `'timeout'` | The SDK's request timeout (or `maxTotalTimeoutMs`) elapsed: `McpError` code `-32001`. Also a guarded `fetch`'s headers deadline (`headersTimeoutMs`) — see {@link IMcpHttpTransportParams.fetch}. |
+ * | `'aborted'` | The caller's `AbortSignal` fired before the request settled. |
+ * | `'not-connected'` | The session's connection is closed: the call was made after it closed, or it closed while the call was in flight. Decided by the observed close, which the SDK reports before it fails the in-flight requests. During the connect handshake, **any** `-32000` is `'not-connected'` — whether the SDK raised it or the server sent it — because a failed handshake leaves no session either way. |
+ * | `'session-expired'` | A Streamable-HTTP server answered HTTP 404 for an established session: it no longer recognizes the session id (typically after a server restart). |
+ * | `'unauthorized'` | The server refused the credentials: HTTP 401 or 403, or the SDK's `UnauthorizedError` — including an interactive authorization refused outside the connect (see {@link IMcpHttpTransportParams.authProvider}) — or an OAuth error from the authorization server. `resourceMetadataUrl` is the `resource_metadata` URL of the endpoint's most recent `WWW-Authenticate` challenge, when it sent a valid one. |
+ * | `'egress-blocked'` | The transport's guarded `fetch` refused the request (`SaferFetch.GuardedFetchError`): an address or request guard, a rejected redirect, a refused response head or an unsupported request. `reason` is the refusal's `FetchFailureReason` kind, never its URL-bearing detail. A configuration refusal: retrying cannot help. A guarded fetch's `'timeout'` (its headers deadline) is `'timeout'`; its `'network'`, `'aborted'` and `'unknown'` (an internal failure) are not refusals and classify as a plain `fetch` failure would (`'transport'`, or `'not-connected'` once closed). |
+ * | `'protocol'` | The server answered with a JSON-RPC error (`code` is its code — including `-32000` on a session that is still open, which servers use as a generic error), or the SDK rejected a response that failed its result schema (no `code`). |
+ * | `'transport'` | Anything else: a network or child-process I/O failure, a non-2xx HTTP status not listed above, or an error the SDK raised without a type — including the handshake's protocol-version refusal, which the SDK raises as a plain `Error`. This is the catch-all that makes the classification total. |
+ * | `'invalid-handle'` | The session or transport handle did not come from this package, or the transport handle was already used by an earlier connect. A caller bug; retrying cannot help. |
+ * | `'invalid-options'` | A `timeoutMs` / `maxTotalTimeoutMs` / `maxTotalMs` outside the accepted range, or a `maxPages` that is not a positive integer. Reported before anything is sent. |
+ * | `'limit-exceeded'` | A bound the caller set over a paged listing was exceeded: {@link IListMcpToolsOptions.maxPages} or {@link IListMcpToolsOptions.maxTotalMs}, named by `limit`. The listing fails whole; nothing is truncated. The session stays usable. |
+ *
+ * **HTTP-error and OAuth-error text never reaches a failure message.** A failure from an HTTP
+ * error (a response's body or status text) or an OAuth error (an `error_description`), and every
+ * `'unauthorized'` failure, gets the kind and the HTTP status as its text — e.g.
+ * `unauthorized (HTTP 401)`, `transport (HTTP 500)` — because a server may repeat a credential it
+ * was sent. Other messages can carry server text: `'tool-error'` and `'protocol'` messages carry the
+ * server's own text by design, and the SDK's other auth errors (for example a failed metadata
+ * discovery) can name a server-chosen URL.
+ *
+ * Reconnecting is the consumer's policy. As a guide: `'not-connected'` and `'session-expired'`
+ * mean the session is dead; `'transport'` means it is suspect; `'egress-blocked'` means the
+ * configuration refuses this server or request, so reconnecting cannot help; the others leave it
+ * usable.
+ *
+ * **Two limits of the SDK, stated so nobody builds on more than it gives.** The SDK reports a
+ * caller's abort as an `McpError` with the *timeout* code; this package tells the two apart by
+ * the identity of the abort it issued, not by the code. And a server that itself answers with the
+ * SDK's reserved timeout code `-32001` is indistinguishable from the SDK's own timeout, so it is
+ * classified `'timeout'`. (The SDK's other reserved code, `-32000`, is disambiguated by the
+ * session's observed close.)
+ *
+ * @public
+ */
+export type McpFailureReason =
+  | { readonly kind: 'tool-error' }
+  | { readonly kind: 'timeout' }
+  | { readonly kind: 'aborted' }
+  | { readonly kind: 'not-connected' }
+  | { readonly kind: 'session-expired' }
+  /**
+   * `status` is the HTTP status, when the refusal came as one. `resourceMetadataUrl` is the
+   * `resource_metadata` URL from the endpoint's most recent `WWW-Authenticate` challenge, present
+   * only when it was a valid `http:`/`https:` URL on one printable line. It is chosen by the server
+   * and may come from an earlier challenge than the one that failed this operation: fetch it only
+   * through the same guarded `fetch` as the transport.
+   */
+  | { readonly kind: 'unauthorized'; readonly status?: number; readonly resourceMetadataUrl?: string }
+  /** `reason` is the kind of the guarded fetch's `FetchFailureReason`; its URL-bearing payload is never carried. */
+  | { readonly kind: 'egress-blocked'; readonly reason: SaferFetch.FetchFailureKind }
+  /** `code` is the JSON-RPC error code, when the failure carried one. */
+  | { readonly kind: 'protocol'; readonly code?: number }
+  /** `status` is the HTTP status, when the failure came as one. */
+  | { readonly kind: 'transport'; readonly status?: number }
+  | { readonly kind: 'invalid-handle' }
+  | { readonly kind: 'invalid-options' }
+  /** `limit` names the listing bound that was exceeded. */
+  | { readonly kind: 'limit-exceeded'; readonly limit: McpListingLimit };
+
+// ============================================================================
+// Tool discovery + invocation
+// ============================================================================
+
+/**
+ * Normalized MCP `Tool.annotations` — the five known host-advisory behavior hints.
+ *
+ * @remarks
+ * Field names mirror MCP's `ToolAnnotations` 1:1 (and map straight onto
+ * `AiAssist.IAiToolAnnotations`). Per the MCP spec these are hints only, and per the
+ * untrusted-server warning they are validated/normalized (known fields kept, malformed
+ * or unknown fields dropped) before they reach {@link IMcpToolDescriptor} — the raw
+ * server blob is never propagated.
+ *
+ * @public
+ */
+export interface IMcpToolAnnotations {
+  /**
+   * Optional human-readable display title for the tool. Kept only when it is one printable line
+   * (no control characters, U+2028 or U+2029); otherwise dropped, never altered.
+   */
+  readonly title?: string;
+  /** Hint: the tool does not modify its environment (read-only). */
+  readonly readOnlyHint?: boolean;
+  /** Hint: the tool may perform destructive updates (only meaningful when not read-only). */
+  readonly destructiveHint?: boolean;
+  /** Hint: repeated calls with the same arguments have no additional effect. */
+  readonly idempotentHint?: boolean;
+  /** Hint: the tool interacts with an open world of external entities. */
+  readonly openWorldHint?: boolean;
+}
+
+/**
+ * Every MCP `Tool.execution.taskSupport` value, as a runtime list — the vocabulary of the SDK's own
+ * `ToolExecutionSchema`.
+ *
+ * @remarks
+ * This is the `@fgv/ts-extras` declaration, `AiAssist.MCP_TASK_SUPPORT_VALUES`, bound here so this
+ * package's surface keeps the name: it is the same array, not a copy. The vocabulary lives in
+ * `@fgv/ts-extras` because it is MCP-spec-level and a browser consumer needs it without this
+ * Node-only package.
+ * @public
+ */
+export const MCP_TASK_SUPPORT_VALUES: typeof AiAssist.MCP_TASK_SUPPORT_VALUES =
+  AiAssist.MCP_TASK_SUPPORT_VALUES;
+
+/**
+ * Whether a tool may, must or must not be invoked as an MCP task (task-augmented execution) — the
+ * MCP `Tool.execution.taskSupport` vocabulary. Per the MCP spec an absent value means `'forbidden'`.
+ *
+ * @remarks
+ * This is the `@fgv/ts-extras` declaration, `AiAssist.McpTaskSupport`, bound here so this package's
+ * surface keeps the name.
+ * @public
+ */
+export type McpTaskSupport = AiAssist.McpTaskSupport;
+
+/**
+ * Normalized MCP `Tool.execution` — the tool's execution metadata.
+ *
+ * @remarks
+ * Validated like {@link IMcpToolAnnotations}: each known field is converted on its own, and an
+ * unknown or malformed value that reaches this package is dropped (and logged at `info`), never
+ * failing discovery and never propagated raw. **Through the SDK, though, an unknown or malformed
+ * value fails the whole `tools/list` page as `'protocol'`** before it reaches this package: the SDK
+ * parses each page against its own schema, whose `execution` is closed. Only a value that gets past
+ * that parse is dropped and logged.
+ * @public
+ */
+export interface IMcpToolExecution {
+  /** The tool's task support, when it declared a known value. Absent means `'forbidden'`. */
+  readonly taskSupport?: McpTaskSupport;
+}
+
+/**
+ * A tool descriptor discovered from an MCP server via {@link listMcpTools}.
+ * @public
+ */
+export interface IMcpToolDescriptor {
+  /** Tool name (unique within a server). */
+  readonly name: string;
+  /**
+   * Human-readable display title: the tool's own `title`, or else its `annotations.title`. Absent
+   * when neither is a non-empty single line of text without control characters or U+2028/U+2029;
+   * a title that is not is dropped, never altered.
+   */
+  readonly title?: string;
+  /** Human-readable description, when the server provided one. */
+  readonly description: string | undefined;
+  /**
+   * The tool's declared input schema as raw JSON. Per the MCP spec this is normally a JSON
+   * Schema object; carried verbatim so {@link adaptMcpTools} can run it through
+   * `JsonSchema.fromJson` (and surface it on {@link IMcpSkippedTool} when it is outside the
+   * supported subset).
+   */
+  readonly inputSchema: JsonValue;
+  /**
+   * The tool's declared output schema as raw JSON, when the server declared one: the shape of the
+   * `structuredContent` its results carry. Carried verbatim, like `inputSchema`, and not parsed.
+   *
+   * @remarks
+   * Absent when the server declared none, or when the value is not JSON. It is also absent — refused
+   * whole, never returned with a key missing — when it holds an own `__proto__` key, which
+   * `@fgv/ts-json-base`'s JSON converters would otherwise drop silently. Note that the SDK parses
+   * the tool list against its own schema first, and that parse already drops a `__proto__` key at
+   * the schema's top level or among its `properties` names; only one nested deeper reaches this
+   * package to be refused.
+   */
+  readonly outputSchema?: JsonValue;
+  /**
+   * The tool's normalized behavior annotations, when the server provided any usable ones.
+   * Absent when the server declared no annotations (or only malformed/unknown fields).
+   * See {@link IMcpToolAnnotations}.
+   */
+  readonly annotations?: IMcpToolAnnotations;
+  /**
+   * The tool's normalized execution metadata, when the server declared any usable field. Absent
+   * when it declared none, or only unknown or malformed ones. See {@link IMcpToolExecution}.
+   *
+   * @remarks
+   * The SDK parses the tool list against its own schema first, and that schema rejects a
+   * `taskSupport` outside {@link McpTaskSupport}: through the SDK such a value fails the whole page
+   * as `'protocol'` before it reaches this package. The drop-and-log path covers any value that does
+   * reach it.
+   */
+  readonly execution?: IMcpToolExecution;
+}
+
+/**
+ * Options for {@link callMcpTool}: the per-request options, plus how media is carried.
+ * @public
+ */
+export interface IMcpCallToolOptions extends IMcpRequestOptions {
+  /**
+   * When `true`, image, audio and embedded blob blocks carry their `data` (base64, exactly as the
+   * server sent it). Default `false`: they carry only `mimeType` and `byteLength`, so a large image
+   * does not ride every result by accident.
+   */
+  readonly includeMediaData?: boolean;
+}
+
+/**
+ * A `text` content block.
+ * @public
+ */
+export interface IMcpTextBlock {
+  readonly type: 'text';
+  /** The block's text, as the server sent it. */
+  readonly text: string;
+}
+
+/**
+ * A `resource_link` content block: a resource the server points at without embedding it.
+ *
+ * @remarks
+ * **The package never follows the link.** The `uri` is server-supplied, and fetching it is the
+ * consumer's decision; any fetch must go through the consumer's own egress guard (for an
+ * `http(s)` URI, `@fgv/ts-extras`' `SaferFetch.saferFetchBytes`, or `SaferFetch.createGuardedFetch`
+ * for a streamed body), never a plain `fetch`.
+ * `uri`, `name`, `title` and `mimeType` are each one printable line; an optional one that is not
+ * is dropped, and a `uri` that is not makes the whole block {@link IMcpUnknownBlock | unknown}.
+ * @public
+ */
+export interface IMcpResourceLinkBlock {
+  readonly type: 'resource_link';
+  /** The resource's URI. Not followed by this package. */
+  readonly uri: string;
+  /** The resource's programmatic name. */
+  readonly name?: string;
+  /** The resource's display title. */
+  readonly title?: string;
+  /** The resource's MIME type, when the server gave one. */
+  readonly mimeType?: string;
+  /** A human-readable description; free text, possibly several lines. */
+  readonly description?: string;
+}
+
+/**
+ * A `resource` content block embedding a text resource.
+ * @public
+ */
+export interface IMcpEmbeddedTextResourceBlock {
+  readonly type: 'resource';
+  /** The embedded resource's URI; absent when the server's was missing or not one printable line. */
+  readonly uri?: string;
+  /** Its MIME type, when the server gave one. */
+  readonly mimeType?: string;
+  /** Its text, as the server sent it. */
+  readonly text: string;
+}
+
+/**
+ * A `resource` content block embedding a binary resource.
+ * @public
+ */
+export interface IMcpEmbeddedBlobResourceBlock {
+  readonly type: 'resource';
+  /** The embedded resource's URI; absent when the server's was missing or not one printable line. */
+  readonly uri?: string;
+  /** Its MIME type, when the server gave one. */
+  readonly mimeType?: string;
+  /** The decoded size of the resource, in bytes. */
+  readonly byteLength: number;
+  /** The base64 data as sent, only when {@link IMcpCallToolOptions.includeMediaData} is `true`. */
+  readonly data?: string;
+}
+
+/**
+ * An `image` content block.
+ * @public
+ */
+export interface IMcpImageBlock {
+  readonly type: 'image';
+  /**
+   * The image's MIME type; absent when the server's was missing or not one printable line. The
+   * block keeps its size and data either way.
+   */
+  readonly mimeType?: string;
+  /** The decoded size of the image, in bytes. */
+  readonly byteLength: number;
+  /** The base64 data as sent, only when {@link IMcpCallToolOptions.includeMediaData} is `true`. */
+  readonly data?: string;
+}
+
+/**
+ * An `audio` content block.
+ * @public
+ */
+export interface IMcpAudioBlock {
+  readonly type: 'audio';
+  /**
+   * The audio's MIME type; absent when the server's was missing or not one printable line. The
+   * block keeps its size and data either way.
+   */
+  readonly mimeType?: string;
+  /** The decoded size of the audio, in bytes. */
+  readonly byteLength: number;
+  /** The base64 data as sent, only when {@link IMcpCallToolOptions.includeMediaData} is `true`. */
+  readonly data?: string;
+}
+
+/**
+ * A content block this package does not carry: a block type it does not know, or a known type
+ * whose required fields are missing or malformed. It never fails the call.
+ * @public
+ */
+export interface IMcpUnknownBlock {
+  readonly type: 'unknown';
+  /**
+   * The block's `type` as the server sent it, when that is one printable line of at most 64
+   * characters. A known type here (`'image'`, say) means the block was malformed.
+   */
+  readonly blockType?: string;
+}
+
+/**
+ * One content block of an MCP tool result, discriminated by `type`. Each is converter-validated;
+ * anything that does not validate is an {@link IMcpUnknownBlock}.
+ *
+ * | MCP block | variant |
+ * |---|---|
+ * | `text` | {@link IMcpTextBlock} |
+ * | `resource_link` | {@link IMcpResourceLinkBlock} |
+ * | `resource` with `text` | {@link IMcpEmbeddedTextResourceBlock} |
+ * | `resource` with `blob` | {@link IMcpEmbeddedBlobResourceBlock} |
+ * | `image` | {@link IMcpImageBlock} |
+ * | `audio` | {@link IMcpAudioBlock} |
+ * | anything else, or malformed | {@link IMcpUnknownBlock} |
+ *
+ * **Not carried:** a block's `annotations` (`audience`, `priority`, `lastModified`) and its `_meta`.
+ * **Base64** (image, audio and blob `data`) is accepted in the standard or URL-safe alphabet, with
+ * or without padding, and **without whitespace**: line-wrapped base64 (MIME style) is treated as
+ * malformed, so such a block is {@link IMcpUnknownBlock | unknown}.
+ *
+ * @public
+ */
+export type McpContentBlock =
+  | IMcpTextBlock
+  | IMcpResourceLinkBlock
+  | IMcpEmbeddedTextResourceBlock
+  | IMcpEmbeddedBlobResourceBlock
+  | IMcpImageBlock
+  | IMcpAudioBlock
+  | IMcpUnknownBlock;
+
+/**
+ * Successful projection of an MCP `CallToolResult` produced by {@link callMcpTool}.
+ *
+ * @remarks
+ * `content` is the text projection handed to a model (it is what {@link adaptMcpTools}' tools
+ * return), one line or passage per block, joined by newlines:
+ *
+ * | block | projects to |
+ * |---|---|
+ * | `text` | its text |
+ * | `resource_link` | `[resource_link: <uri> (<name>)]`, or `[resource_link: <uri>]` without a name |
+ * | embedded text `resource` | its text |
+ * | embedded blob `resource`, `image`, `audio` | `[resource block]`, `[image block]`, `[audio block]` |
+ * | unknown | `[<blockType> block]`, or `[unknown block]` without a usable `blockType` |
+ *
+ * Every server string interpolated into a generated placeholder (a link's URI or name, a
+ * `blockType`) is validated first (one with a line break, U+2028/U+2029 or a control character is
+ * not echoed), so a block cannot forge a placeholder line. Text and embedded-text bodies are free
+ * text, projected verbatim, and may span lines. It is still
+ * untrusted server text — a single line can say anything — exactly as a `text` block always was. A result with `isError: true`
+ * is mapped to `Result.fail(content)` rather than returned here, so it is never silently swallowed.
+ *
+ * @public
+ */
+export interface IMcpToolCallResult {
+  /** The text projection of the tool result. */
+  readonly content: string;
+  /** Every content block, in order, converter-validated. See {@link McpContentBlock}. */
+  readonly blocks: ReadonlyArray<McpContentBlock>;
+  /**
+   * The result's `structuredContent`, when present and JSON. Omitted when it is not JSON, or when it
+   * holds an own `__proto__` key at any depth: refused whole rather than returned with the key
+   * silently dropped. A refusal is logged at `info` to the session's logger.
+   */
+  readonly structuredContent?: JsonValue;
+}
+
+// ============================================================================
+// Adapter (Constraint 1)
+// ============================================================================
+
+/**
+ * Why {@link adaptMcpTools} skipped a tool — the `kind` of an {@link IMcpSkippedTool}.
+ *
+ * @remarks
+ * | kind | skipped because |
+ * |---|---|
+ * | `'schema'` | Its `inputSchema` is not a JSON object, or is outside the subset `JsonSchema.fromJson` supports (including a `pattern` with no {@link IAdaptMcpToolsOptions.patternValidator}). |
+ * | `'wire'` | Its schema parsed, but the target wire cannot carry it (see {@link IAdaptMcpToolsOptions.schemaKeywords}). |
+ * | `'task-support'` | It declares `execution.taskSupport: 'required'`: it must be invoked as an MCP task, which this client cannot drive, so every plain call to it would fail. Checked first, whatever its schema. |
+ * @public
+ */
+export type McpSkipKind = 'schema' | 'wire' | 'task-support';
+
+/**
+ * A tool that was discovered but could NOT be adapted into an `AiAssist.IAiClientTool`: its
+ * `inputSchema` is outside the JSON Schema subset supported by `JsonSchema.fromJson`, the target
+ * wire cannot carry it, or it requires task-augmented execution. Surfaced structurally so
+ * callers/the probe can enumerate exactly which subset features a server needs (with the raw schema
+ * in hand to extend `fromJson` later), branching on `kind` rather than parsing `reason`.
+ * @public
+ */
+export interface IMcpSkippedTool {
+  /** The tool's name. */
+  readonly name: string;
+  /** Why the tool was skipped. See {@link McpSkipKind}. */
+  readonly kind: McpSkipKind;
+  /** Why the tool was skipped, in words — the JSON-pointer reason from `JsonSchema.fromJson`, or a structural reason. */
+  readonly reason: string;
+  /**
+   * The tool's raw input schema, verbatim, in hand for additively widening `JsonSchema.fromJson`. For
+   * a `'task-support'` skip it is the schema as declared, whether or not it would have adapted.
+   */
+  readonly schema: JsonValue;
+}
+
+/**
+ * Options for {@link adaptMcpTools}.
+ * @public
+ */
+export interface IAdaptMcpToolsOptions {
+  /**
+   * Logger for the NOISY per-tool skip warnings. When a tool is skipped, a `warning` is emitted
+   * including the tool name, the JSON-pointer reason, and the raw failing schema. When omitted,
+   * skips are still surfaced structurally on {@link IAdaptMcpToolsResult.skipped}.
+   */
+  readonly logger?: Logging.ILogger;
+
+  /**
+   * The keyword-capability table of the wire the adapted tools will be sent on, used to admit only
+   * tools that wire can carry.
+   *
+   * @remarks
+   * A tool whose schema that table refuses — today, one with a schema that states no `type`
+   * (pydantic `Any`, `{}`) on a wire that requires one or does not document it — is skipped like
+   * any other unadaptable tool, so one such tool cannot fail every request it would ride on. Get the
+   * table for a provider with
+   * `AiAssist.clientToolSchemaKeywords(descriptor, { model, endpoint, verifiedEndpoint })` from
+   * `@fgv/ts-extras`, passing exactly what the turn will be sent with.
+   *
+   * Defaults to `JsonSchema.unverifiedWireSchemaKeywords`, the conservative table, which refuses an
+   * untyped schema — so without this option such a tool is skipped. Pass the Anthropic-tools table
+   * (or any that passes untyped nodes) to have it adapted.
+   *
+   * Admission only: the adapted tool keeps the schema as `fromJson` parsed it, and the request path
+   * adapts it for the wire exactly once, when it is sent. The table must therefore be the one for
+   * the wire the tools are actually sent on: a tool admitted under a more permissive table than the
+   * request's wire makes `AiAssist.executeClientToolTurn` return a `Failure` naming the tool, the
+   * path and the wire, before anything is sent.
+   */
+  readonly schemaKeywords?: JsonSchema.SchemaKeywordCapabilities;
+
+  /**
+   * Compiles the `pattern` keyword of a server's tool schemas; passed to `JsonSchema.fromJson`.
+   *
+   * @remarks
+   * Without it, a tool whose schema uses `pattern` is skipped, because this package never compiles a
+   * server-supplied regular expression: a backtracking `RegExp` built from one is a ReDoS vector on
+   * every tool call, and a synchronous match cannot be timed out. With it, such a tool is adapted,
+   * the predicate the validator returns enforces the pattern on the tool's arguments, and the wire
+   * receives the server's source — or, where the target wire does not document `pattern`, a
+   * description stating it (see `schemaKeywords`). A validator `Failure` skips the tool, with the
+   * reason.
+   *
+   * Supply a validator built on an engine that is safe on hostile input — RE2, say. A plain
+   * `new RegExp(source)` defeats the point of the option.
+   */
+  readonly patternValidator?: JsonSchema.SchemaPatternValidator;
+
+  /**
+   * Options for the tool discovery `adaptMcpTools` runs — passed to {@link listMcpTools} as given,
+   * including its bounds over the paged listing ({@link IListMcpToolsOptions.maxPages},
+   * {@link IListMcpToolsOptions.maxTotalMs}) and each page's `timeoutMs` and `signal`. A discovery
+   * failure, a bound exceeded included, fails the whole adaptation with its
+   * {@link McpFailureReason}. When omitted, discovery is unbounded, as {@link listMcpTools} is.
+   */
+  readonly discovery?: IListMcpToolsOptions;
+}
+
+/**
+ * The result of {@link adaptMcpTools}: cleanly-adapted client tools plus the structurally-surfaced
+ * set of tools that could not be adapted (graceful degradation, Constraint 1).
+ * @public
+ */
+export interface IAdaptMcpToolsResult {
+  /** Tools adapted into `IAiClientTool` — safe to hand to `AiAssist.executeClientToolTurn`. */
+  readonly tools: ReadonlyArray<AiAssist.IAiClientTool>;
+  /** Tools excluded from `tools`, each with the {@link McpSkipKind} of why. */
+  readonly skipped: ReadonlyArray<IMcpSkippedTool>;
+}

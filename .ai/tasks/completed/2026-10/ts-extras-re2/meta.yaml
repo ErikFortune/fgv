@@ -1,0 +1,51 @@
+id: ts-extras-re2
+status: shipped
+packages: ['@fgv/ts-extras-re2', '@fgv/ts-json-base', '@fgv/ts-extras-mcp']
+prs: [746]
+openPrs: []
+opened: 2026-10-19
+closed: 2026-10-19
+summary:
+  intended: >
+    A new @fgv/ts-extras-re2 package on the argon2 template providing the default
+    JsonSchema.SchemaPatternValidator for fromJson and adaptMcpTools: re2js (after age, licence and
+    maintenance checks), unanchored search semantics, refusal of lookaround and backreferences,
+    never throwing, ECMA u Unicode semantics as closely as RE2 allows with the dialect differences
+    documented, optional source-length and program-size limits, and docs routing it.
+  shipped: >
+    re2PatternValidator and createRe2PatternValidator on re2js 2.8.8 (MIT, no dependencies,
+    exact pin). The source is parsed as ECMA-262 u mode and rewritten into RE2 syntax with the same
+    meaning — ., \s and \S rewritten to ECMA's sets — or refused, naming the construct; limits
+    default to 1024 source units and a program size of 10000. Tested against V8 over the code
+    point space, on 100,000-character catastrophic inputs, and end to end through fromJson and a
+    real in-memory MCP server. Script= values are limited to a frozen allow-list of the 171
+    scripts both re2js and V8 accept (review round 1), tested against both engines.
+  diverged: >
+    A full ECMA-to-RE2 translator rather than handing the source to re2js: RE2 reads ., \s, POSIX
+    classes and its own extensions differently, which the ts-json-base seam's TSDoc says a validator
+    must refuse. The brief's "\d/\w Unicode classes" dialect difference does not exist — both are
+    ASCII — so the documented differences are ., \s, \p{…} coverage and group names instead. Also
+    added, beyond the brief: an ACTIVE_DEVELOPMENT.md row and a result-integration-boundary.md
+    instance entry.
+  sourceLine: '**Shipped:** `@fgv/ts-extras-re2`, the default `patternValidator` for an untrusted JSON Schema `pattern` — `re2PatternValidator` reads the source as an ECMA-262 `u`-mode pattern, rewrites it into RE2 syntax with the same meaning or refuses it, and compiles it with re2js under source-length and program-size limits.'
+  headline: >
+    New @fgv/ts-extras-re2: re2PatternValidator lets fromJson and adaptMcpTools accept an untrusted
+    JSON Schema pattern — linear-time RE2 matching, ECMA-262 meaning or a named refusal.
+keywords:
+  [
+    'RE2',
+    're2js',
+    'ReDoS',
+    'catastrophic backtracking',
+    'linear-time regex',
+    'patternValidator',
+    'SchemaPatternValidator',
+    'JSON Schema pattern',
+    'ECMA-262 u mode',
+    'regex dialect translation',
+    'Unicode property escapes',
+    'MCP tool schema'
+  ]
+relatedStreams:
+  - { id: json-schema-pattern, relationship: 'introduced the SchemaPatternValidator seam this implements' }
+sourceHash: 884f4a1e3f16ec52 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

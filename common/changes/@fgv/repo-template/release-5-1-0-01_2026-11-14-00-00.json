@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/repo-template",
+      "comment": "Initial release: the `repo-template` CLI for creating and maintaining Rush monorepos derived from this one — `create`, `sync`, `init-library`, `link` / `unlink` against a local checkout, `update-fgv-versions` and JSONC `patch`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/repo-template",
+  "email": "noreply@anthropic.com"
+}

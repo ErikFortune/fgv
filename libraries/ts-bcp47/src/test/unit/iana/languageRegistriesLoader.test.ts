@@ -22,6 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
+// eslint-disable-next-line @rushstack/packlets/mechanics
 import {
   loadLanguageRegistries,
   loadLanguageRegistriesFromTree,
@@ -30,7 +31,7 @@ import {
   LanguageRegistries,
   LanguageSubtags,
   LanguageTagExtensions
-} from '../../../packlets/iana';
+} from '../../../packlets/iana/index.node';
 import { CORE_REGISTRY_COUNTS } from './testConstants';
 import * as fs from 'fs';
 import * as path from 'path';

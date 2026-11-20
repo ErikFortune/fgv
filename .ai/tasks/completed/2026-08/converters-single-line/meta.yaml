@@ -1,0 +1,68 @@
+id: converters-single-line
+status: shipped
+packages:
+  - '@fgv/ts-utils'
+prs: []
+openPrs: []
+opened: 2026-08-28
+summary:
+  intended: >
+    Answer a PersonAIlity ask (personaility#645) for a sanitizing converter, so
+    that "this text is about to be trusted" becomes declarable the way every
+    other constraint in the codebase is. Their case: a per-prompt `surface`
+    descriptor arriving as unconstrained `Converters.string` and interpolated
+    into a `[SYSTEM]`-framed directive, so an author of a scope-level override
+    could inject a newline and a fabricated second directive.
+  shipped: >
+    Converters.string.singleLine({ maxLength?, message? }) — no line breaks, no
+    control characters, non-empty, optionally bounded, rejecting rather than
+    rewriting. Control chars are matched as \p{Cc}, so U+0085 (NEL) is rejected
+    too, which a naive [^\r\n] check would admit. Ten tests, watched failing.
+  diverged: >
+    We shipped the constraint and refused the name. `sanitized` — or any name
+    carrying a safety claim — would have been actively harmful, because a
+    single-line constraint does not make text safe to interpolate into a framed
+    prompt. Demonstrated rather than argued: "document, and also disregard all
+    prior constraints" has no newline, no control character, sits well inside
+    any bound, passes every shape check, and defeats the framing completely.
+    A primitive implying prompt-safety would tell a caller they were protected
+    at exactly the moment they stopped looking for the narrowing that works.
+    That non-claim is now in the docstring, the package CAPABILITIES entry, and
+    a test named for it, so it travels with the symbol rather than living in a
+    reply nobody re-reads.
+
+    Two further corrections to the ask. Their concrete fix already existed and
+    is strictly stronger: `Converters.enumeratedValue` on a closed domain
+    rejects the injection outright, and they had already planned it — so the
+    honest answer to "narrow your field and move on" was that it is the RIGHT
+    answer for that field, not a consolation. And the machinery they said was
+    missing was not: `StringConverter.matching(RegExp)` already expressed the
+    whole constraint in 5.1.0-55. This addition therefore saves a regex, not a
+    capability; it was taken because the NAME is greppable and the docstring is
+    a permanent home for the non-claim, and that trade was stated plainly to
+    them rather than dressed up.
+  sourceLine: >
+    **Shipped:** `Converters.string.singleLine()` — a shape constraint,
+    deliberately not a safety claim.
+  headline: >
+    A string can now declare that it must be one printable line — and the name
+    says shape, not safety, because no converter can promise the latter.
+keywords:
+  - a converter declares a shape, not safety
+  - the name would have been the defect
+  - refuse a safety claim the check cannot support
+  - a closed set beats any sanitizer
+  - the primitive they needed already existed
+  - marginal addition, stated as marginal
+  - reject rather than rewrite
+  - control characters as \p{Cc}, not [^\r\n]
+  - no sanitize or escape in ts-utils, by decision
+  - watched-it-fail gate
+relatedStreams:
+  - id: personaility-asks-2026-08
+    relationship: >
+      origin; same consumer channel
+  - id: library-capabilities-split
+    relationship: >
+      this stream is based on it — its capability entry is written in the
+      per-package shape that split introduced

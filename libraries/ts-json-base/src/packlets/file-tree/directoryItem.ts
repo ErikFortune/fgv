@@ -20,26 +20,55 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult } from '@fgv/ts-utils';
-import { FileTreeItem, IFileTreeAccessors, IFileTreeDirectoryItem } from './fileTreeAccessors';
+import { DetailedResult, Result, captureResult, fail, failWithDetail, succeed } from '@fgv/ts-utils';
+import {
+  FileTreeItem,
+  IAtomicFileTreeDirectoryItem,
+  IAtomicWriteCapabilities,
+  IAtomicWriteFailure,
+  IAtomicWriteOptions,
+  IAtomicWriteReceipt,
+  IDeleteChildOptions,
+  IFileTreeAccessors,
+  IFileTreeStorageIdentity,
+  IMutableBinaryFileTreeDirectoryItem,
+  IMutableFileTreeDirectoryItem,
+  IMutableFileTreeFileItem,
+  isAtomicAccessors,
+  isMutableAccessors,
+  isMutableBinaryAccessors,
+  isMutableFileItem
+} from './fileTreeAccessors';
 
 /**
  * Class representing a directory in a file tree.
+ *
+ * @remarks
+ * Implements the optional byte-native create capability
+ * ({@link FileTree.IMutableBinaryFileTreeDirectoryItem}) and the optional atomic-write
+ * capability ({@link FileTree.IAtomicFileTreeDirectoryItem}) by delegating to the underlying
+ * accessors, so both guards are true regardless of what backs it. Ask
+ * {@link FileTree.DirectoryItem.canCreateChildFileBytes | canCreateChildFileBytes} or
+ * {@link FileTree.DirectoryItem.getAtomicWriteCapabilities | getAtomicWriteCapabilities} for
+ * the store's actual answer. A consumer holding a `DirectoryItem` never needs a native path or
+ * accessor internals to perform an atomic child write.
  * @public
  */
-export class DirectoryItem<TCT extends string = string> implements IFileTreeDirectoryItem<TCT> {
+export class DirectoryItem<TCT extends string = string>
+  implements IMutableBinaryFileTreeDirectoryItem<TCT>, IAtomicFileTreeDirectoryItem<TCT>
+{
   /**
-   * {@inheritdoc FileTree.IFileTreeDirectoryItem."type"}
+   * {@inheritDoc FileTree.IFileTreeDirectoryItem."type"}
    */
   public readonly type: 'directory' = 'directory';
 
   /**
-   * {@inheritdoc FileTree.IFileTreeDirectoryItem.absolutePath}
+   * {@inheritDoc FileTree.IFileTreeDirectoryItem.absolutePath}
    */
   public readonly absolutePath: string;
 
   /**
-   * {@inheritdoc FileTree.IFileTreeDirectoryItem.name}
+   * {@inheritDoc FileTree.IFileTreeDirectoryItem.name}
    */
   public get name(): string {
     return this._hal.getBaseName(this.absolutePath);
@@ -79,9 +108,237 @@ export class DirectoryItem<TCT extends string = string> implements IFileTreeDire
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeDirectoryItem.getChildren}
+   * {@inheritDoc FileTree.IFileTreeDirectoryItem.getChildren}
    */
   public getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>> {
     return this._hal.getChildren(this.absolutePath);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableFileTreeDirectoryItem.createChildFile}
+   */
+  public createChildFile(name: string, contents: string): Result<IMutableFileTreeFileItem<TCT>> {
+    const hal = this._hal;
+    if (!isMutableAccessors(hal)) {
+      /* c8 ignore next 2 - defensive: all current accessor implementations support mutation interface */
+      return fail(`${this.absolutePath}: mutation not supported`);
+    }
+
+    const filePath = hal.joinPaths(this.absolutePath, name);
+    return this._createdChildFile(filePath, () => hal.saveFileContents(filePath, contents));
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableBinaryFileTreeDirectoryItem.canCreateChildFileBytes}
+   */
+  public canCreateChildFileBytes(): boolean {
+    return isMutableBinaryAccessors(this._hal);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableBinaryFileTreeDirectoryItem.createChildFileBytes}
+   */
+  public createChildFileBytes(name: string, bytes: Uint8Array): Result<IMutableFileTreeFileItem<TCT>> {
+    const hal = this._hal;
+    if (!isMutableBinaryAccessors(hal)) {
+      // Names the file, unlike its `createChildFile` sibling: that guard is defensive
+      // (no shipped accessor lacks the mutation interface) while this one is reachable
+      // from any text-persisting store, so the diagnosis needs to say which file.
+      return fail(`${this.absolutePath}/${name}: raw byte writes not supported`);
+    }
+
+    const filePath = hal.joinPaths(this.absolutePath, name);
+    return this._createdChildFile(filePath, () => hal.saveFileBytes(filePath, bytes));
+  }
+
+  /**
+   * {@inheritDoc FileTree.IFileTreeDirectoryItem.getStorageIdentity}
+   */
+  public getStorageIdentity(): IFileTreeStorageIdentity<TCT> {
+    const realPath = this._hal.resolveRealPath?.(this.absolutePath);
+    return {
+      accessors: this._hal,
+      path: this.absolutePath,
+      ...(realPath?.isSuccess() ? { realPath: realPath.value } : {})
+    };
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeDirectoryItem.getAtomicWriteCapabilities}
+   */
+  public getAtomicWriteCapabilities(): Result<IAtomicWriteCapabilities> {
+    if (!isAtomicAccessors(this._hal)) {
+      return succeed({
+        atomicReplace: false,
+        guarantees: [],
+        reason: `${this.absolutePath}: the backing store does not implement atomic writes`
+      });
+    }
+    return this._hal.getAtomicWriteCapabilities(this.absolutePath);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeDirectoryItem.writeChildAtomically}
+   */
+  public writeChildAtomically(
+    name: string,
+    contents: string,
+    options: IAtomicWriteOptions
+  ): DetailedResult<IAtomicWriteReceipt, IAtomicWriteFailure> {
+    // A child name must denote a single component that stays inside this directory.
+    //
+    // Both separators are rejected regardless of platform: `FsFileTreeAccessors.joinPaths`
+    // is `path.join`, which treats `\` as a separator on Windows, so `a\b` would otherwise
+    // become a nested path through that atomic-capable accessor.
+    //
+    // `.` and `..` are rejected for the sharper reason that `path.join` NORMALIZES them —
+    // `joinPaths('/a/b', '..')` is `/a`, a path outside this directory entirely. The
+    // in-memory accessor preserves dot segments; the filesystem accessor normalizes them,
+    // and only confines a write when it has a root prefix — so for that accessor this
+    // check is what keeps a child write inside this directory, and it is the contract
+    // every future accessor is written against.
+    if (name.length === 0 || name === '.' || name === '..' || name.includes('/') || name.includes('\\')) {
+      return failWithDetail(`${this.absolutePath}: '${name}' is not a valid child file name`, {
+        code: 'not-writable',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    const hal = this._hal;
+    if (!isAtomicAccessors(hal)) {
+      // Compose through joinPaths rather than a hardcoded '/' so the message does not mix
+      // separators on a Windows-style absolutePath.
+      return failWithDetail(`${hal.joinPaths(this.absolutePath, name)}: atomic writes not supported`, {
+        code: 'unsupported',
+        stage: 'validate',
+        visibility: 'unchanged'
+      });
+    }
+
+    const filePath = hal.joinPaths(this.absolutePath, name);
+    return hal.writeFileAtomically(filePath, contents, options);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IAtomicFileTreeDirectoryItem.cleanupAtomicTemporaries}
+   */
+  public cleanupAtomicTemporaries(): Result<ReadonlyArray<string>> {
+    if (!isAtomicAccessors(this._hal)) {
+      // A store with no atomic capability has no reserved working files, so
+      // there is nothing to reclaim and nothing to report. This is the same
+      // "inquiry, not guard" posture as getAtomicWriteCapabilities above.
+      return succeed([]);
+    }
+    return this._hal.cleanupAtomicTemporaries(this.absolutePath);
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableFileTreeDirectoryItem.createChildDirectory}
+   */
+  public createChildDirectory(name: string): Result<IMutableFileTreeDirectoryItem<TCT>> {
+    const hal = this._hal;
+    if (!isMutableAccessors(hal)) {
+      /* c8 ignore next 2 - defensive: all current accessor implementations support mutation interface */
+      return fail(`${this.absolutePath}: mutation not supported`);
+    }
+
+    const dirPath = hal.joinPaths(this.absolutePath, name);
+    return hal.createDirectory(dirPath).onSuccess(() => DirectoryItem.create(dirPath, hal));
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableFileTreeDirectoryItem.deleteChild}
+   */
+  public deleteChild(name: string, options?: IDeleteChildOptions): Result<boolean> {
+    const hal = this._hal;
+    if (!isMutableAccessors(hal)) {
+      /* c8 ignore next 2 - defensive: all current accessor implementations support mutation interface */
+      return fail(`${this.absolutePath}: mutation not supported`);
+    }
+
+    const childPath = hal.joinPaths(this.absolutePath, name);
+    return hal.getItem(childPath).onSuccess((item) => {
+      if (item.type === 'file') {
+        return hal.deleteFile(childPath);
+      }
+      // Directory child
+      if (options?.recursive) {
+        return this._deleteRecursive(childPath);
+      }
+      return hal.deleteDirectory(childPath);
+    });
+  }
+
+  /**
+   * {@inheritDoc FileTree.IMutableFileTreeDirectoryItem.delete}
+   */
+  public delete(): Result<boolean> {
+    const hal = this._hal;
+    if (!isMutableAccessors(hal)) {
+      /* c8 ignore next 2 - defensive: all current accessor implementations support mutation interface */
+      return fail(`${this.absolutePath}: mutation not supported`);
+    }
+    return hal.deleteDirectory(this.absolutePath);
+  }
+
+  /**
+   * Runs a child-file write and resolves the item it produced.
+   *
+   * @remarks
+   * The tail shared by every `createChildFile*` method: the two differ only in their
+   * capability guard and which accessor method they call, and the re-fetch-and-narrow
+   * that follows is identical. Factored so a third writer inherits it rather than
+   * copying it — the two copies had already drifted apart before this existed.
+   * @param filePath - The absolute path being written.
+   * @param write - The accessor call that performs the write.
+   * @returns `Success` with the new file item, or `Failure` with an error message.
+   * @internal
+   */
+  private _createdChildFile(
+    filePath: string,
+    write: () => Result<unknown>
+  ): Result<IMutableFileTreeFileItem<TCT>> {
+    return write().onSuccess(() =>
+      this._hal.getItem(filePath).onSuccess((item) => {
+        /* c8 ignore next 3 - defensive: verifies accessor returned correct item type after save */
+        if (!isMutableFileItem(item)) {
+          return fail(`${filePath}: expected mutable file but got ${item.type}`);
+        }
+        return succeed(item);
+      })
+    );
+  }
+
+  /**
+   * Recursively deletes all children of a directory and then the directory itself.
+   * @param dirPath - The absolute path of the directory to delete.
+   * @returns `Success` with `true` if the directory was deleted, or `Failure` with an error message.
+   * @internal
+   */
+  private _deleteRecursive(dirPath: string): Result<boolean> {
+    const hal = this._hal;
+    /* c8 ignore next 3 - defensive: caller already verified mutable */
+    if (!isMutableAccessors(hal)) {
+      return fail(`${dirPath}: mutation not supported`);
+    }
+    return hal.getChildren(dirPath).onSuccess((children) => {
+      for (const child of children) {
+        if (child.type === 'file') {
+          const result = hal.deleteFile(child.absolutePath);
+          /* c8 ignore next 3 - defensive: error propagation during recursive delete */
+          if (result.isFailure()) {
+            return result;
+          }
+        } else {
+          const result = this._deleteRecursive(child.absolutePath);
+          /* c8 ignore next 3 - defensive: error propagation during recursive delete */
+          if (result.isFailure()) {
+            return result;
+          }
+        }
+      }
+      return hal.deleteDirectory(dirPath);
+    });
   }
 }

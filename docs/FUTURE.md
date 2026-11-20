@@ -1,0 +1,1521 @@
+# Future — fgv
+
+Parking-lot ideas that aren't current work, aren't non-goals, but
+need concrete demand or design before they can be scheduled. Items
+here get promoted to `docs/WORKSTREAMS.md` when a real use case
+surfaces.
+
+---
+
+## Entry format
+
+```markdown
+## Idea title
+
+Description with the user's framing expanded with the design space.
+
+**Why deferred**: why this isn't current work.
+
+**Dependencies**: what would unblock it.
+
+**Reference**: session / observation context.
+```
+
+---
+
+## `ai-assist` — offer `gemini-embedding-2` without moving `@google-gemini:embedding`
+
+`gemini-embedding-2` is Google's latest embedding model and is listed stable, but its vectors live in
+a different space: "The embedding spaces between `gemini-embedding-001` and `gemini-embedding-2` are
+incompatible … If you are upgrading to `gemini-embedding-2`, you must re-embed all of your existing
+data" (https://aistudio.google.com/docs/embeddings, fetched 2026-11-11). Rotating
+`@google-gemini:embedding` would therefore silently change the space under every index a consumer has
+persisted with that alias — the next query would be compared against vectors from the other model.
+So the alias stays on `gemini-embedding-001`, which the same page keeps available, and a migration is
+a consumer decision, not a registry rotation.
+
+What a consumer must do to migrate, and what ai-assist would add to make it explicit:
+- Re-embed the whole corpus with the new model and rebuild the index; vectors from the two models
+  must never share an index. (`ts-agent-memory-sqlite-vec` already refuses to mix embedding models in
+  one file, which is the safety net for its consumers.)
+- Select the new model explicitly — `modelOverride: 'gemini-embedding-2'` today, or a **separate**
+  alias (e.g. `@google-gemini:embedding-2`) so the old alias keeps meaning the old space.
+- Stop sending `taskType`: "You cannot use the `task_type` field for the `gemini-embedding-2` model"
+  (same page); task instructions go in the text instead. The Gemini descriptor's embedding catch-all
+  declares `supportsTaskType: true`, so a `gemini-embedding-2` entry with `supportsTaskType: false`
+  must precede it before that model is offered.
+- Both models default to 3072 dimensions, so a dimension check alone will not catch the switch.
+
+**Why deferred**: no consumer has asked for the new model, and the alias must not move; adding a
+second alias plus the per-model `taskType` entry is small but has no driver yet.
+
+**Dependencies**: a consumer that wants the new space, and a keyed run confirming the
+`gemini-embedding-2` wire (no `taskType`, `outputDimensionality` honoured).
+
+**Reference**: `.ai/tasks/completed/2026-11/model-alias-refresh/` Q4 (held), re-checked in stream
+`model-followups` (2026-11-11).
+
+## `ts-random` — weighted pick without replacement (`pickWeightedSequence`)
+
+`pickWeighted` / `pickWeightedAt` choose one item. A weighted draw of several **distinct** items
+(each chosen item removed before the next draw) is the natural sibling: PersonAIlity's quirk draw
+would want it if its catalog outgrows the free slots. Design questions: whether the pure form takes
+one unit per draw or derives successive units, and whether the single-pick walk (input order,
+`point < cumulative`, last by elimination) is reused unchanged on the shrinking set so a sequence's
+first draw equals `pickWeightedAt`'s.
+
+**Why deferred**: asked for only as optional; no consumer needs it yet.
+
+**Dependencies**: a consumer whose catalog needs several distinct weighted draws.
+
+**Reference**: personaility#669; chore batch `chores-2026-10-asks` (item 2), which shipped the
+single pick.
+
+---
+
+## `ts-extras-system-one` — exact token pre-measurement (design D5)
+
+`askSystemOne`'s mandatory input bound measures characters, with README values (2,400 / 4,400) derived
+from Qwen3-8B characters-per-token measurements (design E33). For a backend whose tokenizer is known,
+the bound could count tokens exactly instead, replacing the character proxy and its safety margin.
+
+**A concrete route now exists** (Phase B, 2026-10-03): Qwen3's `vocab.json` and `merges.txt` are
+reachable without LFS and are enough to build the tokenizer, which is how E33 was measured. Loading it
+at runtime (for example through transformers.js) is unverified. A deployed vLLM encoder also serves
+`POST /tokenize` (E35), which live check L3 would use to confirm E33's counts.
+
+**Why deferred**: the character bound is derived (E33) and deliberately conservative; the package
+has no consumer yet, and L3 (not run) would confirm the measurement against the real tokenizer.
+
+**Dependencies**: a consumer whose states run near the bound, or L3's `/tokenize` evidence showing the
+character rule is too loose or too tight.
+
+**Reference**: `docs/design/system-one-decisions/design.md` §11 D5, E33, E35;
+`.ai/tasks/completed/2026-10/system-one-triage/result.md` § Follow-ups (asked for this entry at
+finalization; added at the `system-one-decisions` cluster close, 2026-10-08).
+
+---
+
+## A browser story for client-tool turns (CORS pre-flight + a proxied entry point)
+
+`callProviderCompletionStream` pre-flights `IAiProviderDescriptor.streamingCorsRestricted` and
+returns a legible `Result.fail` before fetch when the descriptor is CORS-restricted and the call is
+not proxied. `executeClientToolTurn` is also a streaming entry point and does neither: it never
+reads the flag, and there is no proxied client-tool variant. So a browser client-tool turn against
+`xai-grok` (the one registry descriptor that sets the flag) reaches a direct fetch and dies with a
+CORS error rather than an actionable refusal.
+
+The plain completion paths have a complete browser story — the CORS flags plus
+`callProxiedCompletion` / `callProxiedCompletionStream`. The client-tool path has neither half. It
+was never given one.
+
+**Why deferred**: there is no browser consumer. Every caller of `executeClientToolTurn` is Node-side
+— `@fgv/ts-extras-mcp`, `@fgv/ts-agent-memory`, and the testbed scenarios; nothing in
+`ts-web-extras`, `ts-app-shell`, `ts-res-ui-components`, or any app. Closing the gap is a feature,
+not a bug fix, and speculatively shaping an API for a consumer that does not exist is how the
+surface accretes things nobody asked for.
+
+Adding the guard *alone* would be worse than the status quo: its natural message points the caller
+at `callProxiedCompletionStream`, a route that cannot carry a client-tool turn, because the proxy
+stream adapter allowlists four of the seven `IAiStreamEvent` variants and silently drops the three
+`client-tool-*` ones. An opaque CORS failure at least fails loudly; a proxy that quietly discards
+tool calls fails in the middle of a conversation.
+
+**Dependencies**: a real browser consumer. If one appears, this is one coherent change — proxied
+client-tool entry point, full event passthrough on the proxy adapter, and the pre-flight guard —
+not three separate fixes.
+
+**Reference**: raised by Copilot on #678 as a blocking finding; declined there with this reasoning,
+after confirming against the code that nothing advertises browser support for client-tool turns (the
+"works on all four providers" claim is provider coverage, and that sentence now says so). The
+documentation shipped in #678 states the current behavior; this entry records why it was documented
+rather than fixed.
+
+---
+
+## A restamped `embeddingRef` synthesizes the scoped key rather than recovering the index's
+
+`IMemoryStore.reconcile(kind, 'record-vector')` repairs the case where the index holds a vector but
+the envelope lost its `embeddingRef` — a swallowed failure after the vector was committed. That
+branch's whole value is that it needs **no embedder call**: `has(target)` already proved the vector
+exists.
+
+But there is no contract member that returns *the reference the index minted for that vector*.
+`IVectorIndex` is `add` / `remove` / `query` / `has` / `size` / `rebuild`; only `add` returns a
+reference, and calling it would require the embedding this branch exists to avoid. So the restamp
+writes `edgeTargetKey(target)`.
+
+That is correct for both shipped indexes, whose reference **is** the scoped key. A third-party index
+that mints something else gets the scoped key stamped by a restamp and its own reference stamped by
+`put` — a divergence that is invisible until something reads `embeddingRef` expecting the index's
+form.
+
+**Options, none obviously right:** widen `has` to return `Result<string | undefined>` (the reference
+or absent), which makes the member less pleasant for the common case; add a separate
+`referenceFor(target)`; or drop the restamp optimization and re-embed, which is always correct and
+costs the round trip. Not decided here because no consumer has a non-key reference, and picking
+under that condition would be guessing.
+
+**Trigger**: the first `IVectorIndex` implementation whose `add` returns something other than
+`edgeTargetKey(target)`.
+
+**Reference**: `storeReconcile.ts`, the restamp branch — the assumption is stated at the call site.
+
+---
+
+## A `vec0` rebuild at a new dimension fails with a raw SQLite error instead of an actionable one
+
+Raised by the CodeRabbit pass on #633 and **filed rather than fixed**, because it is a message-quality
+improvement rather than a correctness one and #633 was already large.
+
+**The behaviour today.** `SqliteVecVectorIndex._clear` / `SqliteVecFragmentIndex._clear` empty the rows
+but cannot release the table's declared dimension — it is `vec0` schema and there is no `ALTER TABLE`.
+The in-memory siblings forget their dimension on reset. So a `rebuild` with a different-dimension
+embedder **succeeds in memory and fails on SQLite**, which is the one place the two shipped
+implementations of these contracts genuinely diverge. Both `rebuild` contracts and both `_clear`s now
+say so. It does fail loudly — `add` is capture-wrapped, so the column-width mismatch surfaces as a
+`Failure` and the default `onRecordError: 'fail'` aborts — but the message is SQLite's, not ours, and
+it does not name the remedy.
+
+**The proposed improvement, and the distinction that makes it work.** Check at **`rebuild`** time, not
+at `create`: at `create` there is no dimension to compare against when the table does not yet exist,
+but at `rebuild` the embedder's **first returned vector reveals the new dimension before any row is
+written**. Comparing it to the established `_dimension` there and failing with a message naming the
+drop-and-re-index remedy converts a documented footgun into an enforced one. That framing is
+CodeRabbit's and is better than the version this stream had considered.
+
+**Cost is embedding time, never data** — vectors are derived and the vault records remain
+authoritative. Applies to both index classes.
+
+**Trigger**: the first consumer to change embedding model or dimension against a persistent index —
+or any report of a rebuild failing with an opaque `vec0` error.
+
+---
+
+## `reconcile` reports no progress, and `coverage` cannot split a shortfall into declined vs failed
+
+Both deferred by `agent-memory-derived-state-reconciliation` (2026-08-15) as its design's OQ-1 and
+OQ-2. Recorded here because a deferral that lives only in a stream's `result.md` is a deferral
+nobody will find.
+
+**OQ-1 — no progress callback on `IMemoryStore.reconcile`.** A repair over a large kind can run for
+minutes of embedder time behind one unresolved promise. An `onProgress` hook is the obvious
+addition and is purely additive whenever it lands. Deferred because designing a progress vocabulary
+— per record? per batch? what does it carry? — with no caller to check it against would be
+speculative, and the shape of the first real caller's progress UI is the thing that decides it.
+**Trigger**: the first consumer that runs `reconcile` over a kind large enough to want a progress
+bar, or that reports a reconcile appearing to hang.
+
+**OQ-2 — `coverage()` does not cross-reference the observation store.** Coverage reports a
+shortfall but not *why*: the missing records could be embedder declines (intentional, healthy) or
+embed failures (needs repair). The `'write'` observation's `embed` outcome carries exactly that
+split, so a coverage surface *could* join against `MemoryObservationStore` and report it. Deferred
+for two reasons that are still true: `coverage()` must work with **no observers wired** at all, so
+the split can never be more than an optional enrichment; and `reconcile` learns the same split
+**authoritatively** by re-running the embedder, where the observation store only reports what was
+seen at write time. **Trigger**: a consumer that needs the declined-vs-failed split *without* paying
+for a reconcile — i.e. wants it on a dashboard rather than in a repair.
+
+**Explicitly still out of scope, per the stream's brief**: automatic/scheduled repair, and
+persisting coverage snapshots over time. Both are deployment concerns; the library gives the
+measurement and the repair, and the policy for when to run them belongs to the consumer.
+
+---
+
+## `listScoped` can fail on a concurrent eviction, and the loss is not countable
+
+`FileTreeMemoryStore.listScoped()` is the sole feed for `asRecordSource()`, and therefore for
+`IVectorIndex.rebuild`. Since `agent-memory-index-partial-read` (2026-08-15) the index holds
+envelopes rather than records, so `listScoped` reads a file per record — and it does **not** hold the
+write lock. A concurrent `put` whose cap-cull physically evicts a record between the envelope
+snapshot and the read makes the whole call fail, which fails a live rebuild over an entirely ordinary
+write.
+
+**The obvious fix is wrong and was tried.** Dropping the vanished record instead lands it in none of
+the listing's `records` / `excluded`, nor the report's `indexed` / `declined` / `skipped` — so a
+caller computing coverage undercounts *in the direction of looking healthier*. That is verbatim the
+failure `vectorRecordSource`'s own tally exists to prevent, reintroduced one layer down. It was
+caught by that stream's antagonist pass and reverted to fail-loud, which is recoverable where a
+silent undercount is not.
+
+**What a real fix needs**: make the loss *countable*. Either extend `IMemoryRecordListing` with a
+third tally beside `excluded` (a record that vanished mid-read is neither excluded nor a fault of the
+embedder, so it is a genuinely new category), or take a read lock for the duration of the walk and
+pay the write-latency instead. Both are contract or concurrency decisions that should not be made
+inside an unrelated stream.
+
+**Trigger**: the next `IMemoryRecordSource` / `IVectorRebuildReport` change, or the first report of a
+rebuild failing under write load.
+
+**Reference**: `.ai/tasks/completed/2026-08/agent-memory-index-partial-read/` § "The one that nearly
+shipped wrong".
+
+---
+
+## A scope-only fragment narrowing costs a full ranked scan on `SqliteVecFragmentIndex`
+
+`IFragmentQueryOptions` carries `scope` and an optional `id`. The **`scope` + `id`** case — a
+non-versioned kind, one record — pushes down into the `vec0` partition (`AND target_key = ?`), so
+KNN never leaves that record's rows. The **scope-only** case — a versioned kind, whose every version
+is a separate record under the entity's subtree — does not: `target_key` equality cannot express a
+prefix, so the implementation fetches the *whole* ranked set (`fetchK = fragmentCount`) and applies
+the `scope\0` prefix filter in JS before the `topK` cut.
+
+**It is correct, and the property that matters holds** — `topK` is applied to the narrowed set, so a
+scoped query never comes back short. The cost is that a narrowing to one entity scans every fragment
+in the index, which is the opposite of the cost profile a narrowing implies. On a vault where the
+fragment index is small this is invisible; on a large one it makes the versioned-kind narrowing the
+expensive case precisely because it is the more structured one. `InMemoryFragmentCosineIndex` has no
+such asymmetry (it iterates the record map either way, with an O(1) lookup for the single-record
+case), so the two implementations diverge in cost while staying identical in result — which is how
+this stays easy to miss.
+
+**What a real fix needs**: a stored scope column to filter on (a `+scope` auxiliary column is
+readable but not filterable in `vec0`; a real filter wants a partition or a shadow table), or
+resolving a versioned entity's versions to explicit `target_key`s up front and issuing N
+partition-restricted queries. The first is a `vec0` schema change, and this package's schema changes
+require a drop-and-re-index — so it should ride along with the next one rather than force its own.
+
+**Trigger**: a consumer reporting fragment-query latency on a versioned kind, or the next
+`SqliteVecFragmentIndex` schema change (fold it in then).
+
+**Reference**: `fragment-query-scoping` stream, 2026-08-18;
+`libraries/ts-agent-memory-sqlite-vec/src/packlets/sqlite-vec-index/sqliteVecFragmentIndex.ts`
+`query()`.
+
+---
+
+## Whether on-demand body reads want a cache
+
+`agent-memory-index-partial-read` made every `list` / retrieve materialize bodies from storage on
+demand. Its brief put a cache policy explicitly out of scope, and the design argued (OQ-3) that the
+required-narrowing selection makes caching moot by removing the accidental whole-vault read.
+
+That argument covers the *accidental* case, not the deliberate one: a caller with a genuinely hot
+working set now re-reads the same files on every query, and nothing measures how often. **Open, and
+deliberately not answered by symmetry** — if it is worth doing, it should be driven by a measured
+consumer workload, with the eviction policy chosen from what that workload shows. Recording it here
+because the stream's `result.md` re-opened it after the design closed it, and a question live in two
+documents with opposite answers is a question that belongs in this file.
+
+**Trigger**: a consumer reporting read amplification, or the first workload measurement.
+
+---
+
+## `IFragmentVectorIndex` had no `rebuild` and no `size` — **RESOLVED 2026-08-15**
+
+> **Resolved by `agent-memory-derived-state-reconciliation`.** `IFragmentVectorIndex` now carries
+> `has`, `recordCount`, `fragmentCount` and `rebuild`, and `SqliteVecFragmentIndex` implements all
+> four — so a persistent fragment index can be backfilled through the contract, which was E4's whole
+> complaint on that lane. The rebuild returns `IFragmentVectorRebuildReport`, which applies
+> `IVectorRebuildReport`'s per-kind rule verbatim and adds `fragments` (the fan-out), so the
+> `excluded` tally the fragment path used to drop on the floor is now propagated.
+>
+> Kept rather than deleted because the *reasoning* — why a coverage report needs the fan-out that
+> neither `indexed` nor a record count expresses — is what a future fragment-lane change should read.
+
+## `ts-prompt-assist` — cache parsed store records in the resolve path
+
+`PromptLibrary.resolve` re-reads and **re-parses YAML from the store on every call**. The resolve path (`resolve/promptLibrary.ts:622`) calls `walkScopeChain(this._store, …)` unconditionally first, and `FileTreePromptStore` has no record cache — `store.get` → `_readPromptFile` → `yamlConverter.convert(text)` (`store/fileTreePromptStore.ts:160/239/254`) parses on every read. Per resolve this is **O(scope-chain depth) for the requested prompt only** — the `<id>.yaml` in each scope of *that resolve's* chain (`chainWalker.ts:44`) + the per-scope `_bindings.yaml` (`:67`) + recursively the inner-prompt files for any `kind: 'resource'` slots. It is NOT a re-parse of the whole library.
+
+What's already cached (the expensive work): the ts-res **materialization** (`_materialized`, keyed by descriptor-canonical, `:888/916`) and Mustache templates (`_mustacheCache`); `describe()` uses `_descriptorCache` (`:493`), but `resolve` does not. So only the YAML file read + parse of the requested prompt's chain is redundant on a repeat resolve of a hot prompt.
+
+**The fix:** add a parsed-store-record cache in the resolve path (or have `resolve` reuse a record/descriptor cache instead of hitting `walkScopeChain` raw). This is **invalidation-free today** because `FileTreePromptStore` is **read-only at v0.1** — records are immutable for the library's lifetime. The cache key must match the resolve lookup granularity (scope + id, plus the scope `_bindings.yaml`), not just id.
+
+**Why deferred**: not a problem at current scale — the per-resolve parse is a handful of small files and the heavy ts-res setup is already cached. Surfaced as an investigation finding, not a live bottleneck.
+
+**Dependencies**: the per-resolve YAML parse showing up as a real cost in a profiled workload. **Coupling note:** when a write API lands (`put`/`delete`/`watch` — itself a separate FUTURE item, the store is read-only at v0.1), this record cache needs invalidation wired to writes; design the cache so that hook is additive.
+
+**Reference**: 2026-06 investigation — an agent asserted "re-parses all prompt YAML files on every call"; verified the kernel (no record cache → per-resolve re-parse) but corrected the scope (requested prompt's chain files, not the whole library). Originally filed as PR #493; landed via #566 after #493 conflicted.
+
+## OpenAI frontier via Responses routing
+
+> **SHIPPED** — the `ai-assist-openai-frontier-responses` stream. `callProviderCompletion`
+> and `callProviderCompletionStream` now route Responses-API-only OpenAI models
+> (`gpt-5.5-pro`, and any future `-pro`/Responses-only line) to the Responses API via the
+> declarative `IAiProviderDescriptor.responsesOnlyModelPrefixes` marker + the
+> `isResponsesOnlyModel` predicate, even with no tools requested. The `frontier` tier key
+> `@openai:pro → gpt-5.5-pro` is restored and invokable on both the completion and streaming
+> paths. Routing-decision fork resolved in favor of the declarative model-prefix marker (over
+> frontier-tier-specific routing) because it also fixes a direct `modelOverride: 'gpt-5.5-pro'`,
+> not just the tier. Live-verified via the `openaiModelTiersScenario` canary against `gpt-5.5-pro`.
+> Artifacts: `.ai/tasks/completed/2026-07/ai-assist-openai-frontier-responses/brief.md` (shipped, PR #522).
+
+## Horizontal composition B+1 — dependency-ordered render-merge-reinject (topo-sort)
+
+`@fgv/ts-prompt-assist`'s `HorizontalComposer` (shipped Phase B) uses **render-then-merge**: each contributor resolves+renders independently, then the composer merges the rendered per-slot values. This loses **cross-slot placeholders** — a contributor slot value that references another logical slot (`{{otherSlot}}`) is inserted literally, not resolved.
+
+B+1 preserves them via **topological-sort rendering**: extract each slot value's `{{…}}` references → build a slot-dependency DAG → render+merge in topo order, so each merged logical slot is available to downstream slots' renders ("render A, merge A, re-inject merged A into B"). It is the **horizontal analogue of the vertical recursive resource binding that already ships** — so the existing RFC-8785 cycle-detection machinery (`buildCycleKey` in `resolve/resourceBindingResolver.ts`, a standalone exported fn that works on slot names unmodified; the stack-frame + 3-line cycle-check templates) is **directly reusable** for the acyclicity check.
+
+**Why deferred**: the requesting consumer (PersonAIlity) authors **no** cross-slot `{{…}}` references today (OQ-5). Phase A/B kept the forward-compat guards (declared `logicalSlots` order is a tiebreaker, NOT semantic processing order; `IResolvedPromptSlot.value` stays named `value`), so B+1 is a non-breaking additive replacement of "declared order" with "topo order" — the public `IComposedPrompt` API is unchanged.
+
+**Dependencies**: the trigger is the **first cross-slot `{{…}}` reference the consumer authors** — they'll flag it. Size L (its own stream).
+
+**Reference**: `.ai/tasks/completed/2026-06/prompt-assist-horizontal-composition/` (design.md §"Phase B+1", + the §"phase-1 must not preclude" guards); 2026-06 horizontal-composition design discussion.
+
+## Horizontal composition — rewrite / model-synthesis merge strategy + sub-slot provenance
+
+`HorizontalComposer`'s `LogicalSlotStrategy` today is the two-value mechanical set (`'concatenate' | 'overwrite'`), with `constraint`-directive contributions always concatenated-first-and-never-dropped underneath whatever strategy the non-constraints apply. A third class of merge was requested: a **rewrite / model-synthesis** strategy — instead of joining or picking, an out-of-band synthesizer (typically an LLM) *rewrites* the several contributions for a logical slot into one coherent passage. The composer would carry the strategy as a **seam** (the synthesizer is consumer-injected — the library must not take an ai-assist dependency), invoke it over the ordered, directive-filtered contribution list, and record the result.
+
+This pulls in the **sub-slot provenance** half of the ask: today `IComposedPrompt.provenanceTrace` maps each logical slot to an ordered `ISlotProvenanceEntry[]` (which contributor, which strategy, was-it-a-constraint) — provenance at **whole-contribution** granularity. A synthesis merge destroys the 1:1 contribution→span correspondence (the output is a rewrite, not a concatenation), so honest provenance for it needs **sub-slot** attribution — spans/segments of the synthesized text traced back to contributing sources, or an explicit "synthesized, sources: […]" marker when span-level attribution isn't recoverable. The additive-vs-breaking line: adding a `'synthesize'` strategy value + an injected synthesizer seam is additive; enriching `ISlotProvenanceEntry` to carry sub-slot spans should stay additive (new optional fields), but the trace-consumer contract wants design care so a future span model doesn't force a break.
+
+**Why deferred**: the requesting consumer authors only `concatenate`/`overwrite` slots today — no synthesis merge in use, and the constraint-first-never-dropped safety semantics already cover the load-bearing case (a synthesizer must still be handed the constraints as non-negotiable, which is its own design question). Trigger-gated on the consumer actually wiring a synthesizer.
+
+**Dependencies**: the trigger is the **first logical slot the consumer wants synthesized** rather than concatenated/overwritten (they'll flag it). Design must settle: the injected-synthesizer seam shape (sync vs async `Result`-returning; how constraints are presented as non-negotiable), and the sub-slot provenance model (span-level vs marker-level). Size M–L (its own stream); composes with — but is independent of — the B+1 topo-sort entry above.
+
+**Reference**: `.ai/tasks/completed/2026-06/prompt-assist-horizontal-composition/` (design.md — the `LogicalSlotStrategy` set + `provenanceTrace` / `ISlotProvenanceEntry` shape are the extension points); 2026-06 horizontal-composition design discussion; consumer orchestrator's forwarded deferred-asks batch (2026-07).
+
+## Generic editor UX for `@fgv/ts-prompt-assist`
+
+The `ts-prompt-assist` library is shape-agnostic about the consumer's domain (open `surface`, `slot.kind`, `slot.source`; consumer-supplied scope hierarchy encoded into opaque `ScopeKey` strings). Editor UX for authoring prompt descriptors and scope-level binding records is **complex** — qualifier-conditioned candidate editing, slot-binding override visualization, resource-binding navigation, the `IPromptResolveTrace` "where did this value come from" view, validation against registered Converters / serializers / output validators.
+
+The question: can the editor UX be made **generic** (shipped as `@fgv/ts-prompt-assist-ui` or similar, parameterized on consumer registries)? Or is the consumer's domain shape — closed surface enum, closed slot kinds, scope hierarchy — too inextricably tied to the UX for a generic version to be useful in practice?
+
+Arguments for genericizing: complex UX; multiple consumers would benefit; the registries already abstract the closed-vocabulary parts.
+
+Arguments against: every consumer's scope hierarchy is bespoke; editor screens that show "actor: user-42 → role:editor → tenant:acme → global" need consumer-specific labels and navigation; per-surface preview ("this is what the chat assistant will say") is surface-specific by definition.
+
+**Why deferred**: only one consumer (`personaility`) so far; v0.1 hasn't shipped; the editor UX shape isn't designed yet on the consumer side either. Decide when the consumer ships its in-app editor and we can compare what's truly consumer-specific vs library-genericizable.
+
+**Dependencies**: `ts-prompt-assist` v0.1 ships and stabilizes; consumer's in-app editor lands; second consumer surfaces (or doesn't). If a second consumer wants the same editor shape, that's strong evidence for genericizing.
+
+**Reference**: `.ai/tasks/completed/2026-05/ts-prompt-assist/brief.md` (stream commission discussion).
+
+---
+
+## Samples app for `@fgv/ts-prompt-assist`
+
+**Status: superseded by `samples/testbed` (2026-05-22).** Absorbed into the general-purpose `samples/testbed` sample-browser being built under the `local-ai-exploration` cluster. The testbed will demonstrate `@fgv/ts-prompt-assist` scenarios alongside scenarios for other fgv capabilities (ai-assist, ts-res, bcp-47, crypto, etc.) — one general showcase that grows scenarios over time beats two parallel demo apps. See `.ai/tasks/completed/2026-05/local-ai-exploration/brief.md`.
+
+---
+
+## `integrations/` top-level directory for Result-integration boundary packages
+
+The `crypto-batch-2-webauthn` stream shipped two packages (`@fgv/ts-extras-webauthn`, `@fgv/ts-web-extras-webauthn`) whose entire mission is to wrap a well-maintained upstream library (`@simplewebauthn/*`) and adapt its throw-based API into the fgv `Result<T>` model. The package boundary is the whole product; no fgv-specific abstraction sits on top. This is structurally distinct from the libraries under `libraries/` that publish original utility primitives.
+
+The question: does the pattern deserve its own top-level directory (e.g. `integrations/`), or is `libraries/` plus the naming convention `ts-extras-X` / `ts-web-extras-X` sufficient signal? Today the packages live in `libraries/` for consistency, but as the pattern recurs (likely candidates: future LLM provider wrappers, future credential-protocol wrappers) the structural distinction may earn its own home.
+
+**Why deferred**: only one batch of packages so far (`-webauthn`); not enough recurrence to justify a directory rename. Decide when the second or third such package lands and the pattern is clearly distinct from "library that publishes original utilities."
+
+**Dependencies**: at least one more Result-integration-boundary package landing; or a concrete consumer-side ergonomics complaint about discoverability of these packages.
+
+**Reference**: `.ai/tasks/completed/2026-05/crypto-batch-2-webauthn/` (OQ-1 + followups section); cluster-close PR.
+
+---
+
+## Client-defined tools for `@fgv/ts-extras/ai-assist` (function calling + MCP)
+
+**Status: partially shipped 2026-06-04 via PR #447 (Phase C / layer 1 — harness-supplied tools).**
+
+Layer 1 (harness-supplied tools) shipped: `IAiClientTool`, `executeClientToolTurn`, per-provider streaming adapters (Anthropic, OpenAI Responses, Gemini), `client-tool-call-start` / `client-tool-call-done` / `client-tool-result` stream events, multi-turn `continuation.messages` round-trip. Verified live against Anthropic API on 2026-06-04.
+
+**Remaining future work:**
+
+**MCP tools (layer 2).** **Slice 1 shipped 2026-06-06 via the `ts-extras-mcp` stream** — the new `@fgv/ts-extras-mcp` (Node) package wraps `@modelcontextprotocol/sdk`, discovers a server's tools, and adapts each into an `AiAssist.IAiClientTool` (`adaptMcpTools`) that drops directly into `executeClientToolTurn`. Graceful degradation: tools whose `inputSchema` is outside the `JsonSchema.fromJson` subset are excluded, surfaced on `skipped`, and NOISY-warned with the raw schema. Compatibility probe: the `samples/testbed` `mcp-probe` scenario. See `.ai/tasks/completed/2026-06/ts-extras-mcp/`.
+
+**`runToolUseConversation` — the multi-turn orchestration helper (re-queued 2026-08-14).**
+`executeClientToolTurn` is deliberately a **per-turn** primitive: the consumer drives the outer
+loop. The higher-level helper that owns the loop — round cap, termination on a no-tool round,
+cumulative continuation threading — was scoped out of `ai-assist-client-tools` at v0.1 and has
+never been built.
+
+*Why this paragraph exists.* It was deferred by **two** streams (`ai-assist-client-tools` and
+`ai-assist-cross-provider-continuation`), each recording it as out-of-scope and each believing it
+was captured here. It was not — a grep across `docs/` and `.ai/instructions/` on 2026-08-14
+returned nothing outside completed-stream artifacts. Re-queued by the retroactive `finalize-task`
+sweep. Two independent deferrals landing in the same hole is the argument for the deferral itself
+being the thing that needs a durable home, not the item.
+
+*Preconditions now met that were not at v0.1:* continuation forwarding reaches all four providers
+(`ai-assist-cross-provider-continuation`, #454) and `continuation.messages` is cumulative across
+rounds (`ai-assist-tool-continuation`, #488), so a loop helper can now be written provider-agnostically
+against a replace-not-concat contract. **Note the one gap it would inherit:** every `*ClientTools`
+testbed scenario is still two-turn, the degenerate case where replace and accumulate coincide — the
+exact blind spot that hid the original per-round bug. A multi-round live scenario should land with
+or before the helper.
+
+**`runToolUseConversation` — the multi-turn orchestration helper (re-queued 2026-08-14).**
+`executeClientToolTurn` is deliberately a **per-turn** primitive: the consumer drives the outer
+loop. The higher-level helper that owns the loop — round cap, termination on a no-tool round,
+cumulative continuation threading — was scoped out of `ai-assist-client-tools` at v0.1 and has
+never been built.
+
+*Why this paragraph exists.* It was deferred by **two** streams (`ai-assist-client-tools` and
+`ai-assist-cross-provider-continuation`), each recording it as out-of-scope and each believing it
+was captured here. It was not — a grep across `docs/` and `.ai/instructions/` on 2026-08-14
+returned nothing outside completed-stream artifacts. Re-queued by the retroactive `finalize-task`
+sweep. Two independent deferrals landing in the same hole is the argument for the deferral itself
+being the thing that needs a durable home, not the item.
+
+*Preconditions now met that were not at v0.1:* continuation forwarding reaches all four providers
+(`ai-assist-cross-provider-continuation`, #454) and `continuation.messages` is cumulative across
+rounds (`ai-assist-tool-continuation`, #488), so a loop helper can now be written provider-agnostically
+against a replace-not-concat contract. **Note the one gap it would inherit:** every `*ClientTools`
+testbed scenario is still two-turn, the degenerate case where replace and accumulate coincide — the
+exact blind spot that hid the original per-round bug. A multi-round live scenario should land with
+or before the helper.
+
+**Dependencies**: ai-assist-client-tools cluster closed to release (done 2026-06-04).
+
+**Reference**: 2026-05-30 conversation (Erik watching personaility's roadmap); `.ai/tasks/completed/2026-06/ai-assist-client-tools/`; PR #447; `.ai/tasks/completed/2026-06/ts-extras-mcp/`.
+
+---
+
+## `@fgv/ts-extras-mcp` slice-2 follow-ups
+
+Deferred from the `ts-extras-mcp` slice-1 stream (2026-06-06). Each is additive on the new package's surface.
+
+- **Browser sibling `@fgv/ts-web-extras-mcp`.** Slice 1 is Node-only (stdio transport spawns a subprocess; HTTP transport is fine in-browser modulo CORS). A browser package would expose `createHttpTransport` + the session/adapter surface backed by the SDK's browser-compatible transports.
+- **MCP resources / prompts / sampling.** Slice 1 covers tool discovery + invocation only. MCP servers also expose resources, prompt templates, and sampling callbacks.
+- **OAuth / managed auth — partly shipped (mcp-round-2b).** `createHttpTransport({ authProvider })` wraps the SDK's `OAuthClientProvider` in a forwarding facade (a different object from the consumer's provider) whose interactive steps are gated to `connectMcpSession`, and `unauthorized` carries `resourceMetadataUrl`. What remains is the helper below.
+- **A Result-wrapped helper around the SDK's `auth()` flow** (personaility#677, "welcome, not required"). After `redirectToAuthorization`, a consumer has to call the SDK's `auth(provider, { serverUrl, authorizationCode, resourceMetadataUrl, fetchFn })` itself to exchange the code, and must remember to pass its guarded fetch as `fetchFn`. Shape: `completeMcpAuthorization({ url, authProvider, authorizationCode, fetch?, resourceMetadataUrl?, signal? }): Promise<DetailedResult<'authorized', McpFailureReason>>` — `sdk.ts` calls `auth()` with the package's egress wrapper (so the guard, the static-header rule and the `resource_metadata` capture apply), classifies with the same classifier, and never echoes the code or tokens. Optionally a `beginMcpAuthorization` that runs discovery and returns the authorization URL without a connect. Additive; no consumer blocked on it today.
+- **Pinned connect for MCP egress.** The guarded fetch closes SSRF per hop but not DNS rebinding (the platform re-resolves after the guard). The safer-fetch pinning seam (`IGuardVerdict.pinnedAddress` + a pinning `IFetchTransport`) is where it lands, as its own stream; `createGuardedFetch` takes a `transport`, so it inherits the fix without a signature change.
+- **Rich tool-result blocks into the ai-assist round-trip.** `callMcpTool` returns every content block (`blocks`, mcp-round-2a), but `adaptMcpTools`' tools still hand the model the text projection: an `IAiClientTool` result is a string today, so images, audio and embedded blobs cannot reach the model. Needs a multimodal tool-result shape in `@fgv/ts-extras` ai-assist first.
+- **Cross-server tool-name namespacing.** Connecting multiple servers can collide tool names; duplicates already fail loudly in `executeClientToolTurn`, but a namespacing/prefixing scheme would let multiple servers coexist.
+
+**Headline follow-on lever — additively widen `JsonSchema.fromJson`'s supported subset** (in `@fgv/ts-json-base`). The single biggest real-world risk is schema-subset mismatch: real MCP servers advertise shapes `fromJson` rejects, so those tools land in `adaptMcpTools`' `skipped` set.
+
+*Shipped so far:* the nullable union `type: [T, 'null']`; open objects that pass undeclared keys through (#720); in the `json-schema-fromjson-widening` stream, `anyOf`/`oneOf` `[T, {type:'null'}]` (pydantic `Optional[T]`) normalized to nullable, local `$ref`/`$defs` inlined with cycle and size bounds, and schema-valued `additionalProperties` as `JsonSchema.record`; and, in the `json-schema-shapes` stream (PersonAIlity#683), **numeric and boolean `enum`** (pydantic `Literal[1, 2]`; `JsonSchema.numberEnumOf` / `integerEnumOf` / `booleanEnumOf`), **scalar `const`** (now enforced, emitted as a one-value `enum`), and **`{}`** (pydantic `Any`; `JsonSchema.anyValue`). Their wire support is stated per provider in the #682 capability tables: Gemini folds a non-string `enum` into the description (its `enum` is string-only), and every wire that requires a `type` on every schema, or does not document a typeless one, refuses `{}` rather than inventing a type. The trade-off is drawn by where the tool comes from: a **host-authored client tool** with `{}` fails the request loudly on such a wire, naming the tool and the path (an authoring error the host can fix); an **MCP tool** is admitted by `adaptMcpTools` against the target wire's table, **defaulting to the conservative one**, so a server tool with `{}` is skipped — as it was before this stream — unless the host passes a table that carries it (Anthropic tools). See `.ai/tasks/completed/2026-10/json-schema-shapes/result.md`. And, in the `json-schema-pattern` stream, `pattern` split by trust: a host's `RegExp` through `stringOptions({ pattern })` is enforced and sent where the wire documents `pattern`, while `fromJson` admits a server's `pattern` only with an injected `patternValidator`, so the library itself never compiles one (see `.ai/tasks/completed/2026-10/json-schema-pattern/result.md`).
+
+*Still refused, each deferred with its reason* (requested in PersonAIlity#683, which left the choice to fgv):
+
+- **A default `patternValidator` — ✅ shipped (`ts-extras-re2`, #746).** `@fgv/ts-extras-re2` exports `re2PatternValidator` (and `createRe2PatternValidator` for tighter limits), a `JsonSchema.SchemaPatternValidator` on re2js, a pure-JS port of RE2 with no native build. It reads the source as an ECMA-262 `u`-mode pattern and rewrites it into RE2 syntax with the same meaning, or refuses it (lookaround, backreferences, binary Unicode properties, non-ASCII group names, Annex B syntax). It bounds source length and compiled program size. Why the default is refusal and not a `RegExp`: the regex comes from the MCP server, and a backtracking engine run against model-supplied strings is catastrophic on `(a+)+$` and polynomial on `\d+\d+\d+…`. A linear-time engine closes both classes, which is why the default lives in its own package rather than in `ts-json-base`. See `.ai/tasks/completed/2026-10/ts-extras-re2/result.md`. The wire side already has its per-provider design: the `pattern` row in the ai-assist keyword tables passes it on Anthropic tools and Anthropic JSON outputs and folds it elsewhere. **Gemini folds only because its Schema documents the `pattern` field but not its dialect or anchoring**; an enforcement probe (an unanchored pattern, and a reply that would match it only partially) could justify passing it there later, as one could for xAI if it ever matched JSON Schema's unanchored reading.
+- **`{}` on Gemini through `parametersJsonSchema`.** Gemini's `FunctionDeclaration` has a full-JSON-Schema alternative to the OpenAPI-subset `parameters` field, which could carry a typeless schema. Moving the Gemini tool path onto it is a separate provider-path change (it would also change how every other keyword is sent), so today a Gemini request carrying `{}` is refused.
+- **Declared `properties` plus a schema-valued `additionalProperties`** (zod `.catchall()`, pydantic typed extras). The converter is a one-line generalization of the record path; what is missing is a builder typing that does not collapse to `never` when the declared and undeclared value types differ.
+- **General unions** (`anyOf` of two non-null schemas) — out of scope by the requester's own statement, and unrepresentable on strict provider schemas.
+
+Not part of this lever: the constraint keywords (`minimum`, `maxLength`, `format`, …), which PersonAIlity#682 (`json-schema-constraints`, #734) made enforced, emitted and adapted per provider.
+
+**Reference**: `.ai/tasks/completed/2026-06/ts-extras-mcp/brief.md` + `design.md`.
+
+
+---
+
+## Web-runnable CLI scenarios in `samples/testbed`
+
+Today only 2 of the testbed's 16 scenarios have `web` implementations (`local-classifier-safety`, `local-embedding-search`); everything else renders the shell's "This scenario has no web interface — run it from the CLI" panel. Most of those CLI-only scenarios are not intrinsically Node-bound — the provider client-tools, model-tiers, and embedding scenarios are HTTP calls that ai-assist already supports from the browser (directly, or via the proxied variants where CORS bites). A generic web runner — a shell-provided panel that executes a scenario's existing `run` logic in-browser and streams its logger + result text into the UI — would make the whole verification runbook drivable from the web app without writing a bespoke React component per scenario.
+
+Design space:
+- **Opt-in flag, not autodetection**: a scenario declares browser-compatibility (e.g. `webRunnable: true` or a shared `run` hoisted out of `cli`); genuinely Node-only scenarios (better-sqlite3 persistence, stdio MCP probe, Node-ONNX paths) stay CLI-only and keep the current panel.
+- **Secrets are the real prerequisite**: the shell's `IScenarioContext` currently stubs `keyStore: undefined` and `resolveSecret` (B-1 stub — "no web scenario calls it yet"). The web-side KeyStore story already exists as a primitive (`FileApiTreeAccessors.createFromLocalStorage`, per the local-ai-exploration recon) and is proven in `samples/ai-image-gen-sample`; wiring it into the testbed shell unblocks both this entry and the image-scenario port (see the P2 TECH_DEBT entry — shared prerequisite, do the wiring once).
+- **Output surface**: CLI scenarios return `Result<string>` reports; the runner needs only a monospace output panel + the existing StatusBar logger wiring.
+
+**Why deferred**: new shell capability, not a fix; the manual runbook is serviceable from the CLI today. Should follow (or ride with) the `ai-image-gen-sample` port so the secret wiring lands once.
+
+**Dependencies**: web-side KeyStore/secret wiring in the testbed shell (shared with the image-port TECH_DEBT entry); scenario-contract addition (`webRunnable` or equivalent) — additive.
+
+**Reference**: Erik 2026-07-26 ("I thought [we had a task] to make the CLI scenarios runnable in the UI… We should probably revive those"). This task was discussed but never persisted to the backlog — recovered from session context during the model-rotation verification runbook; filed now so it survives.
+
+---
+
+## Live-wire-shape verification testbed scenarios per provider
+
+**Status: shipped 2026-06-05 via the `per-provider-testbed-scenarios` cluster** (parent PR #453 + sub-stream PRs #454, #457, #458). Three new scenarios (`openaiClientTools`, `geminiClientTools`, `xaiClientTools`) in `samples/testbed/` parallel the existing `anthropicClientTools` scenario; all four PASS on live API as of cluster close. Empirical loop ran four times during the cluster; each round surfaced a real wire-shape bug that 100%-coverage unit tests missed and that the live runs caught. See `.ai/tasks/completed/2026-06/per-provider-testbed-scenarios/README.md` for the full arc.
+
+**Remaining future scope (carried forward):**
+
+### ~~Generic-version-alias library surface (companion concern)~~ ✅ SUBSTANTIALLY DELIVERED
+
+**Superseded 2026-08-15.** The `@<provider>:<role>` alias layer shipped in
+`ai-assist-model-aliases` (#505–#508) and the quality-tier axis followed it, so the "resolve a
+stable name to the current concrete id via a registry-maintained mapping" concern this entry
+describes is built. The text below is retained for the two axes the alias layer deliberately did
+**not** cover — capability-detection `idPattern` rules and the typed `*ModelNames` unions — which
+remain manual on a provider rotation and are tracked as a live entry in `docs/TECH_DEBT.md`
+rather than here.
+
+Note the example below is now doubly stale: it cites `gpt-4o` as OpenAI's default, which it has
+not been for three model generations (the line is currently `gpt-6-*`, selected by tier).
+
+*Original entry:*
+
+`<provider>:<family>-<major>-<minor>`-style canonical aliases resolving to the current dated snapshot via a registry-maintained mapping. The exact alias syntax should match the underlying SDK / API conventions per provider (e.g. Anthropic accepts `'claude-sonnet-4-6'` directly per the latest SDK; OpenAI / Gemini / xAI use different conventions). Provider-specific subaliases stay. The registry's `defaultModel` per provider currently pins a specific dated snapshot that goes stale (e.g. `gpt-4o` is not reasoning-capable but is the OpenAI default, so the new OpenAI testbed scenario had to explicitly pin `gpt-5.1`). Roughly 1-2 days of implementation work.
+
+**Dependencies:** per-provider SDK convention research.
+
+**Reference:** `.ai/tasks/completed/2026-06/per-provider-testbed-scenarios/` (scenario model pins are the proximate use case).
+
+### Gemini-side drift instrumentation
+
+The closeout sub-stream (PR #458) shipped warn-on-unrecognized-event drift instrumentation on the Anthropic and OpenAI Responses adapters but **deferred Gemini** because Gemini's `generateContent` streaming response is JSON-chunk-shaped, not named SSE events — the allowlist-by-event-name concept doesn't translate. The structural alternative is to dispatch on chunk sub-structure (`candidates[i].content.parts[j]` shape; top-level chunk keys; `finishReason` enum values) and warn on unknown sub-shapes. More nuanced than the allowlist; needs design before commissioning.
+
+**Why deferred:** Gemini's wire is richer in structure; naive "warn on every unhandled JSON key" would be noisy. The four-round empirical loop never surfaced a Gemini drift-class bug, so the urgency is lower. Commission proactively if symmetric self-diagnosing posture is wanted across all three adapters, OR reactively when a Gemini API evolution surfaces a real gap.
+
+**Reference:** `.ai/tasks/completed/2026-06/ai-assist-responses-reasoning-events/findings/inbox/2026-06-05-gemini-drift-instrument-deferred.md`.
+
+### Library default `max_output_tokens` for reasoning models
+
+**Still open, but its stated workaround is superseded (2026-08-15 note).** The entry advises the
+consumer to pass `max_output_tokens` through the `otherParams` escape hatch; a first-class
+`maxTokens` request param has since shipped (#573), so the workaround is now just "set
+`maxTokens`". That makes the case for a library default weaker, not stronger — the ergonomic gap
+this was filed against has mostly closed on its own.
+
+OpenAI Responses + reasoning models can silently truncate when the consumer doesn't set `max_output_tokens` and the model's reasoning + tool-use steps consume the default output budget before emitting visible text. The cluster's empirical loop surfaced this as the leading hypothesis on round 3 (ruled out via `incompleteReason` capture in round 4). Real root cause was the `item_id ↔ call_id` adapter bug, not budget exhaustion, but the usability gap is real: naive consumers calling with `reasoning.effort: 'low'` on a simple question can still hit budget exhaustion under realistic prompts.
+
+**Proposed fix:** the OpenAI Responses adapter applies a sane default `max_output_tokens` for reasoning models when the consumer doesn't supply one. Consumer can override via the existing `otherParams` mechanism.
+
+**Why deferred:** usability call, not a bug. The current behavior (consumer must supply `max_output_tokens` for reasoning workloads OR set `incompleteReason: 'max_output_tokens'` is the diagnostic) is correct but easy to miss.
+
+### Provider-side request validation (fail-fast on impossible combinations) — ⚠️ NARROWED
+
+**The motivating case has shipped (2026-08-15 note).** The Gemini grounding + client-tools
+combination this entry was filed for now **fails fast with a named `Result.fail` before any wire
+call** (`ai-assist-antagonist`, #529). What remains open is the generalized version — a registry
+of impossible per-provider combinations, checked uniformly — rather than the specific one. Read
+the text below as describing the general shape, not an unfixed bug.
+
+Gemini's API forbids combining built-in grounding (`web_search`) with function calling in the same request — surfaces as HTTP 400 with `INVALID_ARGUMENT`. The cluster's per-provider-testbed-scenarios round 2 hit this; the resolution was a scenario-side fix (drop `web_search` from the Gemini scenario), but a library-side improvement could fail-fast at request-build time with a clearer error pointing to the mutual-exclusion constraint.
+
+Could generalize to a per-provider "incompatible request shapes" registry that callers benefit from without provider-API-spec familiarity.
+
+**Why deferred:** the current behavior (provider HTTP-400s with its own message) isn't silent corruption; the quality-of-life improvement is real but bounded.
+
+### Caller-visible thinking-content stream events (`ai-assist-thinking-events`)
+
+Current ai-assist adapters discard thinking / reasoning content by design — only the final answer + tool-call events surface to the consumer. The provider-drift instrumentation in PR #458 explicitly classifies reasoning events as "intentionally silent" rather than "unrecognized." Surfacing them is a separate scope decision (consumer-facing API change; raises questions about per-provider differences in reasoning event shape).
+
+**Dependencies:** Phase A-style design on the caller-facing event API; agreement on which providers' reasoning content should surface.
+
+**Reference:** 2026-06-04 conversation; PR #447 P1-1 + PR #449 thinking-wire-shape + PR #448 browser-export demonstrate the failure mode; L37 codification (PR #445) is the principle; `samples/testbed/src/scenarios/anthropicClientTools/` is the shape template.
+
+### Gate thinking requests on the per-model capability table
+
+`ai-assist-thinking-anchoring` deleted `IAiProviderDescriptor.thinkingMode` (a required
+per-provider field that gated nothing — `providerDiscriminatorForId` already switches on
+provider **id**, not on that field) and closed the effort-vocabulary hole by adding `'none'`.
+The obvious next move looked like reusing `AiModelCapability`'s `'thinking'` entry —
+already populated per provider via `DEFAULT_MODEL_CAPABILITY_CONFIG`'s RegExp-on-model-id
+rules, and already used for listing/filtering — to have `callProviderCompletion` /
+`callProviderCompletionStream` reject a thinking request up front when the resolved model's
+capability set lacks `'thinking'`.
+
+**Deliberately not done in that stream, and the reasoning is the point of this entry.**
+`DEFAULT_MODEL_CAPABILITY_CONFIG`'s own doc comment states its posture explicitly:
+"Patterns are intentionally narrow — false positives are worse than missing a model." That
+posture is correct for a **listing filter**: a model the patterns miss from a menu is merely
+absent, a one-time annoyance discoverable by browsing. It is wrong for a **call gate**: the
+same miss now rejects a request the provider would have accepted, for a real model a caller
+legitimately passed via `modelOverride` — turning a false negative in the capability table
+into a hard failure on the call path, potentially for a model the table's authors simply
+hadn't added a pattern for yet (new model releases routinely outpace the pattern list).
+
+Reusing the table for gating therefore isn't a line change — it needs a design pass on one of:
+splitting the table into a permissive listing view and a stricter (or explicitly
+unknown-means-allow) gating view; widening the patterns until false negatives are rare enough
+to gate on; or giving the gate an explicit escape hatch for `modelOverride` calls. Each of
+those is a real design decision with tradeoffs, not a "just wire it up" reuse.
+
+**Why deferred:** no consumer has asked for call-path rejection of unsupported thinking
+requests (the actual failure mode today — the provider's own API 400s — isn't silent
+corruption, matching the "provider-side request validation" entry above). Worth a
+design-triage-implement stream if that changes.
+
+---
+
+## Prompt observability for `@fgv/ts-prompt-assist`
+
+**Status: shipped 2026-06-05 via the `ts-prompt-assist-observability` cluster** (Phase A #455 + Phase B triage commit + Phase C #456). Two new pieces of surface:
+
+- **`@fgv/ts-utils` (collections):** `RetainingRingBuffer<T>` — a generic bounded most-recent-N ring with monotonic-`seq` cursor paging, predicate filtering, and `lastSeq` stable across `clear()`. A *pure* substrate (caller mints `seq`/`timestamp`).
+- **`@fgv/ts-prompt-assist`:** new `observe` packlet — `IPromptObserver` (async `observe` + `fireAndForget?`), `IPromptObservationRecord` (`phase`-discriminated union: resolve vs output, cross-linked via `linkedResolveSeq`), `IPromptObservationQuery`, `PromptObservationStore` (implements the observer, composes the ring, schema-aware `query`). `PromptLibrary` gains additive `IPromptLibraryCreateParams.observers?` and fans out at the three public boundaries (`resolve` / `resolveJsonOutput` / `resolveFreeTextOutput`).
+
+See `.ai/tasks/completed/2026-06/ts-prompt-assist-observability/README.md` for the full arc.
+
+**Remaining future scope (carried forward):**
+
+### `MultiPromptObserver` standalone class
+
+Phase B OQ-7 deferred to v0.2: the library itself is the fan-out point today (it holds the `observers` array and runs `_observe`). Add a standalone `MultiPromptObserver` only if a consumer surfaces a need to compose observers *outside* the library (e.g., a tenant-aware fan-out that wraps multiple sub-observers before injection). File the use case as a finding when it appears.
+
+### Partial-trace threading on failure resolve records
+
+Phase B OQ-4 deferred: `IPromptResolveTrace` is constructed only on the success path inside `_renderResolved`. A failed `resolve()` returns a `Result.fail` with just a message. So `IPromptResolveObservation` on `outcome: 'failure'` carries `error` only — no partial trace. Surfacing partial trace would require `PromptLibrary` internals work (threading partial-trace state out of every early-return in `_resolveOnce`). Defer until consumer demand actually surfaces.
+
+### ts-res-driven qualifier matching for `PromptObservationStore.query`
+
+**Status: injection point landed 2026-06-05 via PR #460; default-implementation swap deferred (priority uncertain).**
+
+PR #460 factored qualifier-match into an injectable `IQualifierResolver` dependency on `PromptObservationStore`. The default `defaultStringEqualityQualifierResolver` does naive string equality on supplied (defined) axes — narrower semantics than `PromptLibrary.resolve` itself, which goes through ts-res's full qualifier-type matching (BCP47 language-tag similarity, priority ordering, custom type rules). A record produced under `lang=fr-CA` will NOT be returned by a query asking for `lang=fr` against the default resolver, even though ts-res would have considered them a match.
+
+Erik's framing (2026-06-05): "consider using ts-res instead of hardcoding custom (and incompatible) qualifier match logic." Verified: `PromptLibrary._resolveCandidates` does use ts-res fully (via `Runtime.ValidatingSimpleContextQualifierProvider` + `Runtime.ResourceResolver.resolveDecision`), so the store's narrow default IS a real divergence from how matches were produced.
+
+**Future work:** implement a `TsResQualifierResolver` (or similar) that wraps ts-res's match path — probably via `ValidatingSimpleContextQualifierProvider` + the relevant matching primitives — so consumers can inject it for similarity-aware queries. Since the injection point is already in place, this is a pure implementation-of-interface change with no API surface churn on the store.
+
+**Why deferred:** priority uncertain. The default's narrow semantics are documented (`IPromptObservationQuery.qualifiers` TSDoc explicitly cites the divergence and the injection point). Commission when a consumer surfaces a real need for similarity-aware observability queries, OR proactively if the broader posture warrants it.
+
+**Reference:** PR #460 review thread on `promptObservationStore.ts:195`; the `_resolveCandidates` path in `promptLibrary.ts` is the reference for what a ts-res-equivalent resolver needs to do.
+
+### ~~Composer-emitted composed-observation record (nesting contributor records)~~ ✅ SHIPPED via #538
+
+**Verified 2026-08-14:** `PromptObservationPhase` in `libraries/ts-prompt-assist/src/packlets/observe/types.ts:35` is
+`'resolve' | 'json-output' | 'free-text-output' | 'compose'` — four members — and
+`horizontalComposer.ts` carries the observation seam. The text below described the
+pre-#538 state and read as unbuilt for roughly two months after it shipped.
+
+**Knock-on, not yet fixed:** `.ai/instructions/LIBRARY_CAPABILITIES.md`'s ts-prompt-assist
+observability paragraph still enumerates **three** phases and omits `'compose'`. That one is a
+public-surface documentation gap, not just a stale plan — a consumer writing an
+`IPromptObserver` from the guide would not know a fourth phase can arrive. Raised in
+`docs/FINALIZE-SWEEP-FINDINGS.md`.
+
+*Original entry, retained for the design reasoning:*
+
+Observation fan-out today fires only at `PromptLibrary`'s three public boundaries (`resolve` / `resolveJsonOutput` / `resolveFreeTextOutput`). `HorizontalComposer.compose()` — which takes several already-resolved contributor prompts and merges them into one `IComposedPrompt` — emits **no** observation. So an audit trail sees the N individual contributor `resolve` records but nothing tying them to the composed output, and no record of the merge itself (per-logical-slot strategy, provenance ordering, safeguard findings from `applySafeguards` over the merged slot map).
+
+The ask: have the composer emit a **composed-observation record that nests the contributor records**, the direct horizontal analogue of how a nested resource-binding resolve rolls up under `trace.resourceBindingResolutions[].innerTrace` on the vertical path. The record carries the merge outcome (merged slots, `provenanceTrace`, `safeguardFindings`) with each contributor's own observation nested inside.
+
+**Design point (load-bearing, discovered when scoping):** observation `seq` is minted from a **per-`PromptLibrary`-instance counter**, and that same counter is what the store's cursor (`lastSeq`) pages against. `HorizontalComposer` is a **separate class** that does not hold the library's counter. A composer-emitted record must therefore **share the library's seq source** (inject the library's seq minter / observation-dispatch seam into the composer, rather than giving the composer its own counter) — otherwise composer `seq`s collide with library `seq`s and corrupt cursor paging. This is the central wrinkle any implementation must resolve first; it's why the entry is build-ready but not build-started.
+
+**Why deferred**: explicitly marked non-blocking by the requesting consumer. The contributor-side records already land (each contributor `resolve()` fans out normally); only the *composed* roll-up is missing, and no consumer audit flow depends on it yet. Additive when built — new observation `phase` (e.g. `'compose'`) + the shared-seq seam; no change to existing record shapes.
+
+**Dependencies**: consumer surfaces an audit/debug flow that needs the composed→contributor linkage (e.g. "where did this composed system prompt's tone slot come from, across all contributors"). Size S–M once the seq-coordination seam is designed. Composes with the observability substrate already shipped (`IPromptObserver`, `PromptObservationStore`, the `linkedResolveSeq` cross-link convention — a composed record would cross-link its contributors the same way output records cross-link their resolve record).
+
+**Reference**: `.ai/tasks/completed/2026-06/ts-prompt-assist-observability/` (the `_observe` fan-out + per-instance seq counter) and `.ai/tasks/completed/2026-06/prompt-assist-horizontal-composition/` (the `compose()` path + `IComposedPrompt` shape); `resourceBindingResolutions[].innerTrace` in `promptLibrary.ts` is the vertical-path nesting precedent to mirror; consumer orchestrator's forwarded deferred-asks batch (2026-07).
+
+---
+
+## Browser-bundle canary for tree-shaking / node-barrel correctness
+
+**Status: parking lot — priority uncertain. Added 2026-06-06 alongside the removal of `apps/ts-utils-browser-test`.**
+
+`apps/ts-utils-browser-test` was a Vite app that imported `@fgv/ts-utils` in a browser-bundle context — a lightweight smoke test that the library contained no accidental `node:`-only barrel deps (`node:crypto`, `node:fs`). It was removed (on `main` via PR #464, and on `release` via the same surgical deletion) because its test half never ran in CI, it pointed at a pure-computation library with no node-only barrel leaks of its own, and it generated recurring Vite Dependabot noise disproportionate to its coverage value.
+
+**What was lost:** a CI browser-bundle (Vite) smoke test of `@fgv/ts-utils` — the narrowest possible target, since `ts-utils` has no `node:*` imports.
+
+**Recommendation if revived — target `@fgv/ts-extras` and `@fgv/ts-web-extras` instead.** That is where a browser-bundle canary earns its keep:
+
+- `@fgv/ts-extras` contains `NodeCryptoProvider` (`node:crypto`), filesystem helpers (`node:fs`), and other Node-only code; a misplaced barrel export would explode a browser bundle at runtime.
+- `@fgv/ts-web-extras` is the browser complement, and its correctness depends on `ts-extras` not bleeding Node-only code into the shared surface.
+
+A future canary should build a minimal Vite/webpack bundle importing the browser-safe entry points of `@fgv/ts-extras` + `@fgv/ts-web-extras`, assert it bundles without `node:*` polyfill errors, **actually run in CI** (do not add it otherwise), and live in a package excluded from the publishable version policy so it generates no change-file noise.
+
+---
+
+## `@fgv/ts-web-extras-ollama` — browser Ollama sibling (O-5)
+
+**Status: parking lot — filed at the `ollama-native` O-4 close (2026-06-06). Not commissioned.**
+
+`@fgv/ts-extras-ollama` shipped Node-only at v0.1 (PRs #472–#475; promoted via #477). The browser path is the natural shape of a future sibling, mirroring `@fgv/ts-web-extras-transformers` to `@fgv/ts-extras-transformers`:
+
+- Wrap `import ollama from 'ollama/browser'` (the `ollama` lib's browser entry) instead of the Node entry.
+- The sidecar must set `OLLAMA_ORIGINS` to allow the browser origin — direct `browser → localhost:11434` is CORS-blocked by default. This is a deployment prerequisite the package can document but not remove.
+- Identical surface to the Node package (the primitives are pure HTTP/data; the `fetch`-injection seam already exists on `createOllamaClient`), so most of the boundary is reusable.
+
+**Why deferred:** no browser consumer yet, and the CORS/`OLLAMA_ORIGINS` story makes the browser path a deliberate opt-in rather than a default. Commission when a browser consumer surfaces.
+
+## Native Ollama `embed` — RESOLVED → CUT (do not build)
+
+**Status: resolved 2026-06-07. Native `embed` is CUT, not held.**
+
+The cross-provider `ai-assist-embeddings` primitive shipped (`AiAssist.callProviderEmbedding`) and owns Ollama embeddings via `/v1/embeddings` — point the `ollama` descriptor at `http://localhost:11434/v1` and pass the embedding model via `modelOverride`. Native `/api/embed` adds only marginal diagnostics (`total_duration` / `prompt_eval_count`), not worth a parallel path, so `@fgv/ts-extras-ollama` intentionally does NOT ship `embed`. Revisit additively only if a concrete consumer demonstrates a hard need for the native-only diagnostics. See `.ai/tasks/completed/2026-06/ai-assist-embeddings/` and the `@fgv/ts-extras-ollama` entry in `LIBRARY_CAPABILITIES.md`.
+
+---
+
+## Transparent batch-chunking for `callProviderEmbedding`
+
+`callProviderEmbedding` fails fast when `input` exceeds the capability's `maxBatchSize` (e.g. OpenAI's 2048) rather than auto-chunking — fine for v0.1, since the failure is explicit and a caller can chunk themselves. Future additive nicety: have the dispatcher transparently split an over-limit batch into `maxBatchSize`-sized sub-requests (sequential or bounded-concurrent) and reassemble `vectors[]` in input order. Adds chunking + reassembly + partial-failure semantics; defer until a RAG consumer actually hits the limit and wants it handled in-library.
+
+**Reference:** `ai-assist-embeddings` design §14 amendment #3.
+
+---
+
+## Structured memory for agents (platform capability)
+
+> **SHIPPED 2026-06-26** — `@fgv/ts-agent-memory` v1 substrate (knowledge + memory)
+> promoted to `release`. Completion record:
+> `.ai/tasks/completed/2026-06/ts-agent-memory/`. Original design context retained below.
+>
+> **Vector / semantic recall shipped in v1** (`InMemoryCosineIndex` + embed-on-write, #502).
+> **Remaining fast-follow streams (deferred; seams already present):** (1) temporal
+> versioned write path + temporal retrievers (`temporal?` envelope block + codec
+> `isVersioned` flag already ship); (2) L2 agent-tool surface (`IAiClientTool`);
+> (3) L3 ingest orchestrator (the fgv-side ingestion target for the consumer's own
+> pipeline). Commission each when a consumer needs it.
+
+A structured-memory substrate for agents — an Obsidian-like graph (files + links +
+derived index) as the foundation for **both knowledge and distilled experience** —
+with optional layered capabilities (semantic/vector recall, temporal reasoning,
+observation/audit, qualifier-conditional recall) and a host-driven L3 extract/relate
+ingest pipeline. Anticipatory (no concrete consumer ask yet; one expected from
+personaility) but pursued as **platform**, not consumer-feature, work — the design
+is being fleshed to moderate detail now rather than waiting for a narrow scenario.
+
+Architecture (settled across the 2026-06-25 exploration + refinement passes):
+- **Small invariant core + optional present-when-wired layers.** Core = envelope
+  identity + typed per-kind (consumer-`Converter`) body + attributed edges + FileTree
+  store + transaction-time metadata. Layers = vector, temporal, observe,
+  qualifier-recall — each degrading loudly when not wired.
+- **~80–90% composition** over existing fgv primitives (`FileTree`, the
+  `ts-prompt-assist` store/observe spine, `RetainingRingBuffer`, `Crc32Normalizer`,
+  `callProviderEmbedding`, ai-assist client-tools). The one genuine new-infra item is
+  a minimal in-package cosine/top-k vector index (large-N is out ⇒ no external ANN).
+- **One substrate for knowledge + experience**, unified by a cross-kind provenance
+  link graph; divergences absorbed by per-kind write policy, retriever selection,
+  scope subtrees, and the optional temporal layer.
+- **L3 ingest** = host brings classify/extract/relate judgment; fgv owns the typed
+  validation boundary + content-hash/similarity dedup + edge write/cycle safety +
+  provenance stamping + the `contradicts`→temporal-invalidate interlock.
+
+**Three load-bearing v1 commitments** (cheap now, expensive to retrofit): extensible
+envelope; per-kind-pluggable write policy; attributed (object) edges + structured
+provenance — NOT bare-string links.
+
+**Phase-A seeds to resolve first:** edge/entity identity model (entity-id vs.
+version); episodic-capable-by-construction (yes/no); host-interface granularity
+(staged split vs. single `IMemoryIngestor`). Plus the hedged OQ register (vector
+depth, ts-prompt-assist shared-core extraction, temporal query depth, scope model).
+
+**Why FUTURE, not yet a stream:** stream-commission is a platform-investment
+prioritization call — explicitly NOT gated on a consumer ask (Erik's
+platform-over-features direction, 2026-06-25). Promote to `docs/WORKSTREAMS.md` when
+prioritized; the fleshed design lets it start cold.
+
+**Reference:** `.ai/tasks/completed/2026-06/ts-agent-memory/` — `README.md`, `exploration.md`
+(design-space note + §9 refinement + §10 unified-substrate / L3 contract) and
+`design.md` (moderate-detail platform design). Floated package name
+`@fgv/ts-agent-memory`.
+
+## `@fgv/ts-agent-memory` — deferred consumer asks (2026-07 batch)
+
+The first consumer forwarded a batch of six retrieval/tool-surface asks against the
+v1 substrate. **Four firm asks were built** (result projection + detail tier;
+`IMemoryQuery.offset` pagination; kind-set query axis; and the orderable numeric
+`rank` axis — commissioned as its own stream). Of the items below, the two semantic/vector
+asks are now **closed out in the 2026-07 batch**, leaving one conditional ask captured
+build-ready:
+**N-Ask5** (fragment-granular locator) is **SHIPPED** — the full fragment-granular
+retrieval feature (the `IFragmentVectorIndex` seam + in-memory and persistent backends +
+`FragmentSemanticRetriever` + store fragment-embed-on-write lifecycle + a testbed demo)
+landed against the firmed seven-question contract (#561 / #562 / #563). **N-Ask8**
+(persistent `IVectorIndex`) is **retired as answered** — the shipped
+`@fgv/ts-agent-memory-sqlite-vec` is the persistent index it asked about. Both were
+non-blocking throughout, and with them the personaility→fgv ask queue is closed out.
+
+> **REOPENED (2026-07-28) — round 2.** A new batch of five asks arrived, all non-blocking.
+> Triage against `release` @ `b689c99ca` found that **two were already answered**: WebAuthn
+> R11/R12 shipped 2026-05-12 (#351) as the separate `@fgv/ts-extras-webauthn` /
+> `@fgv/ts-web-extras-webauthn` packages (the consumer searched inside `ts-extras` /
+> `ts-web-extras` and concluded absence), and the `@fgv/ts-agent-memory` provenance merge
+> contract is a deliberately pinned guarantee with sub-key `null` clearing sanctioned and
+> whole-block deletion rejected (verified by execution). One ask is a genuine bug, broader
+> than reported — see the capability-resolver entry below. Full triage with evidence:
+> [`.ai/notes/cross-repo-handoffs/personaility-asks-2026-07-round2.md`](../.ai/notes/cross-repo-handoffs/personaility-asks-2026-07-round2.md).
+
+### Alias-unsafe capability resolvers — `resolveImageCapability` / `resolveEmbeddingCapability`
+
+**Priority: the one real defect in the personaility round-2 batch.** Both functions
+prefix-match a raw model id with no alias resolution and no `MODEL_ALIAS_SIGIL` guard, so an
+fgv alias (`@openai:image`, `@xai-grok:imagine`, `@openai:embedding`) falls through to the
+catch-all `modelPrefix: ''` rule and returns a **confidently wrong capability** rather than
+failing. Verified by execution on `release`: the xAI image alias flips both the wire format
+(`xai-images` vs `xai-images-edits`) and `acceptsImageReferenceInput`; the OpenAI embedding
+alias silently drops `supportsDimensions` and the `maxBatchSize` guard.
+
+The library's own paths are safe (`callProviderImageGeneration` resolves the alias before
+resolving capability), so this is purely a hazard for consumers calling the exported helpers
+— which is what they exist for. `samples/testbed`'s `image-generation` scenario is an
+in-repo instance (`index.tsx:45` produces the alias form, `:89` consumes it).
+
+**Scope sketch**: make both resolvers alias-aware, or fail loudly on a sigil-prefixed id
+(the smaller change, and consistent with the registry-gated posture elsewhere — an
+unregistered `@alias` already fails rather than reaching the wire; silently matching `''` is
+the outlier). Then fix the testbed call site. Include a `@remarks` block on
+`resolveProviderModel` / `ModelSpecKey` noting that `tools` / `thinking` are deliberately
+not model selectors — the absence of a `'tools'` key reads as an oversight and has now sent
+two consumers down a hand-rolled-walk path they didn't need.
+
+**Not blocking**: the consumer is fixed and green on `-45`; no shipped `@fgv/*` code path
+is affected.
+
+### Input-side `resolveHandle` (inverse of `handleFor`) — conditional, build-ready
+
+`createMemoryTools`' `handleFor` hook maps a record → an agent-visible mnemonic on
+the **output** side (`tools/memoryTools.ts`). There is no symmetric **input**-side
+resolver, so an agent that received a mnemonic handle cannot feed it back as a
+`memory_context` seed (`contextSchema.from` is a raw `MemoryId`). The ask: an
+optional `ICreateMemoryToolsParams.resolveHandle?: (handle: string) => Result<{ kind: Kind; entityId: EntityId }>`
+that `buildContextTool` (and optionally `memory_read`/`memory_delete`) consult when
+`from` is a handle; absent → today's raw-id / `(kind, entityId)` behavior. Returns
+`Result` so a bad handle fails loudly (consistent with the substrate's
+loud-degradation contract), and a `from` that fails `resolveHandle` surfaces the
+failure rather than falling through to a raw-id parse.
+
+**Why deferred, not built:** the consumer explicitly filed this **conditional, not
+firm** — it matters only if they adopt the substrate's `memory_context` / `memory_read`
+tool bodies directly. Under their current plan they keep their own tool surface and
+their wrapper owns the mnemonic↔address map, so it is not on their critical path.
+Building it now is additive but would ship input-side handle resolution that no real
+consumer exercises. It is trivially addable (one optional guarded callback + threading
+in `buildContextTool`) the moment they adopt the tool bodies — captured build-ready so
+that round-trip is a same-day change. Completes the `handleFor` symmetry.
+
+**Dependencies / trigger:** the consumer (or any consumer) adopts the substrate's
+built-in `memory_context` / `memory_read` tool bodies instead of a host-owned wrapper.
+Size S.
+
+### Chunk / fragment-granular semantic retrieval + in-result locator (N-Ask5) — SHIPPED (2026-07-20)
+
+> **SHIPPED (2026-07-20).** Built against the firmed contract below across three PRs:
+> **#561** (`@fgv/ts-agent-memory`) added the `IFragmentLocator` / `IEmbeddedFragment` /
+> `IFragmentVectorIndex` types, the additive optional `IVectorQueryHit.locator`, the
+> `FragmentEmbedder` type, the brute-force `InMemoryFragmentCosineIndex`, the
+> `FragmentSemanticRetriever`, and the store's best-effort fragment-embed-on-write / remove
+> lifecycle (`fragmentIndex?` / `fragmentEmbedder?` create params). **#562**
+> (`@fgv/ts-agent-memory-sqlite-vec`) added the persistent `SqliteVecFragmentIndex`. **#563**
+> (`@fgv/testbed`) added the `sqlite-vec-fragment-persistence` live-durability demo.
+>
+> **Two deltas from the pre-build sketch below**, both deliberate simplifications found while
+> implementing against the real code:
+> - **`IFragmentVectorIndex` shipped as a *sibling* of `IVectorIndex`, NOT `extends IVectorIndex`.**
+>   An index keyed by `(target, locator)` has no well-defined single-vector `add(target, vector)`,
+>   so inheriting that method would have been misleading. It is a parallel three-method contract
+>   (`addFragments` / `remove` / `query(vector, topK, maxPerRecord?)`) reusing `IVectorQueryHit`.
+> - **The persistent impl shipped as a separate `SqliteVecFragmentIndex` class, NOT by extending
+>   `SqliteVecVectorIndex`'s PK to `(target_key, locator)` (Q7's sketch).** It uses a `vec0` table
+>   keyed on `target_key` as a **`PARTITION KEY`** (many rows per record) with the `[start, end)`
+>   offsets in auxiliary columns — cleaner than overloading the record index's single-PK table.
+> - `maxPerRecord` (Q1) is applied **during selection, before the topK cut**, in both backends.
+
+> **FIRMED (2026-07-19).** The personaility orchestrator answered all seven open questions
+> (relayed by the consumer orchestrator; the firm-up analysis was a transient task artifact,
+> superseded by this entry and the shipped PRs); the consumer position
+> **converged with fgv's leans on all seven — zero divergence**. (Historical: at firm-up time
+> N-Ask5 was a settled contract not yet scheduled — it would fire as a firm build only when
+> personaility scheduled shared/knowledge semantic search; it has since been **built**, see the
+> SHIPPED block above.) The embedding work personaility shipped then was record-granular (memory
+> recall) and needed no N-Ask5.
+>
+> **Resolved answers — consumer-owned:**
+> - **Q1 hit granularity → per-fragment hits** `{ recordId, locator, score }`, `topK` over
+>   fragments (maps 1:1 onto the consumer's `IKnowledgeSearchMatch` — one locator per match).
+>   Consumer **wants the `maxPerRecord` cap** so a single long document can't dominate results.
+> - **Q2 coexistence → separate indexes.** Memory stays record-granular (`IVectorIndex` +
+>   `SemanticRetriever`); knowledge fragments use a distinct fragment index. No single record
+>   carries both a whole-record and fragment vectors. Whole-doc knowledge recall, if ever
+>   wanted, is just the record index; **v1 knowledge-semantic is fragment-only**.
+> - **Q3 locator unit → `[start, end)` character offsets** (inclusive start, exclusive end)
+>   into the body string, matching the consumer's `IKnowledgeFragmentLocator`. fgv keeps the
+>   locator **opaque** and round-trips the integers — zero conflict; the unit is the consumer's.
+> - **Q4 update model → whole-record re-embed for v1** (remove-all-fragments-then-re-add;
+>   knowledge docs are re-authored wholesale). Per-fragment incremental update deferred.
+>
+> **fgv-owned — consumer concurs with all three leans:** Q5 `embeddingRef` stays opaque;
+> Q6 fragment mode inferred from the wired `FragmentEmbedder` + `IFragmentVectorIndex` types
+> (no config flag); Q7 `SqliteVecVectorIndex` extends its PK to `(target_key, locator)` for
+> multiple rows per record when N-Ask5 lands (`InMemoryCosineIndex` gets the same). Q7 also
+> confirms N-Ask8's answer — see that entry (now retired).
+
+The v1 semantic recall is **record-granular**: one `embeddingRef` per envelope, one
+vector per record (`IVectorIndex.add(target, vector)` is one-per-`target`, replace-on-repeat),
+and `IVectorQueryHit` is `{ target, score }` — no sub-record locator. A consumer whose
+knowledge documents need **sub-document fragment** search returning a `[start, end)`
+locator into the source body (the shape their `IKnowledgeSearchMatch` already carries)
+keeps that host-side today behind an `IKnowledgeSearchProvider` doing keyword fragment
+search — so it is **non-blocking and not a firm ask yet**. The consumer has now **shaped**
+it (2026-07 overnight batch) so fgv sees the concrete surface; it files firm only when
+shared semantic knowledge is scheduled. It becomes a real fgv design change (not a hook)
+the moment one shared semantic retriever must serve **both** record-level memory and
+sub-document knowledge at fragment granularity.
+
+**Concrete shape (grounded in `libraries/ts-agent-memory/src/packlets/vector/vectorIndex.ts`).**
+All additive on an active surface:
+- **`IFragmentLocator { readonly start: number; readonly end: number }`** — half-open
+  `[start, end)` **character** offsets into the record body (consumer-confirmed unit, Q3);
+  fgv stores them opaquely and never interprets them.
+- **`IVectorQueryHit.locator?: IFragmentLocator`** — additive optional; record-granular
+  hits omit it (today's behavior unchanged), fragment hits carry it. `{ target, locator, score }`
+  is the `{recordId, locator, score}` the consumer asked to surface.
+- **Multiple vectors per record.** Today `add(target, vector)` is one-per-target. Fragment
+  mode keys entries on `(target, locator)` and accumulates, so a record contributes N
+  fragment vectors. Cleanest as a sibling **`IFragmentVectorIndex extends IVectorIndex`**
+  adding `addFragments(target, ReadonlyArray<{ locator; vector }>)` (keeps the record-granular
+  seam unburdened) rather than overloading `add`. **`remove(target)` evicts *all* fragments**
+  for the record (whole-record eviction unchanged).
+- **Host-supplied chunking** via a **`FragmentEmbedder = (record) => Promise<Result<ReadonlyArray<{ locator: IFragmentLocator; vector: Float32Array }>>>`**
+  sibling to `MemoryEmbedder` — window/overlap policy lives inside the host's embedder,
+  the core stays chunking-agnostic (same posture as the embedder-agnostic v1).
+- **Retriever:** a `FragmentSemanticRetriever` sibling (or a capability flag on
+  `SemanticRetriever`) surfaces `{ target, locator, score }`; the record-granular
+  `SemanticRetriever` is untouched.
+- **`embeddingRef` stays opaque** (Q5, resolved): the index owns fragment cardinality; the
+  envelope only marks embedded-ness. `maxPerRecord` result cap included per Q1.
+
+All seven firm-up questions were resolved (see the FIRMED block above) before any code was
+written — the shape was a settled consumer contract, not a draft. The sketch above is
+retained as the historical design record; **what actually shipped is described in the SHIPPED
+block at the top of this entry** (two deliberate deltas: sibling-not-`extends`, and a separate
+`SqliteVecFragmentIndex` rather than a PK extension).
+
+**Status:** SHIPPED 2026-07-20 (#561 / #562 / #563). personaility consumes it when it schedules
+shared/knowledge semantic search; the record-granular memory path is unchanged and needs none
+of it.
+
+### Persistent / ANN `IVectorIndex` (N-Ask8) — RETIRED (answered; reference impl SHIPPED)
+
+> **RETIRED (2026-07-19).** The personaility orchestrator retired N-Ask8 as answered: the
+> shipped `@fgv/ts-agent-memory-sqlite-vec` `SqliteVecVectorIndex` (#558) **is** the persistent
+> index the direction question asked about, behind the same `IVectorIndex` seam with no
+> migration. personaility v1 stays on the in-memory index + rebuild-on-open; the sqlite-vec
+> index is the drop-in persistent impl for when v2 durability/scale wants it. This was the last
+> outstanding personaility→fgv ask — the consumer's ask queue is closed out.
+>
+> **RESOLVED (2026-07-19).** Erik's ratification: fgv ships a **reference** persistent
+> `IVectorIndex` — but not by pulling a storage backend into `ts-agent-memory` core.
+> `@fgv/ts-agent-memory-sqlite-vec` (`SqliteVecVectorIndex`) landed as a separate
+> Result-integration-boundary package over `better-sqlite3` + `sqlite-vec`: embeddings
+> persist in a SQLite `vec0` file, so a reopened vault answers queries with **no
+> re-embedding**, keyed on `edgeTargetKey` with cosine scoring byte-identical to
+> `InMemoryCosineIndex`. **Zero core change** — confirmed the store already writes the
+> vector index incrementally and only re-embeds on the consumer-opt-in
+> `rebuild(asRecordSource())`, so a persistent index is a drop-in swap. The
+> incremental-embed-on-open hook noted below was therefore **not needed**. ANN/large-N and
+> a browser sibling are explicitly out of scope on the package (see its README).
+> (Chunk-granular entries were out of scope *as of #558*; N-Ask5 later shipped the
+> persistent `SqliteVecFragmentIndex` in this same package — see the N-Ask5 entry above.)
+> Personaility consumes it directly; the seam was already correct, so no migration.
+
+The original direction question and analysis, retained for context:
+
+
+`InMemoryCosineIndex` is the only shipped `IVectorIndex` — brute-force, in-memory, rebuilt
+from the store (`IMemoryRecordSource.list()` → re-embed all) on every open. Fine for v1
+(small per-agent vaults). For v2 durability/scale — where re-embedding every vault on every
+open stops being cheap — a persistent (and/or ANN, for large-N) index is the gap. The
+consumer raises this as a **direction question, not a firm ask**, so the interface choice is
+eyes-open before either side builds.
+
+**The question is fgv's (Erik's) product call:** does fgv intend to ship a persistent
+`IVectorIndex` (and/or an ANN index), and on what storage (pgvector, sqlite-vec, …)? If yes,
+the consumer aligns now and avoids a migration; if no, the consumer owns persistence host-side
+behind the same interface.
+
+**Analysis / recommendation (for ratification, not a decision):**
+- The consumer's own correction is right: **there is no `IVectorStoreAdapter` symbol** (that
+  name was folklore on their side) — the real seam is **`IVectorIndex` + `IMemoryRecordSource`**,
+  confirmed in `vectorIndex.ts`.
+- **The seam is already correct.** `vectorIndex.ts`'s own docs say "a consumer can swap an
+  external ANN backend behind the same seam once N grows beyond the in-memory regime." So
+  persistence is an **implementation of the existing interface, not a new seam** — which is
+  exactly why this is low-risk either way and needs no interface churn today.
+- **Recommendation:** do **not** drag a storage backend (pgvector/sqlite-vec) into
+  `ts-agent-memory` core — it would pull heavy, runtime-specific deps into a currently
+  dependency-light package. If fgv ships a persistent index at all, make it a **separate
+  Result-integration-boundary package** (the `@fgv/ts-extras-ollama` / `-transformers`
+  precedent: thin `Result` wrapper, explicit not-in-scope list, no opinion in core). The
+  consumer can own persistence host-side **today** behind `IVectorIndex` with zero interface
+  change.
+- **The one forward-compat item worth aligning now** (additive, can still wait): the
+  **re-embed-on-open policy**. `rebuild(IMemoryRecordSource)` re-embeds the *whole* vault; a
+  persistent index wants to embed only **new/changed** records. Reserving an incremental-embed
+  hook (the store checks index membership — a `has(target)` / content-hash compare — before
+  calling the embedder) is the additive that keeps a future persistent index from being forced
+  to re-embed on open. Not needed until a persistent impl exists.
+
+**Priority:** not firm — a v2 concern surfaced early so the interface choice is eyes-open.
+Low-risk; the seam is right regardless of who implements persistence. **Needs Erik's
+yes/no + storage-direction ratification** when v2 durability is scheduled.
+
+### Scope-qualified edge targets — SHIPPED (2026-07-13)
+
+> **SHIPPED** — `IEdge.target: MemoryId → IEdgeTarget` (`{ scope, id }`), via the
+> `agent-memory-scoped-edges` stream (PR #542) plus the `agent-memory-scoped-vectors`
+> follow-on (PR #543). The original "dormant, recorded" framing rested on a premise that
+> turned out to be **wrong**: it assumed no two records share an id stem across a scope
+> boundary. In fact the bundled `MtmIdentityCodec` mints per-scope stems (`turn-<n>`), so
+> two conversations' `turn-3` records collide on a bare `MemoryId` — an edge, backlink,
+> traversal seed, cycle-guard node, ingest-validation target, or vector-index key of
+> `turn-3` was ambiguous across conversations. The consumer surfaced this as a live footgun
+> in the *default* codec; the maintainer adjudicated the deep fix (scope-qualified targets,
+> making per-scope stems legal by construction) over the two lighter options (globally-unique
+> bundled stems; a registration guard). #542 scope-qualified the link graph (edges, backlinks,
+> traversal, cycle guard, ingest edge-validation, edge serialization, the `memory_write` /
+> `memory_context` tool schemas) behind a single collision-proof `edgeTargetKey` helper; #543
+> completed the migration across the vector/similarity + entity-resolution path (breaking the
+> pre-1.0 `IEntityResolver` host contract, no shim). The residual latent item, `IProvenance.derivedFrom`
+> as a bare `MemoryId`, has since been scope-qualified to an `IEdgeTarget` (retired from `TECH_DEBT.md`).
+
+**Reference:** consumer orchestrator's forwarded 2026-07 agent-memory batch (the id-stem
+uniqueness vs. bare-MemoryId-links friction report); PRs #542, #543; the four firm asks from
+the same batch shipped via the `agent-memory-query-tool-batch` and `agent-memory-rank-axis`
+streams.
+
+## RFC 9421 HTTP-message-signature packlet (prospective `@fgv/ts-extras`)
+
+A strict, Ed25519-only [RFC 9421](https://www.rfc-editor.org/rfc/rfc9421) HTTP
+Message Signatures profile as a new `@fgv/ts-extras` packlet: a signer/verifier
+pair plus a signature-base builder, all built over the crypto-utils
+`ICryptoProvider` (`sign`/`verify`), framework-free (no Express/Fetch coupling —
+the caller supplies the covered-component values) and `Result`-shaped throughout.
+The PersonAIlity V2 identity/signing track is proving this out inside its own
+`signing` packlet against real request/response signing and intends to propose it
+upstream to `@fgv/ts-extras` once its Phase 0 lands and the profile has settled.
+
+**Why deferred**: still being proven against a live consumer's request-signing
+surface; the covered-component set, canonicalization edge cases, and the
+Ed25519-only scoping want to settle in the consumer before being frozen as a
+published primitive.
+
+**Dependencies**: this stream's `base64UrlNoPadEncode` / `base64UrlNoPadDecode`
+(`@fgv/ts-extras/crypto-utils`, the base64url-no-pad primitives) — the RFC 9421
+signature-base and signature encoding both traffic in base64url-no-pad, so the
+packlet builds directly on them rather than re-deriving the codec. Also
+`ICryptoProvider.sign`/`verify` (already shipped).
+
+**Reference**: PersonAIlity V2 identity/signing track (`signing` packlet, Phase 0);
+crypto-utils base64url + branded multibase SPKI hardening stream
+(`.ai/tasks/completed/2026-07/crypto-utils-base64url-hardening/`, shipped via PR #519;
+the canonical `MultibaseSpkiPublicKeyRegExp` export + `string`-widened import followed in PR #530).
+
+## `@fgv/ts-extras` crypto — golden-vector test-provenance gaps (2026-07 batch)
+
+Three LOW-priority, non-blocking asks surfaced by a consumer's checked-in crypto
+golden-vector corpus (byte-level fixtures pinning ceremony/signing output so a future
+native/mobile port validates against the same vectors). None is a security exposure;
+each has a documented workaround in the fixtures. What each closes is **test provenance**
+— anchoring a vector to a published-spec KAT or a deterministic checked-in round-trip
+rather than to captured-from-implementation bytes. **Slated to land as one small batched
+`@fgv/ts-extras` crypto PR right after the `agent-memory-lenient-open` stream.**
+
+### Ask A — `IArgon2idProvider.argon2id`: optional `secret` + `associatedData` params
+The RFC 9106 §5.3 official Argon2id KAT binds a secret key (K) and associated data (X)
+alongside password and salt; the seam `argon2id(password, salt, params)` exposes neither,
+so the spec KAT can't run through it (the consumer's Argon2id vector is captured-from-impl
+instead of spec-anchored). Add optional `secret?` / `associatedData?` byte params, both
+defaulting empty so existing callers are unaffected. **Feasibility (checked):** the Node
+`argon2` (kelektiv) `hash()` options support both `secret` and `associatedData` — Node is
+buildable. The browser `hash-wasm` `argon2id` supports `secret`; its `associatedData`
+support must be verified at implementation time. Since neither is used in production
+(test-provenance only), the essential deliverable — the RFC 9106 KAT running through the
+seam — works via the Node provider regardless; cross-provider AD parity is gated on the
+hash-wasm capability check (if hash-wasm lacks AD, scope the AD path to Node or document
+the limitation rather than fake parity).
+
+### Ask B — HPKE: an X25519 private-key import seam (fixed recipient key)
+The consumer's HPKE context vector pins the info/AAD construction but has no checked-in
+sealed-blob → plaintext round-trip, because that needs a **fixed** recipient X25519 private
+key to check in, and the provider exposes no X25519 private-key import (`SeedDerivableAlgorithm`
+is `ed25519`-only). Add a seam to import a fixed X25519 private key (raw bytes or JWK) into
+the HPKE provider so a known recipient keypair can be checked in and a deterministic round-trip
+vector added. **Composes directly with two shipped items:** the HPKE `openBase` caller-supplied
+recipient-public-key work (PR #536) and the seed-deterministic Ed25519 primitive
+(`importKeyPairFromSeed`, PR #549) — this is the X25519 analogue of the latter's seed→private
+import, so it likely falls out of extending `SeedDerivableAlgorithm`/the import seam to `x25519`.
+
+### Footnote — a hex codec primitive (`hexEncode` / `hexDecode`) in crypto-utils
+The fixtures encode bytes as lowercase hex (no `0x`); crypto-utils ships base64url / multibase /
+standard-base64 helpers but no hex, so the vector loader hand-rolls a `bytesHex` Converter. Minor
+on its own — noted because it's the **third** "reached for an fgv primitive that wasn't there" in
+this corpus. Add `hexEncode`/`hexDecode` (or a branded hex-string Converter) alongside the existing
+base64url helpers and the consumer drops the local one. Cheap; bundle into the same batch.
+
+**Why deferred**: all three are LOW-priority test-provenance, non-blocking (the corpus shipped
+complete with documented per-gap workarounds). Batched to land immediately after the HIGH
+`agent-memory-lenient-open` fix.
+
+**Reference**: consumer's `golden-vectors-state.md` § Findings (V2 mobile-enablers track);
+prior ts-extras crypto asks — HPKE Decap non-extractable recipient key (PR #536),
+`encryptBytes`/`decryptBytes` (PR #547), seed-deterministic Ed25519 (PR #549).
+
+## `CryptoUtils.KeyStore` credential-store shape asks (2026-07 batch)
+
+Four asks from a consumer building a tool/MCP/OAuth **credential store** over
+`CryptoUtils.KeyStore` (`@fgv/ts-extras`). **No crypto gap** — the byte-level crypto
+batch (encryptBytes/AAD, HPKE non-extractable decap, vault escrow) closed everything.
+These are **shape-level only over existing primitives**, and **none is build-blocking**
+(serializing a credential bundle to JSON and storing it via `importApiKey` is a working
+interim). The interface disposition is fgv's call per prior-ask convention; a grounded
+recommendation is recorded per ask below.
+
+**Why two of these want runway now:** D1's `type` discriminator and D2's
+`metadata`/`updatedAt` are both **vault-format-visible fields**. Retrofitting either after
+the consumer's credential-store persistence format settles means migrating existing vault
+entries. So D1/D2 are wanted *before* that format freezes — hence captured ahead of the
+consumer's "broaden tools + MCP" stream rather than parked. **Batchable as one small
+additive `KeyStore` PR**; the escrow-field work (`keystore-v2`, PR-series that added the
+optional `escrowedPrivateKeyJwk` superset field) is the precedent for how an additive,
+optional, format-forward field lands here.
+
+**Grounding (this repo, `libraries/ts-extras/src/packlets/crypto-utils/keystore/model.ts`):**
+the symmetric type union is `'encryption-key' | 'api-key'`
+(`KeyStoreSymmetricSecretType`); `IKeyStoreSymmetricEntry` carries `name` / `type` /
+`key: Uint8Array` / `description?` / `createdAt` and **nothing else**. Critically, the
+vault has **no plaintext index** — `IKeyStoreVaultContents.secrets` (the whole
+`Record<string, IKeyStoreEntryJson>`) is AES-GCM-encrypted wholesale into
+`IKeyStoreFile.encryptedData`, decrypted once on unlock, and held as in-memory decrypted
+state. So `listSecrets*` already iterate in-memory entries — the "decrypt every entry to
+list" framing is really "there is nowhere to put mutable metadata except inside the secret
+material" (see D2).
+
+### D1 — opaque byte-secret entry type — P2 (must-have before format settles)
+**Problem:** the symmetric type set is closed to `'encryption-key' | 'api-key'`. A JSON
+credential bundle (OAuth token set, MCP auth record) stored via `importApiKey` is typed as
+an `'api-key'` it isn't — `listSecretsByType` becomes a lie, and any fgv tooling that treats
+`'api-key'` as "a string you hand to a provider" mis-handles it.
+**Proposed disposition (recommend the bytes-shaped variant):** add an `'opaque'` member to
+`KeyStoreSymmetricSecretType` + `allKeyStoreSymmetricSecretTypes`, with
+`importSecretBytes(name, bytes, { type: 'opaque', … })` + `getSecretBytes(name)` (the
+existing symmetric-entry path already stores `key: Uint8Array` — `'opaque'` is a new
+discriminator value plus a raw-bytes accessor that skips the `'api-key'` UTF-8 decode).
+**Prefer this over a first-class `'json'` type**: the vault layer already speaks
+`Uint8Array`, the consumer explicitly offered to own the JSON+Converter layer, and a `'json'`
+type would bake a serialization opinion into the vault format for marginal benefit — against
+the repo's thin-primitive / consumer-owns-the-shape convention. `listSecretsByType` stops
+lying because the bundle is typed `'opaque'`.
+**Named consumer:** the credential store (tool/MCP/OAuth credentials).
+
+### D2 — mutable per-entry metadata + `updatedAt` — P2 (should-have, rides with D1)
+**Problem:** entries carry only `description?` + `createdAt`, so lifecycle bookkeeping
+(`expiresAt`, `rotatedAt`, scope labels, `lastRefreshed`) has nowhere to live except inside
+the secret material — meaning "list credentials with status" must materialize+parse each
+secret's bytes, and updating a timestamp means re-importing the whole secret (replacing `key`).
+**Proposed disposition:** add optional `metadata?: JsonValue` to `IKeyStoreSymmetricEntry`
+(+ its `…Json` form), a `setSecretMetadata(name, value)` mutator that updates metadata
+without replacing key material, and an `updatedAt?: string` stamp maintained on any mutation.
+**Metadata lives inside the ciphertext** (same custody as every other field — the vault has
+no plaintext tier, and inventing one to hold "non-secret" metadata would leak names/labels
+in plaintext, a security regression). "Non-secret by contract" is a consumer-side contract,
+not a storage split. Additive + format-forward exactly like the v2 escrow field.
+**Impl note:** whether this needs a `keystore-v3` bump or rides the existing optional-superset
+pattern is an implementation-time call — the wrinkle is that an older *writer* re-saving a
+metadata-bearing vault would silently strip the field; moot under lockstep single-writer, but
+a format tag would make "metadata-bearing" explicit. Decide at stream start.
+**Workaround if declined:** embed in the D1 JSON payload and eat the parse-to-list cost
+(acceptable at per-actor N) — hence should-have, not must-have.
+
+### D3 — atomic read-modify-write / CAS on a secret — P3 (PARKED, do not request work)
+For OAuth refresh races under concurrent tool calls. The v1 hub is single-process; an
+in-process per-slot mutex suffices, so this is a **forward-looking note only** — revisit when
+the v2 hub process model is known. Captured so it isn't rediscovered cold; **no work requested.**
+
+### D4 — prefix / namespace bulk removal — P3 (opportunistic ergonomics)
+`removeSecrets(prefix)` for session-overlay purge (`byok:<sessionId>:*`). Today's purge
+iterates `listSecrets` + filters, which works. Pure ergonomics — **fold in only if the D1/D2
+PR is already touching the removal path**; not worth a dedicated change.
+
+**Why deferred:** all four are shape-level and non-blocking (the JSON-bundle-via-`importApiKey`
+interim works today). D1/D2 batched to land ahead of the consumer's tools/MCP stream so the
+format-visible fields exist before that persistence format freezes; D3 parked; D4 opportunistic.
+
+**Reference:** consumer's `.ai/tasks/active/credential-store/spec.md` (credential-store track;
+that path is in the consumer repo); grounding in this repo at
+`libraries/ts-extras/src/packlets/crypto-utils/keystore/model.ts`; format-superset precedent =
+the `keystore-v2` optional `escrowedPrivateKeyJwk` escrow field.
+
+---
+
+## R4 — stop emitting `dist` JS for packages nothing routes at it
+
+`@fgv/heft-dual-rig` emits an `esnext` build into `dist` for all 21 of its packages. Exactly
+**four** point at that emit (`ts-utils`, `ts-bcp47`, `ts-random`, `ts-utils-jest`, via
+`import`/`module`). The other 17 build, package, and publish a full parallel ESM tree that no
+`exports` key, no `module` field, and no consumer path resolves to.
+
+**This became more attractive, not less, after `esm-emit-impl`.** That stream tried to claim the
+unreferenced emit's value via R3 and found the emit cannot be pointed at by webpack at all until it
+carries explicit specifiers (Option B). So the 17 are not "nearly useful" — they are unusable as
+shipped, and stay that way until a much larger change lands.
+
+The clean lever is per-package rather than a rig flag: move a package to
+`@rushstack/heft-node-rig` (already used by the CLIs) so it stops emitting `dist` JS at all. Note
+`dist` itself must survive — API Extractor's `.d.ts` rollup lands there too; only the JS emit
+within it is unreferenced.
+
+**Two are measured not worth routing even after Option B**: `ts-json` (0.92–0.95×) and
+`ts-web-extras` (0.96–1.01×) bundle *larger* as ESM than the CJS build bundlers get today, so they
+will not be claimed by a future R3 pass and are the strongest R4 candidates.
+
+**Why deferred**: the design that produced it called this "low value, near-zero risk, and entirely
+optional", and explicitly preferred recording it here over blocking R2/R3 on it. The waste is build
+time and tarball size, not correctness.
+
+**Dependencies**: none, but it interacts with `module`. Four packages carry a `module` field
+pointing at `dist/index.js`. **`module` must be removed in the same commit that stops emitting what
+it points at**, or it becomes a dangling pointer that pre-`exports` bundlers (webpack 4, old
+rollup) will follow into nothing.
+
+**Reference**: `.claude/project/esm-emit-design.md` R4 and OQ-2/OQ-3;
+`.ai/tasks/active/esm-emit-impl/result.md` for the per-package routing decisions and the
+measurements behind the `ts-json` / `ts-web-extras` calls.
+
+---
+
+## Tarball gate — verify each packed entry *loads*, not merely that it is present
+
+**Status:** deferred follow-up from the `publish-tarball-gate` stream. Existence shipped; loading
+did not.
+
+`common/scripts/verify-tarball-exports.mjs` asserts that every path a manifest names — every
+`exports` condition, every subpath, plus `main` / `types` / `module` / `browser` — is present in the
+file list npm would pack. The consumer's ask was two-part: that each path "exists in the tarball
+**and loads** under its declared condition". Only the first half shipped.
+
+**Why the first half was enough to ship on its own.** It catches all three defects that motivated
+the gate, including the one no other check could see (5.1.0-27 packing no build output at all), and
+it costs ~1.5 s across 25 packages — cheap enough to run per-PR *and* at publish time. The second
+half needs `npm pack` (or an equivalent tar write), extraction to a temp root, an install of each
+package's dependencies so its imports resolve, and then an import per condition. That is a
+different order of cost and a different failure surface, and pairing it with a same-PR existence
+check would have delayed the half that closes the known instances.
+
+**What the missing half would add.** Existence proves a path is *in* the tarball; it does not prove
+the extracted file evaluates. `verify-esm-entrypoints.mjs` covers loadability for the one condition
+Node resolves, **against the working tree** — so the residual uncovered case is narrow but real: an
+artifact that packs, and that loads from the tree, but would fail to load from an extracted tarball
+because something it reaches at runtime was *not* packed. A relative `require` of a JSON data file
+excluded by `.npmignore` is the concrete shape.
+
+**Prerequisite before this is worth building:** the findings filed by that stream should be resolved
+first. Several packages currently pack their full `src/` tree and Rush internals; an extract-and-load
+check over tarballs that large pays for the noise before it pays for the signal.
+
+**Reference:** `.ai/tasks/active/publish-tarball-gate/result.md` (OQ-3), and the script header's
+"WHAT THIS GATE DOES NOT TELL YOU".
+
+## Gate `exports`-condition **reachability**, not just existence
+
+All three packaging gates (`verify-esm-entrypoints`, `verify-bundler-resolution`,
+`verify-tarball-exports`) ask the same question of an `exports` map: *does each named file exist?*
+None asks the prior question: *can any resolver actually select this condition?*
+
+**21 of 25 published packages currently fail that second question.** They declare `types` after
+`default`, and `default` matches unconditionally, so the `types` entry — which names the curated
+API-Extractor rollup in `dist/` — is dead in every consumer under every resolution mode. Consumers
+get `lib/index.d.ts` (the raw per-file emit) instead, via TypeScript's fallback to the `.d.ts` beside
+the resolved `.js`. `@fgv/ts-bcp47` shows the correct shape: per-branch `types`, first in each
+condition block.
+
+**The obvious fix is a trap, but the real one is still manifest-only.** There is exactly **one**
+API-Extractor rollup per package and it describes the **Node** entry, so hoisting a single `types`
+key above the branches would hand browser consumers the Node surface — advertising members like
+`convertJsonFileSync` that the browser build does not have. But the browser branch **needs no `types`
+key at all**: it already resolves `lib/index.browser.d.ts` by adjacency to the `.js` it selects, which
+is correct (verified). So `types` goes first **inside the `node` block only**, and no browser rollup
+has to exist.
+
+Two parts, and **the second is the one worth doing first**:
+
+1. **`exports`**: `types` first within the `node` block, across 21 packages. Manifest-only — no build
+   change, nothing unsized.
+2. **Gate**: assert *reachability* — walk each `exports` object in key order and fail when a condition
+   sits behind one that matches unconditionally. Independent of 1, cheap, and the check none of the
+   three existing gates makes.
+
+**What it costs consumers today**: less than the heading suggests. node10 consumers — the
+overwhelming majority, and this repo itself — never read `exports`; they resolve the top-level
+`"types": "dist/<pkg>.d.ts"` and get the rollup, unaffected. Exports-aware consumers resolve the
+per-file `lib/**/*.d.ts` tree instead: same symbols, uncurated rather than the curated rollup, still
+type-checks. So this is a contract-vs-delivery defect and a **gate blind spot**, not a live breakage.
+
+**Why deferred**: nothing is broken today, and the `module-resolution-upgrade` brief scoped `exports`
+blocks as findings rather than edits. **Not** because it is large — an earlier draft said part 1 was
+"a build change of unknown size", which was retracted when the browser-rollup requirement turned out
+not to exist. Both parts are small and fully sized.
+
+**Why it still matters**: it is the same *shape* as the `@fgv/ts-web-extras-webauthn` defect — a
+condition no resolver can reach — and that shape is exactly what our existence-only gates are blind
+to. `@fgv/ts-bcp47` is closest to correct (per-branch `types`, first in each block) but points all
+three branches at the same Node rollup.
+
+**Dependencies**: none. Independent of the `module`/emit decision below.
+
+**Reference**: `module-resolution-upgrade` stream, 2026-08-10 — surfaced while diagnosing why a
+`bundler`-mode sweep resolved every dual-entry package to its browser build. Finding at
+`.ai/tasks/active/module-resolution-upgrade/findings/inbox/2026-08-10-twenty-one-packages-declare-an-unreachable-types-condition.md`.
+
+## Type-check the two webpack apps
+
+`tools/ts-res-browser` and `tools/ts-res-ui-playground` compile via `babel-loader`,
+which strips types without checking them, and their `build` script is bare `webpack --mode
+production` — Heft's TypeScript plugin never runs. **Nothing in `rush build` or `rush test` type-checks
+them.** Running `tsc --noEmit` by hand: `ts-res-browser` 0 errors, `ts-res-ui-playground` **22** —
+ordinary API drift (`IConfigInitFactory` no longer exported by `@fgv/ts-res`,
+`ViewStateTools.Message` → `IMessage`, `GridTools.GridViewInitParams` → `IGridViewInitParams`) and
+unused locals.
+
+Add a type-check step (a `tsc --noEmit` pre-step or `fork-ts-checker-webpack-plugin`) **and** fix the
+22 errors in the same change — adding the step first turns `rush build` red.
+
+**Why deferred**: out of scope for the stream that found it, which was reconciling `moduleResolution`
+across these projects. Note the interaction: that reconciliation is correct and currently buys
+nothing, because whatever these tsconfigs declare, no compiler reads them.
+
+**Dependencies**: none.
+
+**Reference**: `module-resolution-upgrade` stream, 2026-08-10. Finding at
+`.ai/tasks/active/module-resolution-upgrade/findings/inbox/2026-08-10-three-webpack-apps-are-never-type-checked.md`.
+
+## Decide the module emit — the single gate on moving off node10
+
+The repo resolves modules under node10, which is why TypeScript does not read the `exports` map at
+all, which is why a broken condition is invisible to the compiler. Moving off it is **one decision,
+not a ladder**: `moduleResolution` `bundler`, `node16`, and `nodenext` are each illegal with
+`module: commonjs` (TS5095 / TS5110), and every one of the 29 rig-inheriting projects is
+`module: commonjs`. **`node10` is the only legal value there**, so any move changes `module`, and
+changing `module` changes the emit.
+
+That collapses the graded plan in `.claude/project/esm-emit-design.md`'s first amendment: its step 3
+(`bundler` repo-wide) was costed as cheap *because* it left the emit alone, and that is not
+available. Steps 3 and 4 share one prerequisite — the dual-emit question from design § 2 Option D:
+one source tree emitting `commonjs` to `lib` and `esnext` to `dist` is what `node16` is least happy
+with, since it derives module format from `package.json` `type` and file extension rather than an
+emit flag.
+
+**Consumers are not on the ESM path at all** — 25 of 25 packages route `node.import` at the
+CommonJS `lib/`, so both "stop shipping `dist`" and "fix and activate it" are non-breaking for them.
+**Measured, not assumed**: an external `"type": "module"` package installed from real `npm pack`
+tarballs gets 79 named exports via `cjs-module-lexer`, and a TypeScript `node16` consumer
+type-checks, emits and runs clean end-to-end. The only sharp edge is importing a *type* by name from
+JavaScript, which `verbatimModuleSyntax` catches at compile time (`TS1484`). The upside of activating
+ESM is ~5% bundle on `ts-bcp47` (the only package shipping both entries, and a data-heavy low-end
+data point) plus statically-checkable named exports — CJS silently binds `undefined` for a
+mistyped named import where ESM fails the build.
+The ~3,520-specifier change is the price of having a working ESM emit, not of `node16`. Ordering
+trap: adding `dist/package.json` `{"type":"module"}` before fixing specifiers is what would break the
+bundler path that works today, by engaging webpack's `fullySpecified`.
+
+**Do not** substitute a type-check-only `bundler` overlay as a CI gate. It was built and swept: 73
+errors, 70 of them because `bundler` does not set the `node` condition and every dual-entry package
+resolves to its browser build; `customConditions: ["node"]` takes it to 3 but blinds the pass to
+`default` — the webauthn class. Both passes are weaker than the existing scripts.
+
+**Cost, measured by doing it and reverting** (not estimated) — see the
+`cost-of-activating-the-esm-emit-measured-by-doing-it` finding:
+
+| item | size | |
+|---|---|---|
+| specifier rewrite | codemod over **3,697** sites in 1,374 files; **2** needed hands | measured |
+| does it build on today's config? | **yes** — 32 of 35 projects clean, no resolution change needed | measured |
+| the 3 webpack apps | one line of `resolve.extensionAlias` each | measured |
+| **packlet lint conflict** | **1,830 violations** — `@rushstack/eslint-plugin-packlets` compares the entry point by exact path equality, so `../base/index.js` is never the entry point. No rule option. | measured |
+| `dist/package.json` `{"type":"module"}` | per-package build step | small, unwritten |
+| per-branch `types` + a browser `.d.ts` rollup | second API-Extractor pass per dual-entry package | **not sized** |
+
+**The de-risking fact**: extensions build fine under today's `node10`/`commonjs`, so the specifier
+work lands **incrementally, package by package, with no flag day** — it does not require the
+resolution or emit change to go first.
+
+**The blocker is the lint rule, not the specifiers — and the fix is five lines, verified.** The
+same-packlet branch of `PackletAnalyzer` already strips an explicit `index` segment (its comment
+names `"../index.js"` verbatim); the cross-packlet branch twenty lines below compares the path raw.
+Applying the same normalization there took `ts-utils` from 282 warnings to **0**, and a genuine
+bypass (`'../base/result.js'`) is **still flagged** — so it is strictly a relaxation in the correct
+direction. Plan **if and only if this stream is ever commissioned**: patch locally to unblock (five lines, one
+file), upstream the same diff in parallel, drop the patch when it releases. Disabling
+`packlets/mechanics` is now clearly wrong. **Start here, not by flipping `moduleResolution`.**
+
+**Nothing currently decided needs the Rushstack change.** It is a prerequisite of the ESM specifier
+work and of nothing else — not of PR #609, not of the reachability item above, not of the gates. If
+the emit decision lands on "stop shipping `dist`", the Rushstack change is never needed at all.
+
+**Why deferred**: needs the emit answered first, and the reachability item above delivers more
+defect-prevention for far less.
+
+**Dependencies**: design § 2 Option D. The one real defect a move would otherwise have forced fixing
+- `@fgv/ts-utils` importing `jest-snapshot/build`, a subpath that package does not export - was
+fixed in the `module-resolution-upgrade` stream, so it is no longer a prerequisite.
+
+**Reference**: `module-resolution-upgrade` stream, 2026-08-10;
+`.claude/project/esm-emit-design.md` § "Amendment 2 — what the graded steps actually cost, measured".
+
+---
+
+## The design-triage-implement shape only serves UI-prototype designs
+
+`CLAUDE.md` offers `design-triage-implement` as one of three general workflow shapes and points
+at `/triage-cycle`. That skill and `docs/DESIGN_PROCESS.md` are both written for one specific
+case: a **high-fidelity UI prototype** exported from a design tool, dropped at
+`design/pages/<feature>/`, staged into `design/staging/<feature>/`, and sorted by a
+`PACKAGING.md` into port / revise-and-port / already-canonical / discard.
+
+`ai-assist-prompt-caching` (2026-09) was the first stream to reach the triage step with a
+**document-shaped** design — a library API worked out in prose, no prototype, no assets, no
+visuals. The mismatch was total rather than partial:
+
+- The repo has **no `design/` directory at all**, so the skill's step-1 precondition ("the bundle
+  must already be committed under the drop path") cannot be met — and its own instruction in that
+  case is to stop.
+- Three of the process's four triage buckets — *visuals → component plan*, *assets → package
+  destinations*, *staging tree* — have no referent. Only *emergent capabilities → architectural
+  docs* applies, and the fourth (followups) had already been discharged during design.
+
+That stream's open questions were decided directly instead, with per-question reasoning in its
+`design.md` §12 and the deviation noted at the top of that file. It worked — but it worked by
+abandoning the named process, which is the tell that the process does not cover the case.
+
+**What is actually missing** is a triage shape for document-shaped designs, where the valuable
+work is an adversarial pass over the design's *recommendations* — are the defaults right, what
+did it not consider, which open questions are genuinely open versus already settled by an
+existing principle — rather than sorting prototype artifacts. Any library-API design reaching
+phase C hits this.
+
+**Why deferred:** n=1, and the direct-decision path was cheap. Worth doing when a second
+document-shaped design reaches triage, or if the prototype-shaped process ever actually runs — it
+never has; `.ai/tasks/completed/*/` contains no triage cycle, so both halves of this are
+currently unexercised. Options span renaming the existing skill to scope it honestly, adding a
+sibling shape, or making `DESIGN_PROCESS.md`'s bucket list conditional on the design's form.
+
+**Reference:** `ai-assist-prompt-caching` `design.md` § "Note on process"; 2026-09-17 session.
+
+---
+
+## Gemini explicit `CachedContent` as an `ai-assist` primitive
+
+A `GeminiCacheHandle` with explicit `create` / `release` and a documented ownership contract,
+wrapping Gemini's `caches.create(...)` / `GenerateContentRequest.cachedContent` resource. Unlike
+Anthropic's and OpenAI's inline breakpoints (stateless, per-request), this is a control-plane
+resource — `create` / `get` / `list` / `delete` / `patch`, immutable except expiry, with a handle
+whose lifetime spans requests.
+
+**Why deferred:** `ai-assist-prompt-caching` (C1–C3) deliberately did not build this — see design.md
+§10 for the five reasons, in descending force: (1) it is not a request-assembly concern, and every
+other primitive in `ai-assist` is stateless per call; (2) the library cannot own invalidation — any
+content change is delete-plus-create with a *new* handle every caller must re-reference, so
+returning the handle adds a wrapper and holding it adds state to a stateless packlet; (3) an
+abandoned handle is a recurring charge, not a one-time one — a materially different risk class from
+anything else in `ai-assist`; (4) the storage rate is unverified (provider pricing pages are
+egress-blocked from the agent environment); (5) Gemini implicit caching (which C1's usage
+normalization already covers) has zero API surface of its own — there is nothing else to build on
+Gemini without this. One unverified hazard carried forward: a non-monotonic Gemini implicit
+threshold has been reported (`cached_content_token_count` dropping to 0 between ~9K–17K prompt
+tokens) — if real, `ai-assist`'s per-model `minCacheablePrefixTokens` being unset for every Gemini
+entry is already the correct behavior (R-c: unknown reported as unknown), so no rework is implied
+either way.
+
+**Dependencies:** a real consumer with a Gemini-heavy, long-lived-context workload where implicit
+caching's cost is measured and found wanting; verified storage pricing; a design pass on ownership
+and invalidation (not a line change).
+
+**Reference:** `ai-assist-prompt-caching` `design.md` §10; C3 close, 2026-09-18.
+
+---
+
+## Considered and closed — deferrals found by the 2026-08-14 finalize sweep
+
+The sweep found deferrals living only inside completed-stream artifacts, where no ledger reader
+would ever meet them. Two were genuinely lost and were re-queued (`runToolUseConversation`
+above; the safer-fetch browser coverage gap, filed to `TECH_DEBT.md`). One was actioned
+directly: `ks`'s hand-rolled hex, swapped onto `CryptoUtils.hexEncode`.
+
+**The rest are recorded here as closed, with reasoning, so they are not re-found and
+re-litigated by the next sweep.** That is the whole point of this section — a deferral with no
+home gets rediscovered forever, and silence about a decision is indistinguishable from having
+never made one. If any of these acquires a consumer, reopen it by moving it up into a real entry
+rather than arguing from this list.
+
+| deferral | origin | why closed |
+|---|---|---|
+| **>2-round live testbed scenario** | `ai-assist-tool-continuation` | Not closed so much as **rehomed**: it is attached to the `runToolUseConversation` entry above, because a multi-round loop helper shipped without a multi-round live test would inherit exactly the two-turn blind spot that hid the original per-round bug. It belongs to that work, not beside it. |
+| **`generateStructured`** (`/api/generate` one-shot structured output) | `ollama-native` OQ-2 | No consumer has asked. `@fgv/ts-extras-ollama` is a deliberately small Result-integration boundary whose value is its cut list; speculatively widening it works against the package's design. `chatStructured` already covers the structured-output need. |
+| **`AbortSignal` on the fast metadata ops** (`listModels` / `showModel` / `listRunning` / `deleteModel`) | `ollama-native` OQ-3 | Same reasoning, plus these are sub-second local calls against a sidecar — the cancellation that mattered (`pullModel`, `chatStructured`) shipped. |
+| **Additive cross-provider `responseFormat?` on the completion path** | `ollama-native`, the rejected Option C's consolation prize | Would have served OpenAI/Groq/Mistral too, which is what makes it tempting — but it is an `ai-assist` design question wearing an Ollama costume. If it comes back it should come back as an `ai-assist` proposal with those providers named, not as an Ollama leftover. |
+| **YAML `compositionConverter` for `ILogicalSlotConfig[]`** | `prompt-assist-horizontal-composition` OQ-3 | Already documented on the public surface: `LIBRARY_CAPABILITIES.md` states the config is "code-authored at v0.1 — no YAML converter yet". A stated limitation on the surface consumers actually read is a better home than a backlog entry they do not. |
+| **`composedBody` vs resolving from the composed descriptor's candidates** | `prompt-assist-horizontal-composition` | A consumer-adoption question, not a library one. It cannot be answered before a consumer composes in anger; PersonAIlity is the only candidate and has not. Reopen when it does. |
+| **Expose the token scanner as a utility** | `prompt-assist-horizontal-composition` design §5 | Speculative generalization with no second caller. The repo's own published-primitives discipline cuts both ways: extract when a second consumer appears, not in anticipation of one. |
+| **`ks` non-UTF-8 secret auto-detect** (default `get`/`export` to base64) | `ks-encoding` | Was moot when deferred — `importApiKey` took only `string`, so every stored secret was UTF-8 by construction. Still effectively moot: `KeyStore` has since gained `'opaque'` + `importSecretBytes`/`getSecretBytes`, but **`@fgv/ks` exposes none of it**, so there is still no way to get non-UTF-8 bytes into a keystore through the CLI. Reopen if and when the CLI grows an opaque-secret path — that is the real precondition, and it is a cleaner trigger than the original. |
+
+**One correction to the sweep's own findings.** It reported that `ts-prompt-assist`'s README
+claimed typed-qualifier-VALUES was "queued in `docs/FUTURE.md`" when it was not. **That was
+wrong.** The README lists typed qualifier values as a plain out-of-scope bullet with no queued
+claim; the two adjacent bullets that *do* carry that phrasing — editor UX and the samples app —
+are both accurate, and both entries exist above. Nothing needed fixing there, and nothing was.

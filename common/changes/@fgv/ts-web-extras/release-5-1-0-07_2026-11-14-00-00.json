@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-web-extras",
+      "comment": "Upgrading from 5.0.2: `BrowserHashProvider` is still exported at the root, and is now also available as `CryptoUtils.BrowserHashProvider`.",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-web-extras",
+  "email": "noreply@anthropic.com"
+}

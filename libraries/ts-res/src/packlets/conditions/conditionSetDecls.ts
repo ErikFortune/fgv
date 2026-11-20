@@ -25,10 +25,15 @@ import { IConditionDecl } from './conditionDecls';
 
 /**
  * Non-validated declaration of a {@link Conditions.ConditionSet | set of conditions}.
+ *
+ * @remarks
+ * Parameterized on `TQualifierNames` (defaulting to `string`) so consumers can
+ * opt into compile-time axis-name discipline by supplying a literal-string union.
+ *
  * @public
  */
-export interface IConditionSetDecl {
-  conditions: IConditionDecl[];
+export interface IConditionSetDecl<TQualifierNames extends string = string> {
+  conditions: IConditionDecl<TQualifierNames>[];
 }
 
 /**

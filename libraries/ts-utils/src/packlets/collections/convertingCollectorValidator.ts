@@ -38,7 +38,9 @@ export interface IConvertingCollectorValidatorCreateParams<
   TITEM extends ICollectible<any, any>,
   TSRC = TITEM
 > {
+  /** The converting collector to validate access to. */
   collector: ConvertingCollector<TITEM, TSRC>;
+  /** The key-value converters for validation. */
   converters: KeyValueConverters<CollectibleKey<TITEM>, TSRC>;
 }
 
@@ -72,12 +74,18 @@ export class ConvertingCollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.ConvertingCollector.(add:1)}
+   * Adds an item to the collector using the default factory at a specified key,
+   * failing if an item with that key already exists.
+   * @param key - The weakly-typed key of the item to add.
+   * @param value - The source representation of the item to be added.
+   * @returns Returns {@link Success | Success} with the item if it is added, or {@link Failure | Failure} with
+   * an error if the item cannot be created and indexed.
    */
   public add(key: string, value: unknown): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
-   * {@inheritdoc Collections.ConvertingCollector.(add:2)}
+   * Adds an item to the collector using a supplied factory callback
+   * at a specified key, validating the key first.
    */
   public add(
     key: string,
@@ -94,7 +102,7 @@ export class ConvertingCollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.Collector.get}
+   * {@inheritDoc Collections.Collector.get}
    */
   public get(key: string): DetailedResult<TITEM, ResultMapResultDetail> {
     return this.converters.convertKey(key).onSuccess((k) => {
@@ -103,12 +111,26 @@ export class ConvertingCollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.ConvertingCollector.(getOrAdd:3)}
+   * Gets an existing item with a key matching the supplied key, or adds a new item to the collector
+   * by converting the supplied weakly-typed value if no item with that key exists.
+   * @param key - The weakly-typed key of the item to get or add.
+   * @param value - The weakly-typed source value to convert and add if the key does not exist.
+   * @returns Returns {@link DetailedSuccess | Success} with the item stored in the collector -
+   * detail `exists` indicates that an existing item was returned and detail `added` indicates
+   * that the item was added. Returns {@link DetailedFailure | Failure} with an error and
+   * appropriate detail if the item could not be added.
    */
   public getOrAdd(key: string, value: unknown): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
-   * {@inheritdoc Collections.Collector.(getOrAdd:2)}
+   * Gets an existing item with a key matching the supplied key, or adds a new item to the collector
+   * using a factory callback if no item with that key exists.
+   * @param key - The weakly-typed key of the item to get or add.
+   * @param factory - The factory callback to create the item.
+   * @returns Returns {@link DetailedSuccess | Success} with the item stored in the collector -
+   * detail `exists` indicates that an existing item was returned and detail `added` indicates
+   * that the item was added. Returns {@link DetailedFailure | Failure} with an error and
+   * appropriate detail if the item could not be added.
    */
   public getOrAdd(
     key: string,
@@ -136,14 +158,14 @@ export class ConvertingCollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.has}
+   * {@inheritDoc Collections.ResultMap.has}
    */
   public has(key: string): boolean {
     return this._collector.has(key as CollectibleKey<TITEM>);
   }
 
   /**
-   * {@inheritdoc Collections.Collector.toReadOnly}
+   * {@inheritDoc Collections.Collector.toReadOnly}
    */
   public toReadOnly(): IReadOnlyCollectorValidator<TITEM> {
     return this;

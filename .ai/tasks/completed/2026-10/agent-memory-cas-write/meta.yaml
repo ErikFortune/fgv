@@ -1,0 +1,61 @@
+id: agent-memory-cas-write
+status: shipped
+packages: ['@fgv/ts-agent-memory']
+prs: [759]
+openPrs: []
+opened: 2026-10-26
+closed: 2026-10-26
+summary:
+  intended: >
+    personaility#701. put(record, { expected?: seq | 'absent' }) returning a DetailedResult with a
+    classified IMemoryWriteFailure ('conflict' carrying the current seq; 'rejected' | 'invalid' |
+    'io'), the same expected on delete, checked inside the write lock after address resolution and
+    before dedup on both layouts; a persisted seq high-water mark, advanced before the seq it covers
+    is used, to close the cross-restart ABA hole; ingest merge-into passing expected from its
+    snapshot and reporting a conflict per candidate without retrying; in-process guarantee only.
+  shipped: >
+    All of it. writeFailure.ts (public types; MemoryWriteFailureCode over an as-const array),
+    storeWriteCondition.ts (WriteRefusal carried as a value, settleWrite classifying any pipeline
+    failure as io), storeSeq.ts (a reservation ceiling in blocks of 64 in two alternating root slots
+    memory-store.seq.a.json / .b.json, written through the record writer; no slot derives from
+    disk, slots with none readable fail the open, a directory on a slot name is refused). Under
+    expected, a put that would dedup onto another id fails 'duplicate'. The flat path reads the
+    same-id record before content dedup. Ingest merge-into expects the entity's current snapshot
+    seq, carries its own in-pass writes forward, and reports 'conflict' or (for a duplicate)
+    'deduped'. Observation fan-out and merge helpers moved out; fileTreeMemoryStore.ts at 1982 lines.
+  diverged: >
+    Added 'not-found' and 'duplicate' codes and typed delete's expected as a seq only. The
+    high-water mark is a block reservation, so seq is no longer dense across a reopen (one existing
+    test pinned density); review round 1 made it two alternating slots after a torn single file was
+    shown to fail every open on a plain root, and added the duplicate refusal after a probe showed a
+    conditional put succeeding with the addressed record unchanged. The versioned merge expectation
+    is the entity's current version, and a pass's own merges are carried forward; neither was in
+    the brief. Extending the open-time sweep to the root was tried and reverted. The change breaks
+    callers too, so the change file is plain BREAKING rather than the brief's implementers-only.
+  sourceLine: '**Shipped:** `FileTreeMemoryStore.put` and `delete` take an optional `expected` seq, checked under the write lock before any dedup, and a persisted seq high-water mark guarantees no seq is ever issued twice — so a read-modify-write can no longer silently lose a concurrent same-instance update.'
+  headline: >
+    A memory read-modify-write can no longer silently lose a concurrent update: FileTreeMemoryStore
+    put and delete take an expected seq and fail with a conflict, and a seq is never re-issued, even
+    across a restart.
+keywords:
+  [
+    'compare-and-set',
+    'conditional write',
+    'optimistic concurrency',
+    'lost update',
+    'read-modify-write',
+    'expected seq',
+    'ABA',
+    'high-water mark',
+    'seq reservation',
+    'IMemoryWriteFailure',
+    'MemoryWriteResult',
+    'DetailedResult',
+    'merge-into conflict'
+  ]
+relatedStreams:
+  - {
+      id: agent-memory-atomic-writes,
+      relationship: 'shipped the single-writer guard and atomic writes this guarantee relies on'
+    }
+sourceHash: f49aae99910939ef # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Failure, fail, isKeyOf } from '../base';
+import { Failure, fail, formatValueForMessage, isKeyOf } from '../base';
 import { Validator, ValidatorOptions } from './validator';
 import { ValidatorBase } from './validatorBase';
 
@@ -73,7 +73,7 @@ export class FieldValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
   }
 
   /**
-   * {@inheritdoc Validation.ValidatorBase._validate}
+   * {@inheritDoc Validation.ValidatorBase._validate}
    */
   protected _validate(from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> {
     if (typeof from === 'object' && !Array.isArray(from) && from !== null) {
@@ -91,9 +91,11 @@ export class FieldValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
         }
       }
 
-      return optional ? true : fail(`"${this.fieldName}": Field not found in "${JSON.stringify(from)}`);
+      return optional
+        ? true
+        : fail(`"${this.fieldName}": Field not found in "${formatValueForMessage(from)}`);
     }
     /* c8 ignore next 2 -- defense in depth */
-    return fail(`Cannot validate field '${this.fieldName}' from non-object "${JSON.stringify(from)}"`);
+    return fail(`Cannot validate field '${this.fieldName}' from non-object "${formatValueForMessage(from)}"`);
   }
 }

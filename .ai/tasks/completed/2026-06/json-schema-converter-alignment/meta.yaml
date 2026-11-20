@@ -1,0 +1,102 @@
+id: json-schema-converter-alignment
+status: shipped
+# No `packages:` — this stream is a research spike and shipped no code. Its target
+# surface (@fgv/ts-json-base) was implemented by `json-schema-derives-t`, not here.
+# No `prs:` — the spike authored no merged PR of its own. Its artifacts reached
+# `release` only via #444, the `json-schema-derives-t` cluster-promotion PR, which
+# per the artifact protocol belongs to the cluster parent's record. #441 (cited in
+# this stream's own README) is the derives-t implementation PR, not this spike's.
+# The draft research PR named in state.md ("research(json-schema-converter-alignment):
+# spike output") has no merge commit in `git log --all` and is treated as unlanded.
+ledgerEntry: json-schema-derives-t
+relatedStreams:
+  - id: json-schema-derives-t
+    relationship: >
+      implementation stream this spike commissioned; carries the ledger entry that
+      narrates both, and squashed this spike's artifacts to release alongside its own
+  - id: ai-assist-client-tools
+    relationship: >
+      origin — the spike was commissioned off its Phase A design review, and its
+      verdict held that stream's Phase B/C
+  - id: discriminated-object-self-fix
+    relationship: >
+      grand-child — a ts-utils Converter primitive bug surfaced by the implementation
+      stream this spike produced
+  - id: ts-extras-mcp
+    relationship: >
+      downstream consumer of the shipped `fromJson`; its README names widening the
+      subset ($ref/$defs, pattern) as the headline follow-on lever
+opened: 2026-06-02
+closed: 2026-06
+summary:
+  intended: >
+    Answer whether fgv could align JSON Schema (the LLM-provider wire shape) with a
+    typed Converter/Validator (the runtime shape) so a consumer authors one and gets
+    the other for free, instead of hand-maintaining both and letting them drift.
+    Brief scoped a single research doc surveying three directions — (A) Schema →
+    Converter, (B) Converter → Schema, (C) status quo with a drift-detection test
+    pattern — and returning a recommendation. Implementation explicitly out of scope.
+  shipped: >
+    Two research documents rather than one. Phase 1 (`research.md`) surveyed AJV /
+    Zod v4 / TypeBox, sketched fgv-native options per direction, and recommended
+    Direction A in AJV style — `JsonSchema.toConverter<T>(schema)` with consumer-supplied
+    `T`. Erik retracted that recommendation in review and rejected Direction B on a
+    second ground the brief had not anticipated. Phase 2 (`derives-t-feasibility.md`,
+    on an unbriefed fourth direction) tested TypeBox-style schema-derives-T against the
+    existing `Converter<T>` surface and returned FEASIBLE: phantom-tag mechanics
+    tractable for a 7-factory subset, no `Converter<T>` retrofit needed, ~505 lines
+    impl + ~620 tests in one new `ts-json-base` packlet. Erik took the verdict's
+    Option 1 and commissioned `json-schema-derives-t` immediately.
+  diverged: >
+    Four divergences, three of them reversals.
+    (1) The brief's own recommendation was retracted. Phase 1 recommended Direction A
+    (AJV-style, consumer supplies `T`); Erik's 2026-06-02 review killed it on principle
+    — "type assertion via `.toConverter()` doesn't give us any greater protection
+    against drift than just decoupling schema and the converter entirely — just the
+    illusion of greater protection, which is arguably worse." The shipped surface has
+    no `toConverter()` at all; verified absent from the packlet today.
+    (2) The winning direction was not one of the three the brief listed. All three
+    briefed directions were rejected or demoted; what shipped is a fourth,
+    schema-derives-T, which only became reachable once assertion was ruled out. Its
+    feasibility study is therefore an unbriefed phase-2 the brief never contemplated.
+    (3) Sequencing reversed. The brief and phase-1 both assumed the alignment work
+    would land *after* `ai-assist-client-tools` Phase C as a convenience layered on
+    top. Erik instead chose Option 1 — commission alignment immediately and hold
+    `ai-assist-client-tools` Phase B/C for it.
+    (4) The feasibility study said "yes, and here is the mechanism"; the mechanism
+    is what changed. It specified a module-private `unique symbol` phantom with
+    `Static<S> = S['static']` — deliberately property access, "not a recursive
+    conditional", to avoid a depth penalty. What shipped is a plain optional
+    `__staticType?: T` read by a conditional type,
+    `Static<S> = S extends ISchemaValidator<infer T> ? T : never`, because a
+    private-symbol-keyed property cannot be named in emitted `.d.ts` (TypeBox #679)
+    and would break declaration emit and API Extractor on a published package
+    surface — a constraint the feasibility study did not model. The study's
+    `fromJson` return also widened from `ISchemaValidator<JsonObject>` to
+    `ISchemaValidator<JsonValue>` during implementation review. Both estimates the
+    study did make (~505 impl / ~620 tests, one new packlet, no retrofit) held.
+  sourceLine: '**Status:** ✅ shipped as part of the `json-schema-derives-t` cluster (PR #441 / cluster-close 2026-06-03).'
+keywords:
+  - research spike
+  - two-phase spike
+  - feasibility study
+  - retracted recommendation
+  - assertion versus verification
+  - illusion of type safety
+  - schema-derives-T
+  - TypeBox phantom type
+  - Static type derivation
+  - AJV consumer-supplied generic
+  - Zod toJSONSchema
+  - JSON Schema draft-07
+  - LLM tool parameters
+  - function calling schema
+  - MCP boundary constraint
+  - runtime-arriving schema
+  - Converter reflection retrofit
+  - closures-over-data
+  - drift detection test pattern
+  - authoring cost comparison
+  - ts-json-base packlet
+  - json-schema-builder
+sourceHash: 9f92674c6681b917

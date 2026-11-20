@@ -45,10 +45,10 @@ Object.defineProperty(global, 'TextDecoder', {
 
 // Mock DataTransfer for File API testing
 class MockDataTransfer {
-  items: { add: (file: File) => void };
-  files: FileList;
+  public items: { add: (file: File) => void };
+  public files: FileList;
 
-  constructor() {
+  public constructor() {
     const fileArray: File[] = [];
 
     this.items = {

@@ -1,0 +1,3370 @@
+{
+  "manifest": {
+    "stated": "2026-09-23, before any run of this harness",
+    "slice": "T4 (early run; M1 repeats after T7/T8 add history and reservations)",
+    "sampleMethod": "post-GC heapUsed after four forced gc() passes, outside any measured open/rebuild phase; peaks are heapUsed sampled at every record read (instrumented FileTree proxy) — a sampled high-water, not an allocator maximum — plus process maxRSS for the whole child lifetime",
+    "repetitions": "five fresh child processes per arm (--reps)",
+    "fixtureProfile": "retained 25,000; non-archived 11,000; updates 100,000; audience links and acknowledgement ids 5,000,000 each; operations 100,000; logical bytes 64 GiB; resident payload 8 GiB; everything else the default profile. Declared because the default admits neither 10,000 archived tasks next to 100 fixed ones nor, through closeout audience reservations, more than ~890 non-archived tasks.",
+    "amendments": [
+      "2026-09-23, after a one-repetition shakeout run and before any recorded run: the peak fixture was 1,100 x 60,000 bytes = 66,000,000 bytes, under its own stated 64 MiB precondition, and the harness's precondition check refused it. The fixture count was raised to 1,200; no threshold changed.",
+      "2026-09-23, after the first recorded run (all predictions held): the post-close residual is not a prediction, but it was inflated because the measuring child still held the repository through open's result and the inspection. Both references are now dropped before the after-close sample, and every arm was re-run so all reported numbers come from one harness version.",
+      "2026-09-23, after the second recorded run (all predictions held again): settled heap after a rebuild sat ~6.4 MiB above settled heap after open at 10,000 archived tasks, because the harness's inspection snapshot still referenced the old generation's maps. The snapshot is now dropped before the rebuild is measured; every arm re-run again."
+    ],
+    "predictions": {
+      "fixture": "A 16 MiB corpus of independently generated random hex allocates at least 80% of its payload, and dropping it releases 80–120% of what it allocated (1 MiB noise). If not, stop: the fixture is not resident and nothing downstream means anything.",
+      "archived": "100 fixed non-archived tasks; 0 / 1,000 / 10,000 archived children of one parent, each with a 128-byte source key and ~8 KiB of unique presentation data. Identity/edge/source entry counts grow linearly (projections = 100 + n, children = n, sources = n). At 1,000 → 10,000 the minimal projection's incremental post-GC heap is at most 25% of the full-summary-retaining control's increment, and is not flat (at least 1 MiB).",
+      "terminal": "100 fixed open tasks plus 100 / 500 / 900 non-archived terminal tasks carrying ~6 KiB of unique presentation (description, progress summary) each. Non-archived terminal tasks keep full summaries: from 100 to 900 the post-GC heap grows by at least 50% of the added presentation bytes (2 MiB noise). Archiving all of them through the real commit path then releases at least 50% of their presentation bytes (2 MiB noise), while their identity entries remain.",
+      "peak": "Fixed projection (100 open tasks), plus at least 64 MiB of archived cold history (1,200 archived tasks with ~60 KB details each). The sampled peak heap above the settled resident state, for a cold open and for a warm rebuild, is at most 25% of the added cold bytes + 16 MiB. An all-record-buffering control on the same shape exceeds that bound."
+    }
+  },
+  "environment": {
+    "node": "v22.22.2",
+    "v8": "12.4.254.21-node.39",
+    "platform": "linux 6.18.44-fc-v37",
+    "arch": "x64",
+    "tmpdir": "/tmp",
+    "adapter": "FsFileTreeAccessors, durable process-crash open; seeded in a separate process",
+    "revision": "1ec1a953b6cef1d0379e1e98578abdd45220676f"
+  },
+  "raw": {
+    "fixture": [
+      {
+        "payload": 16777216,
+        "built": 16855240,
+        "released": 16825096
+      },
+      {
+        "payload": 16777216,
+        "built": 16855240,
+        "released": 16825096
+      },
+      {
+        "payload": 16777216,
+        "built": 16855240,
+        "released": 16825096
+      },
+      {
+        "payload": 16777216,
+        "built": 16855240,
+        "released": 16825096
+      },
+      {
+        "payload": 16777216,
+        "built": 16855240,
+        "released": 16825096
+      }
+    ],
+    "archived": {
+      "minimal-0": [
+        {
+          "cohort": "archived",
+          "size": 0,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 100,
+            "payloadBytes": 0,
+            "diskBytes": 183090
+          },
+          "baseline": {
+            "rss": 64765952,
+            "heapTotal": 17141760,
+            "heapUsed": 7390904,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 71540736,
+            "heapTotal": 17928192,
+            "heapUsed": 8456664,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 12455464,
+          "shape": {
+            "projections": 100,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 12696768,
+          "afterRebuild": {
+            "rss": 72388608,
+            "heapTotal": 17928192,
+            "heapUsed": 8555232,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 72388608,
+            "heapTotal": 17928192,
+            "heapUsed": 8121944,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 73320
+        },
+        {
+          "cohort": "archived",
+          "size": 0,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 100,
+            "payloadBytes": 0,
+            "diskBytes": 183090
+          },
+          "baseline": {
+            "rss": 63983616,
+            "heapTotal": 17141760,
+            "heapUsed": 7391024,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 71114752,
+            "heapTotal": 17666048,
+            "heapUsed": 8456816,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 12510168,
+          "shape": {
+            "projections": 100,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 12676080,
+          "afterRebuild": {
+            "rss": 71725056,
+            "heapTotal": 17928192,
+            "heapUsed": 8555384,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 71725056,
+            "heapTotal": 17928192,
+            "heapUsed": 8122096,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 72520
+        },
+        {
+          "cohort": "archived",
+          "size": 0,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 100,
+            "payloadBytes": 0,
+            "diskBytes": 183090
+          },
+          "baseline": {
+            "rss": 64061440,
+            "heapTotal": 17141760,
+            "heapUsed": 7391056,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 71348224,
+            "heapTotal": 17666048,
+            "heapUsed": 8456784,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 12554888,
+          "shape": {
+            "projections": 100,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 12681752,
+          "afterRebuild": {
+            "rss": 71606272,
+            "heapTotal": 18190336,
+            "heapUsed": 8555352,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 71606272,
+            "heapTotal": 17403904,
+            "heapUsed": 8122064,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 72748
+        },
+        {
+          "cohort": "archived",
+          "size": 0,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 100,
+            "payloadBytes": 0,
+            "diskBytes": 183090
+          },
+          "baseline": {
+            "rss": 64102400,
+            "heapTotal": 17141760,
+            "heapUsed": 7390832,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 71299072,
+            "heapTotal": 17666048,
+            "heapUsed": 8456656,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 12534240,
+          "shape": {
+            "projections": 100,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 12733096,
+          "afterRebuild": {
+            "rss": 71245824,
+            "heapTotal": 18190336,
+            "heapUsed": 8555224,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 71245824,
+            "heapTotal": 17666048,
+            "heapUsed": 8121936,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 72316
+        },
+        {
+          "cohort": "archived",
+          "size": 0,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 100,
+            "payloadBytes": 0,
+            "diskBytes": 183090
+          },
+          "baseline": {
+            "rss": 64200704,
+            "heapTotal": 17141760,
+            "heapUsed": 7390840,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 71802880,
+            "heapTotal": 17928192,
+            "heapUsed": 8456632,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 12497920,
+          "shape": {
+            "projections": 100,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 12670824,
+          "afterRebuild": {
+            "rss": 72114176,
+            "heapTotal": 18190336,
+            "heapUsed": 8555200,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 72114176,
+            "heapTotal": 17666048,
+            "heapUsed": 8121912,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 72296
+        }
+      ],
+      "control-0": [
+        {
+          "cohort": "archived",
+          "size": 0,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 100,
+            "payloadBytes": 0,
+            "diskBytes": 183090
+          },
+          "baseline": {
+            "rss": 63545344,
+            "heapTotal": 16879616,
+            "heapUsed": 7387904,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 70942720,
+            "heapTotal": 17928192,
+            "heapUsed": 8457608,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 12536992,
+          "shape": {
+            "projections": 100,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 71577600,
+            "heapTotal": 18452480,
+            "heapUsed": 8579280,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 0,
+          "afterClose": {
+            "rss": 71577600,
+            "heapTotal": 18190336,
+            "heapUsed": 8148656,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 72448
+        },
+        {
+          "cohort": "archived",
+          "size": 0,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 100,
+            "payloadBytes": 0,
+            "diskBytes": 183090
+          },
+          "baseline": {
+            "rss": 64094208,
+            "heapTotal": 17141760,
+            "heapUsed": 7390624,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 71548928,
+            "heapTotal": 17666048,
+            "heapUsed": 8456480,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 12532480,
+          "shape": {
+            "projections": 100,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 71553024,
+            "heapTotal": 18190336,
+            "heapUsed": 8578152,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 0,
+          "afterClose": {
+            "rss": 71553024,
+            "heapTotal": 17928192,
+            "heapUsed": 8147528,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 71408
+        },
+        {
+          "cohort": "archived",
+          "size": 0,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 100,
+            "payloadBytes": 0,
+            "diskBytes": 183090
+          },
+          "baseline": {
+            "rss": 64122880,
+            "heapTotal": 17141760,
+            "heapUsed": 7390728,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 71344128,
+            "heapTotal": 18452480,
+            "heapUsed": 8479032,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 12473648,
+          "shape": {
+            "projections": 100,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 71573504,
+            "heapTotal": 18190336,
+            "heapUsed": 8578232,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 0,
+          "afterClose": {
+            "rss": 71573504,
+            "heapTotal": 18190336,
+            "heapUsed": 8147608,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 71228
+        },
+        {
+          "cohort": "archived",
+          "size": 0,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 100,
+            "payloadBytes": 0,
+            "diskBytes": 183090
+          },
+          "baseline": {
+            "rss": 64741376,
+            "heapTotal": 17141760,
+            "heapUsed": 7390584,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 71892992,
+            "heapTotal": 17666048,
+            "heapUsed": 8456440,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 12519864,
+          "shape": {
+            "projections": 100,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 72396800,
+            "heapTotal": 17928192,
+            "heapUsed": 8578232,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 0,
+          "afterClose": {
+            "rss": 72396800,
+            "heapTotal": 17928192,
+            "heapUsed": 8147608,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 71616
+        },
+        {
+          "cohort": "archived",
+          "size": 0,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 100,
+            "payloadBytes": 0,
+            "diskBytes": 183090
+          },
+          "baseline": {
+            "rss": 65040384,
+            "heapTotal": 17141760,
+            "heapUsed": 7390920,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 72175616,
+            "heapTotal": 17928192,
+            "heapUsed": 8456584,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 12473304,
+          "shape": {
+            "projections": 100,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 72396800,
+            "heapTotal": 18190336,
+            "heapUsed": 8578376,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 0,
+          "afterClose": {
+            "rss": 72396800,
+            "heapTotal": 18190336,
+            "heapUsed": 8147752,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 71788
+        }
+      ],
+      "minimal-1000": [
+        {
+          "cohort": "archived",
+          "size": 1000,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 1100,
+            "payloadBytes": 8224000,
+            "diskBytes": 14896980
+          },
+          "baseline": {
+            "rss": 64061440,
+            "heapTotal": 17141760,
+            "heapUsed": 7390608,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 86151168,
+            "heapTotal": 28676096,
+            "heapUsed": 10078576,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 19014288,
+          "shape": {
+            "projections": 1100,
+            "summaries": 100,
+            "children": 1000,
+            "sources": 1000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 20619144,
+          "afterRebuild": {
+            "rss": 88133632,
+            "heapTotal": 28676096,
+            "heapUsed": 10182128,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 88133632,
+            "heapTotal": 26316800,
+            "heapUsed": 8270136,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 86628
+        },
+        {
+          "cohort": "archived",
+          "size": 1000,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 1100,
+            "payloadBytes": 8224000,
+            "diskBytes": 14898081
+          },
+          "baseline": {
+            "rss": 64790528,
+            "heapTotal": 17403904,
+            "heapUsed": 7390968,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 86319104,
+            "heapTotal": 28413952,
+            "heapUsed": 10067688,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 18990296,
+          "shape": {
+            "projections": 1100,
+            "summaries": 100,
+            "children": 1000,
+            "sources": 1000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 20691792,
+          "afterRebuild": {
+            "rss": 88272896,
+            "heapTotal": 28413952,
+            "heapUsed": 10180504,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 88272896,
+            "heapTotal": 26578944,
+            "heapUsed": 8269760,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 87148
+        },
+        {
+          "cohort": "archived",
+          "size": 1000,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 1100,
+            "payloadBytes": 8224000,
+            "diskBytes": 14898081
+          },
+          "baseline": {
+            "rss": 64778240,
+            "heapTotal": 17141760,
+            "heapUsed": 7390896,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 86319104,
+            "heapTotal": 28676096,
+            "heapUsed": 10064704,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 18991952,
+          "shape": {
+            "projections": 1100,
+            "summaries": 100,
+            "children": 1000,
+            "sources": 1000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 20660520,
+          "afterRebuild": {
+            "rss": 88805376,
+            "heapTotal": 29200384,
+            "heapUsed": 10174032,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 88805376,
+            "heapTotal": 26316800,
+            "heapUsed": 8267280,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 86724
+        },
+        {
+          "cohort": "archived",
+          "size": 1000,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 1100,
+            "payloadBytes": 8224000,
+            "diskBytes": 14898081
+          },
+          "baseline": {
+            "rss": 64778240,
+            "heapTotal": 17141760,
+            "heapUsed": 7390576,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 86421504,
+            "heapTotal": 28676096,
+            "heapUsed": 10066672,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 18961680,
+          "shape": {
+            "projections": 1100,
+            "summaries": 100,
+            "children": 1000,
+            "sources": 1000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 20690336,
+          "afterRebuild": {
+            "rss": 88522752,
+            "heapTotal": 28676096,
+            "heapUsed": 10175016,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 88522752,
+            "heapTotal": 26054656,
+            "heapUsed": 8268264,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 86692
+        },
+        {
+          "cohort": "archived",
+          "size": 1000,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 1100,
+            "payloadBytes": 8224000,
+            "diskBytes": 14898081
+          },
+          "baseline": {
+            "rss": 63905792,
+            "heapTotal": 17141760,
+            "heapUsed": 7390264,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 85520384,
+            "heapTotal": 28151808,
+            "heapUsed": 10067776,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 19012936,
+          "shape": {
+            "projections": 1100,
+            "summaries": 100,
+            "children": 1000,
+            "sources": 1000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 20607616,
+          "afterRebuild": {
+            "rss": 87785472,
+            "heapTotal": 28151808,
+            "heapUsed": 10179008,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 87785472,
+            "heapTotal": 26316800,
+            "heapUsed": 8267016,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 86308
+        }
+      ],
+      "control-1000": [
+        {
+          "cohort": "archived",
+          "size": 1000,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 1100,
+            "payloadBytes": 8224000,
+            "diskBytes": 14898081
+          },
+          "baseline": {
+            "rss": 64303104,
+            "heapTotal": 17141760,
+            "heapUsed": 7390936,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 85655552,
+            "heapTotal": 28676096,
+            "heapUsed": 10066240,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 18986584,
+          "shape": {
+            "projections": 1100,
+            "summaries": 100,
+            "children": 1000,
+            "sources": 1000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 117174272,
+            "heapTotal": 54366208,
+            "heapUsed": 19440544,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 1000,
+          "afterClose": {
+            "rss": 117174272,
+            "heapTotal": 54366208,
+            "heapUsed": 17586624,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 118824
+        },
+        {
+          "cohort": "archived",
+          "size": 1000,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 1100,
+            "payloadBytes": 8224000,
+            "diskBytes": 14898081
+          },
+          "baseline": {
+            "rss": 64237568,
+            "heapTotal": 17403904,
+            "heapUsed": 7391272,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 87953408,
+            "heapTotal": 28676096,
+            "heapUsed": 10067536,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 19018096,
+          "shape": {
+            "projections": 1100,
+            "summaries": 100,
+            "children": 1000,
+            "sources": 1000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 120569856,
+            "heapTotal": 54628352,
+            "heapUsed": 19442056,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 1000,
+          "afterClose": {
+            "rss": 120569856,
+            "heapTotal": 54628352,
+            "heapUsed": 17588136,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 119728
+        },
+        {
+          "cohort": "archived",
+          "size": 1000,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 1100,
+            "payloadBytes": 8224000,
+            "diskBytes": 14898081
+          },
+          "baseline": {
+            "rss": 64409600,
+            "heapTotal": 17141760,
+            "heapUsed": 7391112,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 86896640,
+            "heapTotal": 28151808,
+            "heapUsed": 10059744,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 18962296,
+          "shape": {
+            "projections": 1100,
+            "summaries": 100,
+            "children": 1000,
+            "sources": 1000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 118837248,
+            "heapTotal": 54366208,
+            "heapUsed": 19441192,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 1000,
+          "afterClose": {
+            "rss": 118837248,
+            "heapTotal": 54366208,
+            "heapUsed": 17587272,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 120484
+        },
+        {
+          "cohort": "archived",
+          "size": 1000,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 1100,
+            "payloadBytes": 8224000,
+            "diskBytes": 14898081
+          },
+          "baseline": {
+            "rss": 64393216,
+            "heapTotal": 17141760,
+            "heapUsed": 7390856,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 86904832,
+            "heapTotal": 28676096,
+            "heapUsed": 10077832,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 19025776,
+          "shape": {
+            "projections": 1100,
+            "summaries": 100,
+            "children": 1000,
+            "sources": 1000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 117215232,
+            "heapTotal": 54366208,
+            "heapUsed": 19452520,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 1000,
+          "afterClose": {
+            "rss": 117215232,
+            "heapTotal": 54366208,
+            "heapUsed": 17598600,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 119116
+        },
+        {
+          "cohort": "archived",
+          "size": 1000,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 1100,
+            "payloadBytes": 8224000,
+            "diskBytes": 14898081
+          },
+          "baseline": {
+            "rss": 64729088,
+            "heapTotal": 17141760,
+            "heapUsed": 7390728,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 86806528,
+            "heapTotal": 28938240,
+            "heapUsed": 10067056,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 18976976,
+          "shape": {
+            "projections": 1100,
+            "summaries": 100,
+            "children": 1000,
+            "sources": 1000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 116387840,
+            "heapTotal": 54890496,
+            "heapUsed": 19441576,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 1000,
+          "afterClose": {
+            "rss": 116387840,
+            "heapTotal": 54890496,
+            "heapUsed": 17587656,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 119208
+        }
+      ],
+      "minimal-10000": [
+        {
+          "cohort": "archived",
+          "size": 10000,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 10100,
+            "payloadBytes": 82240000,
+            "diskBytes": 147342081
+          },
+          "baseline": {
+            "rss": 63639552,
+            "heapTotal": 17141760,
+            "heapUsed": 7390768,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 125280256,
+            "heapTotal": 59658240,
+            "heapUsed": 23427464,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 45559056,
+          "shape": {
+            "projections": 10100,
+            "summaries": 100,
+            "children": 10000,
+            "sources": 10000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 10100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 10100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 56802152,
+          "afterRebuild": {
+            "rss": 134967296,
+            "heapTotal": 59133952,
+            "heapUsed": 23483248,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 132296704,
+            "heapTotal": 43094016,
+            "heapUsed": 8520736,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 138184
+        },
+        {
+          "cohort": "archived",
+          "size": 10000,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 10100,
+            "payloadBytes": 82240000,
+            "diskBytes": 147342081
+          },
+          "baseline": {
+            "rss": 64061440,
+            "heapTotal": 17141760,
+            "heapUsed": 7390872,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 126603264,
+            "heapTotal": 59658240,
+            "heapUsed": 23436920,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 45499296,
+          "shape": {
+            "projections": 10100,
+            "summaries": 100,
+            "children": 10000,
+            "sources": 10000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 10100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 10100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 57184288,
+          "afterRebuild": {
+            "rss": 137904128,
+            "heapTotal": 58871808,
+            "heapUsed": 23463728,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 135233536,
+            "heapTotal": 43356160,
+            "heapUsed": 8502696,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 139352
+        },
+        {
+          "cohort": "archived",
+          "size": 10000,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 10100,
+            "payloadBytes": 82240000,
+            "diskBytes": 147342081
+          },
+          "baseline": {
+            "rss": 64212992,
+            "heapTotal": 17403904,
+            "heapUsed": 7390800,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 125546496,
+            "heapTotal": 59396096,
+            "heapUsed": 23453800,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 45592928,
+          "shape": {
+            "projections": 10100,
+            "summaries": 100,
+            "children": 10000,
+            "sources": 10000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 10100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 10100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 57121832,
+          "afterRebuild": {
+            "rss": 136945664,
+            "heapTotal": 58347520,
+            "heapUsed": 23463776,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 134316032,
+            "heapTotal": 43094016,
+            "heapUsed": 8502136,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 139576
+        },
+        {
+          "cohort": "archived",
+          "size": 10000,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 10100,
+            "payloadBytes": 82240000,
+            "diskBytes": 147342081
+          },
+          "baseline": {
+            "rss": 63774720,
+            "heapTotal": 17141760,
+            "heapUsed": 7391184,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 125689856,
+            "heapTotal": 59658240,
+            "heapUsed": 23445136,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 45236472,
+          "shape": {
+            "projections": 10100,
+            "summaries": 100,
+            "children": 10000,
+            "sources": 10000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 10100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 10100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 56992744,
+          "afterRebuild": {
+            "rss": 134856704,
+            "heapTotal": 59658240,
+            "heapUsed": 23453192,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 132186112,
+            "heapTotal": 42831872,
+            "heapUsed": 8490656,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 139380
+        },
+        {
+          "cohort": "archived",
+          "size": 10000,
+          "variant": "minimal",
+          "seeded": {
+            "tasks": 10100,
+            "payloadBytes": 82240000,
+            "diskBytes": 147342081
+          },
+          "baseline": {
+            "rss": 63819776,
+            "heapTotal": 17141760,
+            "heapUsed": 7391392,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 125628416,
+            "heapTotal": 59658240,
+            "heapUsed": 23449720,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 45571336,
+          "shape": {
+            "projections": 10100,
+            "summaries": 100,
+            "children": 10000,
+            "sources": 10000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 10100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 10100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 57556736,
+          "afterRebuild": {
+            "rss": 136130560,
+            "heapTotal": 59920384,
+            "heapUsed": 23462544,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 133459968,
+            "heapTotal": 43094016,
+            "heapUsed": 8500912,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 138312
+        }
+      ],
+      "control-10000": [
+        {
+          "cohort": "archived",
+          "size": 10000,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 10100,
+            "payloadBytes": 82240000,
+            "diskBytes": 147342081
+          },
+          "baseline": {
+            "rss": 64503808,
+            "heapTotal": 17141760,
+            "heapUsed": 7390856,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 123756544,
+            "heapTotal": 59658240,
+            "heapUsed": 23444768,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 45281696,
+          "shape": {
+            "projections": 10100,
+            "summaries": 100,
+            "children": 10000,
+            "sources": 10000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 10100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 10100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 217440256,
+            "heapTotal": 154030080,
+            "heapUsed": 116043760,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 10000,
+          "afterClose": {
+            "rss": 215085056,
+            "heapTotal": 139038720,
+            "heapUsed": 101387432,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 219012
+        },
+        {
+          "cohort": "archived",
+          "size": 10000,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 10100,
+            "payloadBytes": 82240000,
+            "diskBytes": 147342081
+          },
+          "baseline": {
+            "rss": 64507904,
+            "heapTotal": 17141760,
+            "heapUsed": 7390680,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 126504960,
+            "heapTotal": 58609664,
+            "heapUsed": 23475312,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 45627408,
+          "shape": {
+            "projections": 10100,
+            "summaries": 100,
+            "children": 10000,
+            "sources": 10000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 10100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 10100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 225116160,
+            "heapTotal": 153243648,
+            "heapUsed": 116070960,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 10000,
+          "afterClose": {
+            "rss": 222597120,
+            "heapTotal": 138514432,
+            "heapUsed": 101410152,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 220232
+        },
+        {
+          "cohort": "archived",
+          "size": 10000,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 10100,
+            "payloadBytes": 82240000,
+            "diskBytes": 147342081
+          },
+          "baseline": {
+            "rss": 64094208,
+            "heapTotal": 17141760,
+            "heapUsed": 7390728,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 125530112,
+            "heapTotal": 59658240,
+            "heapUsed": 23430552,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 45569280,
+          "shape": {
+            "projections": 10100,
+            "summaries": 100,
+            "children": 10000,
+            "sources": 10000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 10100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 10100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 224071680,
+            "heapTotal": 153243648,
+            "heapUsed": 116019576,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 10000,
+          "afterClose": {
+            "rss": 221556736,
+            "heapTotal": 138514432,
+            "heapUsed": 101365520,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 218820
+        },
+        {
+          "cohort": "archived",
+          "size": 10000,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 10100,
+            "payloadBytes": 82240000,
+            "diskBytes": 147342081
+          },
+          "baseline": {
+            "rss": 64962560,
+            "heapTotal": 17141760,
+            "heapUsed": 7390984,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 124788736,
+            "heapTotal": 59658240,
+            "heapUsed": 23435160,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 45241776,
+          "shape": {
+            "projections": 10100,
+            "summaries": 100,
+            "children": 10000,
+            "sources": 10000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 10100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 10100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 219570176,
+            "heapTotal": 153767936,
+            "heapUsed": 116030728,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 10000,
+          "afterClose": {
+            "rss": 217292800,
+            "heapTotal": 138514432,
+            "heapUsed": 101372320,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 217740
+        },
+        {
+          "cohort": "archived",
+          "size": 10000,
+          "variant": "full-summary-control",
+          "seeded": {
+            "tasks": 10100,
+            "payloadBytes": 82240000,
+            "diskBytes": 147342081
+          },
+          "baseline": {
+            "rss": 64266240,
+            "heapTotal": 17141760,
+            "heapUsed": 7390784,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 125095936,
+            "heapTotal": 59396096,
+            "heapUsed": 23433904,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 45228496,
+          "shape": {
+            "projections": 10100,
+            "summaries": 100,
+            "children": 10000,
+            "sources": 10000,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 10100,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 10100,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterControl": {
+            "rss": 222511104,
+            "heapTotal": 154030080,
+            "heapUsed": 116027704,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "retainedCount": 10000,
+          "afterClose": {
+            "rss": 220086272,
+            "heapTotal": 139038720,
+            "heapUsed": 101374680,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 221248
+        }
+      ]
+    },
+    "terminal": {
+      "100": [
+        {
+          "cohort": "terminal",
+          "size": 100,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 200,
+            "payloadBytes": 600000,
+            "diskBytes": 1593281
+          },
+          "baseline": {
+            "rss": 64077824,
+            "heapTotal": 17141760,
+            "heapUsed": 7390976,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 73834496,
+            "heapTotal": 18714624,
+            "heapUsed": 9343616,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 13244616,
+          "shape": {
+            "projections": 200,
+            "summaries": 200,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 200,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 200,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 83587072,
+            "heapTotal": 27103232,
+            "heapUsed": 9194784,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 100,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 200,
+          "afterClose": {
+            "rss": 83587072,
+            "heapTotal": 27103232,
+            "heapUsed": 8621816,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 82676
+        },
+        {
+          "cohort": "terminal",
+          "size": 100,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 200,
+            "payloadBytes": 600000,
+            "diskBytes": 1593281
+          },
+          "baseline": {
+            "rss": 64733184,
+            "heapTotal": 17141760,
+            "heapUsed": 7391288,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 74334208,
+            "heapTotal": 18976768,
+            "heapUsed": 9336360,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 13228344,
+          "shape": {
+            "projections": 200,
+            "summaries": 200,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 200,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 200,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 83513344,
+            "heapTotal": 27365376,
+            "heapUsed": 9193608,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 100,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 200,
+          "afterClose": {
+            "rss": 83320832,
+            "heapTotal": 27365376,
+            "heapUsed": 8622312,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 83488
+        },
+        {
+          "cohort": "terminal",
+          "size": 100,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 200,
+            "payloadBytes": 600000,
+            "diskBytes": 1593281
+          },
+          "baseline": {
+            "rss": 64155648,
+            "heapTotal": 17141760,
+            "heapUsed": 7391160,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 73699328,
+            "heapTotal": 18452480,
+            "heapUsed": 9336136,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 13227616,
+          "shape": {
+            "projections": 200,
+            "summaries": 200,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 200,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 200,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 83054592,
+            "heapTotal": 27103232,
+            "heapUsed": 9193312,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 100,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 200,
+          "afterClose": {
+            "rss": 83054592,
+            "heapTotal": 27103232,
+            "heapUsed": 8622016,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 82812
+        },
+        {
+          "cohort": "terminal",
+          "size": 100,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 200,
+            "payloadBytes": 600000,
+            "diskBytes": 1593281
+          },
+          "baseline": {
+            "rss": 64196608,
+            "heapTotal": 17403904,
+            "heapUsed": 7390968,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 74158080,
+            "heapTotal": 18714624,
+            "heapUsed": 9336008,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 13206816,
+          "shape": {
+            "projections": 200,
+            "summaries": 200,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 200,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 200,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 83648512,
+            "heapTotal": 27103232,
+            "heapUsed": 9193184,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 100,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 200,
+          "afterClose": {
+            "rss": 83648512,
+            "heapTotal": 27103232,
+            "heapUsed": 8621888,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 83180
+        },
+        {
+          "cohort": "terminal",
+          "size": 100,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 200,
+            "payloadBytes": 600000,
+            "diskBytes": 1593281
+          },
+          "baseline": {
+            "rss": 64221184,
+            "heapTotal": 17141760,
+            "heapUsed": 7391136,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 74891264,
+            "heapTotal": 18714624,
+            "heapUsed": 9336240,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 13251912,
+          "shape": {
+            "projections": 200,
+            "summaries": 200,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 200,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 200,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 83316736,
+            "heapTotal": 27627520,
+            "heapUsed": 9193488,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 100,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 200,
+          "afterClose": {
+            "rss": 83316736,
+            "heapTotal": 26841088,
+            "heapUsed": 8622192,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 84364
+        }
+      ],
+      "500": [
+        {
+          "cohort": "terminal",
+          "size": 500,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 600,
+            "payloadBytes": 3000000,
+            "diskBytes": 7234081
+          },
+          "baseline": {
+            "rss": 64184320,
+            "heapTotal": 17403904,
+            "heapUsed": 7391064,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 88719360,
+            "heapTotal": 30773248,
+            "heapUsed": 12729384,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 20698160,
+          "shape": {
+            "projections": 600,
+            "summaries": 600,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 600,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 600,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 106774528,
+            "heapTotal": 44404736,
+            "heapUsed": 9826864,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 500,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 600,
+          "afterClose": {
+            "rss": 106774528,
+            "heapTotal": 44404736,
+            "heapUsed": 8738104,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 105900
+        },
+        {
+          "cohort": "terminal",
+          "size": 500,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 600,
+            "payloadBytes": 3000000,
+            "diskBytes": 7234081
+          },
+          "baseline": {
+            "rss": 64090112,
+            "heapTotal": 17141760,
+            "heapUsed": 7390736,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 88002560,
+            "heapTotal": 30511104,
+            "heapUsed": 12729088,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 20707848,
+          "shape": {
+            "projections": 600,
+            "summaries": 600,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 600,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 600,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 105680896,
+            "heapTotal": 44404736,
+            "heapUsed": 9826280,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 500,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 600,
+          "afterClose": {
+            "rss": 105680896,
+            "heapTotal": 44404736,
+            "heapUsed": 8737520,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 104796
+        },
+        {
+          "cohort": "terminal",
+          "size": 500,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 600,
+            "payloadBytes": 3000000,
+            "diskBytes": 7234081
+          },
+          "baseline": {
+            "rss": 64598016,
+            "heapTotal": 17141760,
+            "heapUsed": 7390720,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 88784896,
+            "heapTotal": 30773248,
+            "heapUsed": 12729144,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 20634216,
+          "shape": {
+            "projections": 600,
+            "summaries": 600,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 600,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 600,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 106950656,
+            "heapTotal": 44404736,
+            "heapUsed": 9827056,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 500,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 600,
+          "afterClose": {
+            "rss": 106950656,
+            "heapTotal": 43618304,
+            "heapUsed": 8738296,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 105856
+        },
+        {
+          "cohort": "terminal",
+          "size": 500,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 600,
+            "payloadBytes": 3000000,
+            "diskBytes": 7234081
+          },
+          "baseline": {
+            "rss": 64188416,
+            "heapTotal": 17141760,
+            "heapUsed": 7390984,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 88371200,
+            "heapTotal": 30773248,
+            "heapUsed": 12729344,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 20630160,
+          "shape": {
+            "projections": 600,
+            "summaries": 600,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 600,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 600,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 106237952,
+            "heapTotal": 44404736,
+            "heapUsed": 9827112,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 500,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 600,
+          "afterClose": {
+            "rss": 106237952,
+            "heapTotal": 44404736,
+            "heapUsed": 8738352,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 105128
+        },
+        {
+          "cohort": "terminal",
+          "size": 500,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 600,
+            "payloadBytes": 3000000,
+            "diskBytes": 7234081
+          },
+          "baseline": {
+            "rss": 64221184,
+            "heapTotal": 17141760,
+            "heapUsed": 7391064,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 87175168,
+            "heapTotal": 30773248,
+            "heapUsed": 12729408,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 20715912,
+          "shape": {
+            "projections": 600,
+            "summaries": 600,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 600,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 600,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 105545728,
+            "heapTotal": 44404736,
+            "heapUsed": 9825208,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 500,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 600,
+          "afterClose": {
+            "rss": 105545728,
+            "heapTotal": 43356160,
+            "heapUsed": 8738136,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 105396
+        }
+      ],
+      "900": [
+        {
+          "cohort": "terminal",
+          "size": 900,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 1000,
+            "payloadBytes": 5400000,
+            "diskBytes": 12874881
+          },
+          "baseline": {
+            "rss": 64200704,
+            "heapTotal": 17141760,
+            "heapUsed": 7391352,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 111304704,
+            "heapTotal": 50958336,
+            "heapUsed": 15950392,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 31190440,
+          "shape": {
+            "projections": 1000,
+            "summaries": 1000,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1000,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1000,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 114237440,
+            "heapTotal": 45715456,
+            "heapUsed": 10332128,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 900,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 1000,
+          "afterClose": {
+            "rss": 114237440,
+            "heapTotal": 43618304,
+            "heapUsed": 8847536,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 112416
+        },
+        {
+          "cohort": "terminal",
+          "size": 900,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 1000,
+            "payloadBytes": 5400000,
+            "diskBytes": 12874881
+          },
+          "baseline": {
+            "rss": 64630784,
+            "heapTotal": 17141760,
+            "heapUsed": 7390720,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 112136192,
+            "heapTotal": 50958336,
+            "heapUsed": 15949824,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 31273208,
+          "shape": {
+            "projections": 1000,
+            "summaries": 1000,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1000,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1000,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 115232768,
+            "heapTotal": 44929024,
+            "heapUsed": 10332264,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 900,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 1000,
+          "afterClose": {
+            "rss": 115232768,
+            "heapTotal": 44929024,
+            "heapUsed": 8847672,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 112648
+        },
+        {
+          "cohort": "terminal",
+          "size": 900,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 1000,
+            "payloadBytes": 5400000,
+            "diskBytes": 12874881
+          },
+          "baseline": {
+            "rss": 64737280,
+            "heapTotal": 17141760,
+            "heapUsed": 7391232,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 111337472,
+            "heapTotal": 50696192,
+            "heapUsed": 15943864,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 31214552,
+          "shape": {
+            "projections": 1000,
+            "summaries": 1000,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1000,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1000,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 114446336,
+            "heapTotal": 45715456,
+            "heapUsed": 10331888,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 900,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 1000,
+          "afterClose": {
+            "rss": 114446336,
+            "heapTotal": 43618304,
+            "heapUsed": 8847296,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 112672
+        },
+        {
+          "cohort": "terminal",
+          "size": 900,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 1000,
+            "payloadBytes": 5400000,
+            "diskBytes": 12874881
+          },
+          "baseline": {
+            "rss": 64212992,
+            "heapTotal": 17403904,
+            "heapUsed": 7391040,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 111796224,
+            "heapTotal": 50696192,
+            "heapUsed": 15950144,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 31255440,
+          "shape": {
+            "projections": 1000,
+            "summaries": 1000,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1000,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1000,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 114802688,
+            "heapTotal": 45977600,
+            "heapUsed": 10331880,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 900,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 1000,
+          "afterClose": {
+            "rss": 114802688,
+            "heapTotal": 45977600,
+            "heapUsed": 8847288,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 112644
+        },
+        {
+          "cohort": "terminal",
+          "size": 900,
+          "variant": "archive-release",
+          "seeded": {
+            "tasks": 1000,
+            "payloadBytes": 5400000,
+            "diskBytes": 12874881
+          },
+          "baseline": {
+            "rss": 64020480,
+            "heapTotal": 17403904,
+            "heapUsed": 7390976,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 111521792,
+            "heapTotal": 50958336,
+            "heapUsed": 15949984,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 31322048,
+          "shape": {
+            "projections": 1000,
+            "summaries": 1000,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1000,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1000,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "afterArchive": {
+            "rss": 114933760,
+            "heapTotal": 45977600,
+            "heapUsed": 10332384,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "archivedCount": 900,
+          "summariesAfterArchive": 100,
+          "projectionsAfterArchive": 1000,
+          "afterClose": {
+            "rss": 114933760,
+            "heapTotal": 43618304,
+            "heapUsed": 8847792,
+            "external": 1864864,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 112500
+        }
+      ]
+    },
+    "peak": {
+      "minimal": [
+        {
+          "cohort": "peak",
+          "size": 0,
+          "variant": "rebuild",
+          "seeded": {
+            "tasks": 1300,
+            "payloadBytes": 72000000,
+            "diskBytes": 74764481
+          },
+          "baseline": {
+            "rss": 63979520,
+            "heapTotal": 17141760,
+            "heapUsed": 7391216,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 107388928,
+            "heapTotal": 44929024,
+            "heapUsed": 10013512,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 27229392,
+          "shape": {
+            "projections": 1300,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1300,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1300,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 28883712,
+          "afterRebuild": {
+            "rss": 115171328,
+            "heapTotal": 45715456,
+            "heapUsed": 10132504,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 110125056,
+            "heapTotal": 43094016,
+            "heapUsed": 8276760,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 114176
+        },
+        {
+          "cohort": "peak",
+          "size": 0,
+          "variant": "rebuild",
+          "seeded": {
+            "tasks": 1300,
+            "payloadBytes": 72000000,
+            "diskBytes": 74764481
+          },
+          "baseline": {
+            "rss": 64753664,
+            "heapTotal": 17403904,
+            "heapUsed": 7390760,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 114061312,
+            "heapTotal": 44666880,
+            "heapUsed": 10013184,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 27043984,
+          "shape": {
+            "projections": 1300,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1300,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1300,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 28879896,
+          "afterRebuild": {
+            "rss": 117436416,
+            "heapTotal": 45453312,
+            "heapUsed": 10130136,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 117436416,
+            "heapTotal": 43094016,
+            "heapUsed": 8274392,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 114960
+        },
+        {
+          "cohort": "peak",
+          "size": 0,
+          "variant": "rebuild",
+          "seeded": {
+            "tasks": 1300,
+            "payloadBytes": 72000000,
+            "diskBytes": 74764481
+          },
+          "baseline": {
+            "rss": 64307200,
+            "heapTotal": 17141760,
+            "heapUsed": 7391128,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 108941312,
+            "heapTotal": 44929024,
+            "heapUsed": 10024560,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 27227424,
+          "shape": {
+            "projections": 1300,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1300,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1300,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 28776032,
+          "afterRebuild": {
+            "rss": 115023872,
+            "heapTotal": 45977600,
+            "heapUsed": 10132768,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 115023872,
+            "heapTotal": 43094016,
+            "heapUsed": 8277016,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 114340
+        },
+        {
+          "cohort": "peak",
+          "size": 0,
+          "variant": "rebuild",
+          "seeded": {
+            "tasks": 1300,
+            "payloadBytes": 72000000,
+            "diskBytes": 74764481
+          },
+          "baseline": {
+            "rss": 64266240,
+            "heapTotal": 17141760,
+            "heapUsed": 7391096,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 108773376,
+            "heapTotal": 44929024,
+            "heapUsed": 10024464,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 27226368,
+          "shape": {
+            "projections": 1300,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1300,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1300,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 28775912,
+          "afterRebuild": {
+            "rss": 114520064,
+            "heapTotal": 45977600,
+            "heapUsed": 10132696,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 114520064,
+            "heapTotal": 43094016,
+            "heapUsed": 8276944,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 113972
+        },
+        {
+          "cohort": "peak",
+          "size": 0,
+          "variant": "rebuild",
+          "seeded": {
+            "tasks": 1300,
+            "payloadBytes": 72000000,
+            "diskBytes": 74764481
+          },
+          "baseline": {
+            "rss": 63684608,
+            "heapTotal": 17141760,
+            "heapUsed": 7390968,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 114503680,
+            "heapTotal": 44929024,
+            "heapUsed": 10013392,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 27163072,
+          "shape": {
+            "projections": 1300,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1300,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1300,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "rebuildPeak": 28883256,
+          "afterRebuild": {
+            "rss": 116584448,
+            "heapTotal": 45715456,
+            "heapUsed": 10135264,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "afterClose": {
+            "rss": 116584448,
+            "heapTotal": 43356160,
+            "heapUsed": 8275472,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 114992
+        }
+      ],
+      "buffered": [
+        {
+          "cohort": "peak",
+          "size": 0,
+          "variant": "buffer-control",
+          "seeded": {
+            "tasks": 1300,
+            "payloadBytes": 72000000,
+            "diskBytes": 74764481
+          },
+          "baseline": {
+            "rss": 64135168,
+            "heapTotal": 17141760,
+            "heapUsed": 7390976,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 114470912,
+            "heapTotal": 44929024,
+            "heapUsed": 10024344,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 27185456,
+          "shape": {
+            "projections": 1300,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1300,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1300,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "bufferPeak": 90130840,
+          "bufferedCount": 1301,
+          "afterClose": {
+            "rss": 187084800,
+            "heapTotal": 125145088,
+            "heapUsed": 84297424,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 182700
+        },
+        {
+          "cohort": "peak",
+          "size": 0,
+          "variant": "buffer-control",
+          "seeded": {
+            "tasks": 1300,
+            "payloadBytes": 72000000,
+            "diskBytes": 74764481
+          },
+          "baseline": {
+            "rss": 64163840,
+            "heapTotal": 16879616,
+            "heapUsed": 7390824,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 113680384,
+            "heapTotal": 44666880,
+            "heapUsed": 10024288,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 27226832,
+          "shape": {
+            "projections": 1300,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1300,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1300,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "bufferPeak": 90130632,
+          "bufferedCount": 1301,
+          "afterClose": {
+            "rss": 186687488,
+            "heapTotal": 125145088,
+            "heapUsed": 84297368,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 182312
+        },
+        {
+          "cohort": "peak",
+          "size": 0,
+          "variant": "buffer-control",
+          "seeded": {
+            "tasks": 1300,
+            "payloadBytes": 72000000,
+            "diskBytes": 74764481
+          },
+          "baseline": {
+            "rss": 64286720,
+            "heapTotal": 17141760,
+            "heapUsed": 7391136,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 115044352,
+            "heapTotal": 45191168,
+            "heapUsed": 10012632,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 27226288,
+          "shape": {
+            "projections": 1300,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1300,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1300,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "bufferPeak": 89875560,
+          "bufferedCount": 1301,
+          "afterClose": {
+            "rss": 186757120,
+            "heapTotal": 125931520,
+            "heapUsed": 84297632,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 182380
+        },
+        {
+          "cohort": "peak",
+          "size": 0,
+          "variant": "buffer-control",
+          "seeded": {
+            "tasks": 1300,
+            "payloadBytes": 72000000,
+            "diskBytes": 74764481
+          },
+          "baseline": {
+            "rss": 64028672,
+            "heapTotal": 17141760,
+            "heapUsed": 7390736,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 108711936,
+            "heapTotal": 44929024,
+            "heapUsed": 10013128,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 27228264,
+          "shape": {
+            "projections": 1300,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1300,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1300,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "bufferPeak": 90297944,
+          "bufferedCount": 1301,
+          "afterClose": {
+            "rss": 181587968,
+            "heapTotal": 124882944,
+            "heapUsed": 84267824,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 177332
+        },
+        {
+          "cohort": "peak",
+          "size": 0,
+          "variant": "buffer-control",
+          "seeded": {
+            "tasks": 1300,
+            "payloadBytes": 72000000,
+            "diskBytes": 74764481
+          },
+          "baseline": {
+            "rss": 64335872,
+            "heapTotal": 17141760,
+            "heapUsed": 7390776,
+            "external": 1808568,
+            "arrayBuffers": 16619
+          },
+          "afterOpen": {
+            "rss": 107065344,
+            "heapTotal": 44929024,
+            "heapUsed": 10018976,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "openPeak": 27162552,
+          "shape": {
+            "projections": 1300,
+            "summaries": 100,
+            "children": 0,
+            "sources": 0,
+            "materializationHighWater": 1,
+            "evidence": {
+              "taskPassReads": 1300,
+              "consumerPassReads": 0,
+              "sourcePassReads": 0,
+              "selectedPassReads": 0,
+              "graphMarks": 1300,
+              "owedDescriptors": 0
+            }
+          },
+          "hotReads": 0,
+          "bufferPeak": 90197992,
+          "bufferedCount": 1301,
+          "afterClose": {
+            "rss": 179679232,
+            "heapTotal": 125669376,
+            "heapUsed": 84297336,
+            "external": 1816800,
+            "arrayBuffers": 24811
+          },
+          "maxRssKiB": 175468
+        }
+      ]
+    }
+  },
+  "results": {
+    "fixture": {
+      "built": {
+        "median": 16855240,
+        "min": 16855240,
+        "max": 16855240,
+        "n": 5
+      },
+      "releasedRatio": {
+        "median": 0.9982115947325579,
+        "min": 0.9982115947325579,
+        "max": 0.9982115947325579,
+        "n": 5
+      },
+      "pass": true
+    },
+    "archived": {
+      "minimal": {
+        "0": {
+          "median": 1065792,
+          "min": 1065728,
+          "max": 1065824,
+          "n": 5
+        },
+        "1000": {
+          "median": 2676720,
+          "min": 2673808,
+          "max": 2687968,
+          "n": 5
+        },
+        "10000": {
+          "median": 16053952,
+          "min": 16036696,
+          "max": 16063000,
+          "n": 5
+        }
+      },
+      "control": {
+        "0": {
+          "median": 1187528,
+          "min": 1187456,
+          "max": 1191376,
+          "n": 5
+        },
+        "1000": {
+          "median": 12050784,
+          "min": 12049608,
+          "max": 12061664,
+          "n": 5
+        },
+        "10000": {
+          "median": 108639744,
+          "min": 108628848,
+          "max": 108680280,
+          "n": 5
+        }
+      },
+      "minimalIncrement": 13377232,
+      "controlIncrement": 96588960,
+      "ratio": 0.1384964906962452,
+      "shape10k": {
+        "projections": 10100,
+        "summaries": 100,
+        "children": 10000,
+        "sources": 10000,
+        "materializationHighWater": 1,
+        "evidence": {
+          "taskPassReads": 10100,
+          "consumerPassReads": 0,
+          "sourcePassReads": 0,
+          "selectedPassReads": 0,
+          "graphMarks": 10100,
+          "owedDescriptors": 0
+        }
+      },
+      "pass": true
+    },
+    "terminal": {
+      "open": {
+        "100": {
+          "median": 1945072,
+          "min": 1944976,
+          "max": 1952640,
+          "n": 5
+        },
+        "500": {
+          "median": 5338352,
+          "min": 5338320,
+          "max": 5338424,
+          "n": 5
+        },
+        "900": {
+          "median": 8559040,
+          "min": 8552632,
+          "max": 8559104,
+          "n": 5
+        }
+      },
+      "releasedByArchive": {
+        "100": {
+          "median": 142824,
+          "min": 142752,
+          "max": 148832,
+          "n": 5
+        },
+        "500": {
+          "median": 2902520,
+          "min": 2902088,
+          "max": 2904200,
+          "n": 5
+        },
+        "900": {
+          "median": 5617600,
+          "min": 5611976,
+          "max": 5618264,
+          "n": 5
+        }
+      },
+      "addedPresentationBytes": 4800000,
+      "growth": 6613968,
+      "release900": 5617600,
+      "payload900": 5400000,
+      "identitiesKept": true,
+      "pass": true
+    },
+    "peak": {
+      "coldPayloadBytes": 72000000,
+      "bound": 34777216,
+      "openAbove": {
+        "median": 17201904,
+        "min": 17030800,
+        "max": 17215880,
+        "n": 5
+      },
+      "rebuildAbove": {
+        "median": 18747992,
+        "min": 18643216,
+        "max": 18751208,
+        "n": 5
+      },
+      "bufferAbove": {
+        "median": 80106496,
+        "min": 79862928,
+        "max": 80284816,
+        "n": 5
+      },
+      "pass": true
+    }
+  }
+}

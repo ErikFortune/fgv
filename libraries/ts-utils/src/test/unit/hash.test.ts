@@ -22,7 +22,7 @@
 
 import '../helpers/jest';
 
-import { Crc32Normalizer } from '../../packlets/hash';
+import { Crc32Normalizer, HashingNormalizer } from '../../packlets/hash';
 
 describe('HashingNormalizer module', () => {
   describe('Crc32 hash function', () => {
@@ -151,6 +151,137 @@ describe('HashingNormalizer module', () => {
 
     test('fails for a non-hashable function', () => {
       expect(normalizer.computeHash(() => 'hello')).toFailWith(/unexpected type/i);
+    });
+  });
+});
+
+describe('HashingNormalizer.canonicalize', () => {
+  const normalizer = new Crc32Normalizer();
+
+  describe('key ordering', () => {
+    test('integer-string keys are sorted lexicographically, not numerically', () => {
+      // Use JSON.parse to create the object — avoids naming-convention lint on integer-string keys
+      // in object literals while still testing the canonical ordering behavior.
+      expect(normalizer.canonicalize(JSON.parse('{"10":1,"2":2,"abc":3}'))).toSucceedAndSatisfy((result) => {
+        // Lexicographic: "10" < "2" < "abc"
+        const pos10 = result.indexOf('"10"');
+        const pos2 = result.indexOf('"2"');
+        const posAbc = result.indexOf('"abc"');
+        expect(pos10).toBeLessThan(pos2);
+        expect(pos2).toBeLessThan(posAbc);
+        // Also verify values are correct
+        const parsed = JSON.parse(result) as Record<string, number>;
+        expect(parsed['10']).toBe(1);
+        expect(parsed['2']).toBe(2);
+        expect(parsed.abc).toBe(3);
+      });
+    });
+
+    test('regular string keys are sorted lexicographically', () => {
+      expect(normalizer.canonicalize({ z: 1, a: 2, m: 3 })).toSucceedAndSatisfy((result) => {
+        const pos_a = result.indexOf('"a"');
+        const pos_m = result.indexOf('"m"');
+        const pos_z = result.indexOf('"z"');
+        expect(pos_a).toBeLessThan(pos_m);
+        expect(pos_m).toBeLessThan(pos_z);
+      });
+    });
+  });
+
+  describe('round-trip', () => {
+    test('JSON.parse(canonicalize(value)) produces equivalent value', () => {
+      const value = { b: 2, a: 1, c: [3, 4, 5] };
+      expect(normalizer.canonicalize(value)).toSucceedAndSatisfy((result) => {
+        const parsed = JSON.parse(result) as typeof value;
+        expect(parsed.a).toBe(1);
+        expect(parsed.b).toBe(2);
+        expect(parsed.c).toEqual([3, 4, 5]);
+      });
+    });
+
+    test('canonicalize produces identical output on repeated calls', () => {
+      const value = { b: 'second', a: 'first', c: null };
+      const result1 = normalizer.canonicalize(value).orThrow();
+      const result2 = normalizer.canonicalize(value).orThrow();
+      expect(result1).toBe(result2);
+    });
+  });
+
+  describe('primitive values', () => {
+    test('null serializes to "null"', () => {
+      expect(normalizer.canonicalize(null)).toSucceedWith('null');
+    });
+
+    test('true serializes to "true"', () => {
+      expect(normalizer.canonicalize(true)).toSucceedWith('true');
+    });
+
+    test('false serializes to "false"', () => {
+      expect(normalizer.canonicalize(false)).toSucceedWith('false');
+    });
+
+    test('number serializes via JSON.stringify', () => {
+      expect(normalizer.canonicalize(42)).toSucceedWith('42');
+      expect(normalizer.canonicalize(3.14)).toSucceedWith('3.14');
+      expect(normalizer.canonicalize(-0)).toSucceedWith('0');
+    });
+
+    test('string serializes as JSON-encoded string', () => {
+      expect(normalizer.canonicalize('hello')).toSucceedWith('"hello"');
+      expect(normalizer.canonicalize('say "hi"')).toSucceedWith('"say \\"hi\\""');
+      expect(normalizer.canonicalize('line\nnewline')).toSucceedWith('"line\\nnewline"');
+    });
+
+    test('fails for non-JSON-serializable types', () => {
+      expect(normalizer.canonicalize(() => 'fn')).toFail();
+      expect(normalizer.canonicalize(Symbol('s'))).toFail();
+      expect(normalizer.canonicalize(new Date())).toFail();
+      expect(normalizer.canonicalize(/regex/)).toFail();
+      expect(normalizer.canonicalize(new Map())).toFail();
+      expect(normalizer.canonicalize(new Set())).toFail();
+    });
+
+    test('fails for non-finite numbers', () => {
+      expect(normalizer.canonicalize(NaN)).toFail();
+      expect(normalizer.canonicalize(Infinity)).toFail();
+      expect(normalizer.canonicalize(-Infinity)).toFail();
+    });
+  });
+
+  describe('arrays', () => {
+    test('empty array', () => {
+      expect(normalizer.canonicalize([])).toSucceedWith('[]');
+    });
+
+    test('preserves array element order', () => {
+      expect(normalizer.canonicalize([3, 1, 2])).toSucceedWith('[3,1,2]');
+    });
+
+    test('array of objects', () => {
+      expect(normalizer.canonicalize([{ b: 2, a: 1 }])).toSucceedWith('[{"a":1,"b":2}]');
+    });
+  });
+
+  describe('nested objects', () => {
+    test('sorts keys at every nesting level', () => {
+      const value = {
+        z: { b: 2, a: 1 },
+        a: { y: 'last', x: 'first' }
+      };
+      expect(normalizer.canonicalize(value)).toSucceedWith(
+        '{"a":{"x":"first","y":"last"},"z":{"a":1,"b":2}}'
+      );
+    });
+
+    test('empty object', () => {
+      expect(normalizer.canonicalize({})).toSucceedWith('{}');
+    });
+  });
+
+  describe('HashingNormalizer base class canonicalize', () => {
+    test('canonicalize is available on any HashingNormalizer instance', () => {
+      const h = new HashingNormalizer((parts) => parts.join(''));
+      expect(h.canonicalize({ b: 1, a: 2 })).toSucceedWith('{"a":2,"b":1}');
     });
   });
 });

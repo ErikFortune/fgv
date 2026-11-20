@@ -94,9 +94,6 @@ export class FsItem implements IFsItemProps {
    * @param props - The {@link Import.IFsItemProps | file system item properties} to use for this item.
    * @param qualifiers - The {@link Qualifiers.IReadOnlyQualifierCollector | qualifiers} used to parse
    * embedded condition set tokens.
-   * @param tree - file tree implementation to use for this item.
-   * @returns `Success` containing the new {@link Import.FsItem | FsItem} if successful, or a `Failure`
-   * containing an error message if not.
    */
   protected constructor(props: IFsItemProps, qualifiers: IReadOnlyQualifierCollector) {
     const { baseName, conditions, item } = props;
@@ -134,7 +131,7 @@ export class FsItem implements IFsItemProps {
    * @param importPath - The path to the file system item to import.
    * @param qualifiers - The {@link Qualifiers.IReadOnlyQualifierCollector | qualifiers} used to parse
    * embedded condition set tokens.
-   * @param fs - An optional {@link Import.IImporterFilesystem | file system implementation} to use for this item.
+   * @param tree - An optional {@link FileTree.FileTree | file tree} to use for this item.
    * @returns `Success` containing the new {@link Import.FsItem | FsItem} if an item is created
    * successfully, or a `Failure` containing an error message if it is not.  Note that the result detail
    * `skipped` indicates that the item was not created because it is not relevant - this is a soft error

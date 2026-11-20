@@ -287,6 +287,15 @@ describe('JsonObjectEditor', () => {
           expect(b).toEqual(expected);
         });
       });
+
+      test('merges own properties from a null-prototype source', () => {
+        const b = JSON.parse(JSON.stringify(base));
+        const src = Object.assign(Object.create(null), toMerge);
+        expect(JsonEditor.default.mergeObjectInPlace(b, src)).toSucceedAndSatisfy((merged) => {
+          expect(merged).toEqual(expected);
+          expect(merged).toBe(b);
+        });
+      });
     });
 
     describe('mergeObjectsInPlace method', () => {

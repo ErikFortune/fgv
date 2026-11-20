@@ -1,0 +1,49 @@
+id: luna-temperature-with-effort
+status: shipped
+packages: ['@fgv/ts-extras', '@fgv/testbed']
+prs: [776]
+openPrs: []
+opened: 2026-11-11
+closed: 2026-11-11
+summary:
+  intended: >
+    Stop the false refusal of temperature 1 beside an effort on gpt-6-luna with a declared per-model
+    rule for "sampling restricted only while thinking" (e.g. samplingParamsRejectedWithThinkingModelPrefixes,
+    reusing samplingParamsAcceptedTemperature): any temperature with thinking off, only the accepted value
+    with thinking on (including luna's default medium), refused locally otherwise on the completion,
+    streaming and client-tool paths; gpt-6-luna only; testbed luna rows to stated outcomes, keeping one raw row.
+  shipped: >
+    IAiProviderDescriptor.samplingParamsRejectedWithThinkingModelPrefixes with the public
+    rejectsSamplingParamsWithThinking; OpenAI lists gpt-6-luna. temperatureAcceptedWithThinking covers
+    both lists and checkSamplingParams takes the resolved thinking config on all three paths, refusing
+    with "… while reasoning: remove temperature, send 1, or set effort 'none'" (the last hint only where
+    'none' turns thinking off). Thinking off is read from the descriptor's wire format, and a verbatim
+    'other' block's effort key decides. Testbed: temp=0.3 and temp=0.3+effort=low REFUSED-LOCALLY,
+    temp=1 and temp=1+effort=low PASS, one raw temp=0.3+effort=low EXPECTED-REJECT on luna's live 400 text.
+  diverged: >
+    The sampling helpers moved from model.ts to a new samplingParams.ts because model.ts crossed
+    max-lines. The raw row kept is an expected-reject (pinned to the provider's text) rather than a
+    report-only observed row, and the raw temp=1 row was dropped. The brief's "no effort on a model whose
+    default is off" case is not modelled: no listed model defaults off. Review round 1 (two P2) reworked
+    the thinking-off check: the first cut read only typed fields across every provider, which refused a
+    luna 'other'-block 'none' that base sent and accepted; it now reads the wire format's own fields and
+    lets an 'other' effort key decide.
+  sourceLine: "**Shipped:** ai-assist accepts `temperature: 1` beside a reasoning effort on `gpt-6-luna`, still sends any temperature with effort `'none'`, and refuses any other value while luna reasons — no effort included — before the wire, from a new declared list, `samplingParamsRejectedWithThinkingModelPrefixes`."
+  headline: >
+    ai-assist sends temperature 1 beside a reasoning effort on GPT-6 Luna and refuses any other value
+    while it reasons, from a declared list of models that restrict temperature only while thinking.
+keywords:
+  - temperature while reasoning
+  - sampling parameters
+  - gpt-6-luna
+  - default effort medium
+  - thinking off detection
+  - false refusal
+  - samplingParamsAcceptedTemperature
+  - checkSamplingParams
+  - thinking temperature conflict
+relatedStreams:
+  - { id: live-run-corrections, relationship: 'added samplingParamsAcceptedTemperature for gpt-6.1-sol and gpt-6-astra (#771)' }
+  - { id: model-followups, relationship: 'made the client-tool path run the conflict and sampling checks (#774)' }
+  - { id: gemini-thinking-level, relationship: 'merged ahead (#775)' }
+sourceHash: sha256:a228d7e3ed508696 # over brief.md + state.md + result.md

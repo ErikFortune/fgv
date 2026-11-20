@@ -41,7 +41,7 @@ export class ResourceDeclTree implements IResourceDeclContainer {
   public readonly tree: Normalized.IResourceTreeRootDecl;
 
   /**
-   * {@inheritdoc ResourceJson.IResourceDeclContainer.context}
+   * {@inheritDoc ResourceJson.IResourceDeclContainer.context}
    */
   public get context(): Normalized.IContainerContextDecl | undefined {
     return this.tree.context;

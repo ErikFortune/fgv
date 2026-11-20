@@ -32,9 +32,15 @@ import * as ResourceJson from '../resource-json';
 
 /**
  * Non-validated declaration of a {@link Conditions.Condition | condition}.
+ *
+ * @remarks
+ * Parameterized on `TQualifierNames` (defaulting to `string`) so consumers
+ * authoring conditions in code can opt into compile-time axis-name discipline.
+ *
  * @public
  */
-export type IConditionDecl = ResourceJson.Json.ILooseConditionDecl;
+export type IConditionDecl<TQualifierNames extends string = string> =
+  ResourceJson.Json.ILooseConditionDecl<TQualifierNames>;
 
 /**
  * Validated declaration of a {@link Conditions.Condition | condition} with all defaults applied.

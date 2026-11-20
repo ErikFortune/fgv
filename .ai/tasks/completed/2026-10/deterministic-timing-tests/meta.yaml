@@ -1,0 +1,46 @@
+id: deterministic-timing-tests
+status: shipped
+packages: ['@fgv/ts-extras', '@fgv/ts-extras-mcp']
+prs: [745]
+openPrs: []
+opened: 2026-10-19
+closed: 2026-10-19
+summary:
+  intended: >
+    Make three load-sensitive tests deterministic without raising a limit or skipping:
+    md5Normalizer.browser's 300 ms performance assertion, saferFetchRetry's exhausted-deadline
+    test (fake timers, or an additive @internal clock seam only if needed), and oauth's
+    times-out-while-saveCodeVerifier-pending test (find the real wait, replace it with a
+    controlled promise or fake timers). Each rewrite must fail against a broken implementation.
+    Sweep for other wall-clock assertions; fix them in ts-extras and ts-extras-mcp only, report
+    the rest.
+  shipped: >
+    All three rewritten, test-only, no production change and no clock seam. md5 now asserts
+    completeness and determinism of a large hash; saferFetchRetry runs on a fake clock with
+    Math.random pinned and a settledWithoutTime helper; oauth fakes setTimeout only, fires the
+    connect deadline after the flow is parked, and replaces a 300 ms sleep with one setImmediate
+    turn. Fifteen more sweep sites in the two packages converted to a fake clock or a
+    discriminating outcome. Every rewrite was proven red against a deliberately broken
+    implementation; both original failures were reproduced on demand. Suites green twice under a
+    parallel rebuild at load average 23–27 on 4 cores.
+  diverged: >
+    The saferFetchRetry failure was not a load effect but a ~0.6% jitter coin flip on every run,
+    so the fix pins Math.random as well as faking timers. The parallel-load run could not use a
+    literal full rebuild (it cleans the lib/ the suites run from) and used a rebuild of everything
+    outside the two packages' dependency closure. ts-extras-mcp's terminate.test.ts, which asserts
+    the termination bound itself over real HTTP, was left whole and reported as a follow-up.
+  sourceLine: '**Shipped:** the three load-sensitive tests in `ts-extras` and `ts-extras-mcp` are deterministic. Each now asserts the property it guarded, on a fake clock or on an outcome that tells the cases apart, never on elapsed wall-clock time. No production code changed.'
+  headline: '' # test-only: no capability for the consumer feed
+keywords:
+  - flaky test
+  - load-sensitive
+  - wall-clock assertion
+  - jest fake timers
+  - retry jitter
+  - Math.random pinning
+  - connect deadline race
+  - event-loop turn
+  - safer-fetch retry
+  - mcp oauth gate
+relatedStreams: []
+sourceHash: sha256:14cdc8f1464cfa14 # over brief.md + result.md + state.md

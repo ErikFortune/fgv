@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "New `Result` methods: `orDefaultWith(cb)`, a default computed only on failure; `shouldNotFail(label?)` for declaration-time invariants, which throws naming the call site; and `Failure.withType<U>()` to re-type a failure for an early return. `DetailedResult` is now `@public` (was `@beta`).",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-utils",
+  "email": "noreply@anthropic.com"
+}

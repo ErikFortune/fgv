@@ -1,5 +1,12 @@
 name: Publish to npm
 
+# One dispatch publishes. `release` and `major` run only on a `publish/<version>` branch cut from
+# `release/<major>`; `alpha` runs only on `prerelease`. Each reusable workflow refuses to start on
+# any other ref, so choosing the wrong branch in the dispatch dialog fails before anything is built.
+#
+# npm trusted publishing (OIDC) is bound to this file name: keep the publish jobs reachable only
+# through it.
+
 on:
   workflow_dispatch:
     inputs:
@@ -13,30 +20,46 @@ on:
           - major
 
 permissions:
-  id-token: write # Required for npm OIDC
-  contents: write # Required for git commits (version bumps)
+  contents: read
+
+# Two dispatches on the same branch would race the same version; the second waits.
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   publish-release:
-    if: ${{ github.event.inputs.release_type == 'release' }}
+    if: ${{ inputs.release_type == 'release' }}
     uses: ./.github/workflows/publish-release-impl.yml
+    with:
+      release_kind: release
     permissions:
-      id-token: write
-      contents: write
-    secrets: inherit
-
-  publish-alpha:
-    if: ${{ github.event.inputs.release_type == 'alpha' }}
-    uses: ./.github/workflows/publish-alpha-impl.yml
-    permissions:
-      id-token: write
-      contents: write
-    secrets: inherit
+      contents: write # bump commit and per-package tags on publish/<version> (publish job only)
+      id-token: write # npm OIDC (publish job only)
+      pull-requests: write # follow-up PRs (publish job only)
+    secrets:
+      GH_USER_NAME: ${{ secrets.GH_USER_NAME }}
+      GH_USER_EMAIL: ${{ secrets.GH_USER_EMAIL }}
 
   publish-major:
-    if: ${{ github.event.inputs.release_type == 'major' }}
-    uses: ./.github/workflows/publish-major-impl.yml
+    if: ${{ inputs.release_type == 'major' }}
+    uses: ./.github/workflows/publish-release-impl.yml
+    with:
+      release_kind: major
     permissions:
-      id-token: write
       contents: write
-    secrets: inherit
+      id-token: write
+      pull-requests: write
+    secrets:
+      GH_USER_NAME: ${{ secrets.GH_USER_NAME }}
+      GH_USER_EMAIL: ${{ secrets.GH_USER_EMAIL }}
+
+  publish-alpha:
+    if: ${{ inputs.release_type == 'alpha' }}
+    uses: ./.github/workflows/publish-alpha-impl.yml
+    permissions:
+      contents: write # per-package tags on prerelease
+      id-token: write # npm OIDC
+    secrets:
+      GH_USER_NAME: ${{ secrets.GH_USER_NAME }}
+      GH_USER_EMAIL: ${{ secrets.GH_USER_EMAIL }}

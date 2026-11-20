@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-webauthn",
+      "comment": "Initial release: a Result boundary over `@simplewebauthn/server` — `generateRegistrationOptions`, `verifyRegistrationResponse`, `generateAuthenticationOptions` and `verifyAuthenticationResponse` return `Result`s instead of throwing. The browser half is `@fgv/ts-web-extras-webauthn`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-webauthn",
+  "email": "noreply@anthropic.com"
+}

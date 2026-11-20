@@ -1,0 +1,265 @@
+/*
+ * Copyright (c) 2026 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+import { Validator } from '@fgv/ts-utils';
+import { JsonObject } from '../json';
+
+/**
+ * Discriminant tag carried by every schema node.
+ * @public
+ */
+export type SchemaNodeType =
+  | 'string'
+  | 'number'
+  | 'integer'
+  | 'boolean'
+  | 'enum'
+  | 'optional'
+  | 'array'
+  | 'object'
+  | 'any';
+
+/**
+ * A typed JSON Schema node for the LLM-tool subset. Every value returned by the
+ * schema factories implements this interface — it IS a `Validator<T>` and also
+ * carries a `toJson()` method for wire-format emission.
+ *
+ * @remarks
+ * The `__staticType` property is a phantom: it exists only in the type system to carry
+ * the derived static type `T` and is never assigned at runtime (declared optional so
+ * factory return values need not populate it). `Static<S>` reads this slot to recover
+ * `T` from a schema value without requiring a user-supplied type assertion. A plain
+ * optional property is used rather than a module-private `unique symbol` because this is
+ * a published package surface — a private-symbol-keyed property cannot be named in the
+ * emitted `.d.ts` (TypeBox issue #679), which would break declaration emission and API
+ * Extractor for downstream consumers.
+ *
+ * Consumers call `schema.validate(input)` directly; no separate adapter step is required.
+ * @public
+ */
+export interface ISchemaValidator<T> extends Validator<T> {
+  /**
+   * Phantom type carrier — type-level only, never present at runtime.
+   */
+  readonly __staticType?: T;
+  /**
+   * Runtime discriminant. Identifies the schema node kind.
+   */
+  readonly _type: SchemaNodeType;
+  /**
+   * Optional human-readable description emitted into the wire JSON Schema.
+   */
+  readonly description?: string;
+  /**
+   * Emits the standard JSON Schema (draft-07 LLM-tool subset) wire form for this schema.
+   * @returns The JSON Schema object describing this schema node.
+   */
+  toJson(): JsonObject;
+}
+
+/**
+ * Every {@link SchemaNodeType}, for {@link isSchemaValidator}.
+ *
+ * @remarks
+ * A **total** `Record<SchemaNodeType, true>` rather than a `Set<SchemaNodeType>`,
+ * and the difference is which way it catches drift. A `Set` built from an array
+ * literal catches a *removed* or misspelled member (a compile error) but not an
+ * *added* one — an incomplete `SchemaNodeType[]` is still a valid
+ * `SchemaNodeType[]`, so a new schema kind would compile fine here and
+ * `isSchemaValidator` would silently start rejecting valid validators of that
+ * kind. A total `Record` makes the addition a compile error at this line, which
+ * is the direction the risk actually runs.
+ * @internal
+ */
+const SCHEMA_NODE_TYPES: Readonly<Record<SchemaNodeType, true>> = {
+  string: true,
+  number: true,
+  integer: true,
+  boolean: true,
+  enum: true,
+  optional: true,
+  array: true,
+  object: true,
+  any: true
+};
+
+/**
+ * Whether `value` is an `ISchemaValidator` — i.e. a schema authored with the
+ * `JsonSchema` factories, as opposed to a plain `Converter` or `Validator`.
+ *
+ * @remarks
+ * `ISchemaValidator<T> extends Validator<T>`, so a caller can already pass a
+ * schema anywhere a `Validator` is accepted and the callee cannot tell. This guard
+ * is what lets such a callee *look* — and do something more with a schema than it
+ * can with a bare validator, most usefully emitting `toJson()` onto a wire.
+ * `@fgv/ts-extras`' `generateJsonCompletion` uses it exactly that way: one object
+ * is both the wire schema and the reply validator, so the two cannot drift.
+ *
+ * Narrows to `ISchemaValidator<unknown>` rather than `ISchemaValidator<T>` —
+ * `_type` is a *node-kind* discriminant and carries no evidence about `T`, which
+ * lives only in the erased `__staticType` phantom. A guard claiming otherwise
+ * would be asserting, not checking.
+ *
+ * @param value - The value to test.
+ * @public
+ */
+export function isSchemaValidator(value: unknown): value is ISchemaValidator<unknown> {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const candidate: Record<string, unknown> = value as Record<string, unknown>;
+  return (
+    typeof candidate._type === 'string' &&
+    // An indexed read compared to `true`, NOT `in` — `in` walks the prototype
+    // chain, so `_type: 'constructor'` or `'toString'` would pass it.
+    SCHEMA_NODE_TYPES[candidate._type as SchemaNodeType] === true &&
+    typeof candidate.toJson === 'function' &&
+    typeof candidate.validate === 'function'
+  );
+}
+
+/**
+ * Recover the derived static type `T` from a schema value.
+ *
+ * @remarks
+ * `Static<typeof MySchema>` resolves to the TypeScript type that `schema.validate()` produces
+ * and that `schema.toJson()` describes — derived, never asserted. No user-supplied `T` is ever
+ * required.
+ * @public
+ */
+export type Static<S extends ISchemaValidator<unknown>> = S extends ISchemaValidator<infer T> ? T : never;
+
+/**
+ * A record of property schemas, as accepted by the `object` factory.
+ * @public
+ */
+export type ILlmProperties = Record<string, ISchemaValidator<unknown>>;
+
+/**
+ * The keys of `P` whose schemas are optional (wrapped with the `optional` modifier).
+ * @public
+ */
+export type OptionalKeys<P extends ILlmProperties> = {
+  [K in keyof P]: P[K] extends ISchemaValidator<infer U> ? (undefined extends U ? K : never) : never;
+}[keyof P];
+
+/**
+ * The keys of `P` whose schemas are required (i.e. not optional).
+ * @public
+ */
+export type RequiredKeys<P extends ILlmProperties> = Exclude<keyof P, OptionalKeys<P>>;
+
+/**
+ * The static value type carried by an optional property (the inner schema's static type,
+ * without the `| undefined` that optionality adds — the `?` modifier conveys that separately).
+ * @public
+ */
+export type OptionalPropertyStatic<V> = V extends ISchemaValidator<infer U> ? Exclude<U, undefined> : never;
+
+/**
+ * Flattens an intersection of object types into a single object type for readable derived types.
+ * @public
+ */
+export type Simplify<T> = { [K in keyof T]: T[K] } & {};
+
+/**
+ * The derived static type for an object built from properties `P`: required keys carry their
+ * static type directly, optional keys carry theirs under a `?` modifier.
+ * @public
+ */
+export type ObjectStatic<P extends ILlmProperties> = Simplify<
+  { [K in RequiredKeys<P>]: Static<P[K]> } & { [K in OptionalKeys<P>]?: OptionalPropertyStatic<P[K]> }
+>;
+
+/**
+ * The derived static type for an **open** object — one built with
+ * `additionalProperties: true`. The declared properties keep their derived types, and every
+ * other key carries a `JsonValue`, which is what the validator passes through for it.
+ *
+ * @remarks
+ * Every declared property type must itself be a `JsonValue` for the intersection to be
+ * inhabitable. The built-in factories only produce such types; a caller-supplied
+ * `ISchemaValidator` whose static type is not JSON (a `Date`, say) cannot be used here.
+ * @public
+ */
+export type OpenObjectStatic<P extends ILlmProperties> = ObjectStatic<P> & JsonObject;
+
+// ---------------------------------------------------------------------------
+// Legacy type aliases kept for backwards compatibility with the first-pass API.
+// These names were in the original public surface; the canonical interface is
+// now ISchemaValidator<T>. New code should use ISchemaValidator<T> directly.
+// ---------------------------------------------------------------------------
+
+/**
+ * @deprecated Use `ISchemaValidator` instead.
+ * @public
+ */
+export type ILlmSchema<T> = ISchemaValidator<T>;
+
+/**
+ * Schema node for a JSON `string`.
+ * @deprecated Use `ISchemaValidator` instead.
+ * @public
+ */
+export type ILlmStringSchema = ISchemaValidator<string>;
+
+/**
+ * Schema node for a JSON `number` or `integer`.
+ * @deprecated Use `ISchemaValidator` instead.
+ * @public
+ */
+export type ILlmNumberSchema = ISchemaValidator<number>;
+
+/**
+ * Schema node for a JSON `boolean`.
+ * @deprecated Use `ISchemaValidator` instead.
+ * @public
+ */
+export type ILlmBooleanSchema = ISchemaValidator<boolean>;
+
+/**
+ * Schema node for a closed set of string literals (`enum`).
+ * @deprecated Use `ISchemaValidator` instead.
+ * @public
+ */
+export type ILlmEnumSchema<T extends string> = ISchemaValidator<T>;
+
+/**
+ * Wrapper marking a property as optional within an object schema.
+ * @deprecated Use `ISchemaValidator` instead.
+ * @public
+ */
+export type ILlmOptional<S extends ISchemaValidator<unknown>> = ISchemaValidator<Static<S> | undefined>;
+
+/**
+ * Schema node for a JSON `array`.
+ * @deprecated Use `ISchemaValidator` instead.
+ * @public
+ */
+export type ILlmArraySchema<S extends ISchemaValidator<unknown>> = ISchemaValidator<Static<S>[]>;
+
+/**
+ * Schema node for a JSON `object`.
+ * @deprecated Use `ISchemaValidator` instead.
+ * @public
+ */
+export type ILlmObjectSchema<P extends ILlmProperties> = ISchemaValidator<ObjectStatic<P>>;

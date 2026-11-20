@@ -1,0 +1,32 @@
+@import '@fgv/ts-app-shell/theme.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Testbed layout: full-viewport three-row stack (top-bar / body / status-bar). */
+.testbed-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* The body row stretches to fill the remaining space. */
+.testbed-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar scrolls independently. */
+.testbed-sidebar {
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+/* Main area scrolls independently. */
+.testbed-main {
+  flex: 1;
+  overflow-y: auto;
+}

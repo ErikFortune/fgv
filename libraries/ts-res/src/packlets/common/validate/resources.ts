@@ -112,7 +112,7 @@ export function isValidCandidateValueKey(key: string): key is CandidateValueKey 
 /**
  * Converts a string to a {@link ResourceName | resource name}.
  *
- * @param id - The string to convert.
+ * @param name - The string to convert.
  * @returns `Success` with the converted name if valid, or `Failure` with an error message
  * if not.
  * @public

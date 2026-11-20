@@ -25,4 +25,8 @@
  * @packageDocumentation
  */
 
+export * from './directoryHandleStore';
 export * from './fileApiTreeAccessors';
+export * from './fileSystemAccessTreeAccessors';
+export * from './httpTreeAccessors';
+export * from './localStorageTreeAccessors';

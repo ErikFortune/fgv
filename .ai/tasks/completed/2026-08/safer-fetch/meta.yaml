@@ -1,0 +1,20 @@
+id: safer-fetch
+status: shipped
+packages: ['@fgv/ts-extras', '@fgv/ts-web-extras']
+prs: [597, 599, 601, 602]
+closed: 2026-08-06
+ledgerEntry: fetch-primitive-threat-model
+summary:
+  intended: >
+    Ship an HTTP fetch primitive with an explicit threat model — deadlines, size caps, a required address guard, and a redirect policy — across Node and browser.
+  shipped: >
+    `saferFetchBytes` / `saferFetchText` / `saferFetchJson` in `@fgv/ts-extras` with a **required** `addressGuard` (omitting it is a compile error), `blockPrivateNetworks` / `allowAnyAddress`, four guard seams, `redirectPolicy: 'validate-each-hop'` unifying redirect following with the SSRF guard, opt-in retry, and the browser entry points in `@fgv/ts-web-extras` that refuse `validate-each-hop` up front rather than degrading it.
+  diverged: >
+  sourceLine: ''
+keywords:
+  ['ssrf', 'address guard', 'redirect walk', 'threat model', 'dns rebinding', 'retry', 'browser parity']
+sourceHash: bca7bb44e29df002
+artifactLoss: >
+  No result.md was ever written. Surviving artifacts: four sub-stream briefs (`brief-s1-core.md`, `brief-s2a-address-classification.md`, `brief-s2b-guard-and-redirect-walk.md`, `brief-s3-browser-retry-docs.md`) and `plan.md`. The summary
+  above is reconstructed from git history; diverged and sourceLine are blank because
+  the evidence to fill them does not exist.

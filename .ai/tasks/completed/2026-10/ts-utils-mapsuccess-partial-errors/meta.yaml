@@ -1,0 +1,41 @@
+id: ts-utils-mapsuccess-partial-errors
+status: shipped
+packages: ['@fgv/ts-utils']
+prs: [752]
+openPrs: []
+opened: 2026-10-20
+closed: 2026-10-20
+summary:
+  intended: >
+    personaility#691: mapSuccess documents aggregatedErrors as receiving any returned error message
+    but appended only when every result failed, so a partial fold dropped its failures silently, and
+    mapSuccessAsync inherited the bug with TSDoc that described it. Fix the behaviour to match the
+    contract (return value unchanged), sweep the other folds in mapResults.ts / mapResultsAsync.ts
+    for the same gap, correct the README / CAPABILITIES wording, and list every caller that passes an
+    aggregator.
+  shipped: >
+    mapSuccess appends every failure to aggregatedErrors in input order whether or not any result
+    succeeded, and still fails only when all failed; mapSuccessAsync inherits it through delegation
+    and both overloads' TSDoc now say so. The sibling sweep found no other mismatch across the
+    twelve other folds (firstSuccess takes no aggregator). No caller in the repo passes an aggregator to either function, so nothing
+    downstream changes. Change file typed minor.
+  diverged: >
+    An existing mapSuccessAsync test pinned the bug ("appends errors to a supplied aggregator only
+    when everything fails") and was replaced. CAPABILITIES.md never described the old behaviour and
+    was left alone. Observed and not changed: mapDetailedResults treats a failure with a falsy detail
+    as ignorable, so it reaches neither the result nor the aggregator.
+  sourceLine: '**Shipped:** `mapSuccess` and `mapSuccessAsync` now append every failure message to a supplied `aggregatedErrors`, in input order, whether or not any result succeeded — so a partial fold reports what it dropped, as the parameter always promised. The returned `Result` is unchanged.'
+  headline: >
+    mapSuccess and mapSuccessAsync now hand every failure to a supplied aggregator, even when some
+    results succeeded, so a lenient fold can report what it dropped.
+keywords:
+  - lenient fold
+  - partial failure
+  - silently dropped errors
+  - MessageAggregator
+  - IMessageAggregator
+  - aggregatedErrors
+  - docs-vs-behaviour contract
+  - async Result family
+  - fgv-ask
+sourceHash: sha256:968a6aa33096f7e3 # over brief.md + result.md + state.md

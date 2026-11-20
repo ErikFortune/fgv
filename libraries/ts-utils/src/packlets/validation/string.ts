@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Failure, fail } from '../base';
+import { Failure, fail, formatValueForMessage } from '../base';
 import { GenericValidator, GenericValidatorConstructorParams } from './genericValidator';
 
 /**
@@ -61,6 +61,6 @@ export class StringValidator<T extends string = string, TC = unknown> extends Ge
     if (typeof from === 'string') {
       return true;
     }
-    return fail<T>(`"${from}": not a string`);
+    return fail<T>(`"${formatValueForMessage(from, { style: 'string' })}": not a string`);
   }
 }

@@ -20,8 +20,9 @@
  * SOFTWARE.
  */
 
-import { Failure, fail, isKeyOf, MessageAggregator } from '../base';
+import { Failure, fail, formatValueForMessage, isKeyOf, MessageAggregator } from '../base';
 import { ArrayValidator, ArrayValidatorConstructorParams } from './array';
+import { CompositeIdValidator, CompositeIdValidatorConstructorParams } from './compositeId';
 import { FieldValidators, ObjectValidator, ObjectValidatorConstructorParams } from './object';
 import { TypeGuardValidator, TypeGuardValidatorConstructorParams } from './typeGuard';
 
@@ -127,7 +128,7 @@ export function recordOf<T, TC = unknown, TK extends string = string>(
       self?: Validator<Record<TK, T>, TC>
     ): boolean | Failure<Record<TK, T>> => {
       if (typeof from !== 'object' || from === null || Array.isArray(from)) {
-        return fail(`Not a string-keyed object: ${JSON.stringify(from)}`);
+        return fail(`Not a string-keyed object: ${formatValueForMessage(from)}`);
       }
 
       const errors = new MessageAggregator();
@@ -185,7 +186,7 @@ export function enumeratedValue<T extends string>(values: ReadonlyArray<T>): Val
         const index = v.indexOf(from as T);
         return index >= 0 ? true : fail(`Invalid enumerated value "${from}"  - expected: (${v.join(', ')})`);
       }
-      return fail(`Not a string: "${JSON.stringify(from, undefined, 2)}`);
+      return fail(`Not a string: "${formatValueForMessage(from, { indent: 2 })}`);
     }
   });
 }
@@ -202,9 +203,28 @@ export function literal<T extends string | number | boolean | symbol | null | un
     validator: (from: unknown, context?: unknown, self?: Validator<T>): boolean | Failure<T> => {
       return from === value
         ? true
-        : fail(`Expected literal ${String(value)}, found "${JSON.stringify(from, undefined, 2)}`);
+        : fail(`Expected literal ${String(value)}, found "${formatValueForMessage(from, { indent: 2 })}`);
     }
   });
+}
+
+/** Helper function to create a {@link Validation.Validator | Validator} which validates a
+ * strongly-typed composite ID.
+ * @param params - {@link Validation.Classes.CompositeIdValidatorConstructorParams | params}
+ * used to construct the validator.
+ * @returns A new {@link Validation.Validator | Validator} which validates the desired
+ * composite ID in place.
+ * @public
+ */
+export function compositeId<
+  T extends string = string,
+  TCOLLECTIONID extends string = string,
+  TITEMID extends string = string,
+  TC = unknown
+>(
+  params: CompositeIdValidatorConstructorParams<T, TCOLLECTIONID, TITEMID, TC>
+): CompositeIdValidator<T, TCOLLECTIONID, TITEMID, TC> {
+  return new CompositeIdValidator<T, TCOLLECTIONID, TITEMID, TC>(params);
 }
 
 /**

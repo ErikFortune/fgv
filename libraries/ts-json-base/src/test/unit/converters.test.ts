@@ -21,6 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { Converters as BaseConverters, Validators as BaseValidators } from '@fgv/ts-utils';
 import { Converters, sanitizeJson } from '../..';
 
 describe('converters', () => {
@@ -123,6 +124,21 @@ describe('converters', () => {
 
   describe('jsonObject', () => {
     const converter = Converters.jsonObject;
+
+    test('drops an own __proto__ key instead of setting the prototype, at any depth', () => {
+      const input = JSON.parse(
+        '{"__proto__":{"isAdmin":true},"ok":{"__proto__":{"isAdmin":true}}}'
+      ) as unknown;
+      expect(converter.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
+        expect('isAdmin' in result).toBe(false);
+        expect(Object.prototype.hasOwnProperty.call(result, '__proto__')).toBe(false);
+        const nested = result.ok as object;
+        expect(Object.getPrototypeOf(nested)).toBe(Object.prototype);
+        expect('isAdmin' in nested).toBe(false);
+        expect(result).toEqual({ ok: {} });
+      });
+    });
     test.each(validObjectTests)('succeeds for $description', (tc) => {
       expect(converter.convert(tc.value)).toSucceedAndSatisfy((v) => {
         // explicitly test for equality but not identity (copying converter)
@@ -237,5 +253,107 @@ describe('converters', () => {
         });
       }
     );
+  });
+
+  describe('jsonConverter', () => {
+    const converter = Converters.jsonConverter(Converters.jsonObject);
+
+    test('parses and converts valid JSON object string', () => {
+      expect(converter.convert('{"name":"test","value":42}')).toSucceedAndSatisfy((v) => {
+        expect(v.name).toBe('test');
+        expect(v.value).toBe(42);
+      });
+    });
+
+    test('fails when input is not a string', () => {
+      expect(converter.convert({ name: 'test' })).toFailWith(/input must be a string/i);
+      expect(converter.convert(42)).toFailWith(/input must be a string/i);
+      expect(converter.convert(true)).toFailWith(/input must be a string/i);
+    });
+
+    test('fails when JSON is malformed', () => {
+      expect(converter.convert('{"name": invalid}')).toFailWith(/failed to parse json/i);
+      expect(converter.convert('{missing: quotes}')).toFailWith(/failed to parse json/i);
+    });
+
+    test('fails when JSON contains a primitive', () => {
+      expect(converter.convert('"hello"')).toFailWith(/json content must be an object/i);
+      expect(converter.convert('42')).toFailWith(/json content must be an object/i);
+      expect(converter.convert('true')).toFailWith(/json content must be an object/i);
+    });
+
+    test('fails when JSON is null', () => {
+      expect(converter.convert('null')).toFailWith(/json content must be an object/i);
+    });
+
+    test('fails when inner converter rejects the parsed value', () => {
+      // jsonObject rejects arrays
+      expect(converter.convert('[1, 2, 3]')).toFailWith(/invalid json object/i);
+    });
+
+    test('handles nested JSON objects', () => {
+      const json = '{"outer":{"inner":"value"},"list":[1,2,3]}';
+      expect(converter.convert(json)).toSucceedAndSatisfy((v) => {
+        expect(v.outer).toEqual({ inner: 'value' });
+        expect(v.list).toEqual([1, 2, 3]);
+      });
+    });
+  });
+
+  describe('stringifiedJson', () => {
+    test('parses to JsonValue when no inner converter is supplied', () => {
+      const converter = Converters.stringifiedJson();
+      expect(converter.convert('{"name":"test","value":42}')).toSucceedWith({ name: 'test', value: 42 });
+      expect(converter.convert('[1,2,3]')).toSucceedWith([1, 2, 3]);
+      expect(converter.convert('"hello"')).toSucceedWith('hello');
+      expect(converter.convert('42')).toSucceedWith(42);
+      expect(converter.convert('true')).toSucceedWith(true);
+      expect(converter.convert('null')).toSucceedWith(null);
+    });
+
+    test('applies a Converter inner step to the parsed value', () => {
+      interface ITestShape {
+        name: string;
+        value: number;
+      }
+      const inner = BaseConverters.object<ITestShape>({
+        name: BaseConverters.string,
+        value: BaseConverters.number
+      });
+      const converter = Converters.stringifiedJson<ITestShape>(inner);
+      expect(converter.convert('{"name":"test","value":42}')).toSucceedWith({ name: 'test', value: 42 });
+    });
+
+    test('applies a Validator inner step to the parsed value', () => {
+      interface ITestShape {
+        name: string;
+        value: number;
+      }
+      const inner = BaseValidators.object<ITestShape>({
+        name: BaseValidators.string,
+        value: BaseValidators.number
+      });
+      const converter = Converters.stringifiedJson<ITestShape>(inner);
+      expect(converter.convert('{"name":"test","value":42}')).toSucceedWith({ name: 'test', value: 42 });
+    });
+
+    test('fails when the input is not a string', () => {
+      const converter = Converters.stringifiedJson();
+      expect(converter.convert({ name: 'test' })).toFailWith(/input must be a string/i);
+      expect(converter.convert(42)).toFailWith(/input must be a string/i);
+      expect(converter.convert(undefined)).toFailWith(/input must be a string/i);
+    });
+
+    test('fails when the JSON is malformed', () => {
+      const converter = Converters.stringifiedJson();
+      expect(converter.convert('{not: valid}')).toFailWith(/failed to parse json/i);
+      expect(converter.convert('')).toFailWith(/failed to parse json/i);
+    });
+
+    test('propagates inner converter failures', () => {
+      const inner = BaseConverters.object<{ name: string }>({ name: BaseConverters.string });
+      const converter = Converters.stringifiedJson<{ name: string }>(inner);
+      expect(converter.convert('{"name":42}')).toFail();
+    });
   });
 });

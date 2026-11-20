@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-ollama",
+      "comment": "Initial release: a Result boundary over the `ollama` JS library for the native Ollama API that its OpenAI-compatible endpoint cannot express. Node only; completion and tool use stay in `@fgv/ts-extras` ai-assist.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-ollama",
+  "email": "noreply@anthropic.com"
+}

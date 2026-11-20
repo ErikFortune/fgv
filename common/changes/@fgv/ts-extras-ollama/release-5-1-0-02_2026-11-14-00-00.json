@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-ollama",
+      "comment": "Model management: `listModels`, `listRunning`, `showModel`, `deleteModel`, and `pullModel` with streamed progress.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-ollama",
+  "email": "noreply@anthropic.com"
+}

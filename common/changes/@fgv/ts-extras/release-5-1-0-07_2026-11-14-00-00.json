@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "Existing packlets: `Converters.isoDateTime` (a luxon `DateTime`); `ZipFileTree` reads raw bytes and strict UTF-8 text and adds `createZipFromFiles` / `createZipFromTextFiles`; `templateString`, `isoDate` and `isoDateTime` fail readably on cyclic or BigInt input instead of throwing.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

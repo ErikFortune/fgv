@@ -38,17 +38,17 @@ export interface IValidatingConvertingCollectorConstructorParams<
   TSRC = TITEM
 > {
   /**
-   * {@inheritdoc Collections.IConvertingCollectorConstructorParams.factory}
+   * {@inheritDoc Collections.IConvertingCollectorConstructorParams.factory}
    */
   factory: CollectibleFactory<TITEM, TSRC>;
 
   /**
-   * {@inheritdoc Collections.IConvertingCollectorValidatorCreateParams.converters}
+   * {@inheritDoc Collections.IConvertingCollectorValidatorCreateParams.converters}
    */
   converters: KeyValueConverters<CollectibleKey<TITEM>, TSRC>;
 
   /**
-   * {@inheritdoc Collections.IConvertingCollectorConstructorParams.entries}
+   * {@inheritDoc Collections.IConvertingCollectorConstructorParams.entries}
    */
   entries?: KeyValueEntry<CollectibleKey<TITEM>, TSRC>[];
 }

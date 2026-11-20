@@ -55,7 +55,7 @@ export interface IJsonResourceTypeCreateParams {
  */
 export class JsonResourceType extends ResourceType<JsonObject> {
   /**
-   * {@inheritdoc ResourceTypes.ResourceType.systemTypeName}
+   * {@inheritDoc ResourceTypes.ResourceType.systemTypeName}
    */
   public readonly systemTypeName: ResourceTypeName = Convert.resourceTypeName.convert('json').orThrow();
 
@@ -82,7 +82,7 @@ export class JsonResourceType extends ResourceType<JsonObject> {
   }
 
   /**
-   * {@inheritdoc ResourceTypes.ResourceType.validateDeclaration}
+   * {@inheritDoc ResourceTypes.ResourceType.validateDeclaration}
    */
 
   public validateDeclaration(props: IResourceCandidateValidationProperties): Result<JsonObject> {
@@ -90,15 +90,27 @@ export class JsonResourceType extends ResourceType<JsonObject> {
   }
 
   /**
-   * {@inheritdoc ResourceTypes.ResourceType.(validate:1)}
+   * Validates a JSON value for use as a resource instance value.
+   * @param json - The JSON value to validate.
+   * @param completeness - Describes {@link CandidateCompleteness | how complete} the candidate value is.
+   * @returns `Success` with the strongly-typed resource value if the JSON is valid,
+   * `Failure` with an error message otherwise.
    */
   public validate(json: JsonObject, completeness: CandidateCompleteness): Result<JsonObject>;
   /**
-   * {@inheritdoc ResourceTypes.ResourceType.(validate:2)}
+   * Validates a JSON value for use as a complete resource instance value.
+   * @param json - The JSON value to validate.
+   * @param completeness - Must be `'full'` to indicate a complete value.
+   * @returns `Success` with the strongly-typed resource value if the JSON is valid,
+   * `Failure` with an error message otherwise.
    */
   public validate(json: JsonObject, completeness: 'full'): Result<JsonObject>;
   /**
-   * {@inheritdoc ResourceTypes.ResourceType.(validate:3)}
+   * Validates a JSON value for use as a partial resource instance value.
+   * @param json - The JSON value to validate.
+   * @param completeness - Must be `'partial'` to indicate a partial value.
+   * @returns `Success` with the strongly-typed partial resource value if the JSON is valid,
+   * `Failure` with an error message otherwise.
    */
   public validate(json: JsonObject, completeness: 'partial'): Result<JsonObject>;
   public validate(json: JsonObject, __completeness?: CandidateCompleteness): Result<JsonObject> {

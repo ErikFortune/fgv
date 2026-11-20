@@ -1,0 +1,27 @@
+[Home](../README.md) > [ResultMapValidator](./ResultMapValidator.md) > add
+
+## ResultMapValidator.add() method
+
+Sets a key/value pair in the map if the key does not already exist.
+
+**Signature:**
+
+```typescript
+add(key: string, value: unknown): DetailedResult<TV, ResultMapResultDetail>;
+```
+
+**Parameters:**
+
+<table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>key</td><td>string</td><td>The key to set.</td></tr>
+<tr><td>value</td><td>unknown</td><td>The value to set.</td></tr>
+</tbody></table>
+
+**Returns:**
+
+[DetailedResult](../type-aliases/DetailedResult.md)&lt;TV, [ResultMapResultDetail](../type-aliases/ResultMapResultDetail.md)&gt;
+
+`Success` with the value and detail `added` if the key was added,
+`Failure` with detail `exists` if the key already exists. Fails with detail
+'invalid-key' or 'invalid-value' and an error message if either is invalid.

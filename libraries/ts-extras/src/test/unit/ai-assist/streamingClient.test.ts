@@ -1,0 +1,1793 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+import '@fgv/ts-utils-jest';
+
+import { AiAssist } from '../../..';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import type { IAiProviderDescriptor } from '../../../packlets/ai-assist/model';
+
+// ============================================================================
+// Test helpers
+// ============================================================================
+
+function makeDescriptor(overrides: Partial<IAiProviderDescriptor> = {}): IAiProviderDescriptor {
+  return {
+    id: 'openai',
+    label: 'OpenAI',
+    buttonLabel: 'AI Assist | OpenAI',
+    needsSecret: true,
+    apiFormat: 'openai',
+    baseUrl: 'https://api.openai.com/v1',
+    defaultModel: 'gpt-4o',
+    supportedTools: ['web_search'],
+    corsRestricted: false,
+    streamingCorsRestricted: false,
+    acceptsImageInput: true,
+    ...overrides
+  };
+}
+
+const TEST_PROMPT = new AiAssist.AiPrompt('hello', 'system');
+
+/**
+ * Builds a ReadableStream<Uint8Array> that yields the given chunks. Used to
+ * mock SSE response bodies for the per-format adapters.
+ */
+function makeReadable(chunks: ReadonlyArray<string>): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+  let i = 0;
+  return new ReadableStream<Uint8Array>({
+    pull(controller: ReadableStreamDefaultController<Uint8Array>): void {
+      if (i < chunks.length) {
+        controller.enqueue(encoder.encode(chunks[i++]));
+      } else {
+        controller.close();
+      }
+    }
+  });
+}
+
+function mockSseResponse(chunks: ReadonlyArray<string>, status: number = 200): void {
+  const body = makeReadable(chunks);
+  const response = {
+    ok: status >= 200 && status < 300,
+    status,
+    body,
+    text: jest.fn().mockResolvedValue(''),
+    headers: new Map([['content-type', 'text/event-stream']])
+  };
+  (global.fetch as jest.Mock).mockResolvedValue(response);
+}
+
+function mockSseHttpError(status: number, errorText: string): void {
+  const response = {
+    ok: false,
+    status,
+    body: null,
+    text: jest.fn().mockResolvedValue(errorText)
+  };
+  (global.fetch as jest.Mock).mockResolvedValue(response);
+}
+
+function mockFetchError(error: Error): void {
+  (global.fetch as jest.Mock).mockRejectedValue(error);
+}
+
+async function collect(iter: AsyncIterable<AiAssist.IAiStreamEvent>): Promise<AiAssist.IAiStreamEvent[]> {
+  const out: AiAssist.IAiStreamEvent[] = [];
+  for await (const event of iter) {
+    out.push(event);
+  }
+  return out;
+}
+
+// ============================================================================
+// SSE bodies per format
+// ============================================================================
+
+function openAiChatSse(deltas: ReadonlyArray<string>, finishReason: string = 'stop'): string[] {
+  const events: string[] = [];
+  for (const delta of deltas) {
+    events.push(
+      `data: ${JSON.stringify({ choices: [{ delta: { content: delta }, finish_reason: null }] })}\n\n`
+    );
+  }
+  events.push(`data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: finishReason }] })}\n\n`);
+  events.push(`data: [DONE]\n\n`);
+  return events;
+}
+
+function responsesApiSse(parts: {
+  textDeltas?: ReadonlyArray<string>;
+  searchProgress?: boolean;
+  truncated?: boolean;
+  errorMessage?: string;
+}): string[] {
+  const events: string[] = [];
+  if (parts.searchProgress) {
+    events.push(
+      `event: response.web_search_call.in_progress\ndata: ${JSON.stringify({})}\n\n`,
+      `event: response.web_search_call.completed\ndata: ${JSON.stringify({})}\n\n`
+    );
+  }
+  for (const delta of parts.textDeltas ?? []) {
+    events.push(`event: response.output_text.delta\ndata: ${JSON.stringify({ delta })}\n\n`);
+  }
+  if (parts.errorMessage !== undefined) {
+    events.push(
+      `event: response.failed\ndata: ${JSON.stringify({ error: { message: parts.errorMessage } })}\n\n`
+    );
+  } else {
+    events.push(
+      `event: response.completed\ndata: ${JSON.stringify({
+        response: { status: parts.truncated ? 'incomplete' : 'completed' }
+      })}\n\n`
+    );
+  }
+  return events;
+}
+
+function anthropicSse(parts: {
+  textDeltas?: ReadonlyArray<string>;
+  searchToolUse?: boolean;
+  truncated?: boolean;
+  errorMessage?: string;
+}): string[] {
+  const events: string[] = [];
+  if (parts.searchToolUse) {
+    events.push(
+      `event: content_block_start\ndata: ${JSON.stringify({
+        content_block: { type: 'server_tool_use', name: 'web_search' }
+      })}\n\n`,
+      `event: content_block_start\ndata: ${JSON.stringify({
+        content_block: { type: 'web_search_tool_result' }
+      })}\n\n`
+    );
+  }
+  events.push(
+    `event: content_block_start\ndata: ${JSON.stringify({
+      content_block: { type: 'text' }
+    })}\n\n`
+  );
+  for (const delta of parts.textDeltas ?? []) {
+    events.push(
+      `event: content_block_delta\ndata: ${JSON.stringify({
+        delta: { type: 'text_delta', text: delta }
+      })}\n\n`
+    );
+  }
+  if (parts.errorMessage !== undefined) {
+    events.push(`event: error\ndata: ${JSON.stringify({ error: { message: parts.errorMessage } })}\n\n`);
+    return events;
+  }
+  if (parts.truncated) {
+    events.push(
+      `event: message_delta\ndata: ${JSON.stringify({
+        delta: { stop_reason: 'max_tokens' }
+      })}\n\n`
+    );
+  }
+  events.push(`event: message_stop\ndata: ${JSON.stringify({})}\n\n`);
+  return events;
+}
+
+function geminiSse(deltas: ReadonlyArray<string>, finishReason: string = 'STOP'): string[] {
+  const events: string[] = [];
+  for (let i = 0; i < deltas.length; i++) {
+    const isLast = i === deltas.length - 1;
+    const candidate: Record<string, unknown> = {
+      content: { parts: [{ text: deltas[i] }] }
+    };
+    if (isLast) {
+      candidate.finishReason = finishReason;
+    }
+    events.push(`data: ${JSON.stringify({ candidates: [candidate] })}\n\n`);
+  }
+  return events;
+}
+
+// ============================================================================
+// Tests
+// ============================================================================
+
+describe('callProviderCompletionStream', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  describe('common validation', () => {
+    test('fails when descriptor has no baseUrl', async () => {
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ baseUrl: '' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      expect(result).toFailWith(/no API endpoint/i);
+    });
+
+    test('rejects up front when streamingCorsRestricted', async () => {
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ streamingCorsRestricted: true }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      expect(result).toFailWith(/requires a proxy for streaming/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('rejects up front when attachments present and provider does not accept image input', async () => {
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ acceptsImageInput: false }),
+        apiKey: 'sk',
+        ...new AiAssist.AiPrompt('describe', 'sys', [{ mimeType: 'image/png', base64: 'AA' }]).toRequest()
+      });
+      expect(result).toFailWith(/does not accept image input/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('surfaces fetch network errors as Result.fail', async () => {
+      mockFetchError(new Error('ECONNREFUSED'));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      expect(result).toFailWith(/ECONNREFUSED/);
+    });
+
+    test('surfaces non-2xx as Result.fail with status and body', async () => {
+      mockSseHttpError(401, 'Unauthorized');
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'bad',
+        ...TEST_PROMPT.toRequest()
+      });
+      expect(result).toFailWith(/401.*Unauthorized/);
+    });
+
+    test('forwards abort signal to fetch', async () => {
+      mockSseResponse(openAiChatSse(['x']));
+      const controller = new AbortController();
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        signal: controller.signal
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[1].signal).toBe(controller.signal);
+    });
+
+    test('uses modelOverride when supplied', async () => {
+      mockSseResponse(openAiChatSse(['x']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        modelOverride: 'gpt-5'
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('gpt-5');
+      expect(body.stream).toBe(true);
+    });
+
+    test('tier selects the streaming model; thinking/tools do not (composition)', async () => {
+      const descriptor = makeDescriptor({
+        defaultModel: { base: 'gpt-4o', advanced: 'gpt-5-adv', frontier: 'gpt-5-front' },
+        supportedTools: ['web_search']
+      });
+      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'advanced',
+        tools,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('gpt-5-adv');
+    });
+
+    test('thinking without a tier resolves the base streaming model', async () => {
+      const descriptor = makeDescriptor({
+        defaultModel: { base: 'gpt-4o', advanced: 'gpt-5-adv' },
+        supportedTools: ['web_search']
+      });
+      const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('gpt-4o');
+    });
+
+    test('tier "frontier" cascades to advanced when no frontier key is defined (streaming)', async () => {
+      const descriptor = makeDescriptor({
+        defaultModel: { base: 'gpt-4o', advanced: 'gpt-5-adv' }
+      });
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'frontier'
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.model).toBe('gpt-5-adv');
+    });
+
+    test('forwards explicit temperature to request body', async () => {
+      mockSseResponse(openAiChatSse(['x']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        temperature: 0.3
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.temperature).toBe(0.3);
+    });
+
+    test('omits temperature when the caller does not provide one', async () => {
+      mockSseResponse(openAiChatSse(['x']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      // No default temperature is injected — gpt-5.5 rejects a non-default temperature.
+      expect(body.temperature).toBeUndefined();
+    });
+  });
+
+  describe('endpoint override', () => {
+    test('substitutes endpoint for descriptor.baseUrl when streaming', async () => {
+      mockSseResponse(openAiChatSse(['hi']));
+      const descriptor = AiAssist.getProviderDescriptor('ollama').orThrow();
+
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: '',
+        ...TEST_PROMPT.toRequest(),
+        endpoint: 'http://localhost:11434/v1',
+        modelOverride: 'llama3.2'
+      });
+
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('http://localhost:11434/v1/chat/completions');
+    });
+
+    test('honors endpoint when descriptor.baseUrl is empty (openai-compat)', async () => {
+      mockSseResponse(openAiChatSse(['hi']));
+      const descriptor = AiAssist.getProviderDescriptor('openai-compat').orThrow();
+
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: '',
+        ...TEST_PROMPT.toRequest(),
+        endpoint: 'http://192.168.1.42:1234/v1',
+        modelOverride: 'qwen2.5-coder'
+      });
+
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('http://192.168.1.42:1234/v1/chat/completions');
+    });
+
+    test('rejects a malformed endpoint URL up front', async () => {
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        endpoint: 'not a url'
+      });
+
+      expect(result).toFailWith(/endpoint is not a valid URL/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('rejects an endpoint with a query string', async () => {
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        endpoint: 'http://localhost:11434/v1?token=secret'
+      });
+
+      expect(result).toFailWith(/must not include a query string or fragment/i);
+      if (result.isFailure()) {
+        expect(result.message).not.toMatch(/secret/);
+      }
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('omits the Authorization header when apiKey is empty', async () => {
+      mockSseResponse(openAiChatSse(['hi']));
+      const descriptor = AiAssist.getProviderDescriptor('ollama').orThrow();
+
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: '',
+        ...TEST_PROMPT.toRequest(),
+        endpoint: 'http://localhost:11434/v1',
+        modelOverride: 'llama3.2'
+      });
+
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      // eslint-disable-next-line dot-notation
+      expect(fetchCall[1].headers['Authorization']).toBeUndefined();
+    });
+
+    test('fails up front when neither defaultModel nor modelOverride yields a model', async () => {
+      const descriptor = AiAssist.getProviderDescriptor('openai-compat').orThrow();
+
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: '',
+        ...TEST_PROMPT.toRequest(),
+        endpoint: 'http://10.0.0.5:8080/v1'
+      });
+
+      expect(result).toFailWith(/no model resolved/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('openai chat completions stream', () => {
+    test('translates text deltas and emits done', async () => {
+      mockSseResponse(openAiChatSse(['Hello, ', 'world!']));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      expect(result).toSucceed();
+      if (!result.isSuccess()) return;
+      const events = await collect(result.value);
+      expect(events).toEqual([
+        { type: 'text-delta', delta: 'Hello, ' },
+        { type: 'text-delta', delta: 'world!' },
+        { type: 'done', truncated: false, fullText: 'Hello, world!' }
+      ]);
+    });
+
+    test('marks truncated when finish_reason is length', async () => {
+      mockSseResponse(openAiChatSse(['cut'], 'length'));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      const done = events.find((e) => e.type === 'done') as AiAssist.IAiStreamDone | undefined;
+      expect(done?.truncated).toBe(true);
+    });
+
+    test('handles deltas that span SSE chunk boundaries', async () => {
+      // Splitting one logical event across two read() returns
+      const fullEvent = `data: ${JSON.stringify({
+        choices: [{ delta: { content: 'hi' }, finish_reason: null }]
+      })}\n\n`;
+      const mid = Math.floor(fullEvent.length / 2);
+      mockSseResponse([fullEvent.slice(0, mid), fullEvent.slice(mid), ...openAiChatSse(['!'])]);
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      const text = events
+        .filter((e) => e.type === 'text-delta')
+        .map((e) => (e as AiAssist.IAiStreamTextDelta).delta)
+        .join('');
+      expect(text).toBe('hi!');
+    });
+
+    test('emits error when stream ends without a finish_reason', async () => {
+      // No final event with finish_reason; just a content delta and EOF.
+      mockSseResponse([
+        `data: ${JSON.stringify({ choices: [{ delta: { content: 'half' }, finish_reason: null }] })}\n\n`
+      ]);
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      const last = events[events.length - 1];
+      expect(last.type).toBe('error');
+    });
+
+    test('places messagesBefore between system and the new user message', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor(),
+        apiKey: 'sk',
+        system: 'You are a helpful assistant.',
+        messages: [
+          { role: 'user', content: 'hi' },
+          { role: 'assistant', content: 'hello' },
+          { role: 'user', content: 'how about pasta?' }
+        ]
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.messages).toEqual([
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: 'hi' },
+        { role: 'assistant', content: 'hello' },
+        { role: 'user', content: 'how about pasta?' }
+      ]);
+    });
+
+    test('includes reasoning_effort and omits temperature when thinking effort provided (OpenAI chat stream)', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'openai' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        thinking: { effort: 'high' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBe('high');
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('sends xAI effort as reasoning_effort and omits temperature (xAI openai-format stream)', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        thinking: { effort: 'low' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBe('low');
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('omits reasoning_effort for grok-4 even when thinking is active (chat stream)', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok', defaultModel: 'grok-4' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning_effort).toBeUndefined();
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('omits both max_tokens and max_completion_tokens when maxTokens is not provided (xAI)', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.max_tokens).toBeUndefined();
+      expect(body.max_completion_tokens).toBeUndefined();
+    });
+
+    test('sends maxTokens as max_tokens (not max_completion_tokens) for a descriptor declaring no field', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        maxTokens: 8000
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.max_tokens).toBe(8000);
+      expect(body.max_completion_tokens).toBeUndefined();
+    });
+
+    test('sends maxTokens as max_completion_tokens (not max_tokens) for a descriptor declaring it', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'openai', chatOutputTokensField: 'max_completion_tokens' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        maxTokens: 8000
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.max_completion_tokens).toBe(8000);
+      expect(body.max_tokens).toBeUndefined();
+    });
+
+    test('merges other-block params into OpenAI chat stream body', async () => {
+      mockSseResponse(openAiChatSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'openai' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        thinking: {
+          providers: [
+            {
+              provider: 'other',
+              models: ['gpt-4o'],
+              config: { custom_param: 'xyz' }
+            }
+          ]
+        }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.custom_param).toBe('xyz');
+    });
+  });
+
+  describe('openai responses API stream (with tools)', () => {
+    const descriptor = makeDescriptor();
+    const tools: ReadonlyArray<AiAssist.AiServerToolConfig> = [{ type: 'web_search' }];
+
+    test('emits text deltas, tool events, and done', async () => {
+      mockSseResponse(responsesApiSse({ searchProgress: true, textDeltas: ['Looking at... ', 'recipes.'] }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      const types = events.map((e) => e.type);
+      expect(types).toEqual(['tool-event', 'tool-event', 'text-delta', 'text-delta', 'done']);
+      const phases = events
+        .filter((e) => e.type === 'tool-event')
+        .map((e) => (e as AiAssist.IAiStreamToolEvent).phase);
+      expect(phases).toEqual(['started', 'completed']);
+      const done = events[events.length - 1] as AiAssist.IAiStreamDone;
+      expect(done.fullText).toBe('Looking at... recipes.');
+    });
+
+    test('omits temperature by default and includes it only when explicitly provided (Responses API stream)', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools
+      });
+      const omitted = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(omitted.temperature).toBeUndefined();
+
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools,
+        temperature: 0.45
+      });
+      const explicit = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+      expect(explicit.temperature).toBe(0.45);
+    });
+
+    test('omits max_output_tokens when maxTokens is not provided (Responses API stream)', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.max_output_tokens).toBeUndefined();
+    });
+
+    test('sends maxTokens as max_output_tokens for xAI routed through the Responses API stream', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools,
+        maxTokens: 9000
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.max_output_tokens).toBe(9000);
+    });
+
+    test('sends maxTokens as max_output_tokens for the openai provider id routed through the Responses API stream', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'openai' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools,
+        maxTokens: 9000
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.max_output_tokens).toBe(9000);
+      expect(body.max_completion_tokens).toBeUndefined();
+      expect(body.max_tokens).toBeUndefined();
+    });
+
+    test('marks truncated for incomplete status', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['cut'], truncated: true }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      const done = events[events.length - 1] as AiAssist.IAiStreamDone;
+      expect(done.truncated).toBe(true);
+    });
+
+    test('emits a terminal error event on response.failed', async () => {
+      mockSseResponse(responsesApiSse({ errorMessage: 'rate limited' }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      expect(events[events.length - 1]).toEqual({ type: 'error', message: 'rate limited' });
+    });
+
+    test('emits error when stream ends without completed event', async () => {
+      mockSseResponse([`event: response.output_text.delta\ndata: ${JSON.stringify({ delta: 'x' })}\n\n`]);
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      expect(events[events.length - 1].type).toBe('error');
+    });
+
+    test('includes reasoning field and omits temperature when thinking provided (Responses API stream)', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'openai' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools,
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning).toEqual({ effort: 'medium' });
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('omits reasoning field for grok-4 even when thinking is active (responses stream)', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'xai-grok', defaultModel: 'grok-4' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools,
+        thinking: { effort: 'high' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.reasoning).toBeUndefined();
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('merges other-block params into Responses API stream body', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({ id: 'openai' }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools,
+        thinking: {
+          providers: [
+            {
+              provider: 'other',
+              models: ['gpt-4o'],
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              config: { extra_responses_param: 42 }
+            }
+          ]
+        }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.extra_responses_param).toBe(42);
+    });
+  });
+
+  describe('openai Responses-only model routing (no tools)', () => {
+    const descriptor = makeDescriptor({
+      id: 'openai',
+      baseUrl: 'https://api.openai.com/v1',
+      defaultModel: { base: 'gpt-5.4-mini', advanced: 'gpt-5.5', frontier: '@openai:pro' },
+      aliases: { '@openai:pro': 'gpt-5.5-pro' },
+      responsesOnlyModelPrefixes: ['gpt-5.5-pro']
+    });
+
+    test('routes a modelOverride of a Responses-only model to /responses even with no tools', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['pro'] }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        modelOverride: 'gpt-5.5-pro'
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      const body = JSON.parse(fetchCall[1].body);
+      expect(body.model).toBe('gpt-5.5-pro');
+      expect(body.stream).toBe(true);
+      // No tools requested → tools field omitted entirely.
+      expect('tools' in body).toBe(false);
+      // No default temperature is force-sent on the Responses-only route.
+      expect(body.temperature).toBeUndefined();
+    });
+
+    test('frontier tier resolves @openai:pro → gpt-5.5-pro and routes to /responses', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['front'] }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'frontier'
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      const body = JSON.parse(fetchCall[1].body);
+      expect(body.model).toBe('gpt-5.5-pro');
+      expect('tools' in body).toBe(false);
+    });
+
+    test('base tier still routes to the /chat/completions stream', async () => {
+      mockSseResponse(openAiChatSse(['base']));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/chat/completions');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.4-mini');
+    });
+
+    test('advanced tier still routes to the /chat/completions stream', async () => {
+      mockSseResponse(openAiChatSse(['adv']));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'advanced'
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/chat/completions');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.5');
+    });
+
+    test('a Responses-only model WITH tools still sends the tools field', async () => {
+      mockSseResponse(responsesApiSse({ textDeltas: ['pro+search'] }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        modelOverride: 'gpt-5.5-pro',
+        tools: [{ type: 'web_search' }]
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      expect(JSON.parse(fetchCall[1].body).tools).toEqual([{ type: 'web_search' }]);
+    });
+
+    test('real OpenAI registry descriptor: frontier resolves gpt-6-astra via the /chat/completions stream', async () => {
+      // gpt-6-astra (unlike the earlier frontier target gpt-5.5-pro) works on chat completions, so
+      // the frontier tier does not route through the Responses-only path.
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      mockSseResponse(openAiChatSse(['ok']));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'frontier'
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/chat/completions');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-6-astra');
+    });
+
+    test("real OpenAI registry descriptor: frontier + effort 'none' streams reasoning_effort 'low'", async () => {
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      mockSseResponse(openAiChatSse(['ok']));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'frontier',
+        thinking: { effort: 'none' }
+      });
+      expect(result).toSucceed();
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body).toMatchObject({ model: 'gpt-6-astra', reasoning_effort: 'low' });
+    });
+
+    // astra restricts temperature with or without thinking, so the refusal is the model's own, not
+    // the degrade note (which xAI's degrade tests still pin).
+    test("real OpenAI registry descriptor: frontier + effort 'none' + temperature is refused for the model", async () => {
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'frontier',
+        temperature: 0.7,
+        thinking: { effort: 'none' }
+      });
+      expect(result).toFailWith(
+        /gpt-6-astra does not accept a non-default temperature \(0\.7\): remove temperature, or send 1/
+      );
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test("real OpenAI registry descriptor: frontier + effort 'none' + onUnsupported 'fail' refuses the stream", async () => {
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tier: 'frontier',
+        thinking: { effort: 'none', onUnsupported: 'fail' }
+      });
+      expect(result).toFailWith(/thinking effort 'none' is not supported by gpt-6-astra/);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('real OpenAI registry descriptor: a gpt-5.5-pro modelOverride still routes via the /responses stream', async () => {
+      // The previous frontier target remains Responses-API-only and reachable via modelOverride.
+      const openai = AiAssist.getProviderDescriptor('openai').orThrow();
+      mockSseResponse(responsesApiSse({ textDeltas: ['ok'] }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor: openai,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        modelOverride: 'gpt-5.5-pro'
+      });
+      expect(result).toSucceed();
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[0]).toBe('https://api.openai.com/v1/responses');
+      expect(JSON.parse(fetchCall[1].body).model).toBe('gpt-5.5-pro');
+    });
+  });
+
+  describe('anthropic stream', () => {
+    const descriptor = makeDescriptor({
+      id: 'anthropic',
+      apiFormat: 'anthropic',
+      baseUrl: 'https://api.anthropic.com/v1',
+      defaultModel: 'claude-sonnet-4-5'
+    });
+
+    test('translates text deltas and emits done', async () => {
+      mockSseResponse(anthropicSse({ textDeltas: ['Hi', ' there'] }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      const text = events
+        .filter((e) => e.type === 'text-delta')
+        .map((e) => (e as AiAssist.IAiStreamTextDelta).delta)
+        .join('');
+      expect(text).toBe('Hi there');
+      expect(events[events.length - 1].type).toBe('done');
+    });
+
+    test('omits temperature by default and includes it only when explicitly provided', async () => {
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      const omitted = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      // No default temperature is injected — Claude-5 rejects any temperature value.
+      expect(omitted.temperature).toBeUndefined();
+
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        temperature: 0.35
+      });
+      const explicit = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+      expect(explicit.temperature).toBe(0.35);
+    });
+
+    test('defaults max_tokens to DEFAULT_ANTHROPIC_MAX_TOKENS and overrides it with maxTokens', async () => {
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      const defaulted = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(defaulted.max_tokens).toBe(AiAssist.DEFAULT_ANTHROPIC_MAX_TOKENS);
+
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        maxTokens: 16000
+      });
+      const overridden = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+      expect(overridden.max_tokens).toBe(16000);
+    });
+
+    test('surfaces server_tool_use as tool-event', async () => {
+      mockSseResponse(anthropicSse({ searchToolUse: true, textDeltas: ['done'] }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        tools: [{ type: 'web_search' }]
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      const phases = events
+        .filter((e) => e.type === 'tool-event')
+        .map((e) => (e as AiAssist.IAiStreamToolEvent).phase);
+      expect(phases).toEqual(['started', 'completed']);
+    });
+
+    test('marks truncated when stop_reason is max_tokens', async () => {
+      mockSseResponse(anthropicSse({ textDeltas: ['cut'], truncated: true }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      const done = events[events.length - 1] as AiAssist.IAiStreamDone;
+      expect(done.truncated).toBe(true);
+    });
+
+    test('emits a terminal error event on error event', async () => {
+      mockSseResponse(anthropicSse({ errorMessage: 'overloaded' }));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      expect(events[events.length - 1]).toEqual({ type: 'error', message: 'overloaded' });
+    });
+
+    test('uses x-api-key auth header', async () => {
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      expect(fetchCall[1].headers['x-api-key']).toBe('sk');
+    });
+
+    test('emits error when stream ends without message_stop', async () => {
+      mockSseResponse([
+        `event: content_block_start\ndata: ${JSON.stringify({ content_block: { type: 'text' } })}\n\n`,
+        `event: content_block_delta\ndata: ${JSON.stringify({
+          delta: { type: 'text_delta', text: 'half' }
+        })}\n\n`
+      ]);
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      expect(events[events.length - 1].type).toBe('error');
+    });
+
+    test('places messagesBefore before the new user message and filters system roles', async () => {
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        system: 'You are a helpful assistant.',
+        messages: [
+          { role: 'user', content: 'hi' },
+          { role: 'assistant', content: 'hello' },
+          { role: 'system', content: 'should be filtered' },
+          { role: 'user', content: 'how about pasta?' }
+        ]
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.system).toBe('You are a helpful assistant.');
+      expect(body.messages).toEqual([
+        { role: 'user', content: 'hi' },
+        { role: 'assistant', content: 'hello' },
+        { role: 'user', content: 'how about pasta?' }
+      ]);
+    });
+
+    test('includes thinking wire fields when thinking effort provided', async () => {
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        thinking: { effort: 'high' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.thinking).toEqual({ type: 'enabled', budget_tokens: 24000 });
+      expect(body.output_config).toBeUndefined();
+      expect(body.temperature).toBeUndefined();
+    });
+
+    describe('Claude 5 adaptive thinking wire shape', () => {
+      const adaptiveDescriptor = makeDescriptor({
+        id: 'anthropic',
+        apiFormat: 'anthropic',
+        baseUrl: 'https://api.anthropic.com/v1',
+        defaultModel: 'claude-sonnet-5',
+        adaptiveThinkingModelPrefixes: ['claude-sonnet-5', 'claude-opus-5', 'claude-fable-5']
+      });
+
+      test('a Claude 5 id sends thinking.type: adaptive + output_config.effort, no budget_tokens', async () => {
+        mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+        await AiAssist.callProviderCompletionStream({
+          descriptor: adaptiveDescriptor,
+          apiKey: 'sk',
+          ...TEST_PROMPT.toRequest(),
+          thinking: { effort: 'high' }
+        });
+        const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+        expect(body.thinking).toEqual({ type: 'adaptive' });
+        expect(body.output_config).toEqual({ effort: 'high' });
+        expect(body.thinking.budget_tokens).toBeUndefined();
+      });
+
+      test('a legacy 4.x id on the same descriptor keeps the byte-identical legacy shape', async () => {
+        mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+        await AiAssist.callProviderCompletionStream({
+          descriptor: { ...adaptiveDescriptor, defaultModel: 'claude-haiku-4-5-20251001' },
+          apiKey: 'sk',
+          ...TEST_PROMPT.toRequest(),
+          thinking: { effort: 'low' }
+        });
+        const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+        expect(body.thinking).toEqual({ type: 'enabled', budget_tokens: 2048 });
+        expect(body.output_config).toBeUndefined();
+      });
+    });
+
+    test('merges other-block params into Anthropic body', async () => {
+      mockSseResponse(anthropicSse({ textDeltas: ['ok'] }));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        thinking: {
+          providers: [
+            {
+              provider: 'other',
+              models: ['claude-sonnet-4-5'],
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              config: { anthropic_extra_param: 'value' }
+            }
+          ]
+        }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.anthropic_extra_param).toBe('value');
+    });
+
+    test('fails when thinking and temperature conflict on Anthropic', async () => {
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        thinking: { effort: 'high' },
+        temperature: 0.7
+      });
+      expect(result).toFailWith(/thinking mode is not compatible with temperature on provider anthropic/i);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('gemini stream', () => {
+    const descriptor = makeDescriptor({
+      apiFormat: 'gemini',
+      baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+      defaultModel: 'gemini-2.5-flash',
+      id: 'google-gemini'
+    });
+
+    test('translates text deltas and emits done', async () => {
+      mockSseResponse(geminiSse(['Hello, ', 'world!']));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      const text = events
+        .filter((e) => e.type === 'text-delta')
+        .map((e) => (e as AiAssist.IAiStreamTextDelta).delta)
+        .join('');
+      expect(text).toBe('Hello, world!');
+      expect(events[events.length - 1].type).toBe('done');
+    });
+
+    test('marks truncated for MAX_TOKENS finishReason', async () => {
+      mockSseResponse(geminiSse(['cut'], 'MAX_TOKENS'));
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      const done = events[events.length - 1] as AiAssist.IAiStreamDone;
+      expect(done.truncated).toBe(true);
+    });
+
+    test('uses streamGenerateContent endpoint with alt=sse', async () => {
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      const url = (global.fetch as jest.Mock).mock.calls[0][0];
+      expect(url).toContain(':streamGenerateContent?alt=sse');
+    });
+
+    test('omits generationConfig.temperature by default and includes it only when explicit', async () => {
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      const omitted = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      // No default temperature is injected — Gemini's own default applies.
+      expect(omitted.generationConfig.temperature).toBeUndefined();
+
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        temperature: 0.15
+      });
+      const explicit = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+      expect(explicit.generationConfig.temperature).toBe(0.15);
+    });
+
+    test('omits generationConfig.maxOutputTokens when maxTokens is not provided', async () => {
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.generationConfig.maxOutputTokens).toBeUndefined();
+    });
+
+    test('includes generationConfig.maxOutputTokens only when maxTokens is explicitly provided', async () => {
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        maxTokens: 12000
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.generationConfig.maxOutputTokens).toBe(12000);
+    });
+
+    test('emits error when stream ends without finishReason', async () => {
+      // Send a chunk with text but no finishReason
+      mockSseResponse([
+        `data: ${JSON.stringify({ candidates: [{ content: { parts: [{ text: 'half' }] } }] })}\n\n`
+      ]);
+      const result = await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest()
+      });
+      if (!result.isSuccess()) throw new Error('expected success');
+      const events = await collect(result.value);
+      expect(events[events.length - 1].type).toBe('error');
+    });
+
+    test('includes thinkingConfig in generationConfig when thinking effort provided', async () => {
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        thinking: { effort: 'medium' }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.generationConfig.thinkingConfig).toEqual({ thinkingBudget: 4096 });
+    });
+
+    test('merges other-block params into generationConfig', async () => {
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor: makeDescriptor({
+          apiFormat: 'gemini',
+          baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+          defaultModel: 'gemini-2.5-flash',
+          id: 'google-gemini'
+        }),
+        apiKey: 'sk',
+        ...TEST_PROMPT.toRequest(),
+        thinking: {
+          providers: [
+            {
+              provider: 'other',
+              models: ['gemini-2.5-flash'],
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              config: { extra_thinking_param: true }
+            }
+          ]
+        }
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.generationConfig.extra_thinking_param).toBe(true);
+    });
+
+    test('places messagesBefore before the new user turn and maps assistant->model', async () => {
+      mockSseResponse(geminiSse(['ok']));
+      await AiAssist.callProviderCompletionStream({
+        descriptor,
+        apiKey: 'sk',
+        system: 'You are a helpful assistant.',
+        messages: [
+          { role: 'user', content: 'hi' },
+          { role: 'assistant', content: 'hello' },
+          { role: 'user', content: 'how about pasta?' }
+        ]
+      });
+      const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+      expect(body.systemInstruction).toEqual({ parts: [{ text: 'You are a helpful assistant.' }] });
+      expect(body.contents).toEqual([
+        { role: 'user', parts: [{ text: 'hi' }] },
+        { role: 'model', parts: [{ text: 'hello' }] },
+        { role: 'user', parts: [{ text: 'how about pasta?' }] }
+      ]);
+    });
+  });
+});
+
+describe('callProxiedCompletionStream', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  test('an unrecognized event type is dropped and the stream carries on', async () => {
+    // Sibling to 'skips events with unknown type' below, and not a duplicate of it.
+    // That one feeds a type nobody defines ('unknown-future-event') and pins
+    // forward-compatibility. This one feeds a REAL member of IAiStreamEvent that the
+    // proxy contract deliberately excludes, and pins the documented boundary: the
+    // path carries four of the seven variants, and the three `client-tool-*` ones
+    // are discarded because nothing on this path can produce them.
+    //
+    // Both matter because the branch they share used to carry
+    // `c8 ignore ... defensive`, asserting it was unreachable — on the one branch
+    // that silently discards data, while a test twelve lines away was already
+    // proving it reachable. The directive is gone; these are what hold it.
+    //
+    // Wrong impls this catches: forwarding an event the contract says is not
+    // carried, and aborting the stream on one rather than skipping it.
+    mockSseResponse([
+      `data: ${JSON.stringify({ type: 'text-delta', delta: 'before' })}\n\n`,
+      `data: ${JSON.stringify({ type: 'client-tool-call-start', toolName: 'recall' })}\n\n`,
+      `data: ${JSON.stringify({ type: 'text-delta', delta: 'after' })}\n\n`,
+      `data: ${JSON.stringify({ type: 'done', truncated: false, fullText: 'beforeafter' })}\n\n`
+    ]);
+
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      messages: [{ role: 'user', content: 'go' }]
+    });
+    expect(result).toSucceed();
+    if (result.isFailure()) return;
+
+    const seen: string[] = [];
+    for await (const event of result.value) {
+      seen.push(event.type);
+    }
+
+    // The client-tool event is gone; the deltas on either side of it are not, so
+    // the drop is a skip rather than a stop.
+    expect(seen).toEqual(['text-delta', 'text-delta', 'done']);
+  });
+
+  test('fails fast when the last message is not a user turn (unified invariant, no proxy call)', async () => {
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      messages: [{ role: 'assistant', content: 'oops' }]
+    });
+    expect(result).toFailWith(/last message must be the current user turn/i);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test('drops attachments from history turns, keeping only the current turn in the proxy body', async () => {
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      messages: [
+        { role: 'user', content: 'old', attachments: [{ mimeType: 'image/png', base64: 'HISTORY' }] },
+        { role: 'user', content: 'now', attachments: [{ mimeType: 'image/png', base64: 'CURRENT' }] }
+      ]
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.messages).toEqual([
+      { role: 'user', content: 'old' },
+      { role: 'user', content: 'now', attachments: [{ mimeType: 'image/png', base64: 'CURRENT' }] }
+    ]);
+  });
+
+  test('rejects attachments when the provider does not accept image input (no proxy call)', async () => {
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor({ acceptsImageInput: false }),
+      apiKey: 'sk',
+      messages: [
+        { role: 'user', content: 'describe', attachments: [{ mimeType: 'image/png', base64: 'AA' }] }
+      ]
+    });
+    expect(result).toFailWith(/does not accept image input/i);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test('translates pre-serialized unified events from the proxy', async () => {
+    mockSseResponse([
+      `data: ${JSON.stringify({ type: 'text-delta', delta: 'Hi' })}\n\n`,
+      `data: ${JSON.stringify({ type: 'text-delta', delta: ' there' })}\n\n`,
+      `data: ${JSON.stringify({ type: 'done', truncated: false, fullText: 'Hi there' })}\n\n`
+    ]);
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest()
+    });
+    if (!result.isSuccess()) throw new Error('expected success');
+    const events = await collect(result.value);
+    expect(events).toEqual([
+      { type: 'text-delta', delta: 'Hi' },
+      { type: 'text-delta', delta: ' there' },
+      { type: 'done', truncated: false, fullText: 'Hi there' }
+    ]);
+  });
+
+  test('hits the documented proxy endpoint and includes stream:true', async () => {
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest()
+    });
+    const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+    expect(fetchCall[0]).toBe('http://proxy.local:3001/api/ai/completion-stream');
+    const body = JSON.parse(fetchCall[1].body);
+    expect(body).toMatchObject({ providerId: 'openai', apiKey: 'sk', stream: true });
+    // No default temperature is forwarded when the caller omits it.
+    expect(body.temperature).toBeUndefined();
+  });
+
+  test('forwards temperature to the proxy body only when explicitly provided', async () => {
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      temperature: 0.25
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.temperature).toBe(0.25);
+  });
+
+  test('forwards maxTokens to the proxy body only when explicitly provided', async () => {
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest()
+    });
+    const omitted = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(omitted.maxTokens).toBeUndefined();
+
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      maxTokens: 5000
+    });
+    const explicit = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body);
+    expect(explicit.maxTokens).toBe(5000);
+  });
+
+  test('forwards ordered messages with attachments, system, modelOverride, and tools', async () => {
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      system: 's',
+      messages: [
+        { role: 'assistant', content: 'prior' },
+        { role: 'user', content: 'q', attachments: [{ mimeType: 'image/png', base64: 'A' }] }
+      ],
+      modelOverride: 'custom',
+      tools: [{ type: 'web_search' }]
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.system).toBe('s');
+    expect(body.messages).toHaveLength(2);
+    expect(body.messages[1].attachments).toHaveLength(1);
+    expect(body.modelOverride).toBe('custom');
+    expect(body.tools).toEqual([{ type: 'web_search' }]);
+  });
+
+  // ==========================================================================
+  // tier / endpoint on the proxied STREAM path.
+  //
+  // Exact siblings of the `callProxiedCompletion` tests in
+  // apiClient.proxiedCompletion.test.ts, and here for the same reason: this
+  // function accepts `IProviderCompletionStreamParams`, which declares both
+  // parameters, and destructured neither. A success-only assertion passes
+  // against the broken version — dropping a parameter is the failure that still
+  // returns a 200 — so each of these asserts the request body or the refusal.
+  // ==========================================================================
+
+  test('tier resolves to a concrete model and travels as modelOverride', async () => {
+    // Wrong impl this catches: `tier` never destructured, so a frontier stream
+    // silently runs on the base model — invisible without reading the body.
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor({ defaultModel: { base: 'gpt-base', advanced: 'gpt-advanced' } }),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      tier: 'advanced'
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.modelOverride).toBe('gpt-advanced');
+    // Resolved here rather than forwarded, so a proxy that has never heard of
+    // tiers still honors one. A `tier` body field is the giveaway that it had not.
+    expect(body.tier).toBeUndefined();
+  });
+
+  test('a frontier tier cascades through the descriptor, not the proxy', async () => {
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor({ defaultModel: { base: 'gpt-base', advanced: 'gpt-advanced' } }),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      tier: 'frontier'
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.modelOverride).toBe('gpt-advanced');
+  });
+
+  test('with no tier, modelOverride passes through untouched — including absent', async () => {
+    // Wrong impl this catches: resolving unconditionally, which would always send
+    // a concrete model and take away the proxy's own default.
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest()
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect('modelOverride' in body).toBe(false);
+  });
+
+  test('a tier that resolves to no model fails before any wire call', async () => {
+    global.fetch = jest.fn();
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor({ defaultModel: '' }),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      tier: 'advanced'
+    });
+    expect(result).toFailWith(/no model resolved/i);
+    expect(global.fetch as jest.Mock).not.toHaveBeenCalled();
+  });
+
+  test('endpoint is refused up front rather than silently ignored', async () => {
+    // `endpoint` names WHERE the prompt goes, the proxy is what makes the upstream
+    // call, and the field has never been sent — so every deployed proxy would
+    // ignore it and reach the provider's public API instead of the host the caller
+    // pinned. Wrong impls this catches: dropping it silently (the original bug),
+    // and forwarding it hopefully (reads as support, delivers none).
+    global.fetch = jest.fn();
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      endpoint: 'http://192.168.1.50:11434/v1'
+    });
+    expect(result).toFailWith(/endpoint is not supported on the proxied path/i);
+    expect(global.fetch as jest.Mock).not.toHaveBeenCalled();
+  });
+
+  test('a usage block on the proxy done event reaches the caller', async () => {
+    // Unlike the non-streaming path, this adapter validates only the type
+    // discriminator and forwards the event as-is — so `usage` arrives typed but
+    // not checked, which is the proxy-stream contract generally rather than a
+    // usage-specific decision. Pinned because the README now says so.
+    mockSseResponse([
+      `data: ${JSON.stringify({
+        type: 'done',
+        truncated: false,
+        fullText: 'hi',
+        usage: { reports: 'reads-and-writes', cachedInputTokens: 10, cacheWriteTokens: 4 }
+      })}\n\n`
+    ]);
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest()
+    });
+    expect(result).toSucceed();
+    if (result.isFailure()) return;
+
+    const events: AiAssist.IAiStreamEvent[] = [];
+    for await (const event of result.value) {
+      events.push(event);
+    }
+    const done = events.find((e): e is AiAssist.IAiStreamDone => e.type === 'done');
+    expect(done?.usage).toEqual({
+      reports: 'reads-and-writes',
+      cachedInputTokens: 10,
+      cacheWriteTokens: 4
+    });
+  });
+
+  test('forwards abort signal', async () => {
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    const controller = new AbortController();
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      signal: controller.signal
+    });
+    const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+    expect(fetchCall[1].signal).toBe(controller.signal);
+  });
+
+  test('surfaces non-2xx as Result.fail', async () => {
+    mockSseHttpError(503, 'proxy upstream down');
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest()
+    });
+    expect(result).toFailWith(/503/);
+  });
+
+  test('terminates iteration on a done event', async () => {
+    mockSseResponse([
+      `data: ${JSON.stringify({ type: 'text-delta', delta: 'a' })}\n\n`,
+      `data: ${JSON.stringify({ type: 'done', truncated: false, fullText: 'a' })}\n\n`,
+      // Anything after done should be ignored:
+      `data: ${JSON.stringify({ type: 'text-delta', delta: 'b' })}\n\n`
+    ]);
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest()
+    });
+    if (!result.isSuccess()) throw new Error('expected success');
+    const events = await collect(result.value);
+    expect(events.map((e) => e.type)).toEqual(['text-delta', 'done']);
+  });
+
+  test('terminates iteration on an error event', async () => {
+    mockSseResponse([
+      `data: ${JSON.stringify({ type: 'error', message: 'bad' })}\n\n`,
+      `data: ${JSON.stringify({ type: 'text-delta', delta: 'too late' })}\n\n`
+    ]);
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest()
+    });
+    if (!result.isSuccess()) throw new Error('expected success');
+    const events = await collect(result.value);
+    expect(events).toEqual([{ type: 'error', message: 'bad' }]);
+  });
+
+  test('skips events with unknown type', async () => {
+    mockSseResponse([
+      `data: ${JSON.stringify({ type: 'text-delta', delta: 'x' })}\n\n`,
+      `data: ${JSON.stringify({ type: 'unknown-future-event' })}\n\n`,
+      `data: ${JSON.stringify({ type: 'done', truncated: false, fullText: 'x' })}\n\n`
+    ]);
+    const result = await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest()
+    });
+    if (!result.isSuccess()) throw new Error('expected success');
+    const events = await collect(result.value);
+    expect(events.map((e) => e.type)).toEqual(['text-delta', 'done']);
+  });
+
+  test('forwards thinking field in proxy stream body when thinking is provided', async () => {
+    mockSseResponse([`data: ${JSON.stringify({ type: 'done', truncated: false, fullText: '' })}\n\n`]);
+    const thinking: AiAssist.IThinkingConfig = { effort: 'high' };
+    await AiAssist.callProxiedCompletionStream('http://proxy.local:3001', {
+      descriptor: makeDescriptor(),
+      apiKey: 'sk',
+      ...TEST_PROMPT.toRequest(),
+      thinking
+    });
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.thinking).toEqual({ effort: 'high' });
+  });
+});

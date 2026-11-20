@@ -27,7 +27,7 @@
 /**
  * Mock file data structure
  */
-export interface MockFileData {
+export interface IMockFileData {
   name: string;
   content: string;
   type?: string;
@@ -38,7 +38,7 @@ export interface MockFileData {
 /**
  * Create a mock File object with all necessary properties and methods
  */
-export function createMockFile(data: MockFileData): File {
+export function createMockFile(data: IMockFileData): File {
   const blob = new Blob([data.content], { type: data.type || 'text/plain' });
   const file = new File([blob], data.name, {
     type: data.type || 'text/plain',
@@ -70,7 +70,7 @@ export function createMockFile(data: MockFileData): File {
  * Create a mock FileList using DataTransfer API
  * This is the most reliable method for creating FileList objects in tests
  */
-export function createMockFileList(files: MockFileData[]): FileList {
+export function createMockFileList(files: IMockFileData[]): FileList {
   // Use DataTransfer to create a proper FileList
   const dt = new DataTransfer();
 

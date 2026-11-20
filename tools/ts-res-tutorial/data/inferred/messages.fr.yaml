@@ -1,0 +1,17 @@
+# Tokenless language qualifier in the filename.
+#
+# File path:   data/inferred/messages.fr.yaml
+# Resource id: inferred.messages.text (same as messages.yaml)
+# Conditions:  language=fr
+#
+# The importer splits the basename on "." and inspects the LAST segment
+# ("fr"). It tries each tokenIsOptional qualifier in turn; "fr" is a
+# valid BCP47 language tag but not a territory code, so the language
+# qualifier is the only match. The segment is removed and the rest of
+# the basename ("messages") becomes the path fragment.
+candidates:
+  - id: text
+    resourceTypeName: json
+    json:
+      hello: Bonjour
+      source: 'LANGUAGE: fr (inferred from filename)'

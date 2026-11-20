@@ -1,0 +1,29 @@
+[Home](../README.md) > [TemplatedJsonEditorRule](./TemplatedJsonEditorRule.md) > editProperty
+
+## TemplatedJsonEditorRule.editProperty() method
+
+Evaluates a property name for template rendering.
+
+**Signature:**
+
+```typescript
+editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedResult<JsonObject, JsonPropertyEditFailureReason>;
+```
+
+**Parameters:**
+
+<table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>key</td><td>string</td><td>The key of the property to be considered.</td></tr>
+<tr><td>value</td><td>JsonValue</td><td>The `JsonValue` of the property to be considered.</td></tr>
+<tr><td>state</td><td>JsonEditorState</td><td>The JsonEditorState | editor state for the object being edited.</td></tr>
+</tbody></table>
+
+**Returns:**
+
+DetailedResult&lt;JsonObject, [JsonPropertyEditFailureReason](../type-aliases/JsonPropertyEditFailureReason.md)&gt;
+
+`Success` with detail `'edited'` and an `JsonObject` to
+be flattened and merged if the key contained a template. Returns `Failure` with detail `'error'`
+if an error occurred or with detail `'inapplicable'` if the property key does not contain
+a template or if name rendering is disabled.

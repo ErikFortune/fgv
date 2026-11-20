@@ -1,0 +1,13 @@
+{
+  "extends": "@fgv/heft-dual-rig/profiles/default/config/jest.config.json",
+  "coverageThreshold": {
+    "global": {
+      "branches": 100,
+      "functions": 100,
+      "lines": 100,
+      "statements": 100
+    }
+  },
+  "collectCoverage": true,
+  "coverageReporters": ["text", "lcov", "html"]
+}

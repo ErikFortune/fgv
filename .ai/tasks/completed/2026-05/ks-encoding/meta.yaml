@@ -1,0 +1,52 @@
+id: ks-encoding
+status: shipped
+packages: ['@fgv/ks']
+prs: [425]
+closed: 2026-05
+summary:
+  intended: >
+    Add a top-level `--encoding <text|base64|hex>` flag to `ks get` and `ks export`
+    so secrets containing control characters can be displayed and piped safely, and
+    so key material can be kept opaque in shell history — with `text` as the default
+    so existing behavior is bit-for-bit preserved.
+  shipped: >
+    The flag on both subcommands, backed by a new pure-function helper module
+    `tools/ks/src/encoding.ts` (`Encoding`, `ENCODINGS`, `DEFAULT_ENCODING`,
+    `parseEncoding`, `encodeSecret`) at 100% coverage. `parseEncoding` rejects unknown
+    values with a `Result.fail` surfaced to stderr before any keystore is opened.
+    For `ks export` the encoded value is seeded into the per-variable template context
+    *before* `renderShellTemplate` substitutes it, so the existing single-quote
+    `shellEscape` already covers base64 `=` padding and hex without any template-grammar
+    change; `collectTemplateContext` keeps the *unencoded* plaintext in the `missing`
+    array so `--persist-missing` never writes an encoded value back into the keystore.
+    Base64 via `CryptoUtils.toBase64`; hex via Node's `Buffer.toString('hex')`.
+    README + `help.ts` template topic document the flag. 83 tests (72 existing + 11 new).
+  diverged: >
+    No brief.md survives for this stream, so there is no briefed-vs-shipped delta to
+    mine — stating that plainly rather than manufacturing one. What `result.md` does
+    record is two design calls taken *against* the obvious alternative, which are
+    divergences from the default approach even absent a brief to diverge from.
+    (1) A generic `--encoding <value>` was chosen over a boolean `--base64`: the boolean
+    would have collapsed at the first request for hex and forced a follow-up CLI break,
+    so the open-ended flag form was taken up front. (2) Encoding was made a *flag*, not
+    a per-variable template directive: `ks export` substitutes values verbatim and the
+    codebase deliberately supports only simple variable substitution, so a
+    `{{xai|base64}}`-style directive would have meant inventing template syntax the
+    project has explicitly rejected — a top-level flag encoding before substitution
+    stays inside the existing grammar and applies uniformly.
+  sourceLine: "Add a top-level `--encoding <text|base64|hex>` flag on `ks get` and `ks export`. Default `text` preserves today's behavior exactly. Enables binary-safe display + pipe-friendly output for secrets that may contain control characters and for keeping keys opaque in shell history."
+keywords:
+  - keystore CLI
+  - secret output encoding
+  - base64
+  - hex
+  - binary-safe output
+  - shell history hygiene
+  - shell template substitution
+  - shellEscape
+  - persist-missing isolation
+  - CryptoUtils.toBase64
+  - CLI flag extensibility
+  - Result-returning flag validation
+  - deferred auto-detect default
+sourceHash: 17592e958cc1c28f

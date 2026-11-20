@@ -1,0 +1,68 @@
+id: agent-tasks-delivery-and-deferral
+status: shipped
+packages: ['@fgv/ts-agent-tasks']
+prs: [762]
+openPrs: []
+opened: 2026-10-26
+closed: 2026-10-26
+summary:
+  intended: >
+    personaility#698 slices B-1 and B-2: a host-driven delivery pump over a bound delivery (one owed
+    revision per next, stale renders released and their superseded revisions disposed, bounded and
+    loud; acknowledge then release; dispose releases first; superseded disposal after a terminal
+    discharge only; never self-acknowledging, at-least-once, exactly-once documented as not its
+    property) and deferred-obligation tasks over tracked tasks with notBefore ((changeRef, role) to a
+    deterministic id, defer idempotent across a crash between create and wait, stateOf, wait,
+    succeed, cancel, merged, abandonPending, due over queryDue, waiting, archiveSettled, a per-task
+    operation budget), every write through an optional structural guard, PersonAIlity's names
+    generalised into options, and nothing that bypasses authorization.
+  shipped: >
+    TaskDeliveryPump, DeferredObligations and ITaskHostWriteGuard in the host packlet;
+    IBoundTaskView.queryDue (an authorized, projected due query over the due index) and
+    IBoundTaskDelivery.prepare's owed-only mode, which the pump uses so a task owed nothing never
+    blocks another; disclosure decided now, on the current record and on acknowledge, so a task that
+    left the binding's view is withheld rather than presented, and IBoundTaskDelivery.disposeWithheld
+    (pin-aware, bounded, counts only, for the registering principal over its whole selection with a
+    dispose-obligation grant) for ending what is withheld; ids, codes, namespaces, schedule and budget as options; a pure retry() advising
+    wait, hold or expire; deterministic operation ids so a lost response replays; decisions read from
+    the pump's own record; obligations adopted and swept only when they read as the helper's own; a
+    check-then-act table, revert matrices for the build and for review rounds 1 to 3, each row red,
+    and every contract test in the ask mapped to a test.
+  diverged: >
+    IBoundTaskView was widened with queryDue, since the due index was reachable only through the
+    repository and the brief required the due pass to be both authorized and indexed. Review round 1
+    found the pump stuck behind current tasks owed nothing; prepare gained an owed-only mode and the
+    stale-render loop the brief described was removed as unnecessary. Review round 2 found it stuck
+    on a revision whose task had left its view; disclosure changed in both prepare modes, including
+    the default, and IBoundTaskDelivery gained disposeWithheld. Review round 3 tightened it to the
+    owning binding plus a grant and to counts; a foreign-principal binding can still drain a
+    subscription on release too, left as documented host responsibility because the host-subscribes,
+    agent-drains pattern depends on it, and escalated. A committed
+    acknowledgement succeeds with its follow-up failures as issues rather than failing. The schedule
+    advises rather than holds, keeping no resident state. merged re-reads its survivor, and the
+    sweeps report per task and carry on; neither is in the PersonAIlity source. No stale-receipt
+    release: issued() plus abandon is documented instead. Repo-wide rush test ran in parts under a
+    ten-minute tool limit, all 39 operations covered.
+  sourceLine: "**Shipped:** `@fgv/ts-agent-tasks` gains the host's own delivery and deferral loops as bounded calls — `TaskDeliveryPump`, which drains a subscription one owed revision at a time and never acknowledges on its own, and `DeferredObligations`, durable retry obligations kept as waiting tracked tasks that a crash cannot duplicate — plus `IBoundTaskView.queryDue`, so the due pass is both authorized and indexed."
+  headline: >
+    An agent-task host can drain a subscription one revision at a time, acknowledging only after its
+    own work commits, and keep a durable retry obligation for a busy recipient that a crash cannot
+    duplicate.
+keywords:
+  - delivery pump
+  - at-least-once delivery
+  - stale render
+  - superseded revisions
+  - stale issued receipt
+  - deferred obligation
+  - durable retry
+  - notBefore
+  - due index
+  - crash idempotency
+  - operation budget
+  - backoff schedule
+  - write gate
+  - withheld updates
+  - disclosure decided now
+  - fgv-ask
+sourceHash: sha256:6c096c64ec0dd2b9 # over brief.md + state.md + result.md

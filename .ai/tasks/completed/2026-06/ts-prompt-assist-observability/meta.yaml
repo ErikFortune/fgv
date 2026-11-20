@@ -1,0 +1,91 @@
+id: ts-prompt-assist-observability
+status: shipped
+packages: ['@fgv/ts-utils', '@fgv/ts-prompt-assist']
+prs: [455, 456, 460]
+opened: 2026-06-04
+closed: 2026-06
+summary:
+  intended: >
+    Commissioned as Phase A only — a design spike answering four questions about adding an
+    observer hook to `@fgv/ts-prompt-assist` (brief.md § "Phase A — the four questions"):
+    Q1 whether `RetainingLogger` from `@fgv/ts-utils/logging` could be reused/extended as the
+    storage substrate (options A/B/C/D), Q2 where the hook fires inside `PromptLibrary`,
+    Q3 the `IPromptObservationRecord` field list, Q4 the query/filter axes. Two semantics were
+    named as load-bearing up front: observer errors must never break `resolve()`, and
+    privacy/redaction is a storage-layer concern the library must not bake in. Explicit brief
+    constraint: "ANY implementation… is out of scope. The output is `design.md` and nothing else."
+  shipped: >
+    The full `design-triage-implement` cluster on its own integration branch. Phase A design
+    spike (#455), Phase B triage locking all eight OQs at their Phase A leans
+    (`phase-b-triage.md`, commit 34ef9443), Phase C implementation (#456), and a cluster-close
+    promotion (#460) that itself carried substantive code. Shipped
+    `RetainingRingBuffer<T extends { seq: number }>` in `@fgv/ts-utils` collections — a pure
+    bounded most-recent-N seq-ring with O(1) eviction, `query({ sinceSeq?, limit?, filter? })`
+    and `lastSeq` stable across `clear()` — plus a new `observe` packlet in
+    `@fgv/ts-prompt-assist`: `IPromptObserver` (async `observe` + `fireAndForget?`), the
+    `phase`-discriminated `IPromptObservationRecord`, `IPromptObservationQuery`,
+    `PromptObservationStore`, and an additive `IPromptLibraryCreateParams.observers?` DI field
+    fanned out at the three public resolve/output boundaries and never inside the re-entrant
+    `_resolveInternal`.
+  diverged: >
+    Substantial, on four axes. (1) SCOPE GREW: the brief commissioned Phase A only and forbade
+    implementation; the stream ran A→B→C to shipped code. That was the briefed three-phase plan,
+    but the artifact set records one commission and three phases of delivery. (2) A FIFTH OPTION:
+    Q1's menu was A/B/C/D; design.md recommended a **hybrid C-minimal + D** that appears nowhere
+    in the brief — extract only the ring/seq/cursor *mechanism* into `@fgv/ts-utils` and build a
+    schema-aware store on top. Falsifiability was cleared by an *existing* second consumer
+    (`RetainingLogger` itself) rather than the brief-demanded "plausible within 6 months" one.
+    (3) THE BUFFER SHAPE REVERSED MID-STREAM: Phase A sketched `push(makeRecord: (seq, timestamp) => T)`
+    with the buffer owning seq and a clock, and the Phase C kickoff echoed an injectable `now?`.
+    Phase C shipped the inverse — a pure seq-ring where the caller mints the record and
+    `PromptLibrary` holds the single per-instance seq authority — because the locked OQ-5
+    (`linkedResolveSeq` cross-linking) is incompatible with per-store seq assignment under
+    multi-observer fan-out. Recorded in `findings/inbox/2026-06-04-ring-buffer-seq-authority.md`.
+    (4) `phase-b-triage.md` IS the mid-stream scoping decision: OQ-6 pushed the
+    `RetainingLogger` → `RetainingRingBuffer` composition refactor OUT of Phase C to keep Phase C
+    additive, converting it into a committed fast-follow stream
+    (`retaining-logger-ring-buffer-refactor`) with an explicit note that the OQ-6 falsifiability
+    argument "retroactively degrades" if that commission never lands (it did — #461). OQ-7
+    declined a standalone `MultiPromptObserver` for v0.1; OQ-4 deferred partial-trace-on-failure
+    because the trace is built only on the success path. Finally, cluster-close #460 landed
+    public surface that neither brief nor design contemplated: an injectable `IQualifierResolver`
+    + `defaultStringEqualityQualifierResolver`, prompted by Erik's 2026-06-05 review that the
+    store's naive string-equality match was incompatible with the ts-res-driven match that
+    produced the records — plus a `durationMs` timer-placement fix and a `captureResult` guard
+    making `contentHash` genuinely best-effort.
+  sourceLine: '**Shipped:** 2026-06-04. Phase A #455 + Phase B (commit `34ef9443`) + Phase C #456 on the `ts-prompt-assist-observability` integration branch; cluster-close squash → `release` opened by the orchestrator.'
+keywords:
+  - prompt observability
+  - observer fan-out
+  - RetainingRingBuffer
+  - ring buffer
+  - seq authority
+  - monotonic cursor paging
+  - linkedResolveSeq
+  - cross-linked records
+  - fire-and-forget observer
+  - error swallow
+  - MultiLogger-shaped
+  - content hash dedupe
+  - RFC 8785 canonical JSON
+  - CRC32
+  - qualifier resolver
+  - design-triage-implement
+  - integration branch
+  - audit trail
+  - most-permissive store
+  - deployment policy vs library policy
+sourceHash: 18643bce597f9c3e # sha256 of `cat *.md` (top-level only — findings/ NOT included)
+relatedStreams:
+  - id: retaining-logger-ring-buffer-refactor
+    relationship: >
+      committed fast-follow commissioned by this stream's OQ-6 lock; brings `RetainingLogger`
+      onto `RetainingRingBuffer<ILogRecord>`. Shipped via #461 — so the OQ-6 "existing second
+      consumer" falsifiability argument held rather than degrading.
+  - id: logging-observability
+    relationship: >
+      predecessor; shipped the `RetainingLogger` whose ring mechanism this stream generalized.
+  - id: prompt-assist-horizontal-composition
+    relationship: >
+      later consumer; added the fourth `'compose'` observation phase and the
+      `IPromptObservationSeam` (#538) on top of this stream's fan-out + seq authority.

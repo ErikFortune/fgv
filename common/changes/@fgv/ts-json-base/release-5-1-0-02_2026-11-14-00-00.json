@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "`JsonSchema.fromJson` turns a received schema (for example an MCP tool's) into a validator: it inlines local `$ref`, accepts a pydantic-style `anyOf` of one type plus null, and refuses `pattern` unless a `patternValidator` is supplied. `JsonSchema.isSchemaValidator` detects an authored schema.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base",
+  "email": "noreply@anthropic.com"
+}

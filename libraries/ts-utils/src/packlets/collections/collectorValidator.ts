@@ -38,22 +38,29 @@ export interface IReadOnlyCollectorValidator<
   TITEM extends ICollectible<any, any>
 > extends IReadOnlyResultMapValidator<CollectibleKey<TITEM>, TITEM> {
   /**
-   * {@inheritdoc Collections.ConvertingCollectorValidator.map}
+   * {@inheritDoc Collections.ReadOnlyResultMapValidator.map}
    */
   readonly map: IReadOnlyResultMap<CollectibleKey<TITEM>, TITEM>;
 
   /**
-   * {@inheritdoc Collections.Collector.get}
+   * {@inheritDoc Collections.Collector.get}
    */
   get(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
 
   /**
-   * {@inheritdoc Collections.ResultMap.has}
+   * {@inheritDoc Collections.ResultMap.has}
    */
   has(key: string): boolean;
 
   /**
-   * {@inheritdoc Collections.Collector.(getOrAdd:2)}
+   * Gets an existing item with a key matching the supplied key, or adds a new item to the collector
+   * using a factory callback if no item with that key exists.
+   * @param key - The weakly-typed key of the item to get or add.
+   * @param factory - The factory callback to create the item.
+   * @returns Returns {@link DetailedSuccess | Success} with the item stored in the collector -
+   * detail `exists` indicates that an existing item was returned and detail `added` indicates
+   * that the item was added. Returns {@link DetailedFailure | Failure} with an error and
+   * appropriate detail if the item could not be added.
    */
   getOrAdd(
     key: string,
@@ -69,7 +76,9 @@ export interface ICollectorValidatorCreateParams<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   TITEM extends ICollectible<any, any>
 > {
+  /** The collector to validate access to. */
   readonly collector: Collector<TITEM>;
+  /** The key-value converters for validation. */
   readonly converters: KeyValueConverters<CollectibleKey<TITEM>, TITEM>;
 }
 
@@ -101,7 +110,12 @@ export class CollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.Collector.add}
+   * Adds an item to the collection, failing if a different item with the same key already exists. Note
+   * that adding an object that is already in the collection again will succeed without updating the collection.
+   * @param item - The item to add.
+   * @returns Returns {@link DetailedSuccess | Success} with the item and detail `added` if it was added
+   * or detail `exists` if the item was already in the map.  Returns {@link DetailedFailure | Failure} with
+   * an error message and appropriate detail if the item could not be added.
    */
   public add(item: unknown): DetailedResult<TITEM, CollectorResultDetail> {
     return this._convertValue(item).onSuccess((i) => {
@@ -110,7 +124,7 @@ export class CollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.Collector.get}
+   * {@inheritDoc Collections.Collector.get}
    */
   public get(key: string): DetailedResult<TITEM, ResultMapResultDetail> {
     return this.converters.convertKey(key).onSuccess((k) => {
@@ -119,7 +133,14 @@ export class CollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.Collector.(getOrAdd:2)}
+   * Gets an existing item with a key matching the supplied key, or adds a new item to the collector
+   * using a factory callback if no item with that key exists.
+   * @param key - The weakly-typed key of the item to get or add.
+   * @param factory - The factory callback to create the item.
+   * @returns Returns {@link DetailedSuccess | Success} with the item stored in the collector -
+   * detail `exists` indicates that an existing item was returned and detail `added` indicates
+   * that the item was added. Returns {@link DetailedFailure | Failure} with an error and
+   * appropriate detail if the item could not be added.
    */
   public getOrAdd(
     key: string,
@@ -127,8 +148,13 @@ export class CollectorValidator<
   ): DetailedResult<TITEM, CollectorResultDetail>;
 
   /**
-   * {@inheritdoc Collections.Collector.(getOrAdd:1)}
-   * @param item - The item to add to the collector.
+   * Gets an existing item with a key matching that of the supplied item, or adds the supplied
+   * item to the collector if no item with that key exists.
+   * @param item - The weakly-typed item to get or add.
+   * @returns Returns {@link DetailedSuccess | Success} with the item stored in the collector -
+   * detail `exists` indicates that an existing item was returned and detail `added` indicates
+   * that the item was added. Returns {@link DetailedFailure | Failure} with an error and
+   * appropriate detail if the item could not be added.
    */
   public getOrAdd(item: unknown): DetailedResult<TITEM, CollectorResultDetail>;
 
@@ -147,14 +173,14 @@ export class CollectorValidator<
   }
 
   /**
-   * {@inheritdoc Collections.ResultMap.has}
+   * {@inheritDoc Collections.ResultMap.has}
    */
   public has(key: string): boolean {
     return this._collector.has(key as CollectibleKey<TITEM>);
   }
 
   /**
-   * {@inheritdoc Collections.Collector.toReadOnly}
+   * {@inheritDoc Collections.Collector.toReadOnly}
    */
   public toReadOnly(): IReadOnlyCollectorValidator<TITEM> {
     return this;

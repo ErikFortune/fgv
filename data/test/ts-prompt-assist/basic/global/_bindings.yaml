@@ -1,0 +1,5 @@
+bindings:
+  audience:
+    kind: literal
+    value: world
+    directive: prose

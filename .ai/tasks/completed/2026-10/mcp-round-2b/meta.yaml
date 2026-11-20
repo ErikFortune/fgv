@@ -1,0 +1,79 @@
+id: mcp-round-2b
+status: shipped
+packages: ['@fgv/ts-extras', '@fgv/ts-extras-mcp']
+prs: [729] # written anticipating merge
+openPrs: []
+opened: 2026-10-14 # first work commit; the brief was frozen 2026-10-13
+closed: 2026-10-14
+summary:
+  intended: >
+    Two PersonAIlity fgv-asks, as extensions of the primitives rather than consumer workarounds:
+    (#672) a streaming, non-buffering guarded fetch as a sibling entry point in ts-extras safer-fetch,
+    sharing the buffered hop walk with no behaviour change, wired into ts-extras-mcp so every HTTP
+    request (POST, SSE GET, termination DELETE) goes through an injectable fetch and a refusal
+    classifies as a new egress-blocked kind; (#677) authProvider passthrough as McpOAuthClientProvider,
+    unauthorized carrying a validated resourceMetadataUrl, interactive authorization never run on a
+    path the consumer did not start, and no secret in any log line or failure message.
+  shipped: >
+    The safer-fetch hop walk now takes a per-entry-point finisher; the buffered suite passes unchanged.
+    createGuardedFetch returns a fetch-shaped GuardedFetch whose response comes back unread, with
+    init.signal cancelling guards, connect, redirect walk and body (via AbortSignal.any), body-reading
+    and retry options refused at creation, and GuardedFetchError (fixed message, URL-bearing reason).
+    ts-extras-mcp always installs its own egress wrapper (consumer fetch or globalThis.fetch beneath),
+    so POSTs, the SSE GET, the DELETE and every OAuth request go through it; egress-blocked carries the
+    refusal kind only. authProvider is wrapped so state, saveCodeVerifier and redirectToAuthorization
+    run only inside connectMcpSession (and an authorization URL that is neither https nor loopback http is always refused);
+    resourceMetadataUrl is read with the SDK's exported extractWWWAuthenticateParams in the wrapper.
+    Real SDK servers throughout (the protected one behind the SDK's own requireBearerAuth via an
+    Express shim, plus a minimal local authorization server); a 45-row revert matrix, 44 red and one
+    (R7, a late-abort check in a microtask-only window) that no test can isolate. After the
+    orchestrator review a guarded headers timeout classifies as 'timeout' (a JSON-response server
+    holds a slow tool's headers) and consumers are told to size headersTimeoutMs to their longest
+    MCP timeout.
+  diverged: >
+    The SDK sends a URLSearchParams body on OAuth token requests, so the guarded fetch accepts one.
+    A guarded fetch's network, aborted and internal (unknown) failures classify as before, and its
+    timeout as 'timeout', rather than as egress-blocked (the brief said any GuardedFetchError). The SDK can start interactive
+    authorization from its detached standalone GET and its reconnect timer; this was prevented by
+    gating the provider rather than the paths. Unasked hardening: static headers reach only the MCP
+    endpoint's origin (the SDK merged them into requests to the authorization server; after Copilot
+    round 3 the egress applies them and the SDK never holds them),
+    failure messages never carry server-authored HTTP or OAuth error text, and OAuthError classifies
+    as unauthorized. The headers deadline on the streaming path runs until the response-headers guard
+    accepts. mcp-session-id was not added to safer-fetch's default stripped headers. The buffered
+    entry points changed in one outcome-neutral way: a call already stopped no longer starts a guard
+    or transport call. ArrayBuffer bodies and a logger option were also accepted, beyond the brief's
+    lists. One residual against the mission: the SDK's detached standalone GET starts inside connect,
+    so a 401 on it before connect settles would still reach the interactive steps. The secrets proof
+    covers access/refresh tokens, a client secret and a static API key across log lines, messages and
+    serialized reasons, but not an authorization code — the code exchange is the consumer's (the
+    auth() helper is deferred). The code-reviewer ran after two coverage-prompted tests had been
+    added, not strictly before coverage closure. Revert R7 is green (not isolatable).
+  sourceLine: '# mcp-round-2b — result'
+  headline: >
+    MCP servers can be reached through the same SSRF guard as the rest of your egress, without
+    buffering their streams, and OAuth-protected MCP servers work — with interactive authorization
+    confined to the connect.
+keywords:
+  - SSRF
+  - streaming fetch
+  - FetchLike
+  - Server-Sent Events
+  - egress guard
+  - blockPrivateNetworks
+  - credential stripping
+  - OAuth 2.1
+  - OAuthClientProvider
+  - WWW-Authenticate resource_metadata
+  - interactive authorization gate
+  - secret redaction
+  - DNS rebinding residual
+relatedStreams:
+  - { id: personality-intake, relationship: 'holds the two inbox files (findings/inbox 0042, 0043)' }
+  - { id: personality-asks-2026-10, relationship: 'triaged the two asks (followups.md entries 12 and 11)' }
+  - { id: mcp-round-2a, relationship: 'added the termination DELETE this stream routes through the guard' }
+  - {
+      id: mcp-client-cancellation,
+      relationship: 'built the McpFailureReason vocabulary (#722) extended here'
+    }
+sourceHash: sha256:70e1322d0c349fca # over brief.md + result.md + state.md

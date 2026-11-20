@@ -32,7 +32,7 @@ import * as ResourceJson from '../../resource-json';
  */
 export class JsonImporter implements IImporter {
   /**
-   * {@inheritdoc Import.Importers.IImporter.types}
+   * {@inheritDoc Import.Importers.IImporter.types}
    */
   public readonly types: ReadonlyArray<string> = ['json'];
 
@@ -51,7 +51,7 @@ export class JsonImporter implements IImporter {
   }
 
   /**
-   * {@inheritdoc Import.Importers.IImporter.import}
+   * {@inheritDoc Import.Importers.IImporter.import}
    */
   public import(
     item: IImportable,

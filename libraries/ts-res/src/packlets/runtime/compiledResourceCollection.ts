@@ -125,14 +125,14 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
   }
 
   /**
-   * {@inheritdoc Runtime.IResourceManager.builtResources}
+   * {@inheritDoc Runtime.IResourceManager.builtResources}
    */
   public get builtResources(): Collections.IReadOnlyValidatingResultMap<ResourceId, IResource> {
     return this._builtResources;
   }
 
   /**
-   * {@inheritdoc Runtime.IResourceManager.numResources}
+   * {@inheritDoc Runtime.IResourceManager.numResources}
    */
   public get numResources(): number {
     return this._builtResources.size;
@@ -141,7 +141,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
   protected _numCandidates?: number;
 
   /**
-   * {@inheritdoc Runtime.IResourceManager.numCandidates}
+   * {@inheritDoc Runtime.IResourceManager.numCandidates}
    */
   public get numCandidates(): number {
     if (this._numCandidates === undefined) {
@@ -203,14 +203,14 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
   }
 
   /**
-   * {@inheritdoc Runtime.IResourceManager.getBuiltResource}
+   * {@inheritDoc Runtime.IResourceManager.getBuiltResource}
    */
   public getBuiltResource(id: string): Result<IResource> {
     return this._builtResources.validating.get(id);
   }
 
   /**
-   * {@inheritdoc Runtime.IResourceManager.validateContext}
+   * {@inheritDoc Runtime.IResourceManager.validateContext}
    */
   public validateContext(context: Context.IContextDecl): Result<Context.IValidatedContextDecl> {
     return Context.Convert.validatedContextDecl.convert(context, {

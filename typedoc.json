@@ -1,0 +1,11 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "extends": ["./rigs/heft-dual-rig/profiles/default/config/typedoc.base.json"],
+  "entryPointStrategy": "packages",
+  "entryPoints": ["libraries/*"],
+  "out": "./docs/api",
+  "name": "@fgv Monorepo API Documentation",
+  "packageOptions": {
+    "entryPoints": ["src/index.ts"]
+  }
+}

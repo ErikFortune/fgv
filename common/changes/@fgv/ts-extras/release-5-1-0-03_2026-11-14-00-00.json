@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "New `CryptoUtils` namespace (also at `@fgv/ts-extras/crypto`): `ICryptoProvider` with `NodeCryptoProvider` — AES-256-GCM, PBKDF2, SHA-256, HMAC-SHA256, Ed25519 / ECDSA signing, X25519 key agreement, ECIES wrap, HPKE (`HpkeProvider`) — and strict base64 / hex helpers.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras",
+  "email": "noreply@anthropic.com"
+}

@@ -1,0 +1,259 @@
+/**
+ * AI assist packlet - provider registry, prompt class, settings, and API client.
+ * @packageDocumentation
+ */
+
+export {
+  AiPrompt,
+  type AiModelCapability,
+  allModelCapabilities,
+  type AiProviderId,
+  type AiServerToolType,
+  type AiServerToolConfig,
+  type AiToolConfig,
+  type AiToolConflictPolicy,
+  type IAiToolConflictReport,
+  type IAiWebSearchToolConfig,
+  type IAiClientToolConfig,
+  type IAiToolAnnotations,
+  MCP_TASK_SUPPORT_VALUES,
+  type McpTaskSupport,
+  type IAiClientTool,
+  type IAiClientToolExecuteContext,
+  type IAiClientToolCallSummary,
+  type IAiClientToolContinuation,
+  type IAiClientToolTurnResult,
+  type IAiToolEnablement,
+  type IAiCompletionResponse,
+  DEFAULT_ANTHROPIC_MAX_TOKENS,
+  type IChatMessage,
+  type IChatRequest,
+  type AiApiFormat,
+  type AiImageApiFormat,
+  type AiEmbeddingApiFormat,
+  type AiEmbeddingTaskType,
+  type IAiEmbeddingModelCapability,
+  type IAiEmbeddingParams,
+  type IAiEmbeddingUsage,
+  type IAiEmbeddingResult,
+  type IAiImageModelCapability,
+  type IAiMaxOutputTokensCapability,
+  type IAiProviderDescriptor,
+  type IAiAssistProviderConfig,
+  type IAiAssistSettings,
+  DEFAULT_AI_ASSIST,
+  type IAiAssistKeyStore,
+  providerApiKeySecretName,
+  type IAiImageAttachment,
+  type IAiImageData,
+  type AiImageSize,
+  type AiImageQuality,
+  type GptImageSize,
+  type GptImageQuality,
+  type GptImageModelNames,
+  type GrokImagineModelNames,
+  type GeminiFlashImageModelNames,
+  type IGptImageGenerationConfig,
+  type IGrokImagineImageGenerationConfig,
+  type IGeminiFlashImageGenerationConfig,
+  type IGptImageModelOptions,
+  type IGrokImagineModelOptions,
+  type IGeminiFlashImageModelOptions,
+  type IOtherModelOptions,
+  type IModelFamilyConfig,
+  type IAiImageGenerationOptions,
+  type IAiImageGenerationParams,
+  type IAiGeneratedImage,
+  type IAiImageGenerationResponse,
+  type IAiModelCapabilityRule,
+  type IAiModelCapabilityConfig,
+  type IAiModelInfo,
+  type IAiStreamEvent,
+  type IAiStreamTextDelta,
+  type IAiStreamToolEvent,
+  type IAiStreamToolUseStart,
+  type IAiStreamToolUseDelta,
+  type IAiStreamToolUseComplete,
+  type IAiStreamDone,
+  type IAiStreamError,
+  type ModelSpec,
+  type ModelSpecKey,
+  type IModelSpecMap,
+  allModelSpecKeys,
+  type IModelAliasMap,
+  MODEL_ALIAS_SIGIL,
+  resolveModelAlias,
+  resolveProviderModel,
+  isResponsesOnlyModel,
+  isAdaptiveThinkingModel,
+  isThinkingRequiredModel,
+  usesMaxCompletionTokensField,
+  type ChatOutputTokensField,
+  toDataUrl,
+  type IThinkingConfig,
+  type IThinkingProviderConfig,
+  type IAnthropicThinkingOptions,
+  type IOpenAiThinkingOptions,
+  type IGeminiThinkingOptions,
+  type IXAiThinkingOptions,
+  type IOtherThinkingOptions,
+  type IAnthropicThinkingConfig,
+  type IOpenAiThinkingConfig,
+  type IXAiThinkingConfig,
+  type AnthropicThinkingModelNames,
+  type OpenAiThinkingModelNames,
+  type GeminiThinkingModelNames,
+  type XAiThinkingModelNames
+} from './model';
+export { MODEL_SPEC_BASE_KEY, resolveModel } from './modelSpecResolver';
+
+export {
+  type AnthropicThinkingOffType,
+  type IAnthropicThinkingOffRule,
+  resolveAnthropicThinkingOffType
+} from './anthropicThinkingOff';
+
+export {
+  type GeminiThinkingLevel,
+  type IGeminiThinkingConfig,
+  type IGeminiThinkingLevelRule,
+  allGeminiThinkingLevels,
+  rejectsGeminiThinkingLevel,
+  resolveGeminiThinkingLevels
+} from './geminiThinking';
+
+export { rejectsSamplingParams, rejectsSamplingParamsWithThinking } from './samplingParams';
+
+export {
+  type IResolvedImageOptions,
+  resolveImageOptions,
+  validateResolvedOptions
+} from './imageOptionsResolver';
+
+export {
+  allProviderIds,
+  getProviderDescriptors,
+  getProviderDescriptor,
+  resolveImageCapability,
+  supportsImageGeneration,
+  resolveEmbeddingCapability,
+  supportsEmbedding,
+  resolveStructuredOutputCapability,
+  supportsStructuredOutput,
+  resolveMaxOutputTokens,
+  DEFAULT_MODEL_CAPABILITY_CONFIG
+} from './registry';
+
+export {
+  callProviderCompletion,
+  callProxiedCompletion,
+  type IProviderCompletionParams
+} from './completionClient';
+
+export {
+  callProviderImageGeneration,
+  callProxiedImageGeneration,
+  type IProviderImageGenerationParams
+} from './imageGenerationClient';
+
+export {
+  callProviderListModels,
+  callProxiedListModels,
+  type IProviderListModelsParams
+} from './listModelsClient';
+
+export {
+  callProviderEmbedding,
+  callProxiedEmbedding,
+  type IProviderEmbeddingParams
+} from './embeddingClient';
+
+export {
+  callProviderCompletionStream,
+  callProxiedCompletionStream,
+  type IProviderCompletionStreamParams,
+  executeClientToolTurn,
+  type IExecuteClientToolTurnParams,
+  type IExecuteClientToolTurnResult,
+  type IToolExecutionDecision
+} from './streamingClient';
+
+export {
+  type ClientToolLoopState,
+  type IClientToolLoopFailureDetail,
+  type IClientToolLoopObserver,
+  type IClientToolLoopOutcome,
+  type IClientToolLoopParams,
+  type IClientToolOrphanedCall,
+  type IClientToolRound,
+  runClientToolLoop
+} from './clientToolLoop';
+
+export {
+  aiProviderId,
+  aiServerToolType,
+  aiWebSearchToolConfig,
+  aiServerToolConfig,
+  aiToolAnnotations,
+  mcpTaskSupport,
+  aiClientToolConfig,
+  aiToolEnablement,
+  aiAssistProviderConfig,
+  aiAssistSettings,
+  modelSpecKey,
+  modelSpec,
+  geminiThinkingLevel
+} from './converters';
+
+export {
+  resolveEffectiveTools,
+  resolveToolConflicts,
+  defaultToolConflictPolicy,
+  toGeminiParameterSchema
+} from './toolFormats';
+export type { IAiResolvedToolConflicts } from './toolFormats';
+
+export type { AiCacheReportingLevel, IAiCompletionUsage } from './usageTypes';
+
+export {
+  supportsCacheUsageReporting,
+  supportsPromptCacheBreakpoints,
+  supportsPromptCacheRouting,
+  supportsStreamUsageOption
+} from './streamUsageCapability';
+export type { IAiPromptCacheRoutingSupport } from './streamUsageCapability';
+
+export { ANTHROPIC_STRUCTURED_OUTPUT_TOOL_NAME, structuredOutputSchemaKeywords } from './structuredOutput';
+export { clientToolSchemaKeywords, type IAiVerifiedEndpoint } from './schemaKeywords';
+
+export type {
+  AiStructuredOutputFormat,
+  IAiStructuredOutputCapability,
+  IJsonObjectStructuredOutputRequest,
+  ISchemaStructuredOutputRequest,
+  StructuredOutputEnforcement,
+  StructuredOutputFallback,
+  StructuredOutputRequest
+} from './structuredOutputTypes';
+
+export {
+  classifyJsonParseFailure,
+  extractJsonText,
+  fencedStringifiedJson,
+  type IFencedStringifiedJsonExtractorOptions,
+  type IFencedStringifiedJsonOptions,
+  type JsonParseFailureReason,
+  type JsonTextExtractor
+} from './jsonResponse';
+
+export {
+  generateJsonCompletion,
+  SMART_JSON_PROMPT_HINT,
+  type IGenerateJsonCompletionParams,
+  type IGenerateJsonCompletionResult,
+  type JsonPromptHint
+} from './jsonCompletion';
+
+export { anthropicEffortToBudgetTokens, type IResolvedThinkingConfig } from './thinkingOptionsResolver';
+
+export { type IAiCacheRequest, validateAiCacheRequest, validateCacheBreakpoints } from './cacheRequest';

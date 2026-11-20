@@ -1,0 +1,26 @@
+[Home](../README.md) > [AsyncResult](./AsyncResult.md) > thenOnSuccess
+
+## AsyncResult.thenOnSuccess() method
+
+Calls a supplied AsyncSuccessContinuation | async success continuation if
+the wrapped result is successful.
+
+**Signature:**
+
+```typescript
+thenOnSuccess(cb: AsyncSuccessContinuation<T, TN>): AsyncResult<TN>;
+```
+
+**Parameters:**
+
+<table><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>cb</td><td>AsyncSuccessContinuation&lt;T, TN&gt;</td><td>The AsyncSuccessContinuation | async success continuation
+to be called in the event of success.</td></tr>
+</tbody></table>
+
+**Returns:**
+
+[AsyncResult](AsyncResult.md)&lt;TN&gt;
+
+A new AsyncResult wrapping the async continuation result.

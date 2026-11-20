@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-system-one",
+      "comment": "`askSystemOne` validates every answer and classifies failures; `measureSystemOneInput` enforces a mandatory input bound before a request is sent.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-system-one",
+  "email": "noreply@anthropic.com"
+}

@@ -1,0 +1,236 @@
+id: per-provider-testbed-scenarios
+status: shipped
+kind: cluster
+packages: ['@fgv/testbed', '@fgv/ts-extras']
+prs: [453, 459]
+opened: 2026-06-04
+closed: 2026-06
+relatedStreams:
+  - id: ai-assist-cross-provider-continuation
+    relationship: >
+      Sub-stream 1 of 3 (empirical-loop round 1, PR #454). Commissioned mid-cluster to
+      unblock this stream's own paused PR #453: Copilot review found that
+      `executeClientToolTurn` forwarded `continuationMessages` only to the Anthropic
+      adapter, so the OpenAI/Gemini/xAI scenarios' continuation gate would have been a
+      false positive. Shared this cluster's integration branch; reached `release` inside
+      this cluster's promotion PR #459. This cluster's README is that stream's polished
+      narrative — it has no README of its own.
+  - id: ai-assist-cross-provider-fixes
+    relationship: >
+      Sub-stream 2 of 3 (rounds 2 and 3, PR #457). Closed the two disjoint bugs this
+      cluster's FIRST live run surfaced: Gemini function-declaration schema sanitization
+      (`additionalProperties` / `$schema` stripped for Gemini's OpenAPI-3.0 subset) and
+      capture of `incomplete_details.reason` as the new `@public`
+      `IAiStreamDone.incompleteReason`. The second shipped as a diagnostic instrument
+      rather than a fix, and armed round 4.
+  - id: ai-assist-responses-reasoning-events
+    relationship: >
+      Sub-stream 3 of 3 and cluster closeout (round 4, PR #458). Used #457's
+      `incompleteReason` to falsify this cluster's own leading hypothesis (budget
+      exhaustion) and found the real cause — an `item_id` ↔ `call_id` correlation bug in
+      the OpenAI Responses streaming adapter — plus a second latent `call_id` bug in
+      `buildOpenAiContinuation` that surfaced the moment the first fix let function calls
+      flow. Also shipped the provider-drift instrumentation and the Gemini scenario fix,
+      and drove the live re-run in which all four scenarios reached PASS.
+  - id: ai-assist-client-tools
+    relationship: >
+      Predecessor cluster (closed 2026-06-04). Supplied `executeClientToolTurn`, the
+      `IAiClientTool` typed-schema contract, the `anthropicClientTools` scenario this
+      cluster's three scenarios are modelled on, and the pre-declared
+      `IBuildMessagesOptions.rawTail` hook that round 1 consumed. Its Phase C is the L37
+      reference observation this cluster re-instantiated four times.
+  - id: ai-assist-thinking-events
+    relationship: >
+      Deferred-to, not implemented-by. The "thinking content present in stream" gate is
+      verified only indirectly in all four scenarios because the adapters discard thinking
+      content by design; surfacing it was ruled a separate scope decision. That stream is
+      still 🟡 unshipped in `docs/WORKSTREAMS.md`.
+summary:
+  intended: >
+    Stand up live-wire-verification testbed scenarios for OpenAI Responses, Gemini and
+    xAI grok under `samples/testbed/src/scenarios/`, paralleling the existing
+    `anthropicClientTools` scenario — each CLI-only, gated on its `<PROVIDER>_API_KEY`,
+    pinned to a version-pinned (not dated, not `*-latest`) model alias, exercising
+    thinking + a `recall_memory` client tool + a `web_search` server tool, and emitting a
+    per-gate PASS/FAIL summary. The brief framed these as "the empirical safety net L37
+    names": unit tests catch emitter-level correctness but cannot catch wire-shape
+    mismatches with a provider's actual contract, and the `anthropicClientTools` scenario
+    had already surfaced two such bugs on its first live run (PRs #448/#449). Explicitly
+    out of scope: ANY change to `@fgv/ts-extras/ai-assist` — "if the stream surfaces a
+    library bug, file as a follow-up finding in `findings/inbox/` and continue with the
+    testbed; do not bundle library fixes into this stream" — plus the generic-version-alias
+    library surface, MCP layer 2, `runToolUseConversation`, and any edit to the Anthropic
+    template scenario.
+  shipped: >
+    The three scenarios exactly as briefed (PR #453) — `openaiClientTools` (`gpt-5.1`,
+    `openAiEffort: 'low'`), `geminiClientTools` (`gemini-2.5-flash`,
+    `geminiThinkingBudget: 1024`) and `xaiClientTools` (`grok-4.3`, `xaiEffort: 'low'`) —
+    self-contained rather than sharing a runner, plus registration in the scenarios index,
+    a corrected registry snapshot and a `coveragePathIgnorePatterns` entry for the
+    live-API scenarios. AND the four library bugs the live runs surfaced, closed across
+    three commissioned sub-streams (#454, #457, #458) on the same integration branch,
+    promoted to `release` as one squash in #459. Final state: cross-provider continuation
+    forwarding on all four providers, Gemini function-declaration schema sanitization, the
+    `@public` `IAiStreamDone.incompleteReason` diagnostic, the OpenAI Responses
+    `item_id` ↔ `call_id` correlation fix, `buildOpenAiContinuation` emitting the required
+    `call_id`, and warn-on-unrecognized-SSE-event drift instrumentation on the Anthropic
+    and OpenAI Responses adapters. All four provider scenarios PASS against the live APIs
+    (2026-06-05).
+  diverged: >
+    **The cluster's mission inverted the brief's central prohibition, and that inversion
+    is the whole story.** The brief forbade library changes and told the stream to file
+    findings and continue. Three findings were filed — and every one was then commissioned
+    as a library sub-stream on the same integration branch, because with the library
+    unfixed the scenarios could not reach the PASS the stream existed to demonstrate. The
+    testbed stayed the detector and never became the fix site (the brief's actual
+    principle held), but "no `@fgv/ts-extras/ai-assist` changes in this cluster" did not:
+    the cluster shipped a `@public` field, four runtime fixes and a new instrumentation
+    surface. `result.md` still opens on the pre-live state ("No library changes... No
+    `@fgv/ts-extras/ai-assist` modification was needed or made") because it was written
+    2026-06-04, before any key was available; the README, written at close, tells the
+    four-round story instead.
+
+    **Every gate the stream itself could reach was GAPPED, and the gap was the deliverable.**
+    `result.md`'s matrix reports GAPPED on every live gate for all three providers (no
+    provider keys in the agent environment) with only the missing-key diagnostic path
+    PASSing. The agent explicitly declined to mock a PASS. The empirical value arrived
+    entirely from Erik's two subsequent live runs — which is precisely why the loop found
+    four bugs that a 100%-coverage suite had not.
+
+    **Round 4 falsified the cluster's own leading hypothesis.** Rounds 3 and 4 were framed
+    around budget exhaustion on reasoning models; #457 shipped `incompleteReason`
+    specifically to confirm it. The instrument reported `truncated: false`,
+    `incompleteReason: undefined` — and the real cause was an adapter correlation bug. The
+    diagnostic's clearest vindication is that it disproved the theory it was built to
+    prove.
+
+    **One brief-declared surface boundary was crossed and disclosed.**
+    `samples/testbed/config/jest.config.json` was outside the declared package surface;
+    the coverage exclusion for `[a-zA-Z]+ClientTools/` was added anyway (and retroactively
+    covers the pre-existing `anthropicClientTools` scenario, previously collected at ~46%)
+    as the honest way to satisfy "match testbed coverage convention / do not force 100%".
+  sourceLine: '**Shipped:** 2026-06-05 via PR #458 (closeout) + the preceding three sub-stream PRs squash-merged into the integration branch. Cluster-close PR squash-merges `per-provider-testbed-scenarios` → `release`.'
+notes:
+  - >
+    ON `sourceLine`. Taken verbatim (`cat -A`-checked, no trailing whitespace) from
+    `README.md:3`, the cluster README's authored opener. `result.md`'s own opener is the
+    weaker `**Completed:** 2026-06-04` — weaker because it predates every live run and
+    every library fix. NOTE the quoted line is itself imprecise: PR #458 was the closeout
+    SUB-STREAM's PR onto the integration branch; the cluster reached `release` via
+    promotion PR **#459** (merged 2026-06-05T14:56:57Z, `202c9f6be`), which the README
+    never names. Quoted as authored, corrected here rather than in the artifact.
+  - >
+    ON `prs`. Flat list, merged only, verified on GitHub: **#453** (this stream's own
+    implementation PR — three scenarios + index + snapshot + coverage exclusion; merged
+    2026-06-05T04:34:52Z into the integration branch, 11 files, +1576/-28) and **#459**
+    (cluster promotion → `release`, merged 2026-06-05T14:56:57Z, 40 files, +5200/-100).
+    `docs/FUTURE.md` corroborates the pairing ("parent PR #453 + sub-stream PRs #454,
+    #457, #458"). The three sub-stream PRs are deliberately NOT listed here — they belong
+    to the sub-streams' own `meta.yaml` records and are reachable via `relatedStreams`;
+    duplicating them would double-count the cluster's output in any index that sums `prs`.
+    No `prHistory` — nothing was retired, superseded or held; #453 was paused mid-review
+    awaiting #454 but merged unchanged.
+  - >
+    ON `sourceHash`. `sha256sum` over `cat *.md` at the directory's TOP LEVEL ONLY —
+    `README.md`, `brief.md`, `result.md`, `state.md` in shell glob order. The
+    `findings/inbox/` subdirectory was **NOT** included (its hash with findings folded in
+    would be `f614c28c038c74b7`). This matches the convention the
+    `ai-assist-responses-reasoning-events` sibling record states explicitly. Computed
+    2026-08-14, after the `2026-06-04-gemini-tool-schema-additionalproperties.md`
+    disposition correction — which therefore does not affect this hash.
+  - >
+    FINDINGS AUDIT (2026-08-14). All three `findings/inbox/` entries now read RESOLVED,
+    and all three dispositions are true against current source:
+    (1) `2026-06-04-continuation-roundtrip-anthropic-only.md` — RESOLVED via #454;
+    verified `clientToolContinuationBuilder.ts` forwards `continuationMessages` from all
+    three switch arms and `registry.ts`'s `xai-grok` still declares `apiFormat: 'openai'`.
+    (2) `2026-06-04-gemini-tool-schema-additionalproperties.md` — RESOLVED via #457;
+    verified `toGeminiParameterSchema` at `toolFormats.ts:228`, wired at the
+    `case 'client_tool':` arm (`:282`), and keyword-aware (a `properties` member literally
+    named `additionalProperties` survives — `:243`). **This file read `Disposition: OPEN`
+    for roughly ten weeks after the fix shipped**, corrected 2026-08-14 by this sweep's
+    predecessor; the sibling stream's own `meta.yaml` diagnoses the cause (the disposition
+    update was handed to cluster-close, which folded in the OpenAI/xAI sibling and missed
+    this one).
+    (3) `2026-06-04-openai-xai-empty-completion.md` — RESOLVED via #457 (diagnostic) +
+    #458 (root cause); verified `itemIdToCallId` at `openaiResponses.ts:304` populated
+    from `output_item.added` (`:340`) and consumed by the delta/done arms (`:352`/`:368`),
+    and `incompleteReason` gated on `truncated` at `:402`. Its narrative correctly records
+    that its own leading hypothesis was wrong.
+    Two further findings filed by this cluster live in the closeout sub-stream's directory
+    (`2026-06-05-openai-continuation-missing-call_id.md` CLOSED,
+    `2026-06-05-gemini-drift-instrument-deferred.md` DEFERRED), not here.
+  - >
+    ONE README CLAIM IS NOW FALSE AGAINST SOURCE, and it was falsified by the cluster's
+    own promotion PR. `README.md:20` describes the drift instrumentation as including
+    "a length-capped payload preview (200 chars, `<no payload>` for empty data)". Current
+    `streamingAdapters/common.ts` defaults to a **structural-only** preview — top-level
+    JSON keys plus byte length, never values — with the raw 200-char form opt-in behind
+    `AI_ASSIST_UNRECOGNIZED_EVENT_FULL_PAYLOAD`. Per the closeout sub-stream's record the
+    change was a PII fix taken on #459 (Copilot round 2), i.e. after the README prose was
+    written and before the code reached `release`; `LIBRARY_CAPABILITIES.md` already
+    documents the shipped behavior. Surfaced here rather than amended — this backfill ran
+    steps 1, 2 and 4 only, and the README amendment is a step-6 action left for the owner.
+  - >
+    DEFERRALS — all five README followups are durably recorded in `docs/FUTURE.md`, but
+    two of the five entries are now STALE IN THE OTHER DIRECTION (recorded as open, since
+    shipped by later streams), and one is partly overtaken:
+    • *Provider-side request validation* — the specific instance it names (Gemini
+    grounding + client tools) now **fails fast**; `clientToolContinuationBuilder.ts:633-638`
+    raises "Gemini cannot combine web_search grounding with client (function) tools in the
+    same request", shipped by `ai-assist-antagonist` (PR #529). The generalized
+    "incompatible request shapes registry" remains open; the entry should be narrowed.
+    • *Generic-version-alias library surface* — substantially delivered by
+    `ai-assist-model-aliases` (#505–#508) and `ai-assist-model-tiers` (#511–#515) as the
+    `@<provider>:<role>` sigil scheme; the entry still reads as unqueued future scope and
+    still cites `gpt-4o` as OpenAI's default, which the tier maps replaced.
+    • *Library default `max_output_tokens` for reasoning models* — still open, but its
+    stated workaround ("override via the existing `otherParams` mechanism") is superseded
+    by the first-class `maxTokens` request param (#573).
+    Still correctly open and correctly recorded: Gemini-side drift instrumentation;
+    caller-visible thinking-content events (`ai-assist-thinking-events`, 🟡 in the ledger).
+    Two items from the brief's out-of-scope list are also durably tracked as of 2026-08-14:
+    MCP layer 2 shipped as `@fgv/ts-extras-mcp`, and `runToolUseConversation` was re-queued
+    in `docs/FUTURE.md:125` by this sweep's predecessor after two streams had deferred it
+    believing it was captured. The `*ClientTools` coverage exclusion is likewise noted in
+    `docs/FUTURE.md`. Nothing this cluster deferred is currently lost.
+  - >
+    NO LEDGER ENTRY, for the cluster or any sub-stream. As of 2026-08-14
+    `docs/WORKSTREAMS.md` contains no `### `per-provider-testbed-scenarios`` heading and no
+    mention of that id or of `ai-assist-cross-provider-continuation` /
+    `ai-assist-cross-provider-fixes` / `ai-assist-responses-reasoning-events` anywhere in
+    the file — four streams, zero narration, despite the cluster being cited by name in
+    `docs/FUTURE.md` and being the canonical L37 reference observation. `ledgerEntry:` is
+    omitted rather than guessed. A single cluster-level entry (this cluster as the heading,
+    the three sub-streams as rows within it, matching the `local-ai-exploration` /
+    `ts-prompt-assist-features` convention) was drafted alongside this record and presented
+    for review — not committed.
+keywords:
+  - live-api-verification
+  - empirical-safety-net
+  - wire-shape-bug
+  - testbed-scenario
+  - client-tools
+  - server-tools
+  - provider-parity
+  - openai-responses
+  - gemini-generatecontent
+  - xai-grok
+  - apiFormat-routing
+  - continuation-round-trip
+  - item_id-call_id-correlation
+  - additionalProperties-rejected-not-ignored
+  - openapi-3.0-schema-subset
+  - incompleteReason
+  - provider-drift-instrumentation
+  - unrecognized-sse-event-allowlist
+  - reasoning-models
+  - hypothesis-falsified-by-its-own-instrument
+  - detector-not-fix-site
+  - coverage-exclusion-live-api-cli
+  - mock-free-gap-reporting
+  - L37
+  - code-reviewer-before-coverage
+  - cluster-parent
+  - four-round-loop
+sourceHash: fa0c966b709b9571

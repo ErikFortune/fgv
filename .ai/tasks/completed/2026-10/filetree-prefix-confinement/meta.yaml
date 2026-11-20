@@ -1,0 +1,61 @@
+id: filetree-prefix-confinement
+status: shipped
+packages: ['@fgv/ts-json-base']
+prs: [763]
+openPrs: []
+opened: 2026-10-27
+closed: 2026-10-27
+summary:
+  intended: >
+    Close the TECH_DEBT P2 "FsFileTreeAccessors' prefix does not confine". User-decided design: one
+    absolutePathPolicy ('unconfined' default, 'confined' prepends the prefix to a resolved path
+    outside it, 'verified' fails) applied to every read and write, judged on the resolved path; a
+    separate realPath option reusing _confineToRoot's rule, on by default under 'verified'; creation
+    with either and no prefix fails; options on an fs-specific params type; atomic behaviour
+    unchanged; prefix TSDoc, fileTreeHelpers wording, CAPABILITIES.md, README and TECH_DEBT updated;
+    a minor change file; an escape matrix and a revert matrix as evidence.
+  shipped: >
+    All of it. IFsFileTreeInitParams extends IFileTreeInitParams with absolutePathPolicy and
+    realPath; FsFileTreeAccessors.create returns the Result, forFilesystem uses it, and the
+    constructor throws for an invalid combination. Every filesystem-touching operation goes through
+    one _resolveConfined step. Also exported: FsAbsolutePathPolicy, allFsAbsolutePathPolicies, and
+    the effective absolutePathPolicy / realPath on the accessors. Escape matrix 5 configurations x 10
+    path classes x 15 operations, observed and asserted; revert matrix 21 rows, all red. Review
+    round 1 (no P1): the atomic methods use the fixed root, a non-string path fails rather than
+    throws, the union is declared once, and realPath's limits (hard links, bind mounts) are
+    documented.
+  diverged: >
+    A relative '..' escape under 'confined' resolves against the prefix as though it were the root,
+    rather than being refused (the brief left the choice open), because resolveAbsolutePath is total
+    and items store its output, so a refusal would be bypassed through any item. The real-path check
+    inspects the target itself and refuses dangling links, rather than reusing _confineToRoot's
+    containing-directory check, because plain reads and writes follow a final link. realPath under
+    'unconfined' is refused at creation, a case the brief did not name. Keeping the atomic methods
+    unchanged needed _confineToRoot and _qualifyDirectory to stop calling the newly policy-checked
+    resolveRealPath.
+  sourceLine: "**Shipped:** `FsFileTreeAccessors` and `FileTree.forFilesystem` take an `absolutePathPolicy` — `'unconfined'` (the default, unchanged), `'confined'` or `'verified'` — and a `realPath` option, applied to every read, listing, stat and write, so a prefixed filesystem tree can finally be a sandbox; asking for either without a prefix fails creation."
+  headline: >
+    A filesystem FileTree can now be a sandbox: absolutePathPolicy 'confined' maps every path
+    beneath the prefix, 'verified' refuses one outside it, and realPath refuses symbolic links that
+    lead out. The default is unchanged.
+keywords:
+  [
+    'sandbox',
+    'path traversal',
+    'directory escape',
+    'chroot',
+    'absolute path',
+    'symbolic link',
+    'realpath',
+    'dangling symlink',
+    'forFilesystem',
+    'IFsFileTreeInitParams',
+    'absolutePathPolicy',
+    '_confineToRoot'
+  ]
+relatedStreams:
+  - {
+      id: agent-memory-atomic-writes,
+      relationship: 'its review found the defect this closes, and added the atomic real-path confinement reused here'
+    }
+sourceHash: d80a07bb6c25a749 # first 16 hex of sha256 over brief.md, state.md and result.md concatenated in that order

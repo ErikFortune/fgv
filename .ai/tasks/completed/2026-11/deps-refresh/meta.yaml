@@ -1,0 +1,99 @@
+id: deps-refresh
+status: shipped
+packages:
+  [
+    '@fgv/ks',
+    '@fgv/repo-template',
+    '@fgv/ts-agent-memory',
+    '@fgv/ts-agent-memory-sqlite-vec',
+    '@fgv/ts-agent-tasks',
+    '@fgv/ts-app-shell',
+    '@fgv/ts-bcp47',
+    '@fgv/ts-extras',
+    '@fgv/ts-extras-argon2',
+    '@fgv/ts-extras-mcp',
+    '@fgv/ts-extras-ollama',
+    '@fgv/ts-extras-re2',
+    '@fgv/ts-extras-system-one',
+    '@fgv/ts-extras-transformers',
+    '@fgv/ts-extras-webauthn',
+    '@fgv/ts-http-storage',
+    '@fgv/ts-json',
+    '@fgv/ts-json-base',
+    '@fgv/ts-prompt-assist',
+    '@fgv/ts-random',
+    '@fgv/ts-res',
+    '@fgv/ts-res-browser',
+    '@fgv/ts-res-browser-cli',
+    '@fgv/ts-res-cli',
+    '@fgv/ts-res-tutorial',
+    '@fgv/ts-res-ui-components',
+    '@fgv/ts-sudoku-lib',
+    '@fgv/ts-sudoku-ui',
+    '@fgv/ts-utils',
+    '@fgv/ts-utils-jest',
+    '@fgv/ts-web-extras',
+    '@fgv/ts-web-extras-argon2',
+    '@fgv/ts-web-extras-transformers',
+    '@fgv/ts-web-extras-webauthn',
+    '@fgv/typedoc-compact-theme'
+  ]
+prs: [766]
+openPrs: []
+opened: 2026-11-08
+closed: 2026-11-08
+summary:
+  intended: >
+    A user request: refresh the monorepo's dependencies, security first. Audit the lockfile and
+    record a baseline; reach zero critical, high and moderate wherever a fix needs no major bump of
+    a direct dependency, by direct bumps first and narrowly scoped globalOverrides second; take
+    every minor and patch within the current major; take a major only if it is the only fix for a
+    high or critical; report the other majors with impact and effort; treat the toolchain as
+    majors-only-with-a-reason; never pick a version younger than the release-age policy, and prove
+    a clean rush install accepts the lockfile.
+  shipped: >
+    Rush lockfile audit 173 advisories (4 critical, 73 high, 84 moderate, 12 low) to 3 (2 moderate,
+    1 low). Root package-lock.json (Dependabot's target) 11 high / 6 moderate / 2 low to 1 high
+    (@azure/msal-node, open: needs a major below Rush) / 1 moderate. rush-pack-check autoinstaller
+    2 high to 0. Means: Rush
+    5.177.2 to 5.182.1, pnpm 11.12.0 to 11.28.9, one rush update --full, six direct security bumps
+    (hono, js-yaml, @huggingface/transformers, and raised floors for @modelcontextprotocol/sdk,
+    axios, react-router-dom), two overrides (css-minimizer-webpack-plugin>serialize-javascript,
+    sockjs>uuid), and 58 more direct ranges to the latest release in their major. No major taken.
+    22 patch and 13 none change files. 22 majors reported with effort. Review round 1 added: root
+    @microsoft/rush ^5.182.1 with an npm-regenerated lock, the three autoinstaller lockfiles
+    refreshed, @types/node to 22.x, unused crypto-browserify removed (closing elliptic), and a
+    same-origin redirect test that pins ts-extras-mcp's own guard.
+  diverged: >
+    The Rush bump became a precondition: on 5.177.2, globalOverrides was silently ignored, because
+    Rush wrote it where pnpm 11 does not read it. The Heft toolchain family was taken, failed
+    rush rebuild and was put back to its base pins. heft-lint-plugin 1.3 lints non-TS files, and
+    @rushstack/eslint-config 4.9 warns on every private member. Both are reported as an effective
+    major. re2js and @typesafe-ai/sdk were held by their packages' own bump policies. The one
+    forced source change was not anticipated: MCP SDK 1.32 defaults to same-origin redirects. That
+    broke a ts-extras-mcp test control, which only the repo-wide rush test caught, and made that
+    package's TSDoc and README inaccurate. All three were updated. The open glob and minimatch
+    moderates need a transitive major that their parents do not range. Review round 1 found the
+    first close-out had audited only the Rush lockfile, while Dependabot scans the root npm
+    lockfile. It also found the close-out had stated a Node 20 floor, taken from a stale
+    MONOREPO_GUIDE, where rush.json requires 22.22 or 24.15. And the MCP test fix had stopped
+    exercising the package's own redirect refusal.
+  sourceLine: "**Shipped:** the Rush lockfile's audit went from 173 advisories (4 critical, 73 high, 84 moderate, 12 low) to 3 (2 moderate, 1 low, none with a fix that a direct bump or a same-major override can deliver), and the root `package-lock.json` Dependabot scans went from 11 high to 1 high (open below `@microsoft/rush`), with Rush 5.182.1 / pnpm 11.28.9, a full lockfile refresh, six direct bumps, two scoped overrides, and a minor/patch refresh of 58 more direct dependencies within their current major."
+  headline: '' # opted out: a dependency refresh adds no capability a consumer would look up
+keywords:
+  - dependency audit
+  - security advisories
+  - GHSA
+  - Dependabot
+  - pnpm audit
+  - globalOverrides ignored under pnpm 11
+  - minimumReleaseAge
+  - release-age policy
+  - lockfile refresh
+  - rush update --full
+  - Heft rig upgrade
+  - prefer-ecmascript-private-members
+  - heft-lint-plugin non-TS files
+  - MCP SDK redirectPolicy same-origin
+  - majors report
+sourceHash: sha256:7298683df79c6ede # over brief.md + state.md + result.md

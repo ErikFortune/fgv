@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-agent-tasks",
+      "comment": "Initial release: recording and mediation of agent work — a task envelope with lifecycle, observation, command and recovery unions, and a kind and command registry. It records work; it runs no agent loop.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-agent-tasks",
+  "email": "noreply@anthropic.com"
+}

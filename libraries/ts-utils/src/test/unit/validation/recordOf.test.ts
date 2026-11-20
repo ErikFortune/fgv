@@ -69,7 +69,7 @@ describe('recordOf validator', () => {
 
     // make sure our source object looks as expected
     expect(srcObject.base1).toBe(100);
-    expect(srcObject.hasOwnProperty('base1')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(srcObject, 'base1')).toBe(false);
     expect(srcObject.p4).toBe(10);
 
     [Validators.recordOf(Validators.string, { onError: 'fail' })].forEach((validator) => {

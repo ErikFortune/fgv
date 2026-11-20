@@ -87,7 +87,7 @@ export class LiteralQualifierType extends QualifierType<
   JsonCompatibleType<Config.ILiteralQualifierTypeConfig>
 > {
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
+   * {@inheritDoc QualifierTypes.IQualifierType.systemTypeName}
    */
   public readonly systemTypeName: QualifierTypeName = Convert.qualifierTypeName.convert('literal').orThrow();
 
@@ -109,11 +109,8 @@ export class LiteralQualifierType extends QualifierType<
 
   /**
    * Constructs a new {@link QualifierTypes.LiteralQualifierType | LiteralQualifierType}.
-   * @param name - Optional name for the qualifier type. Defaults to 'literal'.
-   * @param caseSensitive - Optional flag indicating whether the match should be
-   * case-sensitive. Defaults to `false`.
-   * @param allowContextList - Optional flag indicating whether the context can be a
-   * list of values. Defaults to `false`.
+   * @param params - The {@link QualifierTypes.ILiteralQualifierTypeCreateParams | create parameters}
+   * for this qualifier type.
    * @public
    */
   protected constructor({
@@ -161,7 +158,7 @@ export class LiteralQualifierType extends QualifierType<
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.isPotentialMatch}
+   * {@inheritDoc QualifierTypes.IQualifierType.isPotentialMatch}
    */
   public isPotentialMatch(conditionValue: string, contextValue: string): boolean {
     if (this.isValidConditionValue(conditionValue) && this.isValidContextValue(contextValue)) {
@@ -187,7 +184,7 @@ export class LiteralQualifierType extends QualifierType<
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
+   * {@inheritDoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
   public getConfigurationJson(): Result<JsonCompatibleType<Config.ISystemLiteralQualifierTypeConfig>> {
     const hierarchy: JsonObject = this.hierarchy ? { hierarchy: this.hierarchy.asRecord() } : {};
@@ -207,7 +204,7 @@ export class LiteralQualifierType extends QualifierType<
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
+   * {@inheritDoc QualifierTypes.IQualifierType.validateConfigurationJson}
    */
   public validateConfigurationJson(
     from: unknown
@@ -226,7 +223,7 @@ export class LiteralQualifierType extends QualifierType<
   }
 
   /**
-   * {@inheritdoc QualifierTypes.QualifierType._matchOne}
+   * {@inheritDoc QualifierTypes.QualifierType._matchOne}
    */
   protected _matchOne(
     condition: QualifierConditionValue,

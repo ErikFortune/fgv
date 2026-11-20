@@ -1,0 +1,69 @@
+# Demonstrates composition ("resolveComposedResourceValue"). The imported
+# resource id is resources.theme.theme (import path + explicit id).
+#
+# How composition works:
+#
+#   - A "full" candidate (isPartial omitted or false) is selected as the
+#     base. The first full candidate with the highest priority wins.
+#   - All matching *partial* candidates with priority >= the chosen base
+#     are merged into it, ascending by priority so higher-priority values
+#     overwrite lower-priority ones.
+#   - Property-level merge rules:
+#       * scalars/arrays replace outright
+#       * objects are deep-merged
+#       * explicit null deletes the underlying property (toggle with the
+#         `suppressNullAsDelete` resolver option)
+#
+# See src/lessons/lesson04-resolve.ts for the demo.
+
+resources:
+  - id: theme
+    resourceTypeName: json
+    candidates:
+      # Full baseline theme - no conditions, always selectable.
+      - json:
+          name: default
+          palette:
+            background: '#FFFFFF'
+            foreground: '#111111'
+            accent: '#2b6cb0'
+          typography:
+            family: Inter
+            baseSize: 14
+          experimental:
+            newShadow: null
+
+      # Full "dark" replacement when theme=dark.
+      - conditions:
+          theme: dark
+        json:
+          name: dark
+          palette:
+            background: '#0f172a'
+            foreground: '#e2e8f0'
+            accent: '#60a5fa'
+          typography:
+            family: Inter
+            baseSize: 14
+          experimental:
+            newShadow: null
+
+      # Partial override: at xxhdpi bump typography in isolation and
+      # enable the experimental shadow. Composes with whichever full
+      # candidate was chosen above.
+      - isPartial: true
+        conditions:
+          density: xxhdpi
+        json:
+          typography:
+            baseSize: 16
+          experimental:
+            newShadow: '0 8px 24px rgba(0,0,0,0.35)'
+
+      # Partial override: French users get a different accent font.
+      - isPartial: true
+        conditions:
+          language: fr
+        json:
+          typography:
+            family: 'Merriweather, Inter'

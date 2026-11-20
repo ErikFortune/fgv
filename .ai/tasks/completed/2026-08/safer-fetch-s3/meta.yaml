@@ -1,0 +1,127 @@
+id: safer-fetch-s3
+status: shipped
+packages:
+  - '@fgv/ts-extras'
+  - '@fgv/ts-web-extras'
+  - '@fgv/testbed'
+prs: [601]
+closed: 2026-08
+
+# `docs/WORKSTREAMS.md` narrates this stream as the **S3** sub-stream of the umbrella
+# `fetch-primitive-threat-model` entry, not under its own directory name. Without this
+# pointer every future reconciliation reports `safer-fetch-s3` as un-narrated and someone
+# re-drafts a ledger entry that already exists. Verified 2026-08-14 against the entry's
+# status line, which names S3 and its seven deliverables explicitly.
+ledgerEntry: fetch-primitive-threat-model
+
+relatedStreams:
+  - id: fetch-primitive-threat-model
+    relationship: >
+      parent umbrella stream; owns the design doc
+      (`.claude/project/fetch-primitive-threat-model.md`) and the ledger entry that
+      narrates all four sub-streams. This stream implemented design §11 and §14 phases 4-6
+      and marked the design's status line fully implemented, adding Appendix D.
+  - id: safer-fetch
+    relationship: >
+      sibling design/plan directory (`.ai/tasks/active/safer-fetch/`) holding `plan.md`
+      plus the four per-sub-stream briefs, including this stream's source
+      `brief-s3-browser-retry-docs.md`. No `result.md` of its own.
+  - id: safer-fetch-s1
+    relationship: >
+      predecessor sub-stream (core seams, taxonomy, `platformFetchTransport`, deadlines,
+      streaming cap, content-type gate, three entry points). PR #594, integrated via #597.
+      No stream directory on disk.
+  - id: safer-fetch-s2a
+    relationship: >
+      predecessor sub-stream (address classification + `blockPrivateNetworksPolicy`).
+      PR #592, integrated via #597. No stream directory on disk.
+  - id: safer-fetch-s2b
+    relationship: >
+      immediate predecessor (DNS-resolving `blockPrivateNetworks()` guard,
+      `redirectPolicy: 'validate-each-hop'`, credential stripping, hop cap, loop detection).
+      PR #599, squashed to `release` @ `b392e1534` — this stream's branch point. Bequeathed
+      the two inherited deliverables: the loop-detection `KNOWN LIMIT` restructure and the
+      Result-chaining pass over `saferFetch.ts`.
+
+summary:
+  intended: >
+    Close out the safer-fetch series: implement design §11 retry in full (off by default,
+    retryable/never-retryable sets, GET/HEAD-only unless `retryNonIdempotent`, `Retry-After`
+    clamped to `maxDelayMs`, full-jitter exponential backoff, overall deadline as ceiling,
+    and a full re-walk from hop 0 on every attempt with no cached guard verdict); restructure
+    redirect loop detection to run after the address guard so both sides of the comparison are
+    guard-cleared URLs (removing the `KNOWN LIMIT` inherited from #599); complete the
+    Result-chaining pass over `saferFetch.ts`; ship a `safer-fetch` packlet in
+    `@fgv/ts-web-extras` that states its structurally-absent guarantees rather than degrading
+    silently; publish the design §5.4 guarantee table in both READMEs; add the
+    `LIBRARY_CAPABILITIES.md` entry (deliberately NOT in the Result-integration-boundary list);
+    and add one `samples/testbed` scenario. Four open questions to settle (OQ-1 browser
+    `redirect: 'error'` vs `'manual'`; OQ-2 refusing `'validate-each-hop'` up front; OQ-3
+    browser barrel export surface; OQ-4 `blockPrivateNetworks` allowlist options).
+  shipped: >
+    All seven deliverables, PR #601 squashed to `release` @ `b85b094b7`. Retry landed per §11
+    as a recursive `_runAttempt` (recursive rather than looped so "nothing carries over" is
+    visible in the shape of the code); loop detection moved behind a new `_clearAddress` step
+    with `_detectLoop` comparing cleared-against-cleared and the `KNOWN LIMIT` comment removed;
+    the chaining pass introduced a `_raced` boundary helper folding the stopped/refused/cleared
+    ladder into one chainable `DetailedResult`, done together with the loop-detection
+    restructure so `_connect` was refactored once; `@fgv/ts-web-extras` gained the browser
+    packlet; both guarantee tables, the capabilities entry and a `safer-fetch-guard` testbed
+    scenario landed; the design doc's status line reads fully implemented with a new
+    Appendix D recording every divergence. Gates green in all three packages with 100%
+    coverage and zero `c8 ignore` directives — both remaining coverage gaps were closed by
+    changing the code (a `try`/`finally` became `captureAsyncResult`; an infinite retry loop
+    became the recursive `_runAttempt`) rather than the measurement. Layer 1 `code-reviewer`
+    ran before the coverage-closure pass per the brief's required ordering: no P1, one P2
+    (stale `_inBodyPhase` mislabelling a retried `timeout`'s `phase`), three P3s dispositioned.
+    Copilot loop closed at 2 rounds on the finding profile.
+  diverged: >
+    OQ-1's recommendation was DECLINED — the browser path keeps `redirect: 'manual'` rather
+    than switching to `'error'`, because `'error'` rejects with a generic `TypeError`
+    indistinguishable from a DNS failure and would degrade the reason from `'redirect-opaque'`
+    to an undifferentiated `'network'`; the §5.4 row was restated instead so table and code
+    agree (Appendix D-a; the brief explicitly permitted this). OQ-4 was taken with one part
+    declined: `allowHosts` / `allowPorts` / `allowInsecureHttp` added, but design §12's `{443}`
+    port *default* was not adopted, since it would reject a public `https://…:8443/` endpoint
+    with a `'blocked-by-guard'` failure that reads as an SSRF block (D-c). Two behaviour
+    changes shipped that the deliverable list never mentioned: `blockPrivateNetworks` now
+    requires `https:` unless `allowInsecureHttp` is set (the design listed this default from
+    the start but no shipped guard implemented it), and `DeadlineWatch` gained an
+    attempt-scoped/terminal stop distinction not anticipated by design §10 — without which a
+    `timeout`, the very failure retry exists for, could never be retried (D-h). Found by a
+    test, not by review. `libraries/ts-web-extras/README.md` was created rather than edited
+    (the package had none), and the `docs/WORKSTREAMS.md` edit exceeded the parallel-stream
+    brief's "section-local" guidance because the acceptance criteria required moving this
+    stream's entry to Completed.
+  sourceLine: 'Closed out the safer-fetch series.'
+
+keywords:
+  - ssrf
+  - dns-rebinding
+  - redirect-walk
+  - per-hop-address-guard
+  - credential-stripping
+  - monotonic-credential-stripping
+  - redirect-loop-detection
+  - guard-cleared-url
+  - retry-policy
+  - retry-after-clamp
+  - exponential-backoff
+  - full-jitter
+  - idempotent-methods
+  - deadline-budget
+  - attempt-scoped-deadline
+  - response-size-cap
+  - content-type-gate
+  - failure-taxonomy
+  - scanning-oracle
+  - cross-runtime-split
+  - browser-non-guarantees
+  - opaque-redirect
+  - guarantee-table
+  - transport-seam
+  - address-pinning
+  - result-chaining-pass
+  - threat-model
+
+sourceHash: a794bddadc7c3722

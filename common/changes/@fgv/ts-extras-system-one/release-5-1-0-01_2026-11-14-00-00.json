@@ -1,0 +1,11 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras-system-one",
+      "comment": "Initial release: a Result boundary over `@typesafe-ai/sdk` for System-1 decision servers (CLM, openjev, Jev), which answer typed yes/no, choice and score questions with a distribution over closed candidates. Node only.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@fgv/ts-extras-system-one",
+  "email": "noreply@anthropic.com"
+}

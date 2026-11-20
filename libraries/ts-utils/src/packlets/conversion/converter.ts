@@ -27,6 +27,32 @@ import { Brand, Result, Success } from '../base';
  */
 export type OnError = 'failOnError' | 'ignoreErrors';
 
+// Untyped (literal-tuple-inferred) source of truth for allOnError, kept separate from the widened
+// public export below so the exhaustiveness check actually inspects the literal values instead of
+// being widened away to {@link Conversion.OnError | OnError} before the check runs.
+const onErrorValues = ['failOnError', 'ignoreErrors'] as const;
+
+/**
+ * Compile-time exhaustiveness guard ensuring {@link onErrorValues} exactly matches every member of
+ * {@link Conversion.OnError | OnError}. Adding or removing a union member without updating the array fails the build.
+ * Deliberately not exported - this exists only to force the compiler to evaluate the check below.
+ */
+type _OnErrorExhaustivenessCheck = [
+  Exclude<OnError, (typeof onErrorValues)[number]>,
+  Exclude<(typeof onErrorValues)[number], OnError>
+] extends [never, never]
+  ? true
+  : never;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _onErrorExhaustivenessCheck: _OnErrorExhaustivenessCheck = true;
+
+/**
+ * Exhaustive list of all {@link Conversion.OnError | OnError} values.
+ * @public
+ */
+export const allOnError: readonly OnError[] = onErrorValues;
+
 /**
  * Converter traits.
  * @public
@@ -69,6 +95,7 @@ export interface ConstraintOptions {
 
 export interface Converter<T, TC = unknown> extends ConverterTraits {
   /**
+   *
    * Indicates whether this element is explicitly optional.
    */
   readonly isOptional: boolean;
@@ -84,10 +111,13 @@ export interface Converter<T, TC = unknown> extends ConverterTraits {
    * @param from - The `unknown` to be converted
    * @param context - An optional conversion context of type `<TC>` to be used in
    * the conversion.
+   * @param selfOverride - An optional override for the `self` reference passed to the
+   * converter function, enabling outer converters (e.g. discriminated-object) to thread
+   * themselves through to per-arm converters for recursive parsing.
    * @returns A {@link Result} with a {@link Success} and a value on success or an
    * {@link Failure} with a a message on failure.
    */
-  convert(from: unknown, context?: TC): Result<T>;
+  convert(from: unknown, context?: TC, selfOverride?: Converter<T, TC>): Result<T>;
 
   /**
    * Converts from `unknown` to `<T>` or `undefined`, as appropriate.
@@ -238,6 +268,13 @@ export interface Converter<T, TC = unknown> extends ConverterTraits {
    * Returns a Converter which always succeeds with a default value rather than failing.
    */
   withDefault<TD = T>(dflt: TD): DefaultingConverter<T, TD, TC>;
+
+  /**
+   * Chains this converter with another of the same type, to be attempted if this
+   * converter fails.
+   * @param other -
+   */
+  or(other: Converter<T, TC>): Converter<T, TC>;
 }
 
 /**

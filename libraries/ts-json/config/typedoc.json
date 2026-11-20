@@ -1,0 +1,7 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "extends": ["@fgv/heft-dual-rig/profiles/default/config/typedoc.compact-base.json"],
+  "plugin": ["../../../plugins/typedoc-compact-theme/lib/index.js"],
+  "entryPoints": ["../src/index.ts"],
+  "out": "../docs"
+}

@@ -39,17 +39,21 @@ export interface IReadOnlyValidatingCollector<
   TITEM extends ICollectible<any, any>
 > extends IReadOnlyValidatingResultMap<CollectibleKey<TITEM>, TITEM> {
   /**
-   * {@inheritdoc Collections.ValidatingCollector.validating}
+   * A {@link Collections.CollectorValidator | CollectorValidator} which validates keys and values
+   * before inserting them into this collector.
    */
   readonly validating: IReadOnlyCollectorValidator<TITEM>;
 
   /**
-   * {@inheritdoc Collections.IReadOnlyValidatingCollector.getAt}
+   * Gets the item at a specified index.
+   * @param index - The index of the item to retrieve.
+   * @returns `Success` with the item if it exists, or `Failure` with an error if the index is out of range.
    */
   getAt(index: number): Result<TITEM>;
 
   /**
-   * {@inheritdoc Collections.IReadOnlyCollector.valuesByIndex}
+   * Gets all items in the collection, ordered by index.
+   * @returns An array of items in the collection, ordered by index.
    */
   valuesByIndex(): ReadonlyArray<TITEM>;
 }
@@ -63,12 +67,12 @@ export interface IValidatingCollectorConstructorParams<
   TITEM extends ICollectible<any, any>
 > {
   /**
-   * {@inheritdoc Collections.ICollectorValidatorCreateParams.converters}
+   * {@inheritDoc Collections.ICollectorValidatorCreateParams.converters}
    */
   converters: KeyValueConverters<CollectibleKey<TITEM>, TITEM>;
 
   /**
-   * {@inheritdoc Collections.ICollectorConstructorParams.items}
+   * {@inheritDoc Collections.ICollectorConstructorParams.items}
    */
   items?: unknown[];
 }

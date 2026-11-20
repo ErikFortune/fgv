@@ -1,0 +1,9 @@
+[Home](../../../README.md) > [Qualifiers](../../README.md) > [Convert](../README.md) > qualifierDecl
+
+# Variable: qualifierDecl
+
+Converter for a Qualifiers.IQualifierDecl | qualifier declaration.
+
+## Type
+
+`ObjectConverter<IQualifierDecl, unknown>`
