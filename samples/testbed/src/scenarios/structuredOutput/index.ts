@@ -51,6 +51,7 @@ import {
   summarize
 } from './probe';
 import { resolveTierApiKey } from '../modelTiers';
+import { skipWithoutSecret } from '../aiProviderSecrets';
 
 /** One provider's probe set. */
 interface IStructuredScenarioParams {
@@ -77,6 +78,7 @@ const liveComplete: ProbeComplete = (p) => AiAssist.callProviderCompletion(p);
 function makeStructuredScenario(params: IStructuredScenarioParams): IScenario {
   const cliImpl: ICliScenarioImpl = {
     webRunnable: true,
+    skipReason: skipWithoutSecret(params.requiredSecrets, 'the live structured-output probes'),
     async run(context: IScenarioContext): Promise<Result<string>> {
       const descriptorResult = AiAssist.getProviderDescriptor(params.providerId);
       /* c8 ignore next 3 - unreachable for a hardcoded builtin id; mirrors the sibling scenarios */

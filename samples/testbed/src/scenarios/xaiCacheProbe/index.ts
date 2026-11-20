@@ -32,6 +32,7 @@ import type { JsonObject, JsonValue } from '@fgv/ts-json-base';
 
 import type { IScenario, ICliScenarioImpl } from '../../shell';
 import { runXaiCacheProbe } from './probe';
+import { skipWithoutProviderKey } from '../aiProviderSecrets';
 import type { IXaiCacheProbeDeps } from './probe';
 
 export { runXaiCacheProbe, formatXaiCacheProbeReport } from './probe';
@@ -99,6 +100,7 @@ export const xaiCacheProbeScenario: IScenario = {
     // CLI-only: `webRunnable` would require this module graph to be browser-clean, and the
     // live poster above uses the Node-flavored `safer-fetch`. The browser sibling lives in
     // `@fgv/ts-web-extras`; wiring it is not worth it for a one-shot wire probe.
+    skipReason: skipWithoutProviderKey('xai-grok', 'the prompt-cache wire probe'),
     run: (context) => runXaiCacheProbe(context, DEFAULT_XAI_CACHE_PROBE_DEPS)
   } satisfies ICliScenarioImpl
 };

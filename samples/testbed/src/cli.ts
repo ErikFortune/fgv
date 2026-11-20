@@ -114,12 +114,30 @@ function formatScenarioList(allScenarios: readonly IScenario[]): string {
     .join('\n');
 }
 
+/** What one scenario's CLI surface did: ran (with its report), or declined to, and why. */
+type ScenarioCliOutcome =
+  | { readonly kind: 'ran'; readonly report: string }
+  | { readonly kind: 'skipped'; readonly reason: string };
+
 /**
- * Run one scenario's CLI surface, turning a thrown error or a rejected promise into a `Failure`
- * so a caller looping over many scenarios is never aborted by one of them.
+ * Run one scenario's CLI surface: its `skipReason` precondition first, then `run` if that holds.
+ * A thrown error or a rejected promise from either becomes a `Failure`, so a caller looping over
+ * many scenarios is never aborted by one of them.
  */
-async function runScenarioCli(cli: ICliScenarioImpl, streams: ITestbedCliStreams): Promise<Result<string>> {
-  return (await captureAsyncResult(() => cli.run(buildCliContext(streams)))).onSuccess((result) => result);
+async function runScenarioCli(
+  cli: ICliScenarioImpl,
+  streams: ITestbedCliStreams
+): Promise<Result<ScenarioCliOutcome>> {
+  const context = buildCliContext(streams);
+  return (
+    await captureAsyncResult(async (): Promise<Result<ScenarioCliOutcome>> => {
+      const reason = await cli.skipReason?.(context);
+      if (reason !== undefined) {
+        return succeed({ kind: 'skipped', reason });
+      }
+      return (await cli.run(context)).onSuccess((report) => succeed({ kind: 'ran', report }));
+    })
+  ).onSuccess((outcome) => outcome);
 }
 
 /** One scenario's outcome in an `--all` run. */
@@ -183,8 +201,11 @@ async function runAllScenarios(
     }
     streams.stdout.write(`=== ${scenario.id}\n`);
     const result = await runScenarioCli(scenario.cli, streams);
-    if (result.isSuccess()) {
-      streams.stdout.write(`${result.value}\n`);
+    if (result.isSuccess() && result.value.kind === 'skipped') {
+      streams.stdout.write(`skipped — ${result.value.reason}\n`);
+      outcomes.push({ id: scenario.id, kind: 'skipped', reason: result.value.reason });
+    } else if (result.isSuccess()) {
+      streams.stdout.write(`${result.value.report}\n`);
       outcomes.push({ id: scenario.id, kind: 'passed' });
     } else {
       streams.stdout.write(`FAILED: ${result.message}\n`);
@@ -285,14 +306,17 @@ export async function runTestbedCli(
       return 1;
     }
 
-    const context = buildCliContext(streams);
-    const result = await scenario.cli.run(context);
+    const result = await runScenarioCli(scenario.cli, streams);
     if (result.isFailure()) {
       streams.stderr.write(`testbed CLI: scenario "${scenarioId}" failed: ${result.message}\n`);
       return 1;
     }
 
-    streams.stdout.write(`${result.value}\n`);
+    streams.stdout.write(
+      result.value.kind === 'skipped'
+        ? `testbed CLI: scenario "${scenarioId}" skipped — ${result.value.reason}\n`
+        : `${result.value.report}\n`
+    );
     return 0;
   }
 

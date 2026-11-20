@@ -502,7 +502,7 @@ describe('cli impl: run()', () => {
 
     const ctx = makeScenarioCtx();
     const result = await localEmbeddingSearchScenario.cli!.run(ctx);
-    expect(result).toFailWith(/load failed/i);
+    expect(result).toFailWith(/could not load model .*huggingface\.co reachable.*load failed/i);
   });
 
   test('run fails when embed fails', async () => {

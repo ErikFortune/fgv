@@ -62,11 +62,18 @@ diagnostics go to stderr.
 `--all` runs the scenarios one after another under a `=== <id>` header each, carries on past a
 failure (a scenario that throws counts as failed too), and ends with a summary: passed, failed
 and skipped counts, each failed id with its message, and the skipped ids — web-only scenarios
-and any named in `--skip`. It exits `1` if any scenario failed, otherwise `0`. What an unconfigured
-run reports varies by scenario: some succeed and say what they skipped (`wire-probe`, the
-`*-model-tiers` canaries, `mcp-probe` with no `MCP_PROBE_*` server), others fail for want of a
-provider key, and the `local-*` and `sqlite-vec-*` scenarios fail where the model download is
-blocked — so read the summary's failed list rather than the exit code alone.
+and any named in `--skip`. It exits `1` if any scenario failed, otherwise `0`.
+
+A scenario that cannot do its job in this environment says so instead of failing. Every scenario
+that needs a provider API key — the `*-client-tools` round trips, the `*-structured-output`
+probes, `cross-provider-embedding-search` and `xai-cache-probe` — and `mcp-probe` with no
+`MCP_PROBE_*` server checks first and reports `skipped — <KEY> not set; set it to run …`, which
+`--all` counts under skipped, and `--scenario <id>` reports with exit `0`. With the key set, the
+scenario runs, and a failure is a failure. `wire-probe` and the `*-model-tiers` canaries do their
+offline half without a key and pass, listing what a keyed run would check. So an unkeyed `--all`
+passes or skips everything except the `local-*` and `sqlite-vec-*` scenarios, which download a
+model from `huggingface.co` and fail (`could not load model … (is huggingface.co reachable?)`)
+where that host is blocked — a real environmental failure, not a skip.
 
 ### Web
 

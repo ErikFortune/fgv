@@ -70,7 +70,7 @@ const cliImpl: ICliScenarioImpl = {
 
     const pipeline = await transformers.loadPipeline('feature-extraction', MODEL_ID);
     if (pipeline.isFailure()) {
-      return fail(pipeline.message);
+      return fail(`could not load model ${MODEL_ID} (is huggingface.co reachable?): ${pipeline.message}`);
     }
 
     const embed: DemoEmbedFn = async (text: string): Promise<Result<Float32Array>> => {

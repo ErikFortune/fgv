@@ -296,6 +296,21 @@ describe('mcpProbeScenario', () => {
     expect(mcpProbeScenario.web).toBeUndefined();
   });
 
+  test('skipReason lets a configured server run', async () => {
+    const saved = process.env.MCP_PROBE_URL;
+    process.env.MCP_PROBE_URL = 'http://localhost:3001/mcp';
+    try {
+      const context = {} as unknown as IScenarioContext;
+      expect(await mcpProbeScenario.cli?.skipReason?.(context)).toBeUndefined();
+    } finally {
+      if (saved === undefined) {
+        delete process.env.MCP_PROBE_URL;
+      } else {
+        process.env.MCP_PROBE_URL = saved;
+      }
+    }
+  });
+
   test('cli.run succeeds as skipped, with setup guidance, when no server is configured', async () => {
     const saved = {
       url: process.env.MCP_PROBE_URL,
@@ -310,6 +325,9 @@ describe('mcpProbeScenario', () => {
       if (!mcpProbeScenario.cli) {
         throw new Error('expected a CLI implementation');
       }
+      expect(await mcpProbeScenario.cli.skipReason?.(context)).toMatch(
+        /^MCP_PROBE_URL or MCP_PROBE_COMMAND not set; set it to run the MCP compatibility probe/
+      );
       expect(await mcpProbeScenario.cli.run(context)).toSucceedAndSatisfy((text: string) => {
         expect(text).toMatch(/^mcp-probe: skipped — no MCP server configured/);
         expect(text).toContain(MCP_PROBE_SETUP_HINT);

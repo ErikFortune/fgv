@@ -8,6 +8,8 @@ import {
   requiredSecretsForProviders,
   resolveProviderApiKey,
   SingleSecretKeyStore,
+  skipWithoutProviderKey,
+  skipWithoutSecret,
   useProviderApiKey
 } from '../../../scenarios/aiProviderSecrets';
 import type { IScenarioContext, ISecretSpec } from '../../../shell';
@@ -86,6 +88,53 @@ describe('resolveProviderApiKey', () => {
     const context = makeContext(async () => fail('not set'));
     const result = await resolveProviderApiKey(context, 'openai');
     expect(result).toFailWith(/not set/);
+  });
+});
+
+describe('skipWithoutSecret', () => {
+  const OPENAI: ISecretSpec = { id: 'provider:openai', envVarName: 'OPENAI_API_KEY', description: 'o' };
+  const GEMINI: ISecretSpec = {
+    id: 'provider:google-gemini',
+    envVarName: 'GEMINI_API_KEY',
+    fallbackEnvVarNames: ['GOOGLE_API_KEY'],
+    description: 'g'
+  };
+  const resolvingOnly =
+    (id: string): IScenarioContext['resolveSecret'] =>
+    async (spec) =>
+      spec.id === id ? succeed('key') : fail(`${spec.id} not set`);
+
+  test('runs (no reason) when the only spec resolves', async () => {
+    expect(await skipWithoutSecret([OPENAI], 'x')(makeContext(resolvingOnly(OPENAI.id)))).toBeUndefined();
+  });
+
+  test('runs when any later spec resolves', async () => {
+    expect(
+      await skipWithoutSecret([OPENAI, GEMINI], 'x')(makeContext(resolvingOnly(GEMINI.id)))
+    ).toBeUndefined();
+  });
+
+  test('names every env var, fallbacks included, and the purpose when nothing resolves', async () => {
+    expect(await skipWithoutSecret([OPENAI, GEMINI], 'the probe')(makeContext(resolvingOnly('none')))).toBe(
+      'OPENAI_API_KEY or GEMINI_API_KEY or GOOGLE_API_KEY not set; set it to run the probe'
+    );
+  });
+});
+
+describe('skipWithoutProviderKey', () => {
+  test("checks the provider's canonical key", async () => {
+    const missing = makeContext(async () => fail('not set'));
+    expect(await skipWithoutProviderKey('xai-grok', 'the probe')(missing)).toBe(
+      'XAI_API_KEY not set; set it to run the probe'
+    );
+    const present = makeContext(async () => succeed('key'));
+    expect(await skipWithoutProviderKey('xai-grok', 'the probe')(present)).toBeUndefined();
+  });
+
+  test('never skips a provider that needs no key', async () => {
+    const resolveSecret = jest.fn(async () => fail<string>('not set'));
+    expect(await skipWithoutProviderKey('ollama', 'x')(makeContext(resolveSecret))).toBeUndefined();
+    expect(resolveSecret).not.toHaveBeenCalled();
   });
 });
 

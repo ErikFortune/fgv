@@ -57,7 +57,13 @@ import type { Result } from '@fgv/ts-utils';
 import { AiAssist } from '@fgv/ts-extras';
 
 import type { IScenario, ICliScenarioImpl, IScenarioContext, ISecretSpec } from '../../shell';
-import { formatEmbeddingReport, parseEmbeddingScenarioConfig, runEmbeddingSearch } from './search';
+import { skipWithoutSecret } from '../aiProviderSecrets';
+import {
+  embeddingProviderId,
+  formatEmbeddingReport,
+  parseEmbeddingScenarioConfig,
+  runEmbeddingSearch
+} from './search';
 
 /** The `requiredSecrets` specs, reused for both the scenario declaration and key resolution. */
 const OPENAI_API_KEY_SPEC: ISecretSpec = {
@@ -75,6 +81,13 @@ const MISTRAL_API_KEY_SPEC: ISecretSpec = {
   id: AiAssist.providerApiKeySecretName('mistral'),
   envVarName: 'MISTRAL_API_KEY',
   description: 'Mistral API key (EMBED_PROVIDER=mistral; mistral-embed is OpenAI-shaped)'
+};
+
+/** The key each keyed provider resolves from; a self-hosted provider has no entry and never skips. */
+const API_KEY_SPEC_BY_PROVIDER: Readonly<Record<string, ISecretSpec>> = {
+  openai: OPENAI_API_KEY_SPEC,
+  'google-gemini': GEMINI_API_KEY_SPEC,
+  mistral: MISTRAL_API_KEY_SPEC
 };
 
 /**
@@ -123,6 +136,15 @@ async function buildEmbeddingEnv(context: IScenarioContext): Promise<Record<stri
 
 const cliImpl: ICliScenarioImpl = {
   webRunnable: true,
+  // Skips only for the selected provider's missing key. An unknown EMBED_PROVIDER or any other
+  // configuration error is left to `run`, which fails with the specific diagnostic.
+  async skipReason(context: IScenarioContext): Promise<string | undefined> {
+    const providerId = embeddingProviderId(readNodeEnv());
+    const spec = providerId === undefined ? undefined : API_KEY_SPEC_BY_PROVIDER[providerId];
+    return spec === undefined
+      ? undefined
+      : skipWithoutSecret([spec], `the live ${providerId} embedding search`)(context);
+  },
   async run(context: IScenarioContext): Promise<Result<string>> {
     const env = await buildEmbeddingEnv(context);
     const configResult = parseEmbeddingScenarioConfig(env);

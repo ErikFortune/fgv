@@ -55,6 +55,11 @@ import type { IScenario, ICliScenarioImpl, IScenarioContext } from '../../shell'
 import { type IMcpProbeDeps, MCP_PROBE_SETUP_HINT, parseMcpProbeSpecFromEnv, runMcpProbe } from './probe';
 
 const cliImpl: ICliScenarioImpl = {
+  async skipReason(): Promise<string | undefined> {
+    return parseMcpProbeSpecFromEnv(process.env) === undefined
+      ? `MCP_PROBE_URL or MCP_PROBE_COMMAND not set; set it to run the MCP compatibility probe. ${MCP_PROBE_SETUP_HINT}`
+      : undefined;
+  },
   async run(context: IScenarioContext): Promise<Result<string>> {
     const spec = parseMcpProbeSpecFromEnv(process.env);
     // No server configured is not a failure: like a keyless provider scenario, the run succeeds

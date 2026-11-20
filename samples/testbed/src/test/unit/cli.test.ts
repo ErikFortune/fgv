@@ -414,3 +414,81 @@ describe('runTestbedCli --all', () => {
     expect(out).toContain('--skip <id>[,<id>...]');
   });
 });
+
+// ---------------------------------------------------------------------------
+// skipReason (a scenario that cannot run here, e.g. no API key)
+// ---------------------------------------------------------------------------
+
+/** A CLI scenario whose precondition reports `reason` (or throws, for `'throw'`). */
+function makeSkippingScenario(id: string, reason: string | 'throw'): IScenario {
+  const run = jest.fn(async () => succeed(`${id} ran`));
+  return {
+    id,
+    title: id,
+    description: `${id} description`,
+    category: 'general',
+    tags: ['test'],
+    cli: {
+      run,
+      skipReason: async () => {
+        if (reason === 'throw') {
+          throw new Error(`${id} precondition threw`);
+        }
+        return reason;
+      }
+    }
+  };
+}
+
+describe('runTestbedCli skipReason', () => {
+  test('--scenario reports a skip on stdout, exits 0, and does not run the scenario', async () => {
+    const streams = makeStreams();
+    const scenario = makeSkippingScenario('keyed', 'FOO_KEY not set; set it to run the thing');
+    const code = await runTestbedCli(['node', 'testbed', '--scenario', 'keyed'], streams, {
+      scenarios: [scenario]
+    });
+    expect(code).toBe(0);
+    expect(streams.stdout.output.join('')).toBe(
+      'testbed CLI: scenario "keyed" skipped — FOO_KEY not set; set it to run the thing\n'
+    );
+    expect(scenario.cli?.run).not.toHaveBeenCalled();
+  });
+
+  test('--scenario runs the scenario when its precondition holds', async () => {
+    const streams = makeStreams();
+    const code = await runTestbedCli(['node', 'testbed', '--scenario', 'keyed'], streams, {
+      scenarios: [
+        {
+          ...makeCliScenario('keyed', 'K'),
+          cli: { run: async () => succeed('keyed summary'), skipReason: async () => undefined }
+        }
+      ]
+    });
+    expect(code).toBe(0);
+    expect(streams.stdout.output.join('')).toBe('keyed summary\n');
+  });
+
+  test('--scenario reports a scenario that throws as failed', async () => {
+    const streams = makeStreams();
+    const code = await runTestbedCli(['node', 'testbed', '--scenario', 'thrower'], streams, {
+      scenarios: [makeSkippingScenario('thrower', 'throw')]
+    });
+    expect(code).toBe(1);
+    expect(streams.stderr.output.join('')).toMatch(/scenario "thrower" failed: .*thrower precondition threw/);
+  });
+
+  test('--all counts a skip under skipped with its reason, not as passed or failed', async () => {
+    const streams = makeStreams();
+    const code = await runTestbedCli(['node', 'testbed', '--all'], streams, {
+      scenarios: [
+        makeSkippingScenario('keyed', 'FOO_KEY not set; set it to run the thing'),
+        makeCliScenario('plain', 'Plain')
+      ]
+    });
+    expect(code).toBe(0);
+    const out = streams.stdout.output.join('');
+    expect(out).toContain('=== keyed\nskipped — FOO_KEY not set; set it to run the thing\n');
+    expect(out).toContain('passed 1 · failed 0 · skipped 1');
+    expect(out).toContain('skipped:\n  keyed (FOO_KEY not set; set it to run the thing)');
+  });
+});

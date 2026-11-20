@@ -81,6 +81,47 @@ export async function resolveProviderApiKey(
   return context.resolveSecret(spec);
 }
 
+/** The env vars a spec resolves from, for a message: `GEMINI_API_KEY or GOOGLE_API_KEY`. */
+function secretEnvVarLabel(spec: ISecretSpec): string {
+  return [spec.envVarName, ...(spec.fallbackEnvVarNames ?? [])].join(' or ');
+}
+
+/**
+ * Builds an `ICliScenarioImpl.skipReason` precondition for a scenario that needs an API key: it
+ * resolves each spec through `context.resolveSecret` and runs the scenario if any resolves;
+ * otherwise the reason names every env var that would have supplied one, and what setting it
+ * would run.
+ * @param specs - The secrets the scenario can run with (any one suffices).
+ * @param purpose - What a keyed run does, completing "set it to run …".
+ * @public
+ */
+export function skipWithoutSecret(
+  specs: readonly ISecretSpec[],
+  purpose: string
+): (context: IScenarioContext) => Promise<string | undefined> {
+  return async (context) => {
+    for (const spec of specs) {
+      if ((await context.resolveSecret(spec)).isSuccess()) {
+        return undefined;
+      }
+    }
+    return `${specs.map(secretEnvVarLabel).join(' or ')} not set; set it to run ${purpose}`;
+  };
+}
+
+/**
+ * {@link skipWithoutSecret} for a provider's canonical key ({@link PROVIDER_SECRET_SPECS}) — the
+ * key {@link resolveProviderApiKey} resolves at run time. A provider that needs no key never skips.
+ * @public
+ */
+export function skipWithoutProviderKey(
+  provider: AiAssist.AiProviderId,
+  purpose: string
+): (context: IScenarioContext) => Promise<string | undefined> {
+  const spec = PROVIDER_SECRET_SPECS[provider];
+  return spec === undefined ? async () => undefined : skipWithoutSecret([spec], purpose);
+}
+
 /**
  * Minimal `AiAssist.IAiAssistKeyStore` backed by a single resolved secret value. Mirrors
  * the shape of the `ai-image-gen-sample`'s `InMemoryKeyStore`, re-implemented here since
