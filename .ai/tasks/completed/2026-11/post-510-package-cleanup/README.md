@@ -1,6 +1,6 @@
 # post-510-package-cleanup — READMEs, a LICENSE and a description for 5.1.0's bare packages
 
-**Shipped**: 2026-11-20 via #TBD.
+**Shipped**: 2026-11-20 via #800.
 
 ## Summary
 

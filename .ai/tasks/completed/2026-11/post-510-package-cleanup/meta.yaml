@@ -11,7 +11,7 @@ packages:
     '@fgv/ts-web-extras-webauthn',
     '@fgv/typedoc-compact-theme'
   ]
-prs: [] # #TBD
+prs: [800]
 openPrs: []
 opened: 2026-11-20
 closed: 2026-11-20
