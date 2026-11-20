@@ -2,6 +2,41 @@
   "name": "@fgv/ts-json-base",
   "entries": [
     {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-json-base_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "New `JsonSchema` namespace: typed JSON Schema for LLM tools and structured output, where the schema is also the validator — `string`, `number`, `integer`, `boolean`, `enumOf`, `array`, `object`, `record` and `optional`, with `nullable`, constraint and annotation keywords, `Static<S>` type inference and `toJson()`."
+          },
+          {
+            "comment": "`JsonSchema.fromJson` turns a received schema (for example an MCP tool's) into a validator: it inlines local `$ref`, accepts a pydantic-style `anyOf` of one type plus null, and refuses `pattern` unless a `patternValidator` is supplied. `JsonSchema.isSchemaValidator` detects an authored schema."
+          },
+          {
+            "comment": "Writable `FileTree`s: optional mutable, persistent, binary, strict-text and atomic-write capabilities, each with a type guard (`isMutableAccessors`, `isBinaryAccessors`, …). Filesystem and in-memory trees are writable when created with `mutable: true` (or a filter)."
+          },
+          {
+            "comment": "`FileTree.copyItemInto` / `copyContentsInto` copy between trees faithfully — bytes verbatim where the destination is byte-native — and fail, or skip with `onUnfaithfulFile: 'skip'`, on any file that would change."
+          },
+          {
+            "comment": "Filesystem trees: atomic writes (temporary file, flush, rename) via `writeChildAtomically`, and an `absolutePathPolicy` (`'unconfined'` default, `'confined'` or `'verified'`) to keep a tree inside its prefix."
+          },
+          {
+            "comment": "`Converters.stringifiedJson(inner?)` parses a JSON string, optionally validating the result with an inner converter or validator."
+          }
+        ],
+        "patch": [
+          {
+            "comment": "Fix: the recursive `jsonObject`, `jsonArray` and `jsonValue` converters and validators fail on a cyclic input instead of overflowing the stack, and failure messages render the offending value safely."
+          },
+          {
+            "comment": "Packaging: source maps and `CAPABILITIES.md` now ship in the package; a test helper file no longer does."
+          }
+        ]
+      }
+    },
+    {
       "version": "5.0.2",
       "tag": "@fgv/ts-json-base_v5.0.2",
       "date": "Wed, 17 Dec 2025 18:08:09 GMT",

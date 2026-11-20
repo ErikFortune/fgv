@@ -1,6 +1,31 @@
 # Change Log - @fgv/ts-utils
 
-This log was last generated on Wed, 17 Dec 2025 18:08:09 GMT and should not be manually modified.
+This log was last generated on Fri, 20 Nov 2026 05:01:24 GMT and should not be manually modified.
+
+## 5.1.0
+Fri, 20 Nov 2026 05:01:24 GMT
+
+### Breaking changes
+
+- Upgrading from 5.0.2: `Converter` and `Validator` gained a required `or()`, and `IResult` gained required `orDefaultWith`, `shouldNotFail`, `thenOnSuccess` and `thenOnFailure`. Only code that implements these interfaces by hand is affected — extending `BaseConverter` / `GenericValidator` or using `succeed` / `fail` needs no change.
+
+### Minor changes
+
+- Async `Result` support: `AsyncResult<T>`, returned by the new `captureAsyncResult` and by `thenOnSuccess` / `thenOnFailure` on every `Result`, keeps a chain fluent across `await`; `AsyncDetailedResult<T, TD>` keeps the detail type through async steps.
+- Async collectors with a concurrency bound — `mapResultsAsync`, `mapDetailedResultsAsync`, `mapSuccessAsync`, `mapFailuresAsync`, `allSucceedAsync` — plus the serial `populateObjectAsync` and `firstSuccessAsync`.
+- New `Result` methods: `orDefaultWith(cb)`, a default computed only on failure; `shouldNotFail(label?)` for declaration-time invariants, which throws naming the call site; and `Failure.withType<U>()` to re-type a failure for an early return. `DetailedResult` is now `@public` (was `@beta`).
+- Conversion: `or()` alternation on `Converter` and `Validator`, `Converters.tuple`, `Converters.compositeId` / `compositeIdFromString` / `compositeIdFromObject` (with a `split` mode), and `StringConverter.singleLine()`.
+- New `formatValueForMessage` renders any value for a message without throwing. Every converter and validator failure now uses it, so a cyclic, BigInt or Proxy input fails instead of throwing, and a throw from a function wrapped by `BaseConverter` or `GenericValidator` becomes a `Failure`.
+- Collections: `IResultMap` (implemented by `ResultMap`), `ConvertingResultMap` and `ValidatingConvertingResultMap`, `AggregatedResultMap`, and `RetainingRingBuffer<T>`, a bounded most-recent-N buffer with monotonic `seq` cursor paging.
+- Logging: `BootLogger` buffers output until a real logger is ready, `RetainingLogger` keeps a queryable ring of structured log records, `MultiLogger` fans out to several loggers; `MessageLogLevel` and `ReporterLogLevel` gain value lists and converters.
+- Utilities: `generateUuid()` with the `Uuid` brand and `isValidUuid`; `canonicalize()` on `Normalizer` for RFC 8785 canonical JSON; `OneOf` / `StringOneOf` types; typed record helpers `keysForRecord`, `valuesForRecord`, `entriesForRecord`, `recordFromEntries`; `ensureArray`.
+
+### Patches
+
+- `captureResult` and the async capture paths never throw while reporting a failure, even when the thrown value's message cannot be read.
+- Packaging: source maps and `CAPABILITIES.md` now ship in the package; test helper files no longer do.
+- Upgrading from 5.0.2: behaviour fixes you may notice. `mapSuccess` now matches its documented contract, adding every failure to a supplied `aggregatedErrors` even when some results succeeded; `isKeyOf` and `Converters.strictObject` no longer throw on null-prototype objects.
+- Upgrading from 5.0.2: Node ESM `import` of this package now works; in 5.0.2 it failed with `ERR_UNSUPPORTED_DIR_IMPORT`. `require` and bundlers are unaffected.
 
 ## 5.0.2
 Wed, 17 Dec 2025 18:08:09 GMT

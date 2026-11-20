@@ -2,6 +2,49 @@
   "name": "@fgv/ts-extras",
   "entries": [
     {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-extras_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "patch": [
+          {
+            "comment": "Corrected the import paths documented in README.md and CAPABILITIES.md: `ai-assist`, `crypto-utils` and `experimental` are reached through the `AiAssist`, `CryptoUtils` and `Experimental` namespaces of `@fgv/ts-extras`, not as subpaths. No API change. The package no longer ships the `perf/` live-provider probe scripts."
+          },
+          {
+            "comment": "Packaging: source maps and `CAPABILITIES.md` now ship in the package."
+          }
+        ],
+        "minor": [
+          {
+            "comment": "New `AiAssist` namespace: Result-returning LLM clients for OpenAI, Anthropic, Google Gemini, xAI, Groq, Mistral, Ollama and OpenAI-compatible servers — completion, streaming, image generation and embeddings, with model aliases (`@provider:role`) and quality tiers."
+          },
+          {
+            "comment": "ai-assist tool use and structured output: client-defined tools (`executeClientToolTurn`, `runClientToolLoop`), native structured output with an enforcement report, `generateJsonCompletion<T>` with fence-tolerant JSON parsing, prompt-cache requests and usage, and `resolveMaxOutputTokens`."
+          },
+          {
+            "comment": "New `CryptoUtils` namespace (also at `@fgv/ts-extras/crypto`): `ICryptoProvider` with `NodeCryptoProvider` — AES-256-GCM, PBKDF2, SHA-256, HMAC-SHA256, Ed25519 / ECDSA signing, X25519 key agreement, ECIES wrap, HPKE (`HpkeProvider`) — and strict base64 / hex helpers."
+          },
+          {
+            "comment": "`CryptoUtils.KeyStore` (also at `@fgv/ts-extras/crypto/keystore`): a password-protected encrypted vault for secrets, API keys and key pairs, with PBKDF2 or Argon2id password secrets and pluggable private-key storage such as `EncryptedFilePrivateKeyStorage`."
+          },
+          {
+            "comment": "New `SaferFetch` namespace (also at `@fgv/ts-extras/safer-fetch`): server-side fetch with a required address guard (`blockPrivateNetworks()` against SSRF), redirect, size, deadline and content-type controls, opt-in retry, and `createGuardedFetch` for streamed responses."
+          },
+          {
+            "comment": "New `Mustache` (`MustacheTemplate`, with selectable escaping and `renderWithSegments`), `Yaml` (`yamlConverter`) and `AsyncControl` (`raceStopConditions`, `WriteGate`) namespaces."
+          },
+          {
+            "comment": "Existing packlets: `Converters.isoDateTime` (a luxon `DateTime`); `ZipFileTree` reads raw bytes and strict UTF-8 text and adds `createZipFromFiles` / `createZipFromTextFiles`; `templateString`, `isoDate` and `isoDateTime` fail readably on cyclic or BigInt input instead of throwing."
+          }
+        ],
+        "none": [
+          {
+            "comment": "Upgrading from 5.0.2: new runtime dependencies `js-yaml` and `@types/luxon` (the published typings reference luxon's `DateTime`). The packlets that shipped in 5.0.2 — conversion, csv, experimental, hash, record-jar, zip-file-tree — changed only additively."
+          }
+        ]
+      }
+    },
+    {
       "version": "5.0.2",
       "tag": "@fgv/ts-extras_v5.0.2",
       "date": "Wed, 17 Dec 2025 18:08:09 GMT",

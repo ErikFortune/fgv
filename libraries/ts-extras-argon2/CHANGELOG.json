@@ -1,0 +1,17 @@
+{
+  "name": "@fgv/ts-extras-argon2",
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-extras-argon2_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Initial release: `NodeArgon2Provider`, an Argon2id key-derivation provider for Node backed by the `argon2` native binding — pass it to `@fgv/ts-extras`' `KeyStore` Argon2id password methods. For browsers, use `@fgv/ts-web-extras-argon2`."
+          }
+        ]
+      }
+    }
+  ]
+}

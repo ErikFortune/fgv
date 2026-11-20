@@ -1,0 +1,23 @@
+{
+  "name": "@fgv/ts-agent-memory-sqlite-vec",
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-agent-memory-sqlite-vec_v5.1.0",
+      "date": "Fri, 20 Nov 2026 05:01:24 GMT",
+      "comments": {
+        "minor": [
+          {
+            "comment": "Initial release: durable vector indexes for `@fgv/ts-agent-memory`, backed by SQLite `vec0` (`better-sqlite3` + `sqlite-vec`), so a reopened vault answers queries without re-embedding. Node only."
+          },
+          {
+            "comment": "`SqliteVecVectorIndex` (one vector per record) and `SqliteVecFragmentIndex` (many per record) implement `IVectorIndex` and `IFragmentVectorIndex`."
+          },
+          {
+            "comment": "Both store an embedding identity in the index file, and `identity()` reports whether the stored vectors came from the model in use."
+          }
+        ]
+      }
+    }
+  ]
+}
