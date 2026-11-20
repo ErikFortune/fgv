@@ -101,6 +101,15 @@ export interface IWebScenarioImpl {
 export interface ICliScenarioImpl {
   readonly run: (context: IScenarioContext) => Promise<Result<string>>;
   /**
+   * Optional precondition the CLI checks before `run`: resolves to a reason when the scenario
+   * cannot do its job in this environment — typically because its API key is not set — or to
+   * `undefined` to run it. A skipped scenario is reported as skipped (exit `0`, and counted
+   * under "skipped" by `--all`) rather than as a failure; a scenario whose precondition holds
+   * and whose `run` then fails still fails. The web runner panel shows secret status itself and
+   * does not consult this.
+   */
+  readonly skipReason?: (context: IScenarioContext) => Promise<string | undefined>;
+  /**
    * Opt-in flag: when `true` and the scenario declares no `web` impl, the shell renders a
    * shell-generic runner panel (secret status, Run button, in-flight state, `Result<string>`
    * report) that invokes `run` directly in the browser, instead of the "CLI-only" message.

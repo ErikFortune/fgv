@@ -393,7 +393,7 @@ const cliImpl: ICliScenarioImpl = {
     const nodeFacade = await import(/* webpackIgnore: true */ '@fgv/ts-extras-transformers');
     const pipeResult = await nodeFacade.loadPipeline('text-classification', MODEL_ID);
     if (pipeResult.isFailure()) {
-      return fail(pipeResult.message);
+      return fail(`could not load model ${MODEL_ID} (is huggingface.co reachable?): ${pipeResult.message}`);
     }
 
     const libResult = await buildPromptLibrary(

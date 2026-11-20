@@ -5,13 +5,21 @@
  * @packageDocumentation
  */
 
-import { Logging, type MessageLogLevel, type Success, succeed } from '@fgv/ts-utils';
+import {
+  Logging,
+  type MessageLogLevel,
+  type Result,
+  type Success,
+  captureAsyncResult,
+  fail,
+  succeed
+} from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
 import { dataFiles } from './generated/dataFileTree';
 import { scenarios as defaultScenarios } from './scenarios';
 import { resolveSecret } from './shell';
-import type { IScenario, IScenarioContext } from './shell';
+import type { ICliScenarioImpl, IScenario, IScenarioContext } from './shell';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -106,13 +114,133 @@ function formatScenarioList(allScenarios: readonly IScenario[]): string {
     .join('\n');
 }
 
+/** What one scenario's CLI surface did: ran (with its report), or declined to, and why. */
+type ScenarioCliOutcome =
+  | { readonly kind: 'ran'; readonly report: string }
+  | { readonly kind: 'skipped'; readonly reason: string };
+
+/**
+ * Run one scenario's CLI surface: its `skipReason` precondition first, then `run` if that holds.
+ * A thrown error or a rejected promise from either becomes a `Failure`, so a caller looping over
+ * many scenarios is never aborted by one of them.
+ */
+async function runScenarioCli(
+  cli: ICliScenarioImpl,
+  streams: ITestbedCliStreams
+): Promise<Result<ScenarioCliOutcome>> {
+  const context = buildCliContext(streams);
+  return (
+    await captureAsyncResult(async (): Promise<Result<ScenarioCliOutcome>> => {
+      const reason = await cli.skipReason?.(context);
+      if (reason !== undefined) {
+        return succeed({ kind: 'skipped', reason });
+      }
+      return (await cli.run(context)).onSuccess((report) => succeed({ kind: 'ran', report }));
+    })
+  ).onSuccess((outcome) => outcome);
+}
+
+/** One scenario's outcome in an `--all` run. */
+type AllRunOutcome =
+  | { readonly id: string; readonly kind: 'passed' }
+  | { readonly id: string; readonly kind: 'failed'; readonly message: string }
+  | { readonly id: string; readonly kind: 'skipped'; readonly reason: string };
+
+/**
+ * Parse `--skip <id>[,<id>...]`. Returns the ids to skip (empty when the flag is absent), or a
+ * `Failure` when the flag has no value or names a scenario that is not registered — a typo would
+ * otherwise silently run the scenario it meant to skip.
+ */
+function parseSkipIds(
+  flags: readonly string[],
+  allScenarios: readonly IScenario[]
+): Result<ReadonlySet<string>> {
+  const index = flags.indexOf('--skip');
+  if (index === -1) {
+    return succeed(new Set<string>());
+  }
+  const value = flags[index + 1];
+  if (value === undefined || value.startsWith('-')) {
+    return fail('--skip requires a comma-separated list of scenario ids');
+  }
+  const ids = value
+    .split(',')
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0);
+  const unknown = ids.filter((id) => !allScenarios.some((s) => s.id === id));
+  if (unknown.length > 0) {
+    return fail(`--skip names unknown scenario(s): ${unknown.join(', ')}`);
+  }
+  return succeed(new Set(ids));
+}
+
+/** Indent continuation lines so a multi-line failure message stays under its id in the summary. */
+function indentContinuation(message: string): string {
+  return message.replace(/\n/g, '\n      ');
+}
+
+/**
+ * Run every scenario with a CLI surface, sequentially in registration order, and print a summary.
+ * One scenario's failure — including a throw or a rejection — is recorded, never fatal to the run.
+ * @returns `1` if any scenario failed, otherwise `0`.
+ */
+async function runAllScenarios(
+  allScenarios: readonly IScenario[],
+  skipIds: ReadonlySet<string>,
+  streams: ITestbedCliStreams
+): Promise<number> {
+  const outcomes: AllRunOutcome[] = [];
+  for (const scenario of allScenarios) {
+    if (skipIds.has(scenario.id)) {
+      outcomes.push({ id: scenario.id, kind: 'skipped', reason: '--skip' });
+      continue;
+    }
+    if (!scenario.cli) {
+      outcomes.push({ id: scenario.id, kind: 'skipped', reason: 'web-only' });
+      continue;
+    }
+    streams.stdout.write(`=== ${scenario.id}\n`);
+    const result = await runScenarioCli(scenario.cli, streams);
+    if (result.isSuccess()) {
+      const outcome = result.value;
+      if (outcome.kind === 'skipped') {
+        streams.stdout.write(`skipped — ${outcome.reason}\n`);
+        outcomes.push({ id: scenario.id, kind: 'skipped', reason: outcome.reason });
+      } else {
+        streams.stdout.write(`${outcome.report}\n`);
+        outcomes.push({ id: scenario.id, kind: 'passed' });
+      }
+    } else {
+      streams.stdout.write(`FAILED: ${result.message}\n`);
+      outcomes.push({ id: scenario.id, kind: 'failed', message: result.message });
+    }
+  }
+
+  const failed = outcomes.filter((o): o is Extract<AllRunOutcome, { kind: 'failed' }> => o.kind === 'failed');
+  const skipped = outcomes.filter(
+    (o): o is Extract<AllRunOutcome, { kind: 'skipped' }> => o.kind === 'skipped'
+  );
+  const passed = outcomes.length - failed.length - skipped.length;
+  const lines: string[] = [
+    '=== testbed --all summary',
+    `passed ${passed} · failed ${failed.length} · skipped ${skipped.length}`,
+    ...(failed.length > 0
+      ? ['failed:', ...failed.map((o) => `  ${o.id}: ${indentContinuation(o.message)}`)]
+      : []),
+    ...(skipped.length > 0 ? ['skipped:', ...skipped.map((o) => `  ${o.id} (${o.reason})`)] : [])
+  ];
+  streams.stdout.write(`${lines.join('\n')}\n`);
+  return failed.length > 0 ? 1 : 0;
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
 /**
  * Run the testbed CLI. Supports `--scenario <id>` to dispatch a named scenario's
- * `cli.run()`, `--help` / `-h` for usage, and bare invocation to list available
+ * `cli.run()`, `--all` (optionally with `--skip <id>[,<id>...]`) to run every scenario with a
+ * CLI surface and summarize, `--help` / `-h` for usage, and bare invocation to list available
  * scenarios.
  *
  * @param argv - Raw `process.argv` (or test-supplied equivalent).
@@ -134,11 +262,28 @@ export async function runTestbedCli(
     streams.stdout.write(
       'testbed CLI\n' +
         '  --help, -h              show this banner\n' +
-        '  --scenario <id>         run a named scenario\n\n' +
+        '  --scenario <id>         run a named scenario\n' +
+        '  --all                   run every scenario with a CLI surface, then print a summary;\n' +
+        '                          exits 1 if any failed (web-only scenarios are skipped)\n' +
+        '  --skip <id>[,<id>...]   with --all, leave these scenarios out\n\n' +
         'Available scenarios:\n' +
         `${formatScenarioList(allScenarios)}\n`
     );
     return 0;
+  }
+
+  // --all [--skip <ids>]
+  if (flags.includes('--all')) {
+    if (flags.includes('--scenario')) {
+      streams.stderr.write('testbed CLI: --all and --scenario cannot be combined\n');
+      return 1;
+    }
+    const skipIds = parseSkipIds(flags, allScenarios);
+    if (skipIds.isFailure()) {
+      streams.stderr.write(`testbed CLI: ${skipIds.message}\n`);
+      return 1;
+    }
+    return runAllScenarios(allScenarios, skipIds.value, streams);
   }
 
   // --scenario <id>
@@ -164,14 +309,17 @@ export async function runTestbedCli(
       return 1;
     }
 
-    const context = buildCliContext(streams);
-    const result = await scenario.cli.run(context);
+    const result = await runScenarioCli(scenario.cli, streams);
     if (result.isFailure()) {
       streams.stderr.write(`testbed CLI: scenario "${scenarioId}" failed: ${result.message}\n`);
       return 1;
     }
 
-    streams.stdout.write(`${result.value}\n`);
+    streams.stdout.write(
+      result.value.kind === 'skipped'
+        ? `testbed CLI: scenario "${scenarioId}" skipped — ${result.value.reason}\n`
+        : `${result.value.report}\n`
+    );
     return 0;
   }
 
@@ -182,7 +330,7 @@ export async function runTestbedCli(
   } else {
     streams.stdout.write(
       `testbed CLI — ${count} scenario(s) available:\n${formatScenarioList(allScenarios)}\n` +
-        '\nRun with --scenario <id> to execute a scenario.\n'
+        '\nRun with --scenario <id> to execute a scenario, or --all to run every one.\n'
     );
   }
   return 0;

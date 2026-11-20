@@ -840,6 +840,6 @@ describe('cli impl: run()', () => {
     mockLoadPipeline.mockResolvedValue(fail('load failed'));
     const ctx: IScenarioContext = makeScenarioCtx();
     const result = await localClassifierSafetyScenario.cli!.run(ctx);
-    expect(result).toFailWith(/load failed/i);
+    expect(result).toFailWith(/could not load model .*huggingface\.co reachable.*load failed/i);
   });
 });

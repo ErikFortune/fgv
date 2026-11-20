@@ -9,7 +9,8 @@
  * Drives the Node safer-fetch path end to end against a scripted local HTTP server — a real
  * socket, not a mock transport. It shows the default posture refusing loopback, the named
  * opt-in permitting exactly one host and port, the content-type gate rejecting an HTML page
- * served as `200`, the streaming size cap tripping despite a lying `Content-Length`, a guarded
+ * served as `200`, the streaming size cap tripping during the read of a body with no declared
+ * length, a guarded
  * redirect walk, retry recovering from a `503`, retry declining a `POST`, and — the step that
  * matters most — a `302` to `169.254.169.254` refused *at the hop*, before any connection.
  *
@@ -27,8 +28,11 @@ import { Result, captureAsyncResult, fail, succeed } from '@fgv/ts-utils';
 import type { IScenario, IScenarioContext, ICliScenarioImpl } from '../../shell';
 import { IDemoStep, ISaferFetchDemoDeps, runSaferFetchDemo } from './saferFetchDemo';
 
-/** A body comfortably over the demo's 1 KiB cap, served with a `Content-Length` that lies. */
-const BIG_BODY: string = 'x'.repeat(64 * 1024);
+/** One chunk of the oversized body; `BIG_BODY_CHUNKS` of them comfortably exceed the 1 KiB cap. */
+const BIG_BODY_CHUNK: string = 'x'.repeat(512);
+
+/** How many chunks `/big` writes — 2048 bytes in all, twice the demo's cap. */
+const BIG_BODY_CHUNKS: number = 4;
 
 const cliImpl: ICliScenarioImpl = {
   async run(context: IScenarioContext): Promise<Result<string>> {
@@ -60,10 +64,15 @@ const cliImpl: ICliScenarioImpl = {
           response.end('<html><body>not the JSON you asked for</body></html>');
           return;
         case '/big':
-          // A `Content-Length` an attacker chooses freely: the cap must hold with no help
-          // from it, which is what counting during the read buys.
-          response.writeHead(200, { 'content-type': 'text/plain', 'content-length': '12' });
-          response.end(BIG_BODY);
+          // Chunked, with no `Content-Length`: there is no declared length to refuse up front,
+          // so the cap can only hold by counting bytes during the read. (A `Content-Length`
+          // smaller than the body would not test this — an HTTP/1.1 client frames the body by
+          // it and never reads past it.)
+          response.writeHead(200, { 'content-type': 'text/plain' });
+          for (let i = 0; i < BIG_BODY_CHUNKS; i++) {
+            response.write(BIG_BODY_CHUNK);
+          }
+          response.end();
           return;
         case '/redirect':
           response.writeHead(302, { location: '/final' });
@@ -160,7 +169,8 @@ export const saferFetchGuardScenario: IScenario = {
   description:
     'Drives `@fgv/ts-extras/safer-fetch` against a scripted local HTTP server: the default ' +
     'posture refusing loopback, the named opt-in permitting exactly one host and port, the ' +
-    'content-type gate, the streaming size cap under a lying Content-Length, a guarded redirect ' +
+    'content-type gate, the streaming size cap counted during the read of an undeclared-length ' +
+    'body, a guarded redirect ' +
     'walk, opt-in retry, and a 302 to the cloud metadata endpoint refused at the hop before any ' +
     'connection is made. CLI-only.',
   category: 'general',

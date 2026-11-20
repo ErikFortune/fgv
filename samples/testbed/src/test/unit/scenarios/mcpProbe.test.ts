@@ -28,6 +28,7 @@ import type { IAdaptMcpToolsResult, IMcpSession } from '@fgv/ts-extras-mcp';
 import {
   type IMcpProbeDeps,
   type IMcpProbeSpec,
+  MCP_PROBE_SETUP_HINT,
   formatMcpProbeReport,
   parseMcpProbeSpecFromEnv,
   runMcpProbe
@@ -58,27 +59,27 @@ describe('parseMcpProbeSpecFromEnv', () => {
         MCP_PROBE_URL: 'http://localhost:3001/mcp',
         MCP_PROBE_HEADERS: 'authorization=Bearer xyz, x-tenant = acme'
       })
-    ).toSucceedWith({
+    ).toEqual({
       kind: 'http',
       url: 'http://localhost:3001/mcp',
       headers: { authorization: 'Bearer xyz', 'x-tenant': 'acme' }
-    } as IMcpProbeSpec);
+    });
   });
 
   test('parses an HTTP spec without headers (and ignores a blank/invalid header string)', () => {
-    expect(parseMcpProbeSpecFromEnv({ MCP_PROBE_URL: 'http://localhost/mcp' })).toSucceedWith({
+    expect(parseMcpProbeSpecFromEnv({ MCP_PROBE_URL: 'http://localhost/mcp' })).toEqual({
       kind: 'http',
       url: 'http://localhost/mcp'
-    } as IMcpProbeSpec);
+    });
     expect(
       parseMcpProbeSpecFromEnv({ MCP_PROBE_URL: 'http://localhost/mcp', MCP_PROBE_HEADERS: 'no-equals' })
-    ).toSucceedWith({ kind: 'http', url: 'http://localhost/mcp' } as IMcpProbeSpec);
+    ).toEqual({ kind: 'http', url: 'http://localhost/mcp' });
   });
 
   test('parses an HTTP spec with an empty-valued header pair', () => {
     expect(
       parseMcpProbeSpecFromEnv({ MCP_PROBE_URL: 'http://h/mcp', MCP_PROBE_HEADERS: 'x-trace=' })
-    ).toSucceedWith({ kind: 'http', url: 'http://h/mcp', headers: { 'x-trace': '' } } as IMcpProbeSpec);
+    ).toEqual({ kind: 'http', url: 'http://h/mcp', headers: { 'x-trace': '' } });
   });
 
   test('parses a stdio spec with args and cwd', () => {
@@ -88,36 +89,32 @@ describe('parseMcpProbeSpecFromEnv', () => {
         MCP_PROBE_ARGS: '-y  @modelcontextprotocol/server-everything',
         MCP_PROBE_CWD: '/srv'
       })
-    ).toSucceedWith({
+    ).toEqual({
       kind: 'stdio',
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-everything'],
       cwd: '/srv'
-    } as IMcpProbeSpec);
+    });
   });
 
   test('parses a stdio spec with no args and no cwd', () => {
-    expect(parseMcpProbeSpecFromEnv({ MCP_PROBE_COMMAND: 'my-server' })).toSucceedWith({
+    expect(parseMcpProbeSpecFromEnv({ MCP_PROBE_COMMAND: 'my-server' })).toEqual({
       kind: 'stdio',
       command: 'my-server',
       args: []
-    } as IMcpProbeSpec);
+    });
   });
 
   test('prefers HTTP when both URL and command are present', () => {
     expect(
       parseMcpProbeSpecFromEnv({ MCP_PROBE_URL: 'http://h/mcp', MCP_PROBE_COMMAND: 'cmd' })
-    ).toSucceedAndSatisfy((spec: IMcpProbeSpec) => {
-      expect(spec.kind).toBe('http');
-    });
+    ).toMatchObject({ kind: 'http' });
   });
 
-  test('fails with guidance when no spec is configured', () => {
-    expect(parseMcpProbeSpecFromEnv({})).toFailWith(/no server spec found.*MCP_PROBE_URL.*MCP_PROBE_COMMAND/);
+  test('returns undefined when no server is configured', () => {
+    expect(parseMcpProbeSpecFromEnv({})).toBeUndefined();
     // Whitespace-only values are treated as absent.
-    expect(parseMcpProbeSpecFromEnv({ MCP_PROBE_URL: '   ', MCP_PROBE_COMMAND: '  ' })).toFailWith(
-      /no server spec found/
-    );
+    expect(parseMcpProbeSpecFromEnv({ MCP_PROBE_URL: '   ', MCP_PROBE_COMMAND: '  ' })).toBeUndefined();
   });
 });
 
@@ -129,7 +126,9 @@ describe('formatMcpProbeReport', () => {
   test('reports a mixed catalog with identity', () => {
     const result: IAdaptMcpToolsResult = {
       tools: [adaptedTool('alpha')],
-      skipped: [{ name: 'beta', kind: 'schema', reason: '#/properties/x: pattern', schema: { type: 'object' } }]
+      skipped: [
+        { name: 'beta', kind: 'schema', reason: '#/properties/x: pattern', schema: { type: 'object' } }
+      ]
     };
     const report = formatMcpProbeReport('HTTP http://h/mcp', { name: 'srv', version: '2.0' }, result);
     expect(report).toMatch(/Server: HTTP http:\/\/h\/mcp/);
@@ -297,7 +296,22 @@ describe('mcpProbeScenario', () => {
     expect(mcpProbeScenario.web).toBeUndefined();
   });
 
-  test('cli.run fails (before the live-server seam) when no spec is in the environment', async () => {
+  test('skipReason lets a configured server run', async () => {
+    const saved = process.env.MCP_PROBE_URL;
+    process.env.MCP_PROBE_URL = 'http://localhost:3001/mcp';
+    try {
+      const context = {} as unknown as IScenarioContext;
+      expect(await mcpProbeScenario.cli?.skipReason?.(context)).toBeUndefined();
+    } finally {
+      if (saved === undefined) {
+        delete process.env.MCP_PROBE_URL;
+      } else {
+        process.env.MCP_PROBE_URL = saved;
+      }
+    }
+  });
+
+  test('cli.run succeeds as skipped, with setup guidance, when no server is configured', async () => {
     const saved = {
       url: process.env.MCP_PROBE_URL,
       command: process.env.MCP_PROBE_COMMAND
@@ -311,7 +325,14 @@ describe('mcpProbeScenario', () => {
       if (!mcpProbeScenario.cli) {
         throw new Error('expected a CLI implementation');
       }
-      expect(await mcpProbeScenario.cli.run(context)).toFailWith(/no server spec found/);
+      expect(await mcpProbeScenario.cli.skipReason?.(context)).toMatch(
+        /^MCP_PROBE_URL or MCP_PROBE_COMMAND not set; set it to run the MCP compatibility probe/
+      );
+      expect(await mcpProbeScenario.cli.run(context)).toSucceedAndSatisfy((text: string) => {
+        expect(text).toMatch(/^mcp-probe: skipped — no MCP server configured/);
+        expect(text).toContain(MCP_PROBE_SETUP_HINT);
+        expect(text).toMatch(/MCP_PROBE_URL.*MCP_PROBE_COMMAND/);
+      });
     } finally {
       if (saved.url !== undefined) {
         process.env.MCP_PROBE_URL = saved.url;

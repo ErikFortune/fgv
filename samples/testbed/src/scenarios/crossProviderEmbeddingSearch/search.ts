@@ -135,6 +135,25 @@ function resolveApiKey(providerId: string, env: Record<string, string | undefine
 }
 
 /**
+ * The `EMBED_PROVIDER` label, lower-cased. A blank/whitespace-only value is treated as unset
+ * (default `openai`), consistent with how EMBED_MODEL / EMBED_DIMENSIONS / EMBED_ENDPOINT treat
+ * blank-as-absent.
+ */
+function embeddingProviderLabel(env: Record<string, string | undefined>): string {
+  const rawProvider = env.EMBED_PROVIDER?.trim();
+  return rawProvider !== undefined && rawProvider.length > 0 ? rawProvider.toLowerCase() : 'openai';
+}
+
+/**
+ * The ai-assist provider id `EMBED_PROVIDER` selects (default `openai`), or `undefined` for a
+ * label that names no supported provider — which {@link parseEmbeddingScenarioConfig} reports.
+ * @public
+ */
+export function embeddingProviderId(env: Record<string, string | undefined>): string | undefined {
+  return PROVIDER_LABEL_TO_ID[embeddingProviderLabel(env)];
+}
+
+/**
  * Parse the scenario configuration from environment variables (the CLI-dispatch idiom — the
  * testbed CLI does not forward trailing argv to scenarios).
  *
@@ -155,11 +174,7 @@ function resolveApiKey(providerId: string, env: Record<string, string | undefine
 export function parseEmbeddingScenarioConfig(
   env: Record<string, string | undefined>
 ): Result<IEmbeddingScenarioConfig> {
-  // Treat a blank/whitespace-only EMBED_PROVIDER as unset (default `openai`), consistent with
-  // how EMBED_MODEL / EMBED_DIMENSIONS / EMBED_ENDPOINT treat blank-as-absent.
-  const rawProvider = env.EMBED_PROVIDER?.trim();
-  const providerLabel =
-    rawProvider !== undefined && rawProvider.length > 0 ? rawProvider.toLowerCase() : 'openai';
+  const providerLabel = embeddingProviderLabel(env);
   const providerId = PROVIDER_LABEL_TO_ID[providerLabel];
   if (providerId === undefined) {
     return fail(

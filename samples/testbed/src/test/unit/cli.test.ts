@@ -273,3 +273,222 @@ describe('runTestbedCli --scenario', () => {
     expect(out).toContain('no-impl');
   });
 });
+
+// ---------------------------------------------------------------------------
+// --all
+// ---------------------------------------------------------------------------
+
+/** A scenario whose CLI `run` throws (or rejects, when `async`) instead of returning a Result. */
+function makeThrowingScenario(id: string, mode: 'throw' | 'reject'): IScenario {
+  return {
+    id,
+    title: id,
+    description: `${id} description`,
+    category: 'general',
+    tags: ['test'],
+    cli: {
+      run:
+        mode === 'throw'
+          ? () => {
+              throw new Error(`${id} threw`);
+            }
+          : async () => Promise.reject(new Error(`${id} rejected`))
+    }
+  };
+}
+
+describe('runTestbedCli --all', () => {
+  test('runs every CLI scenario in registration order, prints headers and a summary, exits 0', async () => {
+    const streams = makeStreams();
+    const code = await runTestbedCli(['node', 'testbed', '--all'], streams, {
+      scenarios: [makeCliScenario('first', 'First'), makeCliScenario('second', 'Second')]
+    });
+    expect(code).toBe(0);
+    const out = streams.stdout.output.join('');
+    expect(out.indexOf('=== first\nfirst summary')).toBeGreaterThanOrEqual(0);
+    expect(out.indexOf('=== second\nsecond summary')).toBeGreaterThan(out.indexOf('=== first'));
+    expect(out).toContain('=== testbed --all summary\npassed 2 · failed 0 · skipped 0\n');
+    expect(out).not.toContain('failed:');
+    expect(out).not.toContain('skipped:');
+  });
+
+  test('exits 1 when one scenario fails, keeps going, and names it in the summary', async () => {
+    const streams = makeStreams();
+    const code = await runTestbedCli(['node', 'testbed', '--all'], streams, {
+      scenarios: [
+        makeCliScenario('bad', 'Bad', 'fail'),
+        makeCliScenario('good', 'Good'),
+        { ...makeCliScenario('multi', 'Multi'), cli: { run: async () => fail('line one\nline two') } }
+      ]
+    });
+    expect(code).toBe(1);
+    const out = streams.stdout.output.join('');
+    expect(out).toContain('=== bad\nFAILED: bad run failed\n');
+    expect(out).toContain('=== good\ngood summary\n');
+    expect(out).toContain('passed 1 · failed 2 · skipped 0');
+    expect(out).toContain('failed:\n  bad: bad run failed\n  multi: line one\n      line two');
+  });
+
+  test('lists web-only scenarios as skipped, not failed', async () => {
+    const streams = makeStreams();
+    const code = await runTestbedCli(['node', 'testbed', '--all'], streams, {
+      scenarios: [WEB_ONLY_SCENARIO, makeCliScenario('cli-one', 'CLI One')]
+    });
+    expect(code).toBe(0);
+    const out = streams.stdout.output.join('');
+    expect(out).not.toContain('=== web-only');
+    expect(out).toContain('passed 1 · failed 0 · skipped 1');
+    expect(out).toContain('skipped:\n  web-only (web-only)');
+  });
+
+  test('a scenario that throws or rejects is counted as failed without aborting the loop', async () => {
+    const streams = makeStreams();
+    const code = await runTestbedCli(['node', 'testbed', '--all'], streams, {
+      scenarios: [
+        makeThrowingScenario('thrower', 'throw'),
+        makeThrowingScenario('rejecter', 'reject'),
+        makeCliScenario('after', 'After')
+      ]
+    });
+    expect(code).toBe(1);
+    const out = streams.stdout.output.join('');
+    expect(out).toContain('=== after\nafter summary');
+    expect(out).toContain('passed 1 · failed 2 · skipped 0');
+    expect(out).toMatch(/ {2}thrower: .*thrower threw/);
+    expect(out).toMatch(/ {2}rejecter: .*rejecter rejected/);
+  });
+
+  test('--skip leaves the named scenarios out and lists them as skipped', async () => {
+    const streams = makeStreams();
+    const code = await runTestbedCli(['node', 'testbed', '--all', '--skip', 'bad, other'], streams, {
+      scenarios: [
+        makeCliScenario('bad', 'Bad', 'fail'),
+        makeCliScenario('other', 'Other', 'fail'),
+        makeCliScenario('good', 'Good')
+      ]
+    });
+    expect(code).toBe(0);
+    const out = streams.stdout.output.join('');
+    expect(out).not.toContain('=== bad');
+    expect(out).not.toContain('=== other');
+    expect(out).toContain('passed 1 · failed 0 · skipped 2');
+    expect(out).toContain('skipped:\n  bad (--skip)\n  other (--skip)');
+  });
+
+  test('--skip without a value exits 1', async () => {
+    for (const argv of [
+      ['node', 'testbed', '--all', '--skip'],
+      ['node', 'testbed', '--all', '--skip', '--other']
+    ]) {
+      const streams = makeStreams();
+      expect(await runTestbedCli(argv, streams, { scenarios: [makeCliScenario('x', 'X')] })).toBe(1);
+      expect(streams.stderr.output.join('')).toMatch(/--skip requires/);
+      expect(streams.stdout.output.join('')).toBe('');
+    }
+  });
+
+  test('--skip naming an unknown scenario exits 1 without running anything', async () => {
+    const streams = makeStreams();
+    const code = await runTestbedCli(['node', 'testbed', '--all', '--skip', 'x,nope'], streams, {
+      scenarios: [makeCliScenario('x', 'X')]
+    });
+    expect(code).toBe(1);
+    expect(streams.stderr.output.join('')).toMatch(/unknown scenario\(s\): nope/);
+    expect(streams.stdout.output.join('')).toBe('');
+  });
+
+  test('--all with --scenario exits 1', async () => {
+    const streams = makeStreams();
+    const code = await runTestbedCli(['node', 'testbed', '--all', '--scenario', 'x'], streams, {
+      scenarios: [makeCliScenario('x', 'X')]
+    });
+    expect(code).toBe(1);
+    expect(streams.stderr.output.join('')).toMatch(/cannot be combined/);
+  });
+
+  test('--help documents --all and --skip', async () => {
+    const streams = makeStreams();
+    await runTestbedCli(['node', 'testbed', '--help'], streams, { scenarios: [] });
+    const out = streams.stdout.output.join('');
+    expect(out).toContain('--all');
+    expect(out).toContain('--skip <id>[,<id>...]');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// skipReason (a scenario that cannot run here, e.g. no API key)
+// ---------------------------------------------------------------------------
+
+/** A CLI scenario whose precondition reports `reason` (or throws, for `'throw'`). */
+function makeSkippingScenario(id: string, reason: string | 'throw'): IScenario {
+  const run = jest.fn(async () => succeed(`${id} ran`));
+  return {
+    id,
+    title: id,
+    description: `${id} description`,
+    category: 'general',
+    tags: ['test'],
+    cli: {
+      run,
+      skipReason: async () => {
+        if (reason === 'throw') {
+          throw new Error(`${id} precondition threw`);
+        }
+        return reason;
+      }
+    }
+  };
+}
+
+describe('runTestbedCli skipReason', () => {
+  test('--scenario reports a skip on stdout, exits 0, and does not run the scenario', async () => {
+    const streams = makeStreams();
+    const scenario = makeSkippingScenario('keyed', 'FOO_KEY not set; set it to run the thing');
+    const code = await runTestbedCli(['node', 'testbed', '--scenario', 'keyed'], streams, {
+      scenarios: [scenario]
+    });
+    expect(code).toBe(0);
+    expect(streams.stdout.output.join('')).toBe(
+      'testbed CLI: scenario "keyed" skipped — FOO_KEY not set; set it to run the thing\n'
+    );
+    expect(scenario.cli?.run).not.toHaveBeenCalled();
+  });
+
+  test('--scenario runs the scenario when its precondition holds', async () => {
+    const streams = makeStreams();
+    const code = await runTestbedCli(['node', 'testbed', '--scenario', 'keyed'], streams, {
+      scenarios: [
+        {
+          ...makeCliScenario('keyed', 'K'),
+          cli: { run: async () => succeed('keyed summary'), skipReason: async () => undefined }
+        }
+      ]
+    });
+    expect(code).toBe(0);
+    expect(streams.stdout.output.join('')).toBe('keyed summary\n');
+  });
+
+  test('--scenario reports a scenario that throws as failed', async () => {
+    const streams = makeStreams();
+    const code = await runTestbedCli(['node', 'testbed', '--scenario', 'thrower'], streams, {
+      scenarios: [makeSkippingScenario('thrower', 'throw')]
+    });
+    expect(code).toBe(1);
+    expect(streams.stderr.output.join('')).toMatch(/scenario "thrower" failed: .*thrower precondition threw/);
+  });
+
+  test('--all counts a skip under skipped with its reason, not as passed or failed', async () => {
+    const streams = makeStreams();
+    const code = await runTestbedCli(['node', 'testbed', '--all'], streams, {
+      scenarios: [
+        makeSkippingScenario('keyed', 'FOO_KEY not set; set it to run the thing'),
+        makeCliScenario('plain', 'Plain')
+      ]
+    });
+    expect(code).toBe(0);
+    const out = streams.stdout.output.join('');
+    expect(out).toContain('=== keyed\nskipped — FOO_KEY not set; set it to run the thing\n');
+    expect(out).toContain('passed 1 · failed 0 · skipped 1');
+    expect(out).toContain('skipped:\n  keyed (FOO_KEY not set; set it to run the thing)');
+  });
+});

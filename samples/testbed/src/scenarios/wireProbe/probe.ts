@@ -39,7 +39,8 @@
  *    read from the library: unchanged is `pass`, changed is `adapt`, a failure is `refuse`.
  * 2. **Raw.** Send the fixture **unadapted** in a minimal request and record whether the provider
  *    accepts it (2xx) or rejects it (400/422), with its error text. Anything else — 401, 404, 429,
- *    5xx, a transport failure — says nothing about the schema and is `inconclusive`.
+ *    5xx, a transport failure, a 400 for running out of output budget — says nothing about the
+ *    schema and is `inconclusive`.
  * 3. **Classify.** `agrees`; `conservative` (we adapt or refuse, the provider accepted the raw
  *    schema); `unsafe` (we pass, the provider rejected it).
  * 4. **End to end.** Send the fixture **through** `ai-assist` and confirm the request we actually
@@ -241,6 +242,22 @@ export function providerErrorText(body: string): string {
 const SCHEMA_REJECTION_STATUSES: ReadonlySet<number> = new Set([400, 422]);
 
 /**
+ * Provider text for a request refused because it ran out of output budget — OpenAI answers a
+ * reasoning model that exhausts `max_tokens` with a `400` reading "Could not finish the message
+ * because max_tokens or model output limit was reached". The schema was accepted far enough to
+ * start generating, so the status says nothing about whether its keywords are.
+ */
+const OUTPUT_LIMIT_TEXT: RegExp = /output limit was reached|\bmax_(?:completion_|output_)?tokens\b/i;
+
+/**
+ * Whether an error status and its provider text reject the schema: a `400` or `422` that is not
+ * an output-budget failure. Everything else is inconclusive.
+ */
+function rejectsSchema(status: number, providerText: string): boolean {
+  return SCHEMA_REJECTION_STATUSES.has(status) && !OUTPUT_LIMIT_TEXT.test(providerText);
+}
+
+/**
  * Classifies a raw response.
  * @public
  */
@@ -252,10 +269,9 @@ export function observeRaw(response: Result<IHttpResponse>): ProviderObservation
   if (status >= 200 && status < 300) {
     return { kind: 'accepted' };
   }
-  const detail = `${status} ${providerErrorText(body)}`;
-  return SCHEMA_REJECTION_STATUSES.has(status)
-    ? { kind: 'rejected', detail }
-    : { kind: 'inconclusive', detail };
+  const text = providerErrorText(body);
+  const detail = `${status} ${text}`;
+  return rejectsSchema(status, text) ? { kind: 'rejected', detail } : { kind: 'inconclusive', detail };
 }
 
 /**
@@ -280,10 +296,9 @@ export function observeAdapted(result: Result<string>): AdaptedObservation {
   const http = /API returned (\d{3}): ?([\s\S]*)$/.exec(message);
   if (http !== null) {
     const status = Number(http[1]);
-    const detail = `${status} ${providerErrorText(http[2])}`;
-    return SCHEMA_REJECTION_STATUSES.has(status)
-      ? { kind: 'rejected', detail }
-      : { kind: 'inconclusive', detail };
+    const text = providerErrorText(http[2]);
+    const detail = `${status} ${text}`;
+    return rejectsSchema(status, text) ? { kind: 'rejected', detail } : { kind: 'inconclusive', detail };
   }
   return { kind: 'inconclusive', detail: truncate(message) };
 }

@@ -57,7 +57,7 @@ import { JsonSchema } from '@fgv/ts-json-base';
 import { AiAssist } from '@fgv/ts-extras';
 
 import type { IScenario, ICliScenarioImpl, IScenarioContext } from '../../shell';
-import { resolveProviderApiKey } from '../aiProviderSecrets';
+import { resolveProviderApiKey, skipWithoutProviderKey } from '../aiProviderSecrets';
 
 // ---------------------------------------------------------------------------
 // Memory store (in-scenario harness state)
@@ -221,6 +221,7 @@ export function clientToolRunVerdicts(evidence: IClientToolRunEvidence): IClient
 function makeCliImpl(model: string): ICliScenarioImpl {
   return {
     webRunnable: true,
+    skipReason: skipWithoutProviderKey('anthropic', `the live client-tool round trip on ${model}`),
     async run(context: IScenarioContext): Promise<Result<string>> {
       // Resolve the API key via the shared secret pipeline (KeyStore -> session secrets store ->
       // env var), so this scenario works identically on the CLI and the web runner panel.

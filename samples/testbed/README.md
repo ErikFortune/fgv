@@ -49,10 +49,31 @@ node bin/testbed.js --help          # usage banner
 # run a single scenario by id
 node bin/testbed.js --scenario sqlite-vec-fragment-persistence
 node bin/testbed.js --scenario sqlite-vec-memory-persistence
+
+# run every scenario that has a CLI surface, in order, then print a summary
+node bin/testbed.js --all
+node bin/testbed.js --all --skip local-summarization,mcp-probe
 ```
 
-`rushx cli` runs the same shim (`rushx cli` to list; `rushx cli -- --scenario <id>` to pass
-flags through). Structured output goes to stdout; scenario diagnostics go to stderr.
+`rushx cli` runs the same shim (`rushx cli` to list; `rushx cli -- --scenario <id>` or
+`rushx cli -- --all` to pass flags through). Structured output goes to stdout; scenario
+diagnostics go to stderr.
+
+`--all` runs the scenarios one after another under a `=== <id>` header each, carries on past a
+failure (a scenario that throws counts as failed too), and ends with a summary: passed, failed
+and skipped counts, each failed id with its message, and the skipped ids — web-only scenarios
+and any named in `--skip`. It exits `1` if any scenario failed, otherwise `0`.
+
+A scenario that cannot do its job in this environment says so instead of failing. Every scenario
+that needs a provider API key — the `*-client-tools` round trips, the `*-structured-output`
+probes, `cross-provider-embedding-search` and `xai-cache-probe` — and `mcp-probe` with no
+`MCP_PROBE_*` server checks first and reports `skipped — <KEY> not set; set it to run …`, which
+`--all` counts under skipped, and `--scenario <id>` reports with exit `0`. With the key set, the
+scenario runs, and a failure is a failure. `wire-probe` and the `*-model-tiers` canaries do their
+offline half without a key and pass, listing what a keyed run would check. So an unkeyed `--all`
+passes or skips everything except the `local-*` and `sqlite-vec-*` scenarios, which download a
+model from `huggingface.co` and fail (`could not load model … (is huggingface.co reachable?)`)
+where that host is blocked — a real environmental failure, not a skip.
 
 ### Web
 

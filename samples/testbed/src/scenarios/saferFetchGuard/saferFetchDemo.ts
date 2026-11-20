@@ -204,14 +204,14 @@ export async function runSaferFetchDemo(
     )
   );
 
-  // 5. The size cap is counted during the read, so a lying Content-Length does not help.
+  // 5. With no declared length to refuse up front, the size cap holds by counting during the read.
   const capped = await deps.saferFetchText(`${params.baseUrl}/big`, {
     addressGuard: guard,
     maxResponseBytes: 1024
   });
   steps.push(
     step(
-      'the streaming size cap trips despite a lying Content-Length',
+      'the streaming size cap trips during the read when no Content-Length is declared',
       refusedBecause(capped, 'too-large'),
       capped.isFailure() ? capped.message : 'unexpectedly succeeded'
     )

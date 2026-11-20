@@ -277,7 +277,7 @@ const cliImpl: ICliScenarioImpl = {
     const nodeFacade = await import(/* webpackIgnore: true */ '@fgv/ts-extras-transformers');
     const pipeResult = await nodeFacade.loadPipeline('feature-extraction', MODEL_ID);
     if (pipeResult.isFailure()) {
-      return fail(pipeResult.message);
+      return fail(`could not load model ${MODEL_ID} (is huggingface.co reachable?): ${pipeResult.message}`);
     }
 
     const rankResult = await searchCorpus(pipeResult.value, nodeFacade.embed, CLI_DEMO_QUERY);

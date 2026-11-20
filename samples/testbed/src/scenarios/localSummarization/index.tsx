@@ -240,7 +240,7 @@ const cliImpl: ICliScenarioImpl = {
 
     const pipeResult = await nodeFacade.loadPipeline('summarization', MODEL_ID);
     if (pipeResult.isFailure()) {
-      return fail(pipeResult.message);
+      return fail(`could not load model ${MODEL_ID} (is huggingface.co reachable?): ${pipeResult.message}`);
     }
 
     return (

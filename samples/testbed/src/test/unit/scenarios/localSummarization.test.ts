@@ -330,7 +330,7 @@ describe('cli impl: run()', () => {
     mockLoadPipeline.mockResolvedValue(fail('model not found'));
 
     const result = await localSummarizationScenario.cli!.run(makeScenarioCtx());
-    expect(result).toFailWith(/model not found/i);
+    expect(result).toFailWith(/could not load model .*huggingface\.co reachable.*model not found/i);
   });
 
   test('run fails when summarize fails', async () => {

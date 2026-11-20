@@ -64,8 +64,7 @@ function deps(overrides?: Partial<ISaferFetchDemoDeps>): ISaferFetchDemoDeps {
         return failWithDetail('response exceeded the 1024-byte cap', {
           kind: 'too-large',
           bytesRead: 2048,
-          limit: 1024,
-          declared: 12
+          limit: 1024
         });
       case '/redirect':
         return succeedWithDetail(response(value, [`${BASE_URL}/redirect`, `${BASE_URL}/final`]));
